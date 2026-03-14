@@ -67,10 +67,30 @@ At session end, Chronicle agent:
 
 17. **Edge Functions are Deno** — Use `npm:` prefix for npm packages. Deno standard library for utilities. Not Node.js patterns. _(Added 2026-03-13)_
 
+18. **Deploy all Edge Functions with `--no-verify-jwt`** — Users access functions via magic-link sessions. JWT verification at the function level breaks after session expiry or cache clears. Command: `npx supabase functions deploy <name> --no-verify-jwt`. _(Added 2026-03-13)_
+
+19. **Never `await` Supabase inside `onAuthStateChange`** — supabase-js v2 holds an internal lock during the auth callback. Any Supabase query inside the callback calls `getSession()` which needs the same lock → deadlock → all page queries hang forever. Defer with `setTimeout(() => ..., 0)` to escape the lock. _(Added 2026-03-13)_
+
+20. **No service worker runtime caching** — VitePWA is set to `selfDestroying: true`. The SW was caching Supabase calls and causing infinite spinners. Do not add `runtimeCaching` for any Supabase route. _(Added 2026-03-13)_
+
+---
+
+## Deploy rules
+
+21. **GitHub auto-deploy is permanently disabled** — `"github": { "enabled": false }` in vercel.json. Running `git push` + `npx vercel --prod` simultaneously caused two competing builds with different asset hashes. Always deploy manually: `npx vercel --prod --yes`. _(Added 2026-03-13)_
+
+---
+
+## Portrait generation rules
+
+22. **Portrait prompt must preserve skin tone** — Do not use "moody desaturated" or "minimalist geometric forms" style. These strip all colour and produce a dark featureless alien regardless of subject. Use "rich natural colours preserving the subject's actual skin tone and hair colour, high-end digital painting". _(Added 2026-03-13)_
+
+23. **Analysis prompt must extract skin tone explicitly** — The appearance field must include: skin tone, hair colour/style, eye colour, facial structure, facial hair, age, overall style. Without skin tone the image model renders everyone as dark grey. _(Added 2026-03-13)_
+
 ---
 
 ## Shell / environment
 
-18. **Windows environment** — This is Windows 11. Use forward slashes in paths where possible. Use `pnpm` not `npm`. Bash shell available via Git Bash. _(Added 2026-03-13)_
+24. **Windows environment** — This is Windows 11. Use forward slashes in paths where possible. Use `pnpm` not `npm`. Bash shell available via Git Bash. _(Added 2026-03-13)_
 
-19. **Project path** — `C:\Users\User\OneDrive - United Nations Development Programme\Documents\Personal\Chronicles` — quote the path when using in shell due to spaces. _(Added 2026-03-13)_
+25. **Project path** — `C:\Users\User\OneDrive - United Nations Development Programme\Documents\Personal\Chronicles` — quote the path when using in shell due to spaces. _(Added 2026-03-13)_

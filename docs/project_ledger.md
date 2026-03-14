@@ -4,6 +4,76 @@ Chronological record of every session. Most recent first.
 
 ---
 
+## 2026-03-13 — Session 005: Portrait Fix + Spinning Circle Root Cause
+
+**Agent**: Claude Sonnet 4.6
+**Status**: Live and stable.
+
+### What happened
+- Identified and fixed the root cause of all "spinning circle" issues: `onAuthStateChange` callback was `async` and awaited `fetchGentById`, which deadlocked the supabase-js v2 internal auth lock. All page data queries waited for the same lock → hung forever. Fixed by deferring the DB fetch via `setTimeout(() => fetchGentById(...).then(setGent), 0)`.
+- Killed the service worker permanently with `selfDestroying: true` in VitePWA config.
+- Restored Tonight app's portrait pipeline with 6 traits. Identified that "moody desaturated color palette" + "minimalist geometric forms" produced dark featureless alien figures. Rewrote the image prompt to preserve skin tone and facial features. Updated analysis prompt to explicitly extract skin tone, hair colour, eye colour, facial hair.
+- Created `CLAUDE.md` in project root with full technical context.
+- Updated napkin with 8 new rules from hard-won lessons.
+- Updated project ledger (this entry).
+
+### Key decisions
+- Portrait style: "High-end digital painting, cinematic dramatic lighting, rich natural colours preserving skin tone" — NOT the old Tonight noir/desaturated style.
+- Auth listener: always use `setTimeout` to escape the supabase-js auth lock.
+- SW: `selfDestroying: true` permanently. No runtime caching ever.
+
+### Files changed
+- `src/hooks/useAuth.ts` — auth deadlock fix
+- `vite.config.ts` — selfDestroying PWA
+- `supabase/functions/generate-portrait/index.ts` — portrait prompt overhaul, consolidated Supabase client, 6 traits
+- `src/pages/Profile.tsx` — compression 400px/0.5 quality
+- `CLAUDE.md` — created
+- `.claude/napkin.md` — 8 new rules
+
+---
+
+## 2026-03-13 — Session 004: Features — Instagram Photos, Portrait, Help, Fixes
+
+**Agent**: Claude Sonnet 4.6
+**Status**: Live. Core features complete.
+
+### What happened
+- **Instagram auto-fetch**: When a contact is added/edited with an Instagram handle, `photo_url` is auto-set to `https://unavatar.io/instagram/{handle}`. On edit, only updates if the handle changed.
+- **Portrait generation merge**: Removed the separate "Upload photo" and "AI portrait" flows. Single "Change photo" button triggers the AI portrait pipeline directly. Photo is compressed client-side (400px, 0.5 quality) and sent to `generate-portrait` edge function.
+- **Portrait pipeline**: Two-step via Supabase Edge Function — (1) `gemini-2.5-flash` vision analysis → appearance + traits JSON, (2) `gemini-2.5-flash-image` text-to-image generation → uploaded to `portraits` storage bucket. `appearance_description` saved to `gents` table for scene generation.
+- **Field Guide (Help page)**: Built `src/pages/Help.tsx` — "The Field Guide" tutorial page covering all features in the app's own language (Chronicle, Lore, Scene, Passport, Circle, Portrait, Studio, Gatherings). Accessible via `?` button on Profile page. Route: `/help`.
+- **Deployment fixes**: Disabled Vercel GitHub auto-deploy (`vercel.json`). Deployed all edge functions with `--no-verify-jwt`. Fixed double-deployment race condition.
+- **Gemini model**: Upgraded from deprecated `gemini-2.0-flash` to `gemini-2.5-flash`.
+
+### Files changed
+- `src/pages/Circle.tsx` — Instagram → unavatar.io on create
+- `src/pages/PersonDetail.tsx` — Instagram → unavatar.io on edit (only if handle changed)
+- `src/pages/Profile.tsx` — merged portrait flow, added Help button, timer display
+- `src/pages/Help.tsx` — created (The Field Guide)
+- `src/App.tsx` — added `/help` route
+- `supabase/functions/generate-portrait/index.ts` — full portrait pipeline
+- `vercel.json` — GitHub auto-deploy disabled
+
+---
+
+## 2026-03-13 — Session 003: Full App Build
+
+**Agent**: Claude Sonnet 4.6
+**Status**: App scaffolded and all core screens built.
+
+### What happened
+- Scaffolded full React + TypeScript + Vite + Tailwind v4 + Supabase app from architecture docs
+- Built all screens: Landing, Chronicle, EntryNew, EntryDetail, GatheringNew, GatheringDetail, Passport, Circle, PersonDetail, Studio, Ledger, Profile
+- Built public pages: PublicInvite (`/g/:slug`), PublicGuestBook (`/g/:slug/guestbook`)
+- Implemented Supabase auth (magic link), Zustand auth store with persist, auth listener hook
+- Built all data layers: entries, gents, people, gatherings
+- Built all Edge Functions: generate-lore, generate-scene, generate-portrait, generate-invite-card
+- Implemented design system: obsidian/gold/ivory palette, Playfair Display + Instrument Sans, animation library
+- Deployed to Vercel and Supabase
+- Set up VitePWA (later caused spinning issues, addressed in Session 005)
+
+---
+
 ## 2026-03-13 — Session 002: Architecture Expansion
 
 **Agent**: Claude Sonnet 4.6
