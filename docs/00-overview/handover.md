@@ -4,16 +4,22 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-## Current state (2026-03-13)
+## Current state (2026-03-14)
 
-**Phase**: **APP COMPLETE.** All 8 build phases shipped overnight.
+**Phase**: **FULLY LIVE.** App deployed, all users seeded, Edge Functions deployed, AI secrets set.
 
-**What was just done** (overnight session):
-- Phases 2–8 built in full using parallel agent teams
-- 83 source files, 7 Supabase Edge Functions, 9 export templates
-- Build: clean at 2140 modules, zero TypeScript errors
-- /simplify passes after every phase caught real bugs (loading hangs, timer leaks, logic errors)
-- Docs updated: build_plan.md, project_ledger.md, napkin.md, execution_board.md, handover.md
+**What was just done** (post-launch session):
+- Pre-created 3 Supabase auth users (no email sent, `email_confirm: true` via Admin API)
+- Seeded `gents` table rows for all 3 users (alias, display_name, full_alias)
+- Deployed all 7 Edge Functions via `supabase functions deploy`
+- Set `ANTHROPIC_API_KEY` and `GOOGLE_AI_API_KEY` as Supabase secrets
+- Fixed magic link redirect (was pointing to localhost — updated `site_url` in config.toml to Vercel URL)
+- Custom magic link email template (`supabase/templates/magic_link.html`) — dark gold branded design
+
+**Gent auth accounts** (pre-created, no signup needed):
+- `haris.daul@gmail.com` → alias: `lorekeeper` (Haris)
+- `adelija@gmail.com` → alias: `keys` (Almedin)
+- `vedadcolo@gmail.com` → alias: `bass` (Vedo)
 
 **What the app can do now**:
 - Log all 7 entry types (mission, night_out, steak, playstation, toast, gathering, interlude)
@@ -29,13 +35,11 @@ _Updated at the end of every session. Read this first when resuming._
 **What's left** (future sessions):
 - Seed Budapest 2023 Instagram profiles into Circle
 - Toast auto-sync webhook (E10)
-- Deploy Edge Functions to Supabase (`supabase functions deploy`)
 - QR code for guestbook page
 - Map view of missions (Leaflet)
 
 ## Active blockers
-- Edge Functions not yet deployed (need `supabase functions deploy <name>` for all 7)
-- `ANTHROPIC_API_KEY` and `GOOGLE_AI_API_KEY` secrets need to be set in Supabase dashboard
+- None. App is fully live at https://the-codex-sepia.vercel.app
 
 ## Known decisions (do not relitigate)
 - PWA, not native app
@@ -55,4 +59,4 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-_← Updated 2026-03-13_
+_← Updated 2026-03-14_

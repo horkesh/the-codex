@@ -4,6 +4,24 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-14
+
+**Goal**: Get all 3 gents able to log in; deploy Edge Functions; fix magic link.
+
+**Done**:
+- Pre-created 3 Supabase auth users via Admin API (`email_confirm: true`, no emails sent)
+  - haris.daul@gmail.com → lorekeeper | adelija@gmail.com → keys | vedadcolo@gmail.com → bass
+- Seeded `gents` table with matching UUIDs, aliases, display names, full aliases
+- Deployed all 7 Edge Functions: generate-lore, generate-cover, generate-stamp, generate-wrapped, generate-portrait, submit-rsvp, submit-guestbook
+- Set `ANTHROPIC_API_KEY` and `GOOGLE_AI_API_KEY` as Supabase project secrets
+- Fixed `site_url` in config.toml (was `localhost:3000` → `https://the-codex-sepia.vercel.app`)
+- Added custom magic link email template (`supabase/templates/magic_link.html`) — dark gold branded design matching app aesthetic
+- Pushed updated config to Supabase via `supabase config push`
+
+**Status**: App fully operational. No remaining blockers.
+
+---
+
 ## Session — 2026-03-13
 
 **Goal**: Complete Phase 2 through Phase 8 while sleeping.
