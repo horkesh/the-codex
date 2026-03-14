@@ -138,8 +138,10 @@ export async function createEntry(data: {
   if (error) throw error
   const entry = rawEntry as unknown as Entry
   // Fire-and-forget: check milestones after publish
-  checkAndAwardAchievements(data.created_by).catch(() => {})
-  checkAndAwardThresholds(data.created_by).catch(() => {})
+  Promise.all([
+    checkAndAwardAchievements(data.created_by),
+    checkAndAwardThresholds(data.created_by),
+  ]).catch(() => {})
   return entry
 }
 

@@ -39,12 +39,14 @@ export const THRESHOLD_DEFINITIONS: ThresholdDefinition[] = [
   },
 ]
 
+const THRESHOLD_TYPES = THRESHOLD_DEFINITIONS.map((d) => d.type)
+
 export async function fetchEarnedThresholds(gentId: string): Promise<string[]> {
   const { data, error } = await supabase
     .from('achievements')
     .select('criteria')
     .eq('earned_by', gentId)
-    .eq('type', 'threshold')
+    .in('type', THRESHOLD_TYPES)
   if (error) throw error
   return (data ?? [])
     .map((row) => ((row.criteria as Record<string, unknown>).reward_key as string) ?? '')
@@ -52,18 +54,12 @@ export async function fetchEarnedThresholds(gentId: string): Promise<string[]> {
 }
 
 export async function checkAndAwardThresholds(gentId: string): Promise<void> {
-  const { data: stats } = await supabase
-    .from('gent_stats')
-    .select('missions, steaks, gatherings, countries_visited')
-    .eq('gent_id', gentId)
-    .single()
+  const [{ data: stats }, { data: earned }] = await Promise.all([
+    supabase.from('gent_stats').select('*').eq('gent_id', gentId).single(),
+    supabase.from('achievements').select('type').eq('earned_by', gentId).in('type', THRESHOLD_TYPES),
+  ])
   if (!stats) return
 
-  const { data: earned } = await supabase
-    .from('achievements')
-    .select('type')
-    .eq('earned_by', gentId)
-    .eq('type', 'threshold')
   const earnedTypes = new Set(earned?.map((a) => a.type) ?? [])
 
   const toAward = THRESHOLD_DEFINITIONS.filter((def) => {

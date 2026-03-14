@@ -1,5 +1,37 @@
 import { supabase } from '@/lib/supabase'
 import type { GentStats, GentAlias } from '@/types/app'
+import { GENT_LABELS } from '@/lib/gents'
+
+// ─── Comparison helpers ───────────────────────────────────────────────────────
+
+export interface ComparisonStatRow {
+  label: string
+  field: keyof GentStats
+}
+
+export const COMPARISON_STAT_ROWS: ComparisonStatRow[] = [
+  { label: 'Missions',   field: 'missions'          },
+  { label: 'Nights Out', field: 'nights_out'         },
+  { label: 'Steaks',     field: 'steaks'             },
+  { label: 'Gatherings', field: 'gatherings'         },
+  { label: 'Countries',  field: 'countries_visited'  },
+  { label: 'People',     field: 'people_met'         },
+  { label: 'Stamps',     field: 'stamps_collected'   },
+]
+
+export function computeLeaderSummary(statA: GentStats, statB: GentStats): string {
+  let leadsA = 0
+  let leadsB = 0
+  for (const row of COMPARISON_STAT_ROWS) {
+    const a = statA[row.field] as number
+    const b = statB[row.field] as number
+    if (a > b) leadsA++
+    else if (b > a) leadsB++
+  }
+  if (leadsA > leadsB) return `${GENT_LABELS[statA.alias]} leads in ${leadsA} of ${COMPARISON_STAT_ROWS.length} categories`
+  if (leadsB > leadsA) return `${GENT_LABELS[statB.alias]} leads in ${leadsB} of ${COMPARISON_STAT_ROWS.length} categories`
+  return 'Perfectly matched'
+}
 
 // Fetch all-time stats for all gents from the gent_stats view
 export async function fetchAllStats(): Promise<GentStats[]> {

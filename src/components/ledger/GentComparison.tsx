@@ -2,30 +2,9 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router'
 import { staggerContainer, staggerItem } from '@/lib/animations'
+import { GENT_LABELS, GENT_ALIASES } from '@/lib/gents'
+import { COMPARISON_STAT_ROWS, computeLeaderSummary } from '@/data/stats'
 import type { GentStats, GentAlias } from '@/types/app'
-
-const GENT_LABELS: Record<GentAlias, string> = {
-  keys: 'Keys',
-  bass: 'Bass',
-  lorekeeper: 'Lorekeeper',
-}
-
-const ALIASES: GentAlias[] = ['keys', 'bass', 'lorekeeper']
-
-interface StatRow {
-  label: string
-  field: keyof GentStats
-}
-
-const STAT_ROWS: StatRow[] = [
-  { label: 'Missions', field: 'missions' },
-  { label: 'Nights Out', field: 'nights_out' },
-  { label: 'Steaks', field: 'steaks' },
-  { label: 'Gatherings', field: 'gatherings' },
-  { label: 'Countries', field: 'countries_visited' },
-  { label: 'People', field: 'people_met' },
-  { label: 'Stamps', field: 'stamps_collected' },
-]
 
 interface Props {
   stats: GentStats[]
@@ -41,14 +20,7 @@ export function GentComparison({ stats }: Props) {
 
   if (!statA || !statB) return null
 
-  const leadsA = STAT_ROWS.filter((r) => (statA[r.field] as number) > (statB[r.field] as number)).length
-  const leadsB = STAT_ROWS.filter((r) => (statB[r.field] as number) > (statA[r.field] as number)).length
-  const leaderLabel =
-    leadsA > leadsB
-      ? `${GENT_LABELS[aliasA]} leads in ${leadsA} of ${STAT_ROWS.length} categories`
-      : leadsB > leadsA
-        ? `${GENT_LABELS[aliasB]} leads in ${leadsB} of ${STAT_ROWS.length} categories`
-        : 'Perfectly matched'
+  const leaderLabel = computeLeaderSummary(statA, statB)
 
   return (
     <section className="mb-10">
@@ -70,7 +42,7 @@ export function GentComparison({ stats }: Props) {
         animate="animate"
         className="flex flex-col gap-3 bg-slate-mid rounded-xl p-5 shadow-card mb-3"
       >
-        {STAT_ROWS.map((row) => {
+        {COMPARISON_STAT_ROWS.map((row) => {
           const a = statA[row.field] as number
           const b = statB[row.field] as number
           const total = a + b
@@ -138,7 +110,7 @@ function GentPicker({
   exclude: GentAlias
   onChange: (a: GentAlias) => void
 }) {
-  const options = ALIASES.filter((a) => a !== exclude)
+  const options = GENT_ALIASES.filter((a) => a !== exclude)
   return (
     <div className="flex rounded-lg overflow-hidden border border-white/10 flex-1">
       {options.map((alias) => (

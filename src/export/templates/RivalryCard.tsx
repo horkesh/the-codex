@@ -1,27 +1,8 @@
 import React from 'react'
 import { BrandMark, GoldRule, BackgroundLayer } from '@/export/templates/shared'
-import type { GentStats, GentAlias } from '@/types/app'
-
-const GENT_LABELS: Record<GentAlias, string> = {
-  keys: 'Keys',
-  bass: 'Bass',
-  lorekeeper: 'Lorekeeper',
-}
-
-interface StatRow {
-  label: string
-  field: keyof GentStats
-}
-
-const STAT_ROWS: StatRow[] = [
-  { label: 'Missions', field: 'missions' },
-  { label: 'Nights Out', field: 'nights_out' },
-  { label: 'Steaks', field: 'steaks' },
-  { label: 'Gatherings', field: 'gatherings' },
-  { label: 'Countries', field: 'countries_visited' },
-  { label: 'People', field: 'people_met' },
-  { label: 'Stamps', field: 'stamps_collected' },
-]
+import { GENT_LABELS } from '@/lib/gents'
+import { COMPARISON_STAT_ROWS, computeLeaderSummary } from '@/data/stats'
+import type { GentStats } from '@/types/app'
 
 interface RivalryCardProps {
   gentA: GentStats
@@ -31,14 +12,7 @@ interface RivalryCardProps {
 
 export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
   ({ gentA, gentB, backgroundUrl }, ref) => {
-    const leadsA = STAT_ROWS.filter((r) => (gentA[r.field] as number) > (gentB[r.field] as number)).length
-    const leadsB = STAT_ROWS.filter((r) => (gentB[r.field] as number) > (gentA[r.field] as number)).length
-    const summaryLine =
-      leadsA > leadsB
-        ? `${GENT_LABELS[gentA.alias]} leads in ${leadsA} of ${STAT_ROWS.length} categories`
-        : leadsB > leadsA
-          ? `${GENT_LABELS[gentB.alias]} leads in ${leadsB} of ${STAT_ROWS.length} categories`
-          : 'Perfectly matched'
+    const summaryLine = computeLeaderSummary(gentA, gentB)
 
     return (
       <div
@@ -129,7 +103,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
 
         {/* Stat rows */}
         <div style={{ position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', justifyContent: 'center' }}>
-          {STAT_ROWS.map((row) => {
+          {COMPARISON_STAT_ROWS.map((row) => {
             const a = gentA[row.field] as number
             const b = gentB[row.field] as number
             const total = a + b
