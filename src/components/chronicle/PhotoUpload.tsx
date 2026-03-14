@@ -4,13 +4,14 @@ import { cn } from '@/lib/utils'
 import { Spinner } from '@/components/ui'
 import { uploadEntryPhoto } from '@/data/entries'
 import { fadeIn } from '@/lib/animations'
-import { extractLocationFromPhoto } from '@/lib/geo'
-import type { DetectedLocation } from '@/lib/geo'
+import { extractLocationFromPhoto, haversineMetres } from '@/lib/geo'
+import type { LocationFill } from '@/lib/geo'
+import { fetchLocations } from '@/data/locations'
 
 interface PhotoUploadProps {
   entryId: string | null
   onUpload?: (url: string) => void
-  onGeoDetected?: (loc: DetectedLocation) => void
+  onGeoDetected?: (loc: LocationFill) => void
   className?: string
 }
 
@@ -60,11 +61,30 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, className }: Pho
 
       // Try to extract GPS/date from the first photo (only once per session)
       if (onGeoDetected && !geoFiredRef.current && toAdd.length > 0) {
-        extractLocationFromPhoto(toAdd[0]).then((loc) => {
-          if (loc && !geoFiredRef.current) {
-            geoFiredRef.current = true
-            onGeoDetected(loc)
+        extractLocationFromPhoto(toAdd[0]).then(async (loc) => {
+          if (!loc || geoFiredRef.current) return
+          geoFiredRef.current = true
+
+          // Proximity check: if GPS coords exist, prefer a saved place name within 200m
+          let finalLoc = loc
+          if (loc.lat != null && loc.lng != null) {
+            const saved = await fetchLocations()
+            const nearby = saved.find(
+              (p) => p.lat != null && p.lng != null &&
+                haversineMetres(loc.lat!, loc.lng!, p.lat!, p.lng!) <= 200,
+            )
+            if (nearby) {
+              finalLoc = {
+                ...loc,
+                location: nearby.name,
+                city: loc.city || nearby.city,
+                country: loc.country || nearby.country,
+                country_code: loc.country_code || nearby.country_code,
+              }
+            }
           }
+
+          onGeoDetected(finalLoc)
         })
       }
 

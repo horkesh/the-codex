@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar } from '@/components/layout'
@@ -6,6 +6,8 @@ import { PageWrapper } from '@/components/layout'
 import { EntryTypeSelector } from '@/components/chronicle/EntryTypeSelector'
 import { ParticipantSelector } from '@/components/chronicle/ParticipantSelector'
 import { PhotoUpload, usePendingPhotos } from '@/components/chronicle/PhotoUpload'
+import { SavedPlacesBar } from '@/components/chronicle/SavedPlacesBar'
+import { fetchLocations } from '@/data/locations'
 import { MissionForm } from '@/components/chronicle/forms/MissionForm'
 import { NightOutForm } from '@/components/chronicle/forms/NightOutForm'
 import { SteakForm } from '@/components/chronicle/forms/SteakForm'
@@ -20,7 +22,8 @@ import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { fadeUp } from '@/lib/animations'
 import type { EntryType, PS5Match, GentAlias } from '@/types/app'
-import type { DetectedLocation } from '@/lib/geo'
+import type { LocationFill } from '@/lib/geo'
+import type { SavedLocation } from '@/types/app'
 import type { MissionFormData } from '@/components/chronicle/forms/MissionForm'
 import type { NightOutFormData } from '@/components/chronicle/forms/NightOutForm'
 import type { SteakFormData } from '@/components/chronicle/forms/SteakForm'
@@ -51,8 +54,13 @@ export default function EntryNew() {
   const [selectedType, setSelectedType] = useState<EntryType | null>(null)
   const [participants, setParticipants] = useState<string[]>(() => (gent ? [gent.id] : []))
   const [submitting, setSubmitting] = useState(false)
-  const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | undefined>()
-  const handleGeoDetected = useCallback((loc: DetectedLocation) => setDetectedLocation(loc), [])
+  const [locationFill, setLocationFill] = useState<LocationFill | undefined>()
+  const [savedPlaces, setSavedPlaces] = useState<SavedLocation[]>([])
+  const handleGeoDetected = useCallback((loc: LocationFill) => setLocationFill(loc), [])
+
+  useEffect(() => {
+    fetchLocations().then(setSavedPlaces)
+  }, [])
 
   const { pendingFiles, uploadAll, clearFiles } = usePendingPhotos()
 
@@ -233,21 +241,26 @@ export default function EntryNew() {
           <span className="text-ivory-muted font-body text-sm">{typeMeta?.label}</span>
         </div>
 
+        {/* Saved places — shown for location-aware entry types */}
+        {selectedType !== 'playstation' && selectedType !== 'interlude' && (
+          <SavedPlacesBar places={savedPlaces} onSelect={setLocationFill} />
+        )}
+
         {/* The form */}
         {selectedType === 'mission' && (
-          <MissionForm onSubmit={submitMission} loading={submitting} detectedLocation={detectedLocation} />
+          <MissionForm onSubmit={submitMission} loading={submitting} detectedLocation={locationFill} />
         )}
         {selectedType === 'night_out' && (
-          <NightOutForm onSubmit={submitNightOut} loading={submitting} detectedLocation={detectedLocation} />
+          <NightOutForm onSubmit={submitNightOut} loading={submitting} detectedLocation={locationFill} />
         )}
         {selectedType === 'steak' && (
-          <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={detectedLocation} />
+          <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={locationFill} />
         )}
         {selectedType === 'playstation' && (
           <PlaystationForm onSubmit={submitPlaystation} loading={submitting} />
         )}
         {selectedType === 'toast' && (
-          <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={detectedLocation} />
+          <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={locationFill} />
         )}
         {selectedType === 'interlude' && (
           <InterludeForm onSubmit={submitInterlude} loading={submitting} />

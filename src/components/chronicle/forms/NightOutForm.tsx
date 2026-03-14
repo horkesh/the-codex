@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import type { DetectedLocation } from '@/lib/geo'
+import type { LocationFill } from '@/lib/geo'
 
 export interface NightOutFormData {
   title: string
@@ -14,7 +14,7 @@ export interface NightOutFormData {
 interface NightOutFormProps {
   onSubmit: (data: NightOutFormData) => Promise<void>
   loading: boolean
-  detectedLocation?: DetectedLocation
+  detectedLocation?: LocationFill
 }
 
 const empty: NightOutFormData = {
@@ -34,10 +34,11 @@ export function NightOutForm({ onSubmit, loading, detectedLocation }: NightOutFo
 
   useEffect(() => {
     if (!detectedLocation) return
+    const ow = detectedLocation.overwrite
     setForm((prev) => ({
       ...prev,
       date: prev.date || detectedLocation.date || prev.date,
-      location: prev.location || detectedLocation.location || prev.location,
+      location: ow ? (detectedLocation.location ?? prev.location) : (prev.location || detectedLocation.location || prev.location),
     }))
   }, [detectedLocation])
   const [errors, setErrors] = useState<FieldErrors>({})

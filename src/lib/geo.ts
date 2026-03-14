@@ -1,23 +1,45 @@
 import exifr from 'exifr'
 
-export interface DetectedLocation {
+export interface LocationFill {
   city?: string
   country?: string
   country_code?: string
   location?: string
   date?: string
+  lat?: number
+  lng?: number
+  /** If true, overwrite existing form values. If false/undefined, only fill empty fields. */
+  overwrite?: boolean
+}
+
+/**
+ * Returns distance in metres between two lat/lng points (haversine).
+ */
+export function haversineMetres(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number,
+): number {
+  const R = 6_371_000
+  const toRad = (d: number) => (d * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.asin(Math.sqrt(a))
 }
 
 /**
  * Reads EXIF GPS + datetime from a photo and reverse-geocodes via Nominatim.
  * Returns null if no useful data is found.
+ * Includes lat/lng so the caller can do proximity checks against saved places.
  */
-export async function extractLocationFromPhoto(file: File): Promise<DetectedLocation | null> {
+export async function extractLocationFromPhoto(file: File): Promise<LocationFill | null> {
   try {
     const exif = await exifr.parse(file, { gps: true, pick: ['DateTimeOriginal'] })
     if (!exif) return null
 
-    const result: DetectedLocation = {}
+    const result: LocationFill = {}
 
     // EXIF date: "YYYY:MM:DD HH:MM:SS" — normalize to ISO before parsing
     if (exif.DateTimeOriginal) {
@@ -30,6 +52,9 @@ export async function extractLocationFromPhoto(file: File): Promise<DetectedLoca
 
     // GPS reverse geocoding
     if (typeof exif.latitude === 'number' && typeof exif.longitude === 'number') {
+      result.lat = exif.latitude
+      result.lng = exif.longitude
+
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${exif.latitude}&lon=${exif.longitude}&format=json&zoom=10`,
         { headers: { 'User-Agent': 'TheGentsChronicles/1.0' } },
@@ -40,7 +65,6 @@ export async function extractLocationFromPhoto(file: File): Promise<DetectedLoca
         result.city = addr.city || addr.town || addr.village || addr.municipality
         result.country = addr.country
         result.country_code = addr.country_code?.toUpperCase()
-        // First token of display_name as the specific venue hint
         const first = data.display_name?.split(',')[0]?.trim()
         if (first) result.location = first
       }

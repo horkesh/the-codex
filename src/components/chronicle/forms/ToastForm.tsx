@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import type { DetectedLocation } from '@/lib/geo'
+import type { LocationFill } from '@/lib/geo'
 
 export interface ToastFormData {
   title: string
@@ -14,7 +14,7 @@ export interface ToastFormData {
 interface ToastFormProps {
   onSubmit: (data: ToastFormData) => Promise<void>
   loading: boolean
-  detectedLocation?: DetectedLocation
+  detectedLocation?: LocationFill
 }
 
 const empty: ToastFormData = {
@@ -34,10 +34,11 @@ export function ToastForm({ onSubmit, loading, detectedLocation }: ToastFormProp
 
   useEffect(() => {
     if (!detectedLocation) return
+    const ow = detectedLocation.overwrite
     setForm((prev) => ({
       ...prev,
       date: prev.date || detectedLocation.date || prev.date,
-      location: prev.location || detectedLocation.location || prev.location,
+      location: ow ? (detectedLocation.location ?? prev.location) : (prev.location || detectedLocation.location || prev.location),
     }))
   }, [detectedLocation])
   const [errors, setErrors] = useState<FieldErrors>({})

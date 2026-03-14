@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { HelpCircle } from 'lucide-react'
+import { HelpCircle, ChevronRight, MapPin } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar } from '@/components/ui/Avatar'
@@ -244,6 +244,19 @@ export default function Profile() {
                 Save Changes
               </Button>
             </div>
+
+            {/* Places */}
+            <button
+              type="button"
+              onClick={() => navigate('/places')}
+              className="w-full flex items-center justify-between py-3 border-t border-white/8 text-ivory-muted hover:text-ivory transition-colors"
+            >
+              <span className="flex items-center gap-2 text-sm font-body">
+                <MapPin size={14} className="text-gold-muted" />
+                Saved Places
+              </span>
+              <ChevronRight size={15} className="text-ivory-dim" />
+            </button>
 
             {/* Account */}
             <SectionDivider label="Account" />

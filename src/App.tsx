@@ -18,6 +18,7 @@ import Studio from '@/pages/Studio'
 import Ledger from '@/pages/Ledger'
 import Profile from '@/pages/Profile'
 import Help from '@/pages/Help'
+import Places from '@/pages/Places'
 
 // Public pages (no auth)
 import PublicInvite from '@/pages/public/PublicInvite'
@@ -53,6 +54,7 @@ function AnimatedRoutes() {
         <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+        <Route path="/places" element={<ProtectedRoute><Places /></ProtectedRoute>} />
       </Routes>
     </AnimatePresence>
   )

@@ -1,4 +1,19 @@
 export type EntryType = 'mission' | 'night_out' | 'steak' | 'playstation' | 'toast' | 'gathering' | 'interlude'
+export type LocationType = 'restaurant' | 'bar' | 'home' | 'venue' | 'other'
+
+export interface SavedLocation {
+  id: string
+  name: string
+  type: LocationType
+  city: string
+  country: string
+  country_code: string
+  lat: number | null
+  lng: number | null
+  address: string | null
+  created_by: string
+  created_at: string
+}
 export type EntryStatus = 'draft' | 'published' | 'gathering_pre' | 'gathering_post'
 export type GentAlias = 'keys' | 'bass' | 'lorekeeper'
 
