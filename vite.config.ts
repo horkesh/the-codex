@@ -25,12 +25,11 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Only precache static assets — never cache API or auth calls
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: 'index.html',
-        // Explicitly block the SW from touching anything Supabase-related
-        navigateFallbackDenylist: [/^\/rest\//, /^\/auth\//, /^\/functions\//],
         runtimeCaching: [],
+        // Purge all caches from old SW versions on activation (clears the old supabase-cache)
+        cleanupOutdatedCaches: true,
       },
     }),
   ],
