@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
-import { Card } from '@/components/ui/Card'
+import { MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
-import { cn, formatDate, flagEmoji } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { staggerItem } from '@/lib/animations'
+import { ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
 import type { EntryWithParticipants, EntryType } from '@/types/app'
 
 interface EntryCardProps {
@@ -12,13 +13,13 @@ interface EntryCardProps {
 }
 
 const gradientMap: Record<EntryType, string> = {
-  mission:     'from-mission to-obsidian',
-  night_out:   'from-night-out to-obsidian',
-  steak:       'from-steak to-obsidian',
-  playstation: 'from-playstation to-obsidian',
-  toast:       'from-toast to-obsidian',
-  gathering:   'from-gathering to-obsidian',
-  interlude:   'from-interlude to-obsidian',
+  mission:     'from-[#2a1b4a] via-[#1a1030] to-[#0d0b0f]',
+  night_out:   'from-[#0a1828] via-[#0c1520] to-[#0d0b0f]',
+  steak:       'from-[#2e1208] via-[#1e0e06] to-[#0d0b0f]',
+  playstation: 'from-[#051c18] via-[#081412] to-[#0d0b0f]',
+  toast:       'from-[#2e180a] via-[#1c1008] to-[#0d0b0f]',
+  gathering:   'from-[#0e2010] via-[#0c1a0e] to-[#0d0b0f]',
+  interlude:   'from-[#151224] via-[#120f1e] to-[#0d0b0f]',
 }
 
 export function EntryCard({ entry, onClick }: EntryCardProps) {
@@ -26,8 +27,8 @@ export function EntryCard({ entry, onClick }: EntryCardProps) {
 
   const locationLabel = (() => {
     if (entry.city) {
-      const flag = entry.country_code ? flagEmoji(entry.country_code) + ' ' : ''
-      return flag + entry.city
+      const code = entry.country_code ? `${entry.country_code} · ` : ''
+      return code + entry.city
     }
     return entry.location ?? null
   })()
@@ -38,79 +39,91 @@ export function EntryCard({ entry, onClick }: EntryCardProps) {
   const overflow = entry.participants.length - 3
 
   return (
-    <motion.div variants={staggerItem} whileTap={{ scale: 0.98 }}>
-      <Card variant="entry" entryType={entry.type} onClick={onClick} className="overflow-hidden">
-        {/* Cover image / gradient header */}
-        <div className="relative h-[180px] w-full overflow-hidden rounded-t-lg">
-          {entry.cover_image_url ? (
-            <img
-              src={entry.cover_image_url}
-              alt={entry.title}
-              className="w-full h-full object-cover"
-              draggable={false}
-            />
-          ) : (
-            <div className={cn('w-full h-full bg-gradient-to-br', gradient)} />
-          )}
+    <motion.div
+      variants={staggerItem}
+      whileTap={{ scale: 0.985 }}
+      onClick={onClick}
+      className="cursor-pointer group rounded-xl border border-white/6 overflow-hidden bg-slate-dark transition-all duration-200 hover:border-gold/20"
+      style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.35)' }}
+    >
+      {/* Cover image / gradient header */}
+      <div className="relative h-[215px] w-full overflow-hidden">
+        {entry.cover_image_url ? (
+          <img
+            src={entry.cover_image_url}
+            alt={entry.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            draggable={false}
+          />
+        ) : (
+          <img
+            src={ENTRY_TYPE_IMAGES[entry.type]}
+            alt=""
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            aria-hidden
+          />
+        )}
 
-          {/* Badge + date overlay */}
-          <div className="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-end justify-between bg-gradient-to-t from-black/60 to-transparent">
-            <Badge type={entry.type} size="sm" />
-            <span className="text-xs text-ivory-dim font-body">
-              {formatDate(entry.date)}
+        {/* Atmospheric overlay — darkens towards edges for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-dark/90 via-transparent to-black/20" />
+
+        {/* Badge — top left */}
+        <div className="absolute top-3 left-3">
+          <Badge type={entry.type} size="sm" />
+        </div>
+
+        {/* Date — top right */}
+        <div className="absolute top-3 right-3">
+          <span className="text-[10px] text-ivory/60 font-body tracking-wide bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full">
+            {formatDate(entry.date)}
+          </span>
+        </div>
+      </div>
+
+      {/* Card body */}
+      <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
+        {/* Title */}
+        <h3 className="font-display text-xl text-ivory leading-tight line-clamp-2 tracking-wide">
+          {entry.title}
+        </h3>
+
+        {/* Location + participants */}
+        <div className="flex items-center justify-between gap-2">
+          {locationLabel ? (
+            <span className="flex items-center gap-1 text-xs text-ivory-dim font-body truncate flex-1">
+              <MapPin size={10} className="text-gold/50 shrink-0" aria-hidden="true" />
+              {locationLabel}
             </span>
-          </div>
-        </div>
+          ) : (
+            <span className="flex-1" />
+          )}
 
-        {/* Card body */}
-        <div className="px-3 pt-2.5 pb-3 flex flex-col gap-1.5">
-          {/* Title */}
-          <h3
-            className="font-display text-lg text-ivory leading-tight line-clamp-2"
-          >
-            {entry.title}
-          </h3>
-
-          {/* Location + participants row */}
-          <div className="flex items-center justify-between gap-2">
-            {locationLabel ? (
-              <span className="text-xs text-ivory-dim font-body truncate flex-1">
-                {locationLabel}
-              </span>
-            ) : (
-              <span className="flex-1" />
-            )}
-
-            {/* Participant avatars */}
-            {entry.participants.length > 0 && (
-              <div className="flex items-center shrink-0">
-                <div className="flex -space-x-1.5">
-                  {visibleParticipants.map((gent) => (
-                    <Avatar
-                      key={gent.id}
-                      src={gent.avatar_url}
-                      name={gent.display_name}
-                      size="xs"
-                    />
-                  ))}
-                </div>
-                {overflow > 0 && (
-                  <span className="ml-1 text-[10px] text-ivory-dim font-body">
-                    +{overflow}
-                  </span>
-                )}
+          {entry.participants.length > 0 && (
+            <div className="flex items-center shrink-0">
+              <div className="flex -space-x-1.5">
+                {visibleParticipants.map((gent) => (
+                  <Avatar
+                    key={gent.id}
+                    src={gent.avatar_url}
+                    name={gent.display_name}
+                    size="xs"
+                  />
+                ))}
               </div>
-            )}
-          </div>
-
-          {/* Lore preview */}
-          {previewText && (
-            <p className="text-xs text-ivory-muted font-body italic truncate leading-snug">
-              {previewText}
-            </p>
+              {overflow > 0 && (
+                <span className="ml-1 text-[10px] text-ivory-dim font-body">+{overflow}</span>
+              )}
+            </div>
           )}
         </div>
-      </Card>
+
+        {/* Lore preview */}
+        {previewText && (
+          <p className="text-xs text-ivory-muted/70 font-display italic line-clamp-1 leading-snug">
+            {previewText}
+          </p>
+        )}
+      </div>
     </motion.div>
   )
 }

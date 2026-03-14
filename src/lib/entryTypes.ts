@@ -18,3 +18,14 @@ export const ENTRY_TYPE_META: Record<EntryType, EntryTypeMeta> = {
   gathering:   { label: 'Gathering',  Icon: Users,     bg: 'bg-gathering',   borderColor: '#1a2a1a' },
   interlude:   { label: 'Interlude',  Icon: BookOpen,  bg: 'bg-interlude',   borderColor: '#1a1a2e' },
 }
+
+/** Entry-type category images (public/entry-types/). Used in selector, card and hero when no cover. */
+export const ENTRY_TYPE_IMAGES: Record<EntryType, string> = {
+  mission:     '/entry-types/01-mission.png',
+  night_out:   '/entry-types/02-night-out.png',
+  steak:       '/entry-types/03-the-table.png',
+  playstation: '/entry-types/04-the-pitch.png',
+  toast:       '/entry-types/05-the-toast.png',
+  gathering:   '/entry-types/06-gathering.png',
+  interlude:   '/entry-types/07-interlude.png',
+}

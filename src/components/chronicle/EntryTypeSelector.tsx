@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { ENTRY_TYPE_META } from '@/lib/entryTypes'
+import { ENTRY_TYPE_META, ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryType } from '@/types/app'
 
@@ -66,23 +66,21 @@ export function EntryTypeSelector({ onSelect }: EntryTypeSelectorProps) {
                   type="button"
                   onClick={() => handleSelect(type)}
                   className={cn(
-                    'w-full text-left rounded-lg transition-all duration-200 overflow-hidden',
-                    'bg-white/5 backdrop-blur-md border',
+                    'relative w-full text-left rounded-lg transition-all duration-200 overflow-hidden border',
                     isSelected
-                      ? 'border-gold bg-gold/10 shadow-gold'
-                      : 'border-white/10 hover:border-white/20 hover:bg-white/[0.07]',
+                      ? 'border-gold shadow-gold ring-1 ring-gold/30'
+                      : 'border-white/10 hover:border-white/20',
                   )}
                 >
-                  <div className="p-4 flex flex-col gap-2">
-                    {/* Icon with colored background dot */}
-                    <div
-                      className={cn(
-                        'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
-                        meta.bg,
-                      )}
-                    >
-                      <meta.Icon size={20} aria-hidden="true" />
-                    </div>
+                  {/* Type image background */}
+                  <img
+                    src={ENTRY_TYPE_IMAGES[type]}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                    aria-hidden
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/30" />
+                  <div className="relative p-4 flex flex-col gap-2 min-h-[100px]">
                     {/* Label + description */}
                     <div>
                       <p
@@ -93,11 +91,10 @@ export function EntryTypeSelector({ onSelect }: EntryTypeSelectorProps) {
                       >
                         {meta.label}
                       </p>
-                      <p className="text-ivory-dim text-xs font-body mt-0.5 leading-snug">
+                      <p className="text-ivory-muted text-xs font-body mt-0.5 leading-snug">
                         {TYPE_DESCRIPTIONS[type]}
                       </p>
                     </div>
-                    {/* Selected indicator */}
                     {isSelected && (
                       <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-gold" />
                     )}
@@ -120,23 +117,21 @@ export function EntryTypeSelector({ onSelect }: EntryTypeSelectorProps) {
                   type="button"
                   onClick={() => handleSelect(type)}
                   className={cn(
-                    'w-full text-left rounded-lg transition-all duration-200 overflow-hidden',
-                    'bg-white/5 backdrop-blur-md border',
+                    'relative w-full text-left rounded-lg transition-all duration-200 overflow-hidden border',
                     isSelected
-                      ? 'border-gold bg-gold/10 shadow-gold'
-                      : 'border-white/10 hover:border-white/20 hover:bg-white/[0.07]',
+                      ? 'border-gold shadow-gold ring-1 ring-gold/30'
+                      : 'border-white/10 hover:border-white/20',
                   )}
                 >
-                  <div className="p-4 flex flex-row items-center gap-4">
-                    <div
-                      className={cn(
-                        'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
-                        meta.bg,
-                      )}
-                    >
-                      <meta.Icon size={20} aria-hidden="true" />
-                    </div>
-                    <div className="flex-1">
+                  <img
+                    src={ENTRY_TYPE_IMAGES[type]}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                    aria-hidden
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/30" />
+                  <div className="relative p-4 flex flex-row items-center gap-4">
+                    <div className="flex-1 min-w-0">
                       <p
                         className={cn(
                           'font-display text-sm font-semibold',
@@ -145,7 +140,7 @@ export function EntryTypeSelector({ onSelect }: EntryTypeSelectorProps) {
                       >
                         {meta.label}
                       </p>
-                      <p className="text-ivory-dim text-xs font-body mt-0.5">
+                      <p className="text-ivory-muted text-xs font-body mt-0.5">
                         {TYPE_DESCRIPTIONS[type]}
                       </p>
                     </div>

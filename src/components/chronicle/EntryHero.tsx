@@ -1,9 +1,8 @@
 import { motion } from 'framer-motion'
-import { cn } from '@/lib/utils'
 import { formatDate, flagEmoji } from '@/lib/utils'
 import { Badge } from '@/components/ui'
 import { Avatar } from '@/components/ui'
-import { ENTRY_TYPE_META } from '@/lib/entryTypes'
+import { ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
 import { fadeIn } from '@/lib/animations'
 import type { EntryWithParticipants } from '@/types/app'
 
@@ -11,20 +10,7 @@ interface EntryHeroProps {
   entry: EntryWithParticipants
 }
 
-// Maps entry type to a CSS gradient for when there's no cover image
-const TYPE_GRADIENT: Record<string, string> = {
-  mission:     'from-[#3d2b6b] via-[#1e1228] to-[#0a0a0f]',
-  night_out:   'from-[#0f2038] via-[#091420] to-[#0a0a0f]',
-  steak:       'from-[#3d1a0a] via-[#1e0d05] to-[#0a0a0f]',
-  playstation: 'from-[#0a2420] via-[#051210] to-[#0a0a0f]',
-  toast:       'from-[#3d2010] via-[#1e1008] to-[#0a0a0f]',
-  gathering:   'from-[#1a2a1a] via-[#0d150d] to-[#0a0a0f]',
-  interlude:   'from-[#1a1a2e] via-[#0e0e1a] to-[#0a0a0f]',
-}
-
 export function EntryHero({ entry }: EntryHeroProps) {
-  const gradient = TYPE_GRADIENT[entry.type] ?? 'from-slate-light via-slate-mid to-obsidian'
-  const meta = ENTRY_TYPE_META[entry.type]
 
   const hasLocation = entry.city || entry.country
   const locationParts: string[] = []
@@ -45,30 +31,15 @@ export function EntryHero({ entry }: EntryHeroProps) {
           animate="animate"
         />
       ) : (
-        <motion.div
-          className={cn('absolute inset-0 bg-gradient-to-b', gradient)}
+        <motion.img
+          src={ENTRY_TYPE_IMAGES[entry.type]}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          aria-hidden
           variants={fadeIn}
           initial="initial"
           animate="animate"
-        >
-          {/* Subtle animated pulse overlay for visual interest */}
-          <div className="absolute inset-0 opacity-20">
-            <div
-              className="absolute inset-0 animate-pulse"
-              style={{
-                background: `radial-gradient(ellipse at 30% 50%, ${meta.borderColor}80 0%, transparent 70%)`,
-              }}
-            />
-          </div>
-          {/* Large type icon centered as decoration */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <meta.Icon
-              size={96}
-              className="opacity-10 select-none"
-              aria-hidden="true"
-            />
-          </div>
-        </motion.div>
+        />
       )}
 
       {/* Gradient overlay: bottom heavy so text is readable */}
