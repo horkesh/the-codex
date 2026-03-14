@@ -21,6 +21,29 @@ function SectionDivider({ label }: { label: string }) {
   )
 }
 
+// Compress and convert image file to base64 for AI analysis
+async function fileToBase64(file: File, maxWidth = 512): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / Math.max(img.width, img.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+        // Strip the data:image/...;base64, prefix — Gemini wants raw base64
+        resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1])
+      }
+      img.onerror = reject
+      img.src = e.target?.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function Profile() {
   const { gent, setGent } = useAuthStore()
   const addToast = useUIStore((s) => s.addToast)
@@ -32,7 +55,8 @@ export default function Profile() {
   const [generatingPortrait, setGeneratingPortrait] = useState(false)
   const [portraitSeconds, setPortraitSeconds] = useState(0)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const portraitInputRef = useRef<HTMLInputElement>(null)
 
   if (!gent) {
     return (
@@ -87,15 +111,12 @@ export default function Profile() {
       if (updated) {
         setGent({ ...gent, avatar_url: publicUrl })
         addToast('Avatar updated.', 'success')
-      } else {
-        addToast('Avatar uploaded but profile update failed.', 'error')
       }
     } catch {
       addToast('Failed to upload avatar.', 'error')
     } finally {
       setUploadingAvatar(false)
-      // Reset input so the same file can be re-selected if needed
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
     }
   }
 
@@ -105,14 +126,22 @@ export default function Profile() {
     return () => clearInterval(t)
   }, [generatingPortrait])
 
-  async function handleGeneratePortrait() {
+  async function handlePortraitPhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
     if (!gent) return
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (portraitInputRef.current) portraitInputRef.current.value = ''
+
     setGeneratingPortrait(true)
     try {
+      const photo_base64 = await fileToBase64(file)
+
       const { data, error } = await supabase.functions.invoke('generate-portrait', {
-        body: { gent_id: gent.id, display_name: gent.display_name, alias: gent.full_alias },
+        body: { gent_id: gent.id, display_name: gent.display_name, photo_base64 },
       })
+
       if (error || !data?.portrait_url) throw new Error(error?.message ?? 'No portrait returned')
+
       const updated = await updateGent(gent.id, { avatar_url: data.portrait_url })
       if (updated) {
         setGent({ ...gent, avatar_url: data.portrait_url })
@@ -135,6 +164,8 @@ export default function Profile() {
     }
   }
 
+  const busy = uploadingAvatar || generatingPortrait
+
   return (
     <>
       <TopBar title="Profile" />
@@ -154,38 +185,33 @@ export default function Profile() {
                 size="xl"
                 active
               />
-              {(uploadingAvatar || generatingPortrait) && (
+              {busy && (
                 <div className="absolute inset-0 rounded-full bg-obsidian/70 flex items-center justify-center">
                   <Spinner size="sm" />
                 </div>
               )}
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarUpload}
-            />
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            <input ref={portraitInputRef} type="file" accept="image/*" capture="user" className="hidden" onChange={handlePortraitPhotoSelected} />
           </motion.div>
 
           {/* Avatar actions */}
           <motion.div variants={staggerItem} className="flex gap-2 mb-6">
             <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingAvatar || generatingPortrait}
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={busy}
               className="text-xs text-ivory-dim font-body border border-white/10 rounded-full px-4 py-1.5 hover:border-white/30 transition-colors disabled:opacity-40"
             >
               {uploadingAvatar ? 'Uploading…' : 'Upload photo'}
             </button>
             <button
-              onClick={handleGeneratePortrait}
-              disabled={uploadingAvatar || generatingPortrait}
+              onClick={() => portraitInputRef.current?.click()}
+              disabled={busy}
               className="text-xs text-gold font-body border border-gold/30 rounded-full px-4 py-1.5 hover:border-gold/60 transition-colors disabled:opacity-40"
             >
               {generatingPortrait
-                ? portraitSeconds < 3 ? 'Generating…'
-                  : `Working… ${portraitSeconds}s`
+                ? portraitSeconds < 3 ? 'Analysing…'
+                  : `Painting… ${portraitSeconds}s`
                 : 'AI portrait'}
             </button>
           </motion.div>
@@ -231,7 +257,7 @@ export default function Profile() {
                 fullWidth
                 loading={saving}
                 onClick={handleSave}
-                disabled={saving || uploadingAvatar}
+                disabled={saving || busy}
               >
                 Save Changes
               </Button>
