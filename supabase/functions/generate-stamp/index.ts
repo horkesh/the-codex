@@ -26,7 +26,7 @@ Deno.serve(async (req: Request) => {
     const prompt = `Vintage passport ${stampType}, circular design, ornate border, serif typography. Text: "${stamp.name}" and "${location}" and "${year}". Style: aged ink on cream paper, official government stamp aesthetic, intricate geometric patterns, no background, transparent outside circle. High detail, clean vector aesthetic.`
 
     const imageResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${googleApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
