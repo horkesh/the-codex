@@ -37,15 +37,19 @@ export async function confirmPersonScan(
 }
 
 /**
- * Check if a normalized Instagram handle already exists in people (globally).
- * Returns the existing person's name, or null if no duplicate.
+ * Uploads a source photo for a scan and returns the public URL.
+ * Failure is non-fatal — caller should handle null gracefully.
  */
-export async function findPersonByInstagram(handle: string): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('people')
-    .select('name')
-    .ilike('instagram', handle)
-    .maybeSingle()
-  if (error) throw error
-  return data ? (data as unknown as { name: string }).name : null
+export async function uploadPersonScanPhoto(
+  gentId: string,
+  file: File,
+): Promise<string | null> {
+  const tempId = crypto.randomUUID()
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${gentId}/${tempId}/source.${ext}`
+  const { error } = await supabase.storage
+    .from('person-scans')
+    .upload(path, file, { contentType: file.type, upsert: false })
+  if (error) return null
+  return supabase.storage.from('person-scans').getPublicUrl(path).data.publicUrl
 }

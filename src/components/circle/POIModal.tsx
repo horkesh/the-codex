@@ -17,7 +17,7 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
   const screenshotInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
-  const { step, setStep, tab, setTab, analyzeError, verdictResult, dossier, setDossier, duplicateWarning, handleAnalyzeFile, handleSave, reset } = useVerdictIntake((personId) => {
+  const { step, setStep, tab, setTab, analyzeError, verdictResult, portraitLoading, dossier, setDossier, duplicateWarning, handleAnalyzeFile, handleSave, reset } = useVerdictIntake((personId) => {
     onSaved(personId)
     onClose()
   })
@@ -165,7 +165,7 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
 
               {/* Generated portrait or shimmer */}
               <div className="flex flex-col items-center gap-1">
-                {verdictResult?.portraitLoading ? (
+                {portraitLoading ? (
                   <div className="w-20 h-20 rounded-full bg-slate-light/40 border border-gold/20 animate-pulse" />
                 ) : verdictResult?.portraitUrl ? (
                   <img
@@ -174,7 +174,7 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
                     className="w-20 h-20 rounded-full object-cover border border-gold/30"
                   />
                 ) : null}
-                {(verdictResult?.portraitLoading || verdictResult?.portraitUrl) && (
+                {(portraitLoading || verdictResult?.portraitUrl) && (
                   <span className="text-[10px] text-ivory-dim font-body">Portrait</span>
                 )}
               </div>

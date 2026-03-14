@@ -231,6 +231,20 @@ export async function fetchAllLabels(): Promise<string[]> {
   return unique
 }
 
+/**
+ * Check if a normalized Instagram handle already exists in people (globally).
+ * Returns the existing person's name, or null if no duplicate.
+ */
+export async function findPersonByInstagram(handle: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('people')
+    .select('name')
+    .ilike('instagram', handle)
+    .maybeSingle()
+  if (error) throw error
+  return data ? (data as unknown as { name: string }).name : null
+}
+
 export async function fetchPeopleByCategory(category: 'contact' | 'person_of_interest'): Promise<Person[]> {
   const { data, error } = await supabase
     .from('people')

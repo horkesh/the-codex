@@ -1,12 +1,14 @@
 import { useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/auth'
 import { scanPersonVerdict } from '@/ai/personVerdict'
 import { generatePersonPortrait } from '@/ai/personPortrait'
-import { createPersonScanDraft, updatePersonScan, confirmPersonScan, findPersonByInstagram } from '@/data/personScans'
-import { createPersonFromScan } from '@/data/people'
+import { createPersonScanDraft, updatePersonScan, confirmPersonScan, uploadPersonScanPhoto } from '@/data/personScans'
+import { createPersonFromScan, findPersonByInstagram } from '@/data/people'
 import { normalizeInstagramHandle } from '@/lib/instagram'
 import type { PersonVerdict, DossierDraft, VerdictSourceType } from '@/types/app'
+
+// Score at or above this routes to 'contact'; below routes to 'person_of_interest'
+const CONTACT_SCORE_THRESHOLD = 8.0
 
 export type IntakeStep = 'input' | 'analyzing' | 'review' | 'saving'
 export type IntakeTab = 'screenshot' | 'photo'
@@ -16,19 +18,21 @@ export interface VerdictResult {
   portraitUrl: string | null
   sourcePhotoUrl: string | null
   scanId: string
-  portraitLoading: boolean
 }
 
-const EMPTY_DOSSIER: DossierDraft = {
-  display_name: '',
-  instagram: '',
-  bio: '',
-  why_interesting: '',
-  best_opener: '',
-  green_flags: [],
-  watchouts: [],
-  category: 'person_of_interest',
-  visibility: 'private',
+// Factory avoids sharing array references across resets
+function createEmptyDossier(): DossierDraft {
+  return {
+    display_name: '',
+    instagram: '',
+    bio: '',
+    why_interesting: '',
+    best_opener: '',
+    green_flags: [],
+    watchouts: [],
+    category: 'person_of_interest',
+    visibility: 'private',
+  }
 }
 
 export function useVerdictIntake(onSaved: (personId: string) => void) {
@@ -37,7 +41,8 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
   const [tab, setTab] = useState<IntakeTab>('screenshot')
   const [analyzeError, setAnalyzeError] = useState('')
   const [verdictResult, setVerdictResult] = useState<VerdictResult | null>(null)
-  const [dossier, setDossier] = useState<DossierDraft>(EMPTY_DOSSIER)
+  const [portraitLoading, setPortraitLoading] = useState(false)
+  const [dossier, setDossier] = useState<DossierDraft>(createEmptyDossier)
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
 
   const reset = useCallback(() => {
@@ -45,7 +50,8 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     setTab('screenshot')
     setAnalyzeError('')
     setVerdictResult(null)
-    setDossier(EMPTY_DOSSIER)
+    setPortraitLoading(false)
+    setDossier(createEmptyDossier())
     setDuplicateWarning(null)
   }, [])
 
@@ -55,30 +61,21 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     setStep('analyzing')
 
     try {
-      // 1. Read file as base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve((reader.result as string).split(',')[1])
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
+      // Read base64 and upload source photo in parallel — both need only `file`
+      const [base64, sourcePhotoUrl] = await Promise.all([
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve((reader.result as string).split(',')[1])
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        }),
+        uploadPersonScanPhoto(gent.id, file),
+      ])
 
-      // 2. Upload source photo (non-blocking; failure is non-fatal)
-      let sourcePhotoUrl: string | null = null
-      const tempId = crypto.randomUUID()
-      const ext = file.name.split('.').pop() ?? 'jpg'
-      const storagePath = `${gent.id}/${tempId}/source.${ext}`
-      const { error: uploadErr } = await supabase.storage
-        .from('person-scans')
-        .upload(storagePath, file, { contentType: file.type, upsert: false })
-      if (!uploadErr) {
-        sourcePhotoUrl = supabase.storage.from('person-scans').getPublicUrl(storagePath).data.publicUrl
-      }
-
-      // 3. AI verdict
+      // AI verdict (needs base64 from above)
       const verdict = await scanPersonVerdict({ photo_base64: base64, mime_type: file.type || 'image/jpeg' })
 
-      // 4. Create draft scan record
+      // Create draft scan record
       const sourceType: VerdictSourceType = tab === 'screenshot' ? 'instagram_screenshot' : 'photo'
       const scan = await createPersonScanDraft({
         created_by: gent.id,
@@ -89,7 +86,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         score: verdict.score,
         verdict_label: verdict.verdict_label,
         confidence: verdict.confidence,
-        recommended_category: verdict.score >= 8.0 ? 'contact' : 'person_of_interest',
+        recommended_category: verdict.score >= CONTACT_SCORE_THRESHOLD ? 'contact' : 'person_of_interest',
         display_name: null,
         bio: null,
         why_interesting: verdict.why_interesting,
@@ -102,7 +99,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         generated_avatar_url: null,
       })
 
-      // 5. Pre-fill dossier from verdict — go to review immediately
+      // Pre-fill dossier and advance to review immediately
       setDossier({
         display_name: '',
         instagram: '',
@@ -111,26 +108,24 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         best_opener: verdict.best_opener ?? '',
         green_flags: verdict.green_flags ?? [],
         watchouts: verdict.watchouts ?? [],
-        category: verdict.score >= 8.0 ? 'contact' : 'person_of_interest',
+        category: verdict.score >= CONTACT_SCORE_THRESHOLD ? 'contact' : 'person_of_interest',
         visibility: 'private',
       })
-
-      setVerdictResult({ verdict, portraitUrl: null, sourcePhotoUrl, scanId: scan.id, portraitLoading: true })
+      setVerdictResult({ verdict, portraitUrl: null, sourcePhotoUrl, scanId: scan.id })
+      setPortraitLoading(true)
       setStep('review')
 
-      // 6. Generate portrait in background — don't block review
+      // Generate portrait in background — don't block review
       generatePersonPortrait({ appearance: verdict.appearance, traits: verdict.trait_words, scan_id: scan.id })
         .then((result) => {
-          setVerdictResult((prev) => prev ? { ...prev, portraitUrl: result.portrait_url, portraitLoading: false } : prev)
+          setVerdictResult((prev) => prev ? { ...prev, portraitUrl: result.portrait_url } : prev)
           updatePersonScan(scan.id, { generated_avatar_url: result.portrait_url }).catch(() => {})
         })
-        .catch(() => {
-          setVerdictResult((prev) => prev ? { ...prev, portraitLoading: false } : prev)
-        })
+        .catch(() => {})
+        .finally(() => setPortraitLoading(false))
 
     } catch (err) {
-      const msg = (err as Error).message
-      setAnalyzeError(msg)
+      setAnalyzeError((err as Error).message)
       setStep('input')
     }
   }, [gent, tab])
@@ -153,11 +148,9 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         }
       }
 
-      // Build photo_url: prefer source photo, fall back to unavatar for Instagram
       const photoUrl = verdictResult?.sourcePhotoUrl ??
         (normalizedHandle ? `https://unavatar.io/instagram/${normalizedHandle}` : null)
 
-      // Build poi_intel from dossier fields
       const poiIntel = [
         dossier.why_interesting,
         dossier.best_opener ? `Opener: ${dossier.best_opener}` : '',
@@ -195,6 +188,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     step, setStep, tab, setTab,
     analyzeError,
     verdictResult,
+    portraitLoading,
     dossier, setDossier,
     duplicateWarning,
     handleAnalyzeFile,
