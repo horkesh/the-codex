@@ -51,12 +51,10 @@ export default function Profile() {
   const [displayName, setDisplayName] = useState(gent?.display_name ?? '')
   const [bio, setBio] = useState(gent?.bio ?? '')
   const [saving, setSaving] = useState(false)
-  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [generatingPortrait, setGeneratingPortrait] = useState(false)
   const [portraitSeconds, setPortraitSeconds] = useState(0)
 
-  const avatarInputRef = useRef<HTMLInputElement>(null)
-  const portraitInputRef = useRef<HTMLInputElement>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   if (!gent) {
     return (
@@ -89,37 +87,6 @@ export default function Profile() {
     }
   }
 
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!gent) return
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setUploadingAvatar(true)
-    try {
-      const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `${gent.id}/avatar-${Date.now()}.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(path, file, { contentType: file.type, upsert: true })
-
-      if (uploadError) throw uploadError
-
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-
-      const updated = await updateGent(gent.id, { avatar_url: publicUrl })
-      if (updated) {
-        setGent({ ...gent, avatar_url: publicUrl })
-        addToast('Avatar updated.', 'success')
-      }
-    } catch {
-      addToast('Failed to upload avatar.', 'error')
-    } finally {
-      setUploadingAvatar(false)
-      if (avatarInputRef.current) avatarInputRef.current.value = ''
-    }
-  }
-
   useEffect(() => {
     if (!generatingPortrait) { setPortraitSeconds(0); return }
     const t = setInterval(() => setPortraitSeconds((s) => s + 1), 1000)
@@ -130,7 +97,7 @@ export default function Profile() {
     if (!gent) return
     const file = e.target.files?.[0]
     if (!file) return
-    if (portraitInputRef.current) portraitInputRef.current.value = ''
+    if (photoInputRef.current) photoInputRef.current.value = ''
 
     setGeneratingPortrait(true)
     try {
@@ -164,7 +131,7 @@ export default function Profile() {
     }
   }
 
-  const busy = uploadingAvatar || generatingPortrait
+  const busy = generatingPortrait
 
   return (
     <>
@@ -191,28 +158,20 @@ export default function Profile() {
                 </div>
               )}
             </div>
-            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-            <input ref={portraitInputRef} type="file" accept="image/*" capture="user" className="hidden" onChange={handlePortraitPhotoSelected} />
+            <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePortraitPhotoSelected} />
           </motion.div>
 
-          {/* Avatar actions */}
-          <motion.div variants={staggerItem} className="flex gap-2 mb-6">
+          {/* Avatar action */}
+          <motion.div variants={staggerItem} className="mb-6">
             <button
-              onClick={() => avatarInputRef.current?.click()}
-              disabled={busy}
-              className="text-xs text-ivory-dim font-body border border-white/10 rounded-full px-4 py-1.5 hover:border-white/30 transition-colors disabled:opacity-40"
-            >
-              {uploadingAvatar ? 'Uploading…' : 'Upload photo'}
-            </button>
-            <button
-              onClick={() => portraitInputRef.current?.click()}
+              onClick={() => photoInputRef.current?.click()}
               disabled={busy}
               className="text-xs text-gold font-body border border-gold/30 rounded-full px-4 py-1.5 hover:border-gold/60 transition-colors disabled:opacity-40"
             >
               {generatingPortrait
                 ? portraitSeconds < 3 ? 'Analysing…'
                   : `Painting… ${portraitSeconds}s`
-                : 'AI portrait'}
+                : 'Change photo'}
             </button>
           </motion.div>
 

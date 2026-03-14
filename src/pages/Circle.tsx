@@ -31,9 +31,11 @@ export default function Circle() {
 
   const handleSave = async (data: PersonFormData) => {
     if (!gent) return
+    const igHandle = data.instagram?.replace(/^@/, '').trim()
     await createPerson({
       name: data.name,
       instagram: data.instagram || undefined,
+      photo_url: igHandle ? `https://unavatar.io/instagram/${igHandle}` : undefined,
       met_location: data.met_location || undefined,
       met_date: data.met_date || undefined,
       notes: data.notes || undefined,

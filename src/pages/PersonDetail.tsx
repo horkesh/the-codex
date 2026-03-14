@@ -38,9 +38,14 @@ export default function PersonDetail() {
 
   const handleSaveEdit = async (data: PersonFormData) => {
     if (!person) return
+    const igHandle = data.instagram?.replace(/^@/, '').trim()
+    const instagramChanged = (data.instagram || '') !== (person.instagram || '')
     const updated = await updatePerson(person.id, {
       name: data.name,
       instagram: data.instagram || null,
+      photo_url: igHandle && instagramChanged
+        ? `https://unavatar.io/instagram/${igHandle}`
+        : person.photo_url,
       met_location: data.met_location || null,
       met_date: data.met_date || null,
       notes: data.notes || null,
