@@ -62,7 +62,7 @@ export default function EntryNew() {
     fetchLocations().then(setSavedPlaces)
   }, [])
 
-  const { pendingFiles, uploadAll, clearFiles } = usePendingPhotos()
+  const { pendingFiles, addFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos()
 
   function handleTypeSelect(type: EntryType) {
     if (type === 'gathering') {
@@ -280,6 +280,8 @@ export default function EntryNew() {
             <PhotoUpload
               entryId={null}
               onGeoDetected={handleGeoDetected}
+              onFilesAdded={addFiles}
+              onFileRemoved={removeFile}
               className="w-full"
             />
           </div>

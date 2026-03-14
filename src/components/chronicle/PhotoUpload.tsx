@@ -12,6 +12,8 @@ interface PhotoUploadProps {
   entryId: string | null
   onUpload?: (url: string) => void
   onGeoDetected?: (loc: LocationFill) => void
+  onFilesAdded?: (files: File[]) => void
+  onFileRemoved?: (file: File) => void
   className?: string
 }
 
@@ -27,7 +29,7 @@ interface PendingPhoto {
 
 const MAX_PHOTOS = 10
 
-export function PhotoUpload({ entryId, onUpload, onGeoDetected, className }: PhotoUploadProps) {
+export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, onFileRemoved, className }: PhotoUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PendingPhoto[]>([])
   const geoFiredRef = useRef(false)
@@ -88,6 +90,12 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, className }: Pho
         })
       }
 
+      // If no entryId yet, hand files to the parent for deferred upload
+      if (!entryId) {
+        onFilesAdded?.(toAdd)
+        return
+      }
+
       // If entryId is available, upload immediately
       if (entryId) {
         const currentCount = photos.length
@@ -121,13 +129,14 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, className }: Pho
         }
       }
     },
-    [entryId, photos.length, onUpload],
+    [entryId, photos.length, onUpload, onFilesAdded],
   )
 
   function removePhoto(id: string) {
     setPhotos((prev) => {
       const photo = prev.find((p) => p.id === id)
       if (photo?.previewUrl) URL.revokeObjectURL(photo.previewUrl)
+      if (photo && !entryId) onFileRemoved?.(photo.file)
       return prev.filter((p) => p.id !== id)
     })
   }
@@ -260,8 +269,8 @@ export function usePendingPhotos() {
     })
   }, [])
 
-  const removeFile = useCallback((index: number) => {
-    setPendingFiles((prev) => prev.filter((_, i) => i !== index))
+  const removeFile = useCallback((file: File) => {
+    setPendingFiles((prev) => prev.filter((f) => f !== file))
   }, [])
 
   const clearFiles = useCallback(() => {
