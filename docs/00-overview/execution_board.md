@@ -99,7 +99,19 @@
 - [x] `src/hooks/useVerdictIntake.ts` — orchestrates all intake state + async portrait shimmer
 - [x] PersonDetail updated to show AI portrait alongside source photo
 
-### E11: The Toast Auto-Sync
+### E11: Threshold System & Gent Comparison ✅
+- [x] `supabase/migrations/20260317000001_threshold_system.sql` — adds `'threshold'` to achievements type constraint
+- [x] `src/data/thresholds.ts` — 4 definitions (veteran, explorer, connoisseur, host) + `fetchEarnedThresholds` + `checkAndAwardThresholds`
+- [x] `src/hooks/useThresholds.ts` — fetches earned reward keys for current gent
+- [x] Achievement + threshold checks wired into `createEntry` (fire-and-forget, parallelised)
+- [x] Export template cosmetic variants: Connoisseur badge on SteakVerdict, Host seal on GatheringInviteCard, Veteran mark on MissionCarousel
+- [x] `src/components/ledger/GentComparison.tsx` — head-to-head section in Ledger with animated stat bars and Export button
+- [x] `src/export/templates/RivalryCard.tsx` — 1080×1350 Studio export card
+- [x] Studio supports `?comparison=keys:bass` — standalone rivalry card, no entry selection needed
+- [x] `src/lib/gents.ts` — shared `GENT_LABELS` + `GENT_ALIASES` constants
+- [x] `COMPARISON_STAT_ROWS` + `computeLeaderSummary` added to `src/data/stats.ts`
+
+### E12: The Toast Auto-Sync
 - [ ] Toast app webhook / integration point _(future)_
 
 ## Backlog (future)
@@ -112,4 +124,4 @@
 - Seed Budapest 2023 Instagram profiles into Circle
 
 ## Completed
-All E1–E9 epics shipped 2026-03-13. E10 (Verdict & Dossier) shipped 2026-03-15.
+All E1–E9 epics shipped 2026-03-13. E10 (Verdict & Dossier) shipped 2026-03-15. E11 (Threshold System & Gent Comparison) shipped 2026-03-15.

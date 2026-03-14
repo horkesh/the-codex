@@ -4,6 +4,26 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-15 (011)
+
+**Goal**: Implement 6.9 Threshold System + 6.10 Gent Comparison (final two P3 items from master roadmap).
+
+**Done**:
+- Migration `20260317000001_threshold_system.sql`: adds `'threshold'` to achievements type constraint
+- `src/data/thresholds.ts`: 4 threshold definitions (veteran_stamp / explorer_palette / connoisseur_badge / host_seal) with `fetchEarnedThresholds` + `checkAndAwardThresholds`; queries parallelised with `Promise.all`
+- `src/hooks/useThresholds.ts`: fetches earned reward keys for the current gent on Studio load
+- Achievement + threshold milestone checks now wired into `createEntry` (fire-and-forget, parallelised — was never called before)
+- Export template variants: "Connoisseur" badge overlay on SteakVerdict, circular "Host" seal on GatheringInviteCard, "Veteran" stamp mark on MissionCarousel — each gated behind earned reward key
+- `src/components/ledger/GentComparison.tsx`: head-to-head Ledger section with gent pickers, 7 animated stat bars, leader summary, "Export Rivalry Card" button
+- `src/export/templates/RivalryCard.tsx`: 1080×1350 Studio export card with VS header + full stat rows
+- Studio wired for `?comparison=keys:bass` standalone mode (no entry selector shown)
+- Simplify pass: extracted `GENT_LABELS` + `GENT_ALIASES` to `src/lib/gents.ts`; `COMPARISON_STAT_ROWS` + `computeLeaderSummary` to `src/data/stats.ts`; fixed critical threshold type-query bug (`.eq('type','threshold')` → `.in('type', THRESHOLD_TYPES)`); deduped leader-summary ternary; consistent `.select('*')`
+- Deployed to Vercel: https://the-codex-sepia.vercel.app
+
+**Status**: All master roadmap features shipped (P0–P3 complete). Zero TS errors.
+
+---
+
 ## Session — 2026-03-15 (010)
 
 **Goal**: Implement Verdict & Dossier — AI-powered person intake for The Circle.
