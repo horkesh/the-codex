@@ -19,6 +19,7 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 - Colors: obsidian `#0a0a0f`, gold `#c9a84c`, ivory `#f5f0e8`
 - Fonts: Playfair Display (`font-display`), Instrument Sans (`font-body`)
 - Language: "Gents" not "users", "Chronicle" not "feed", "Mission" not "trip", "Circle" not "contacts"
+- **App imagery:** Entry-type images (1–7) in `public/entry-types/*.webp`; empty-state images (8–11) in `public/empty-states/*.webp`; guilloche in `public/textures/guilloche.webp`. Prompts and paths: `docs/03-architecture/entry_type_image_prompts.md`. Visual audit and wiring: `docs/03-architecture/visual_audit.md`.
 
 ## Portrait generation (`supabase/functions/generate-portrait/`)
 Two-step pipeline:

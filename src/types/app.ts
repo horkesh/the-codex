@@ -72,6 +72,8 @@ export interface Person {
   name: string
   instagram: string | null
   photo_url: string | null
+  portrait_url: string | null
+  instagram_source_url: string | null
   met_at_entry: string | null
   met_date: string | null
   met_location: string | null
@@ -234,6 +236,66 @@ export interface GentWhereabouts {
   neighborhood: string
   shared_at: number
   expires_at: number
+}
+
+// ─── Verdict & Dossier ───────────────────────────────────────────────────────
+
+export type VerdictSourceType = 'photo' | 'instagram_screenshot'
+export type ScanStatus = 'draft' | 'confirmed' | 'discarded'
+export type VerdictLabel = 'Immediate Interest' | 'Circle Material' | 'On the Radar' | 'Observe Further'
+
+export interface PersonVerdict {
+  eligible: true
+  appearance: string
+  trait_words: string[]
+  score: number
+  verdict_label: VerdictLabel
+  confidence: number
+  vibe: string
+  style_read: string
+  why_interesting: string
+  best_opener: string
+  green_flags: string[]
+  watchouts: string[]
+}
+
+export interface PersonScan {
+  id: string
+  created_by: string
+  person_id: string | null
+  source_type: VerdictSourceType
+  source_photo_url: string | null
+  instagram_handle: string | null
+  instagram_source_url: string | null
+  generated_avatar_url: string | null
+  appearance_description: string | null
+  trait_words: string[] | null
+  score: number | null
+  verdict_label: string | null
+  confidence: number | null
+  recommended_category: PersonCategory | null
+  display_name: string | null
+  bio: string | null
+  why_interesting: string | null
+  best_opener: string | null
+  green_flags: string[] | null
+  watchouts: string[] | null
+  review_payload: Record<string, unknown> | null
+  status: ScanStatus
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface DossierDraft {
+  display_name: string
+  instagram: string
+  bio: string
+  why_interesting: string
+  best_opener: string
+  green_flags: string[]
+  watchouts: string[]
+  category: PersonCategory
+  visibility: POIVisibility
 }
 
 // Instagram analysis result

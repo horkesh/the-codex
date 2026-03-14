@@ -1,159 +1,40 @@
-import { useState, useRef } from 'react'
+import { useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link, ImagePlus } from 'lucide-react'
-import { Modal, Button, Input, Avatar } from '@/components/ui'
-import { analyzeInstagramUrl, analyzeInstagramScreenshot } from '@/ai/instagram'
-import { createPerson } from '@/data/people'
-import { useAuthStore } from '@/store/auth'
-import { useUIStore } from '@/store/ui'
+import { ImagePlus, Camera } from 'lucide-react'
+import { Modal, Button, Input } from '@/components/ui'
+import { VerdictCard } from '@/components/circle/VerdictCard'
+import { useVerdictIntake } from '@/hooks/useVerdictIntake'
 import { cn } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
-import type { Person } from '@/types/app'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface POIModalProps {
+interface ProspectIntakeModalProps {
   open: boolean
   onClose: () => void
-  onSaved: (person: Person) => void
+  onSaved: (personId: string) => void
 }
 
-type Tab = 'url' | 'screenshot'
-type Step = 'input' | 'analyzing' | 'review'
+export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
+  const screenshotInputRef = useRef<HTMLInputElement>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export function POIModal({ open, onClose, onSaved }: POIModalProps) {
-  const { gent } = useAuthStore()
-  const { addToast } = useUIStore()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const [tab, setTab] = useState<Tab>('url')
-  const [step, setStep] = useState<Step>('input')
-  const [url, setUrl] = useState('')
-  const [analyzeError, setAnalyzeError] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  // Review form fields
-  const [fields, setFields] = useState({
-    display_name: '',
-    instagram: '',
-    bio: '',
-    poi_intel: '',
-    why_interesting: '',
-    photo_url: '',
+  const { step, setStep, tab, setTab, analyzeError, verdictResult, dossier, setDossier, duplicateWarning, handleAnalyzeFile, handleSave, reset } = useVerdictIntake((personId) => {
+    onSaved(personId)
+    onClose()
   })
-  const [visibility, setVisibility] = useState<'private' | 'circle'>('private')
-
-  const resetModal = () => {
-    setTab('url')
-    setStep('input')
-    setUrl('')
-    setAnalyzeError('')
-    setSaving(false)
-    setFields({ display_name: '', instagram: '', bio: '', poi_intel: '', why_interesting: '', photo_url: '' })
-    setVisibility('private')
-  }
 
   const handleClose = () => {
-    resetModal()
+    reset()
     onClose()
   }
 
-  // ── Analyze URL ──
-  const handleAnalyzeUrl = async () => {
-    if (!url.trim()) {
-      setAnalyzeError('Please paste an Instagram profile URL')
-      return
-    }
-    setAnalyzeError('')
-    setStep('analyzing')
-    try {
-      const result = await analyzeInstagramUrl(url.trim(), 'profile')
-      setFields((prev) => ({
-        ...prev,
-        display_name: result.display_name ?? '',
-        instagram: result.username ?? '',
-        bio: result.bio ?? '',
-        poi_intel: [
-          result.apparent_location ? `Location: ${result.apparent_location}` : '',
-          result.apparent_interests ? `Interests: ${result.apparent_interests}` : '',
-          result.notable_details ?? '',
-          result.suggested_approach ? `Approach: ${result.suggested_approach}` : '',
-        ].filter(Boolean).join('\n'),
-      }))
-      setStep('review')
-    } catch {
-      setAnalyzeError('Could not analyze that URL. Fill in details manually.')
-      setStep('review')
-    }
-  }
-
-  // ── Screenshot upload ──
-  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setStep('analyzing')
-    setAnalyzeError('')
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve((reader.result as string).split(',')[1])
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
-      const result = await analyzeInstagramScreenshot(base64)
-      setFields((prev) => ({
-        ...prev,
-        display_name: result.display_name ?? '',
-        instagram: result.username ?? '',
-        bio: result.bio ?? '',
-        poi_intel: [
-          result.apparent_location ? `Location: ${result.apparent_location}` : '',
-          result.apparent_interests ? `Interests: ${result.apparent_interests}` : '',
-          result.notable_details ?? '',
-          result.post_count ? `Posts: ${result.post_count}` : '',
-          result.follower_count ? `Followers: ${result.follower_count}` : '',
-        ].filter(Boolean).join('\n'),
-      }))
-      setStep('review')
-    } catch {
-      setAnalyzeError('Could not analyze screenshot. Fill in details manually.')
-      setStep('review')
-    }
-  }
-
-  // ── Save ──
-  const handleSave = async () => {
-    if (!gent || !fields.display_name.trim()) return
-    setSaving(true)
-    try {
-      const igHandle = fields.instagram.replace(/^@/, '').trim()
-      const person = await createPerson({
-        name: fields.display_name.trim(),
-        instagram: igHandle || undefined,
-        photo_url: fields.photo_url || (igHandle ? `https://unavatar.io/instagram/${igHandle}` : undefined),
-        notes: [fields.bio, fields.why_interesting].filter(Boolean).join('\n\n') || undefined,
-        labels: ['POI'],
-        added_by: gent.id,
-      })
-      addToast('Person of Interest added', 'success')
-      onSaved(person)
-      handleClose()
-    } catch {
-      addToast('Failed to save', 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const setField = (key: keyof typeof fields) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => setFields((prev) => ({ ...prev, [key]: e.target.value }))
+  const setField = (key: keyof typeof dossier) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setDossier((prev) => ({ ...prev, [key]: e.target.value }))
 
   return (
-    <Modal isOpen={open} onClose={handleClose} title="Person of Interest">
+    <Modal isOpen={open} onClose={handleClose} title="Run Verdict">
       <AnimatePresence mode="wait">
+
         {/* ── Input step ── */}
         {step === 'input' && (
           <motion.div
@@ -168,70 +49,69 @@ export function POIModal({ open, onClose, onSaved }: POIModalProps) {
             <div className="flex rounded-lg overflow-hidden border border-white/10">
               <button
                 type="button"
-                onClick={() => setTab('url')}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-body transition-colors',
-                  tab === 'url' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory'
-                )}
-              >
-                <Link size={13} />
-                Instagram URL
-              </button>
-              <button
-                type="button"
                 onClick={() => setTab('screenshot')}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-body transition-colors',
-                  tab === 'screenshot' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory'
+                  tab === 'screenshot' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
                 )}
               >
                 <ImagePlus size={13} />
                 Screenshot
               </button>
+              <button
+                type="button"
+                onClick={() => setTab('photo')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-body transition-colors',
+                  tab === 'photo' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
+                )}
+              >
+                <Camera size={13} />
+                Photo
+              </button>
             </div>
 
-            {/* URL tab */}
-            {tab === 'url' && (
-              <>
-                <Input
-                  label="Profile URL"
-                  placeholder="https://instagram.com/username"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  error={analyzeError}
-                />
-                <Button fullWidth onClick={handleAnalyzeUrl} disabled={!url.trim()}>
-                  Analyze
-                </Button>
-              </>
-            )}
-
-            {/* Screenshot tab */}
-            {tab === 'screenshot' && (
-              <>
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-white/15 rounded-xl p-8 flex flex-col items-center gap-2 cursor-pointer hover:border-gold/30 transition-colors"
-                >
+            {/* Drop zone */}
+            <div
+              onClick={() => (tab === 'screenshot' ? screenshotInputRef : photoInputRef).current?.click()}
+              className="border-2 border-dashed border-white/15 rounded-xl p-8 flex flex-col items-center gap-2 cursor-pointer hover:border-gold/30 transition-colors"
+            >
+              {tab === 'screenshot' ? (
+                <>
                   <ImagePlus size={24} className="text-ivory-dim" />
-                  <p className="text-sm text-ivory-muted font-body text-center">
-                    Upload profile screenshot
-                  </p>
-                  <p className="text-xs text-ivory-dim font-body text-center">
-                    Works with private profiles
-                  </p>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleScreenshotUpload}
-                />
-                {analyzeError && (
-                  <p className="text-xs text-[--color-error] font-body">{analyzeError}</p>
-                )}
-              </>
+                  <p className="text-sm text-ivory-muted font-body text-center">Upload Instagram screenshot</p>
+                  <p className="text-xs text-ivory-dim font-body text-center">Works with private profiles</p>
+                </>
+              ) : (
+                <>
+                  <Camera size={24} className="text-ivory-dim" />
+                  <p className="text-sm text-ivory-muted font-body text-center">Upload or take a photo</p>
+                  <p className="text-xs text-ivory-dim font-body text-center">AI will analyze and generate a portrait</p>
+                </>
+              )}
+            </div>
+
+            {/* Hidden file inputs */}
+            <input
+              ref={screenshotInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAnalyzeFile(f) }}
+            />
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAnalyzeFile(f) }}
+            />
+
+            {analyzeError && (
+              <div className="rounded-lg bg-[--color-error]/10 border border-[--color-error]/30 px-3 py-2">
+                <p className="text-xs text-[--color-error] font-body">{analyzeError}</p>
+              </div>
             )}
 
             <button
@@ -255,7 +135,7 @@ export function POIModal({ open, onClose, onSaved }: POIModalProps) {
             className="flex flex-col items-center justify-center gap-4 py-10"
           >
             <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
-            <p className="text-sm text-ivory-muted font-body">Analyzing profile...</p>
+            <p className="text-sm text-ivory-muted font-body">Reading the room...</p>
           </motion.div>
         )}
 
@@ -267,8 +147,51 @@ export function POIModal({ open, onClose, onSaved }: POIModalProps) {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-4"
           >
+            {/* Images row */}
+            <div className="flex items-start gap-4 justify-center">
+              {/* Source photo */}
+              {verdictResult?.sourcePhotoUrl && (
+                <div className="flex flex-col items-center gap-1">
+                  <img
+                    src={verdictResult.sourcePhotoUrl}
+                    alt="Source"
+                    className="w-20 h-20 rounded-full object-cover border border-white/10"
+                  />
+                  <span className="text-[10px] text-ivory-dim font-body">Source</span>
+                </div>
+              )}
+
+              {/* Generated portrait or shimmer */}
+              <div className="flex flex-col items-center gap-1">
+                {verdictResult?.portraitLoading ? (
+                  <div className="w-20 h-20 rounded-full bg-slate-light/40 border border-gold/20 animate-pulse" />
+                ) : verdictResult?.portraitUrl ? (
+                  <img
+                    src={verdictResult.portraitUrl}
+                    alt="AI Portrait"
+                    className="w-20 h-20 rounded-full object-cover border border-gold/30"
+                  />
+                ) : null}
+                {(verdictResult?.portraitLoading || verdictResult?.portraitUrl) && (
+                  <span className="text-[10px] text-ivory-dim font-body">Portrait</span>
+                )}
+              </div>
+            </div>
+
+            {/* Verdict card */}
+            {verdictResult?.verdict && (
+              <VerdictCard
+                label={verdictResult.verdict.verdict_label}
+                score={verdictResult.verdict.score}
+                confidence={verdictResult.verdict.confidence}
+                vibe={verdictResult.verdict.vibe}
+                greenFlags={verdictResult.verdict.green_flags}
+                watchouts={verdictResult.verdict.watchouts}
+              />
+            )}
+
             {/* Error banner */}
             {analyzeError && (
               <div className="rounded-lg bg-[--color-error]/10 border border-[--color-error]/30 px-3 py-2">
@@ -276,79 +199,94 @@ export function POIModal({ open, onClose, onSaved }: POIModalProps) {
               </div>
             )}
 
-            {/* Photo preview */}
-            {(fields.photo_url || fields.instagram) && (
-              <div className="flex justify-center pb-1">
-                <Avatar
-                  src={
-                    fields.photo_url ||
-                    (fields.instagram
-                      ? `https://unavatar.io/instagram/${fields.instagram.replace(/^@/, '')}`
-                      : undefined)
-                  }
-                  name={fields.display_name || 'POI'}
-                  size="xl"
-                />
+            {/* Duplicate warning */}
+            {duplicateWarning && (
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/25 px-3 py-2">
+                <p className="text-xs text-amber-400 font-body">{duplicateWarning}</p>
               </div>
             )}
 
-            {/* Form fields */}
+            {/* Dossier fields */}
             <Input
               label="Display Name"
               placeholder="Full name or alias"
-              value={fields.display_name}
+              value={dossier.display_name}
               onChange={setField('display_name')}
             />
             <Input
               label="Instagram Handle"
               placeholder="@username"
-              value={fields.instagram}
+              value={dossier.instagram}
               onChange={setField('instagram')}
             />
             <Input
               as="textarea"
               label="Bio"
-              placeholder="Profile bio or description"
-              value={fields.bio}
+              placeholder="Background, bio, or description"
+              value={dossier.bio}
               onChange={setField('bio')}
             />
             <Input
               as="textarea"
-              label="Vibe / Intel"
-              placeholder="AI-extracted intel about this person"
-              value={fields.poi_intel}
-              onChange={setField('poi_intel')}
-            />
-            <Input
-              as="textarea"
               label="Why Interesting"
-              placeholder="Your own notes on why this person is on the radar"
-              value={fields.why_interesting}
+              placeholder="Why is this person on the radar?"
+              value={dossier.why_interesting}
               onChange={setField('why_interesting')}
             />
+            <Input
+              label="Best Opener"
+              placeholder="Opening line for when you meet"
+              value={dossier.best_opener}
+              onChange={setField('best_opener')}
+            />
 
-            {/* Visibility toggle */}
+            {/* Category selector */}
             <div className="flex flex-col gap-1">
-              <span className="text-ivory-muted text-xs uppercase tracking-widest font-body">
-                Visibility
-              </span>
+              <span className="text-ivory-muted text-xs uppercase tracking-widest font-body">Route to</span>
               <div className="flex rounded-lg overflow-hidden border border-white/10">
                 <button
                   type="button"
-                  onClick={() => setVisibility('private')}
+                  onClick={() => setDossier((prev) => ({ ...prev, category: 'contact' }))}
                   className={cn(
                     'flex-1 py-2 text-xs font-body transition-colors',
-                    visibility === 'private' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory'
+                    dossier.category === 'contact' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
+                  )}
+                >
+                  Add to Circle
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDossier((prev) => ({ ...prev, category: 'person_of_interest' }))}
+                  className={cn(
+                    'flex-1 py-2 text-xs font-body transition-colors',
+                    dossier.category === 'person_of_interest' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
+                  )}
+                >
+                  On the Radar
+                </button>
+              </div>
+            </div>
+
+            {/* Visibility toggle */}
+            <div className="flex flex-col gap-1">
+              <span className="text-ivory-muted text-xs uppercase tracking-widest font-body">Visibility</span>
+              <div className="flex rounded-lg overflow-hidden border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setDossier((prev) => ({ ...prev, visibility: 'private' }))}
+                  className={cn(
+                    'flex-1 py-2 text-xs font-body transition-colors',
+                    dossier.visibility === 'private' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
                   )}
                 >
                   Keep Private
                 </button>
                 <button
                   type="button"
-                  onClick={() => setVisibility('circle')}
+                  onClick={() => setDossier((prev) => ({ ...prev, visibility: 'circle' }))}
                   className={cn(
                     'flex-1 py-2 text-xs font-body transition-colors',
-                    visibility === 'circle' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory'
+                    dossier.visibility === 'circle' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
                   )}
                 >
                   Share with The Gents
@@ -358,20 +296,35 @@ export function POIModal({ open, onClose, onSaved }: POIModalProps) {
 
             {/* Actions */}
             <div className="flex gap-2 pt-1">
-              <Button variant="ghost" fullWidth onClick={() => setStep('input')} disabled={saving}>
+              <Button variant="ghost" fullWidth onClick={() => setStep('input')}>
                 Back
               </Button>
               <Button
                 fullWidth
-                loading={saving}
                 onClick={handleSave}
-                disabled={!fields.display_name.trim()}
+                disabled={!dossier.display_name.trim()}
               >
-                Add to Circle
+                {dossier.category === 'contact' ? 'Add to Circle' : 'Send to On the Radar'}
               </Button>
             </div>
           </motion.div>
         )}
+
+        {/* ── Saving step ── */}
+        {step === 'saving' && (
+          <motion.div
+            key="saving"
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="flex flex-col items-center justify-center gap-4 py-10"
+          >
+            <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+            <p className="text-sm text-ivory-muted font-body">Saving to The Circle...</p>
+          </motion.div>
+        )}
+
       </AnimatePresence>
     </Modal>
   )

@@ -589,6 +589,8 @@ export type Database = {
           poi_source_gent: string | null
           poi_source_url: string | null
           poi_visibility: string | null
+          portrait_url: string | null
+          instagram_source_url: string | null
           tier: string | null
         }
         Insert: {
@@ -597,6 +599,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           instagram?: string | null
+          instagram_source_url?: string | null
           labels?: string[]
           met_at_entry?: string | null
           met_date?: string | null
@@ -608,6 +611,7 @@ export type Database = {
           poi_source_gent?: string | null
           poi_source_url?: string | null
           poi_visibility?: string | null
+          portrait_url?: string | null
           tier?: string | null
         }
         Update: {
@@ -616,6 +620,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           instagram?: string | null
+          instagram_source_url?: string | null
           labels?: string[]
           met_at_entry?: string | null
           met_date?: string | null
@@ -627,6 +632,7 @@ export type Database = {
           poi_source_gent?: string | null
           poi_source_url?: string | null
           poi_visibility?: string | null
+          portrait_url?: string | null
           tier?: string | null
         }
         Relationships: [
@@ -709,6 +715,102 @@ export type Database = {
           },
           {
             foreignKeyName: "people_notes_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      person_scans: {
+        Row: {
+          id: string
+          created_by: string
+          person_id: string | null
+          source_type: string
+          source_photo_url: string | null
+          instagram_handle: string | null
+          instagram_source_url: string | null
+          generated_avatar_url: string | null
+          appearance_description: string | null
+          trait_words: string[] | null
+          score: number | null
+          verdict_label: string | null
+          confidence: number | null
+          recommended_category: string | null
+          display_name: string | null
+          bio: string | null
+          why_interesting: string | null
+          best_opener: string | null
+          green_flags: string[] | null
+          watchouts: string[] | null
+          review_payload: Json | null
+          status: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          created_by: string
+          person_id?: string | null
+          source_type: string
+          source_photo_url?: string | null
+          instagram_handle?: string | null
+          instagram_source_url?: string | null
+          generated_avatar_url?: string | null
+          appearance_description?: string | null
+          trait_words?: string[] | null
+          score?: number | null
+          verdict_label?: string | null
+          confidence?: number | null
+          recommended_category?: string | null
+          display_name?: string | null
+          bio?: string | null
+          why_interesting?: string | null
+          best_opener?: string | null
+          green_flags?: string[] | null
+          watchouts?: string[] | null
+          review_payload?: Json | null
+          status?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          created_by?: string
+          person_id?: string | null
+          source_type?: string
+          source_photo_url?: string | null
+          instagram_handle?: string | null
+          instagram_source_url?: string | null
+          generated_avatar_url?: string | null
+          appearance_description?: string | null
+          trait_words?: string[] | null
+          score?: number | null
+          verdict_label?: string | null
+          confidence?: number | null
+          recommended_category?: string | null
+          display_name?: string | null
+          bio?: string | null
+          why_interesting?: string | null
+          best_opener?: string | null
+          green_flags?: string[] | null
+          watchouts?: string[] | null
+          review_payload?: Json | null
+          status?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "person_scans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "person_scans_person_id_fkey"
             columns: ["person_id"]
             isOneToOne: false
             referencedRelation: "people"

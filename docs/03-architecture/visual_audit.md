@@ -21,15 +21,15 @@ Re-examination of all visual elements and where we can improve. Use this when qu
 
 Prompts 8–11 in `entry_type_image_prompts.md` define assets for empty states. **UI is wired;** images appear when files are present and hide on load error (no broken icon).
 
-| Location | Current | Improvement |
-|--------|--------|-------------|
-| **Chronicle** (`Chronicle.tsx`) | Text “The Chronicle awaits…” + button only | Add `public/empty-states/chronicle.webp` (or .png) above the text; ~240–320px wide, centered. |
-| **Circle — Contacts** (`Circle.tsx`) | `Users` icon + “Your circle is empty” + button | Add `public/empty-states/circle.webp` above the text (optional per doc). |
-| **Circle — On the Radar** | `Radar` icon + “No one on the radar yet” + button | Reuse circle illustration or keep icon; both are fine. |
-| **Passport — StampGrid** (`StampGrid.tsx`) | “No stamps yet” / “No achievement stamps yet” text only | Add `public/empty-states/passport.webp` for stamps tab and `public/empty-states/passport-achievements.webp` for achievements tab; show above the empty text. |
-| **Studio** | “The Studio is Ready” + short copy when no entries | No prompt exists; optional future illustration or leave as-is. |
+| Location | Status |
+|--------|--------|
+| **Chronicle** (`Chronicle.tsx`) | Uses `EmptyStateImage` with `/empty-states/chronicle.webp` above the text. |
+| **Circle — Contacts** (`Circle.tsx`) | Uses `/empty-states/circle.webp` above icon + text. |
+| **Circle — On the Radar** | Uses the same `circle.webp` above icon + text. |
+| **Passport — StampGrid** (`StampGrid.tsx`) | Uses `passport.webp` for All/Missions/Diplomatic empty and `passport-achievements.webp` for Achievements empty. |
+| **Studio** | No prompt exists; leave as-is. |
 
-**Implementation pattern:** For each empty state, add an `<img>` (or Next/Image if you add it) above the message, e.g. `src="/empty-states/chronicle.webp"`, `alt=""`, `className="w-64 max-w-[85%] h-auto"` (or similar), and ensure the container stays centered and responsive.
+**Implementation detail:** `EmptyStateImage` in `src/components/ui/EmptyStateImage.tsx` hides itself on load error, so missing assets don't show a broken icon. Drop the generated files into `public/empty-states/` to enable them.
 
 ---
 
@@ -44,20 +44,20 @@ Prompts 8–11 in `entry_type_image_prompts.md` define assets for empty states. 
 
 | Issue | Where | Recommendation |
 |-------|--------|-----------------|
-| **Body font name** | `globals.css`: `--font-body: 'Plus Jakarta Sans'` but file is `InstrumentSans-Variable.woff2` | Rename variable to `'Instrument Sans'` (or keep loading Instrument Sans and fix the comment/name) so it matches the design system and avoids confusion. |
-| **Gathering colour** | `design_system.md` lists 6 entry types; `globals.css` has `--color-gathering` | Add `--color-gathering` to the design system doc (e.g. `#1a2a1a`). |
+| **Body font name** | Done: `--font-body` is now `'Instrument Sans'` in `globals.css`. | Matches design system. |
+| **Gathering colour** | Done: `--color-gathering` added to `design_system.md` (`#1a2a1a`). | Doc matches code. |
 | **Borders** | Design system: `--border-gold` (gold-dim), hover `--color-gold-muted`. Many components use `border-white/6`, `border-gold/25` | Acceptable; white/6 reads as “subtle edge” and gold/20–30 on hover is consistent. Optional: introduce Tailwind theme tokens that map to `--color-gold-dim` / `--color-gold-muted` and use them for cards/topbar for a single source of truth. |
-| **TopBar border** | `border-white/[0.04]` | Could switch to a gold-dim equivalent (e.g. `border-gold/10`) for brand consistency if you want the header to feel more “gold-tinted.” |
+| **TopBar border** | Done: `border-gold/10` | Gold-dim border for brand consistency. |
 
 ---
 
 ## 5. Small polish items
 
 - **Landing — error message**  
-  `Landing.tsx` uses inline `style={{ color: '#c0392b' }}` for the code error. Prefer `className="text-[--color-error]"` or a utility so it uses the design system `--color-error`.
+  Done: `Landing.tsx` now uses `text-[--color-error]`.
 
 - **FAB safe area**  
-  Chronicle FAB uses `style={{ bottom: '90px' }}`. On devices with a home indicator, consider `bottom: calc(90px + env(safe-area-inset-bottom))` so the FAB doesn’t sit under the nav or indicator.
+  Done: Chronicle FAB uses `bottom: calc(90px + env(safe-area-inset-bottom, 0px))`.
 
 - **Favicon / apple-touch-icon**  
   `index.html` points to `/logo.png`. When you have a WebP or optimized PNG, you can keep `/logo.png` for compatibility or add a `<link rel="icon" type="image/webp" href="/logo.webp">` for supporting browsers to save a bit of payload.

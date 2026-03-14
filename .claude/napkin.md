@@ -57,6 +57,10 @@ At session end, Chronicle agent:
 
 14. **Mobile-first** — All layouts start from mobile (375px). Desktop adjustments are additions, not the base. The "wow" moments (Passport reveal, invite card animation, QR guest book) must be perfect on mobile. _(Added 2026-03-13)_
 
+15. **Asset docs need one source of truth** — When wiring visual assets (entry types, empty states, textures), keep the exact runtime paths in `docs/03-architecture/entry_type_image_prompts.md` and point higher-level docs to it. `visual_audit.md` is for review/status, not the canonical path list. _(Added 2026-03-14)_
+
+16. **Hotness / dossier feature rule** — User wants photo-based AI verdicts to auto-route by score: `8+` goes straight into Circle (`contact`), below `8` goes to On the Radar (`person_of_interest`). It should also generate that person's avatar using the same analysis + portrait generation protocol as Gent profile portraits. _(Added 2026-03-14)_
+
 ---
 
 ## Backend / Edge Function rules

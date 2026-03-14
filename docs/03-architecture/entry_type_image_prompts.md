@@ -20,6 +20,24 @@ Generate each asset once at the size in the table; the prompts below match these
 
 ---
 
+## App asset paths (what the code uses)
+
+Single source of truth for where the app looks for these assets. Add files to `public/`; paths below are relative to `public/`.
+
+| # | Path the app loads | Component / usage |
+|---|--------------------|-------------------|
+| 1–7 | `/entry-types/01-mission.webp` … `07-interlude.webp` | `ENTRY_TYPE_IMAGES` in `src/lib/entryTypes.ts` → EntryTypeSelector, EntryCard, EntryHero (when no cover). |
+| 8 | `/empty-states/chronicle.webp` | `EmptyStateImage` in Chronicle page empty state (`src/pages/Chronicle.tsx`). Hides on 404. |
+| 9 | `/empty-states/circle.webp` | `EmptyStateImage` in Circle Contacts and On the Radar empty states (`src/pages/Circle.tsx`). Hides on 404. |
+| 10 | `/empty-states/passport.webp` | `EmptyStateImage` in StampGrid for All/Missions/Diplomatic empty (`src/components/passport/StampGrid.tsx`). Hides on 404. |
+| 11 | `/empty-states/passport-achievements.webp` | `EmptyStateImage` in StampGrid for Achievements empty. Hides on 404. |
+| 12 | (optional) `/textures/grain.png` | Not currently used; app uses inline SVG noise in `globals.css`. Add if you want to switch. |
+| 13 | `/textures/guilloche.webp` | PassportCover tiled background at 6% opacity (`src/components/passport/PassportCover.tsx`). Add file to enable. |
+
+Empty-state images use the `EmptyStateImage` component (`src/components/ui/EmptyStateImage.tsx`), which hides itself on load error so missing assets don’t show a broken icon. See also **Visual elements audit** in `docs/03-architecture/visual_audit.md`.
+
+---
+
 ## Brand reference: attach this image
 
 **Attach the reference image** (e.g. **docs/01 Gold logo.png**) **only for prompts that say "Match the attached reference image"**—Mission (passport/stamp), Chronicle empty, Passport empty, Passport achievements empty, Guilloche. Those are the only images where the circular emblem style fits. The generator only sees the prompt and the attached image—it does not know about “the app.” Describe the style in the prompt; the attachment shows the exact gold tone and level of detail.
@@ -157,18 +175,18 @@ public/entry-types/06-gathering.webp
 public/entry-types/07-interlude.webp
 ```
 
-**Empty states (8–11):**
+**Empty states (8–11):** App loads `.webp` from `public/empty-states/`. Save as PNG from generator; convert to WebP if desired (same paths with .webp extension).
 ```
-public/empty-states/chronicle.png
-public/empty-states/circle.png
-public/empty-states/passport.png
-public/empty-states/passport-achievements.png
+public/empty-states/chronicle.webp
+public/empty-states/circle.webp
+public/empty-states/passport.webp
+public/empty-states/passport-achievements.webp
 ```
 
-**Decorative (12–13):**
+**Decorative (12–13):** Grain is optional (app uses CSS noise). Guilloche: app expects `public/textures/guilloche.webp` for Passport cover.
 ```
-public/textures/grain.png
-public/textures/guilloche.png
+public/textures/grain.png      (optional; not wired)
+public/textures/guilloche.webp (PassportCover background)
 ```
 
 ---
@@ -191,9 +209,9 @@ public/textures/guilloche.png
 
 | #   | Use              | Filename               | Dimensions  |
 |-----|------------------|------------------------|------------|
-| 8   | Chronicle empty  | chronicle.png          | 1080×1080  |
-| 9   | Circle empty     | circle.png             | 1080×1080  |
-| 10  | Passport empty   | passport.png           | 1080×1080  |
-| 11  | Passport achievements empty | passport-achievements.png | 1080×1080  |
-| 12  | Grain overlay    | grain.png              | 512×512    |
-| 13  | Guilloche        | guilloche.png          | 1080×1080  |
+| 8   | Chronicle empty  | chronicle.webp          | 1080×1080  |
+| 9   | Circle empty     | circle.webp             | 1080×1080  |
+| 10  | Passport empty   | passport.webp           | 1080×1080  |
+| 11  | Passport achievements empty | passport-achievements.webp | 1080×1080  |
+| 12  | Grain overlay    | grain.png (optional)    | 512×512    |
+| 13  | Guilloche        | guilloche.webp          | 1080×1080  |

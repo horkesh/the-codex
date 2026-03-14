@@ -117,11 +117,21 @@ export default function PersonDetail() {
       <PageWrapper>
         {/* Avatar — large, centered */}
         <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-          <Avatar
-            src={person.photo_url}
-            name={person.name}
-            size="xl"
-          />
+          {person.portrait_url ? (
+            <div className="flex items-end gap-3">
+              <Avatar src={person.photo_url} name={person.name} size="xl" />
+              <div className="flex flex-col items-center gap-1 mb-0.5">
+                <img
+                  src={person.portrait_url}
+                  alt={`${person.name} portrait`}
+                  className="w-14 h-14 rounded-xl object-cover border border-gold/30"
+                />
+                <span className="text-[9px] text-ivory-dim font-body">AI Portrait</span>
+              </div>
+            </div>
+          ) : (
+            <Avatar src={person.photo_url} name={person.name} size="xl" />
+          )}
 
           {/* Name */}
           <h2 className="font-display text-2xl text-ivory text-center leading-tight">

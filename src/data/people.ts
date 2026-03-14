@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Person, PersonWithPrivateNote } from '@/types/app'
 
-const PERSON_COLUMNS = 'id, name, instagram, photo_url, met_at_entry, met_date, met_location, notes, labels, added_by, category, tier'
+const PERSON_COLUMNS = 'id, name, instagram, photo_url, portrait_url, instagram_source_url, met_at_entry, met_date, met_location, notes, labels, added_by, category, tier, poi_source_url, poi_intel, poi_source_gent, poi_visibility'
 
 export async function fetchPeople(filters?: {
   search?: string
@@ -85,6 +85,43 @@ export async function createPerson(data: {
       met_location: data.met_location ?? null,
       notes: data.notes ?? null,
       labels: data.labels ?? [],
+      added_by: data.added_by,
+    })
+    .select(PERSON_COLUMNS)
+    .single()
+
+  if (error) throw error
+  return rawPerson as unknown as Person
+}
+
+export async function createPersonFromScan(data: {
+  name: string
+  instagram: string | null
+  instagram_source_url: string | null
+  photo_url: string | null
+  portrait_url: string | null
+  bio: string | null
+  poi_intel: string | null
+  category: 'contact' | 'person_of_interest'
+  poi_visibility: 'private' | 'circle'
+  tier: 'inner_circle' | 'outer_circle' | 'acquaintance'
+  added_by: string
+  labels: string[]
+}): Promise<Person> {
+  const { data: rawPerson, error } = await supabase
+    .from('people')
+    .insert({
+      name: data.name,
+      instagram: data.instagram ?? null,
+      instagram_source_url: data.instagram_source_url ?? null,
+      photo_url: data.photo_url ?? null,
+      portrait_url: data.portrait_url ?? null,
+      notes: data.bio ?? null,
+      poi_intel: data.poi_intel ?? null,
+      category: data.category,
+      poi_visibility: data.poi_visibility,
+      tier: data.tier,
+      labels: data.labels,
       added_by: data.added_by,
     })
     .select(PERSON_COLUMNS)

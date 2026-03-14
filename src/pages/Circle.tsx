@@ -305,9 +305,15 @@ export default function Circle() {
       <POIModal
         open={showPOIModal}
         onClose={() => setShowPOIModal(false)}
-        onSaved={(person) => {
-          setPOIPeople(prev => [person, ...prev])
+        onSaved={() => {
           setShowPOIModal(false)
+          // Reload the POI list to include the new person
+          setPOILoading(true)
+          fetchPeopleByCategory('person_of_interest')
+            .then(p => { setPOIPeople(p); setPOILoading(false) })
+            .catch(() => setPOILoading(false))
+          // Also reload contacts in case they were routed there
+          reload()
         }}
       />
     </div>
