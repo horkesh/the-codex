@@ -22,7 +22,7 @@ export async function fetchAllGents(): Promise<Gent[]> {
   return data as Gent[]
 }
 
-export async function updateGent(id: string, updates: Partial<Omit<Gent, 'id' | 'alias'>>): Promise<Gent | null> {
+export async function updateGent(id: string, updates: Partial<Omit<Gent, 'id'>>): Promise<Gent | null> {
   const { data, error } = await supabase
     .from('gents')
     .update(updates)
