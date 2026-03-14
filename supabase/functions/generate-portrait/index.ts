@@ -17,7 +17,7 @@ Deno.serve(async (req: Request) => {
     if (!googleApiKey) throw new Error('GOOGLE_AI_API_KEY not set')
     if (!gent_id || !photo_base64) throw new Error('Missing gent_id or photo_base64')
 
-    // Step 1: Extract appearance description for future scene generation
+    // Step 1: Extract detailed appearance description
     const analysisResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`,
       {
@@ -27,9 +27,7 @@ Deno.serve(async (req: Request) => {
           contents: [{
             parts: [
               {
-                text: `Describe this person's appearance in precise detail for use in scene generation.
-Include: face shape, hair (color, length, style), eye color, skin tone, beard/moustache/facial hair (be specific — if they have a moustache, goatee, full beard, stubble, say so exactly), distinctive features, approximate age.
-Return only the description, no commentary.`,
+                text: `Describe this person's appearance in precise detail. Include: approximate age, skin tone, face shape, eye colour, hair colour and style, and ALL facial hair in exact detail (e.g. "thick dark moustache", "short beard", "clean-shaven" — whatever applies). Also note any other distinctive features. One paragraph, no commentary.`,
               },
               { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
             ],
@@ -53,7 +51,9 @@ Return only the description, no commentary.`,
       .update({ appearance_description: appearance })
       .eq('id', gent_id)
 
-    // Step 2: Transform photo directly — img2img so all features are preserved
+    // Step 2: img2img — photo + appearance description reinforces features, style transforms the look
+    const imagePrompt = `Paint a cinematic digital portrait of the person in this photo. Subject: ${appearance}. Render their face and all features faithfully — do not omit or alter facial hair, hair style, or distinctive features. Style: dramatic Rembrandt lighting, dark obsidian background, warm gold rim light on the edges, rich shadows, high-end digital painting — photorealistic enough to be recognisable, not abstract. No text, no watermarks. Square format.`
+
     const imageResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${googleApiKey}`,
       {
@@ -62,9 +62,7 @@ Return only the description, no commentary.`,
         body: JSON.stringify({
           contents: [{
             parts: [
-              {
-                text: `Transform this photo into a stylised portrait avatar. Preserve the person's exact likeness — every facial feature must remain faithful to the photo, including face shape, eyes, nose, lips, skin tone, hair style and colour, and ALL facial hair (moustache, beard, stubble — exactly as it appears). Do not alter or omit any feature. Apply this visual style: cinematic noir lighting, dark obsidian background, subtle warm gold rim light, high-end digital art, dramatic shadows, sophisticated composition. No text, no watermarks. Square format.`,
-              },
+              { text: imagePrompt },
               { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
             ],
           }],
