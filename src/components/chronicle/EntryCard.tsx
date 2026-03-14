@@ -2,28 +2,17 @@ import { motion } from 'framer-motion'
 import { MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
-import { cn, formatDate } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import { staggerItem } from '@/lib/animations'
 import { ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
-import type { EntryWithParticipants, EntryType } from '@/types/app'
+import type { EntryWithParticipants } from '@/types/app'
 
 interface EntryCardProps {
   entry: EntryWithParticipants
   onClick: () => void
 }
 
-const gradientMap: Record<EntryType, string> = {
-  mission:     'from-[#2a1b4a] via-[#1a1030] to-[#0d0b0f]',
-  night_out:   'from-[#0a1828] via-[#0c1520] to-[#0d0b0f]',
-  steak:       'from-[#2e1208] via-[#1e0e06] to-[#0d0b0f]',
-  playstation: 'from-[#051c18] via-[#081412] to-[#0d0b0f]',
-  toast:       'from-[#2e180a] via-[#1c1008] to-[#0d0b0f]',
-  gathering:   'from-[#0e2010] via-[#0c1a0e] to-[#0d0b0f]',
-  interlude:   'from-[#151224] via-[#120f1e] to-[#0d0b0f]',
-}
-
 export function EntryCard({ entry, onClick }: EntryCardProps) {
-  const gradient = gradientMap[entry.type]
 
   const locationLabel = (() => {
     if (entry.city) {
