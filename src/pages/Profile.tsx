@@ -1,4 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router'
+import { HelpCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar } from '@/components/ui/Avatar'
@@ -45,6 +47,7 @@ async function fileToBase64(file: File, maxWidth = 512): Promise<string> {
 }
 
 export default function Profile() {
+  const navigate = useNavigate()
   const { gent, setGent } = useAuthStore()
   const addToast = useUIStore((s) => s.addToast)
 
@@ -135,7 +138,19 @@ export default function Profile() {
 
   return (
     <>
-      <TopBar title="Profile" />
+      <TopBar
+        title="Profile"
+        right={
+          <button
+            type="button"
+            onClick={() => navigate('/help')}
+            className="flex items-center justify-center w-8 h-8 text-ivory-dim hover:text-gold transition-colors"
+            aria-label="Field Guide"
+          >
+            <HelpCircle size={18} />
+          </button>
+        }
+      />
       <PageWrapper>
         <motion.div
           variants={staggerContainer}
