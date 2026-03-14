@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { Plus, Users, Radar } from 'lucide-react'
+import { Plus, Users, Radar, Network } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, EmptyStateImage } from '@/components/ui'
@@ -84,14 +84,24 @@ export default function Circle() {
             : (poiLoading ? undefined : `${poiPeople.length} on the radar`)
         }
         right={
-          <button
-            type="button"
-            onClick={handleFABPress}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-gold text-obsidian hover:bg-gold-light transition-colors duration-150"
-            aria-label={activeTab === 'poi' ? 'Scout someone' : 'Add contact'}
-          >
-            <Plus size={16} strokeWidth={2.5} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate('/circle/map')}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-light/40 text-ivory-muted hover:text-gold hover:bg-slate-light transition-colors duration-150"
+              aria-label="Mind map"
+            >
+              <Network size={16} strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              onClick={handleFABPress}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-gold text-obsidian hover:bg-gold-light transition-colors duration-150"
+              aria-label={activeTab === 'poi' ? 'Scout someone' : 'Add contact'}
+            >
+              <Plus size={16} strokeWidth={2.5} />
+            </button>
+          </div>
         }
       />
 

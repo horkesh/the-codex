@@ -525,6 +525,52 @@ export type Database = {
           },
         ]
       }
+      person_appearances: {
+        Row: {
+          id: string
+          person_id: string
+          entry_id: string
+          noted_by: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          person_id: string
+          entry_id: string
+          noted_by: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          person_id?: string
+          entry_id?: string
+          noted_by?: string
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "person_appearances_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "person_appearances_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "person_appearances_noted_by_fkey"
+            columns: ["noted_by"]
+            isOneToOne: false
+            referencedRelation: "gents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people: {
         Row: {
           added_by: string | null
@@ -543,6 +589,7 @@ export type Database = {
           poi_source_gent: string | null
           poi_source_url: string | null
           poi_visibility: string | null
+          tier: string | null
         }
         Insert: {
           added_by?: string | null
@@ -561,6 +608,7 @@ export type Database = {
           poi_source_gent?: string | null
           poi_source_url?: string | null
           poi_visibility?: string | null
+          tier?: string | null
         }
         Update: {
           added_by?: string | null
@@ -579,6 +627,7 @@ export type Database = {
           poi_source_gent?: string | null
           poi_source_url?: string | null
           poi_visibility?: string | null
+          tier?: string | null
         }
         Relationships: [
           {

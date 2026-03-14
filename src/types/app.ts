@@ -78,6 +78,7 @@ export interface Person {
   notes: string | null
   labels: string[]
   added_by: string
+  tier: PersonTier
   category: PersonCategory
   poi_source_url: string | null
   poi_intel: string | null
@@ -144,9 +145,21 @@ export interface GatheringMetadata {
   phase: 'pre' | 'post'
 }
 
+// Person tiers for mind map
+export type PersonTier = 'inner_circle' | 'outer_circle' | 'acquaintance'
+
 // Person of Interest (subcategory of people)
 export type PersonCategory = 'contact' | 'person_of_interest'
 export type POIVisibility = 'private' | 'circle'
+
+// Person appearance in an entry (for mind map edges)
+export interface PersonAppearance {
+  id: string
+  person_id: string
+  entry_id: string
+  noted_by: string
+  created_at: string
+}
 
 // Prospect (possible future event scouted from Instagram)
 export interface Prospect {

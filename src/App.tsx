@@ -25,6 +25,7 @@ import StoryNew from '@/pages/StoryNew'
 import StoryDetail from '@/pages/StoryDetail'
 import DossierMap from '@/pages/DossierMap'
 import BucketList from '@/pages/BucketList'
+import MindMap from '@/pages/MindMap'
 
 // Public pages (no auth)
 import PublicInvite from '@/pages/public/PublicInvite'
@@ -61,6 +62,7 @@ function AnimatedRoutes() {
         <Route path="/gathering/:id" element={<ProtectedRoute><GatheringDetail /></ProtectedRoute>} />
         <Route path="/passport" element={<ProtectedRoute><Passport /></ProtectedRoute>} />
         <Route path="/circle" element={<ProtectedRoute><Circle /></ProtectedRoute>} />
+        <Route path="/circle/map" element={<ProtectedRoute><MindMap /></ProtectedRoute>} />
         <Route path="/circle/:id" element={<ProtectedRoute><PersonDetail /></ProtectedRoute>} />
         <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
         <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />

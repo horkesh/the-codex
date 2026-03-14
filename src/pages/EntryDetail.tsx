@@ -11,6 +11,7 @@ import { generateScene } from '@/ai/scene'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
 import { MetadataCard } from '@/components/chronicle/MetadataCard'
 import { PS5Scoreboard } from '@/components/chronicle/PS5Scoreboard'
+import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
 import { useEntry } from '@/hooks/useEntry'
 import { deleteEntry } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
@@ -366,6 +367,11 @@ export default function EntryDetail() {
             {/* Participants */}
             <motion.div variants={staggerItem}>
               <ParticipantsSection entry={entry} />
+            </motion.div>
+
+            {/* People Present (non-gent people tagged to this entry) */}
+            <motion.div variants={staggerItem}>
+              <PeoplePresent entryId={entry.id} />
             </motion.div>
 
             {/* Actions */}

@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Person, PersonWithPrivateNote } from '@/types/app'
 
-const PERSON_COLUMNS = 'id, name, instagram, photo_url, met_at_entry, met_date, met_location, notes, labels, added_by'
+const PERSON_COLUMNS = 'id, name, instagram, photo_url, met_at_entry, met_date, met_location, notes, labels, added_by, category, tier'
 
 export async function fetchPeople(filters?: {
   search?: string
