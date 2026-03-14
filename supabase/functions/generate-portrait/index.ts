@@ -17,7 +17,7 @@ Deno.serve(async (req: Request) => {
     if (!googleApiKey) throw new Error('GOOGLE_AI_API_KEY not set')
     if (!gent_id || !photo_base64) throw new Error('Missing gent_id or photo_base64')
 
-    // Step 1: Analyse photo to extract appearance + traits
+    // Step 1: Analyse photo — extract appearance description + personality traits
     const analysisResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`,
       {
@@ -27,44 +27,44 @@ Deno.serve(async (req: Request) => {
           contents: [{
             parts: [
               {
-                text: `Analyze this person's photo. Return a JSON object with:
-1. "appearance": detailed description of their face, hair (colour, length, style), eye colour, skin tone, all facial hair (moustache, beard, stubble — exact details), distinctive features, approximate age.
-2. "traits": array of 3 personality/vibe words inferred from their look (e.g. "sharp", "relaxed", "intense").
-Output PURE JSON only.`,
+                text: `Analyze this user photo. Return a JSON object with exactly two fields:
+"appearance": a detailed visual description of their face, hair, eye colour, skin tone, facial hair, distinctive features, approximate age.
+"traits": an array of exactly 3 personality trait words inferred from how they look.
+Output PURE JSON only, no markdown, no explanation.`,
               },
               { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
             ],
           }],
-          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 512 },
+          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 400 },
         }),
       }
     )
 
     if (!analysisResponse.ok) {
-      throw new Error(`Gemini analysis error: ${analysisResponse.status} ${await analysisResponse.text()}`)
+      throw new Error(`Analysis error: ${analysisResponse.status} ${await analysisResponse.text()}`)
     }
 
-    const analysisData = await analysisResponse.json()
-    const rawText = analysisData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
+    const analysisResult = await analysisResponse.json()
+    const rawText = analysisResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
 
-    let appearance = rawText
-    let traits: string[] = ['distinguished', 'sharp', 'sophisticated']
+    let appearance = 'A mysterious figure'
+    let traits = ['mysterious', 'enigmatic', 'distinguished']
     try {
       const parsed = JSON.parse(rawText)
-      appearance = parsed.appearance ?? rawText
-      traits = parsed.traits ?? traits
-    } catch { /* fallback to raw text */ }
+      if (parsed.appearance) appearance = parsed.appearance
+      if (Array.isArray(parsed.traits) && parsed.traits.length > 0) traits = parsed.traits
+    } catch { /* use defaults */ }
 
-    // Save appearance for future scene generation
+    // Save appearance for scene generation
     const { createClient: createEarly } = await import('npm:@supabase/supabase-js@2')
     await createEarly(supabaseUrl, supabaseServiceKey)
       .from('gents')
       .update({ appearance_description: appearance })
       .eq('id', gent_id)
 
-    // Step 2: Text-to-image — abstract cinematic avatar (Tonight style)
+    // Step 2: Generate avatar — exactly Tonight's buildAvatarPrompt style
     const traitList = traits.join(', ')
-    const imagePrompt = `Abstract artistic portrait avatar. Subject: ${appearance}. Personality: ${traitList}. Style: minimalist geometric forms, cinematic noir lighting, moody desaturated colour palette with deep blacks and subtle gold accents, high-end digital art, dramatic shadows and highlights, sophisticated composition. No text, no words, no watermarks. Square format.`
+    const imagePrompt = `Abstract artistic portrait avatar. Subject: ${appearance}. Personality: ${traitList}. Style: Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, high-end digital art, dramatic shadows and highlights, sophisticated composition. No text or words.`
 
     const imageResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${googleApiKey}`,
@@ -73,13 +73,16 @@ Output PURE JSON only.`,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: imagePrompt }] }],
-          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+          generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            imageConfig: { aspectRatio: '1:1' },
+          },
         }),
       }
     )
 
     if (!imageResponse.ok) {
-      throw new Error(`Gemini image generation error: ${imageResponse.status} ${await imageResponse.text()}`)
+      throw new Error(`Image generation error: ${imageResponse.status} ${await imageResponse.text()}`)
     }
 
     const imageResult = await imageResponse.json()
@@ -101,15 +104,15 @@ Output PURE JSON only.`,
     const fileName = `${gent_id}/portrait-${Date.now()}.${ext}`
 
     const { createClient } = await import('npm:@supabase/supabase-js@2')
-    const storageClient = createClient(supabaseUrl, supabaseServiceKey)
+    const db = createClient(supabaseUrl, supabaseServiceKey)
 
-    const { error: uploadError } = await storageClient.storage
+    const { error: uploadError } = await db.storage
       .from('portraits')
       .upload(fileName, imageBytes, { contentType: mimeType, upsert: true })
 
     if (uploadError) throw new Error(`Storage upload error: ${uploadError.message}`)
 
-    const { data: { publicUrl } } = storageClient.storage.from('portraits').getPublicUrl(fileName)
+    const { data: { publicUrl } } = db.storage.from('portraits').getPublicUrl(fileName)
 
     return new Response(JSON.stringify({ portrait_url: publicUrl, appearance }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
