@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import type { DetectedLocation } from '@/lib/geo'
 
 export interface ToastFormData {
   title: string
@@ -13,6 +14,7 @@ export interface ToastFormData {
 interface ToastFormProps {
   onSubmit: (data: ToastFormData) => Promise<void>
   loading: boolean
+  detectedLocation?: DetectedLocation
 }
 
 const empty: ToastFormData = {
@@ -27,8 +29,17 @@ interface FieldErrors {
   date?: string
 }
 
-export function ToastForm({ onSubmit, loading }: ToastFormProps) {
+export function ToastForm({ onSubmit, loading, detectedLocation }: ToastFormProps) {
   const [form, setForm] = useState<ToastFormData>(empty)
+
+  useEffect(() => {
+    if (!detectedLocation) return
+    setForm((prev) => ({
+      ...prev,
+      date: prev.date || detectedLocation.date || prev.date,
+      location: prev.location || detectedLocation.location || prev.location,
+    }))
+  }, [detectedLocation])
   const [errors, setErrors] = useState<FieldErrors>({})
 
   function set(field: keyof ToastFormData, value: string) {

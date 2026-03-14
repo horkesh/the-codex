@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import type { DetectedLocation } from '@/lib/geo'
 
 export interface MissionFormData {
   title: string
@@ -16,6 +17,7 @@ export interface MissionFormData {
 interface MissionFormProps {
   onSubmit: (data: MissionFormData) => Promise<void>
   loading: boolean
+  detectedLocation?: DetectedLocation
 }
 
 const empty: MissionFormData = {
@@ -35,9 +37,21 @@ interface FieldErrors {
   country?: string
 }
 
-export function MissionForm({ onSubmit, loading }: MissionFormProps) {
+export function MissionForm({ onSubmit, loading, detectedLocation }: MissionFormProps) {
   const [form, setForm] = useState<MissionFormData>(empty)
   const [errors, setErrors] = useState<FieldErrors>({})
+
+  useEffect(() => {
+    if (!detectedLocation) return
+    setForm((prev) => ({
+      ...prev,
+      date: prev.date || detectedLocation.date || prev.date,
+      city: prev.city || detectedLocation.city || prev.city,
+      country: prev.country || detectedLocation.country || prev.country,
+      country_code: prev.country_code || detectedLocation.country_code || prev.country_code,
+      location: prev.location || detectedLocation.location || prev.location,
+    }))
+  }, [detectedLocation])
 
   function set(field: keyof MissionFormData, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))

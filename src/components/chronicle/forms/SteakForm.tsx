@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import type { DetectedLocation } from '@/lib/geo'
 
 export interface SteakFormData {
   title: string
@@ -16,6 +17,7 @@ export interface SteakFormData {
 interface SteakFormProps {
   onSubmit: (data: SteakFormData) => Promise<void>
   loading: boolean
+  detectedLocation?: DetectedLocation
 }
 
 const CUTS = ['Ribeye', 'Wagyu', 'T-Bone', 'Striploin', 'Fillet', 'Other']
@@ -36,8 +38,17 @@ interface FieldErrors {
   score?: string
 }
 
-export function SteakForm({ onSubmit, loading }: SteakFormProps) {
+export function SteakForm({ onSubmit, loading, detectedLocation }: SteakFormProps) {
   const [form, setForm] = useState<SteakFormData>(empty)
+
+  useEffect(() => {
+    if (!detectedLocation) return
+    setForm((prev) => ({
+      ...prev,
+      date: prev.date || detectedLocation.date || prev.date,
+      location: prev.location || detectedLocation.location || prev.location,
+    }))
+  }, [detectedLocation])
   const [errors, setErrors] = useState<FieldErrors>({})
 
   function set(field: keyof SteakFormData, value: string) {

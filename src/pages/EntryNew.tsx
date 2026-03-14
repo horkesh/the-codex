@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar } from '@/components/layout'
@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { fadeUp } from '@/lib/animations'
 import type { EntryType, PS5Match, GentAlias } from '@/types/app'
+import type { DetectedLocation } from '@/lib/geo'
 import type { MissionFormData } from '@/components/chronicle/forms/MissionForm'
 import type { NightOutFormData } from '@/components/chronicle/forms/NightOutForm'
 import type { SteakFormData } from '@/components/chronicle/forms/SteakForm'
@@ -50,6 +51,8 @@ export default function EntryNew() {
   const [selectedType, setSelectedType] = useState<EntryType | null>(null)
   const [participants, setParticipants] = useState<string[]>(() => (gent ? [gent.id] : []))
   const [submitting, setSubmitting] = useState(false)
+  const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | undefined>()
+  const handleGeoDetected = useCallback((loc: DetectedLocation) => setDetectedLocation(loc), [])
 
   const { pendingFiles, uploadAll, clearFiles } = usePendingPhotos()
 
@@ -232,19 +235,19 @@ export default function EntryNew() {
 
         {/* The form */}
         {selectedType === 'mission' && (
-          <MissionForm onSubmit={submitMission} loading={submitting} />
+          <MissionForm onSubmit={submitMission} loading={submitting} detectedLocation={detectedLocation} />
         )}
         {selectedType === 'night_out' && (
-          <NightOutForm onSubmit={submitNightOut} loading={submitting} />
+          <NightOutForm onSubmit={submitNightOut} loading={submitting} detectedLocation={detectedLocation} />
         )}
         {selectedType === 'steak' && (
-          <SteakForm onSubmit={submitSteak} loading={submitting} />
+          <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={detectedLocation} />
         )}
         {selectedType === 'playstation' && (
           <PlaystationForm onSubmit={submitPlaystation} loading={submitting} />
         )}
         {selectedType === 'toast' && (
-          <ToastForm onSubmit={submitToast} loading={submitting} />
+          <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={detectedLocation} />
         )}
         {selectedType === 'interlude' && (
           <InterludeForm onSubmit={submitInterlude} loading={submitting} />
@@ -263,6 +266,7 @@ export default function EntryNew() {
           <div className="border-t border-white/8 pt-4">
             <PhotoUpload
               entryId={null}
+              onGeoDetected={handleGeoDetected}
               className="w-full"
             />
           </div>

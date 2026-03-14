@@ -4,10 +4,13 @@ import { cn } from '@/lib/utils'
 import { Spinner } from '@/components/ui'
 import { uploadEntryPhoto } from '@/data/entries'
 import { fadeIn } from '@/lib/animations'
+import { extractLocationFromPhoto } from '@/lib/geo'
+import type { DetectedLocation } from '@/lib/geo'
 
 interface PhotoUploadProps {
   entryId: string | null
   onUpload?: (url: string) => void
+  onGeoDetected?: (loc: DetectedLocation) => void
   className?: string
 }
 
@@ -23,9 +26,10 @@ interface PendingPhoto {
 
 const MAX_PHOTOS = 10
 
-export function PhotoUpload({ entryId, onUpload, className }: PhotoUploadProps) {
+export function PhotoUpload({ entryId, onUpload, onGeoDetected, className }: PhotoUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PendingPhoto[]>([])
+  const geoFiredRef = useRef(false)
 
   const openPicker = () => {
     fileInputRef.current?.click()
@@ -53,6 +57,16 @@ export function PhotoUpload({ entryId, onUpload, className }: PhotoUploadProps) 
       e.target.value = ''
 
       setPhotos((prev) => [...prev, ...newPhotos])
+
+      // Try to extract GPS/date from the first photo (only once per session)
+      if (onGeoDetected && !geoFiredRef.current && toAdd.length > 0) {
+        extractLocationFromPhoto(toAdd[0]).then((loc) => {
+          if (loc && !geoFiredRef.current) {
+            geoFiredRef.current = true
+            onGeoDetected(loc)
+          }
+        })
+      }
 
       // If entryId is available, upload immediately
       if (entryId) {
