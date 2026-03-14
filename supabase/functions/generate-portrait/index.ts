@@ -17,7 +17,7 @@ Deno.serve(async (req: Request) => {
     if (!googleApiKey) throw new Error('GOOGLE_AI_API_KEY not set')
     if (!gent_id || !photo_base64) throw new Error('Missing gent_id or photo_base64')
 
-    // Step 1: Analyse photo — extract appearance description + personality traits
+    // Step 1: Analyse photo — Tonight's exact approach
     const analysisResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`,
       {
@@ -28,14 +28,14 @@ Deno.serve(async (req: Request) => {
             parts: [
               {
                 text: `Analyze this user photo. Return a JSON object with exactly two fields:
-"appearance": a detailed visual description of their face, hair, eye colour, skin tone, facial hair, distinctive features, approximate age.
-"traits": an array of exactly 3 personality trait words inferred from how they look.
+"appearance": a detailed visual description of their face, hair, clothes, and style.
+"traits": an array of exactly 6 personality trait words guessed from the photo.
 Output PURE JSON only, no markdown, no explanation.`,
               },
               { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
             ],
           }],
-          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 400 },
+          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 500 },
         }),
       }
     )
@@ -48,7 +48,7 @@ Output PURE JSON only, no markdown, no explanation.`,
     const rawText = analysisResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
 
     let appearance = 'A mysterious figure'
-    let traits = ['mysterious', 'enigmatic', 'distinguished']
+    let traits = ['mysterious', 'enigmatic', 'distinguished', 'confident', 'refined', 'intense']
     try {
       const parsed = JSON.parse(rawText)
       if (parsed.appearance) appearance = parsed.appearance
@@ -56,13 +56,12 @@ Output PURE JSON only, no markdown, no explanation.`,
     } catch { /* use defaults */ }
 
     // Save appearance for scene generation
-    const { createClient: createEarly } = await import('npm:@supabase/supabase-js@2')
-    await createEarly(supabaseUrl, supabaseServiceKey)
-      .from('gents')
-      .update({ appearance_description: appearance })
-      .eq('id', gent_id)
+    const { createClient } = await import('npm:@supabase/supabase-js@2')
+    const db = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Step 2: Generate avatar — exactly Tonight's buildAvatarPrompt style
+    await db.from('gents').update({ appearance_description: appearance }).eq('id', gent_id)
+
+    // Step 2: Generate avatar — Tonight's buildAvatarPrompt
     const traitList = traits.join(', ')
     const imagePrompt = `Abstract artistic portrait avatar. Subject: ${appearance}. Personality: ${traitList}. Style: Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, high-end digital art, dramatic shadows and highlights, sophisticated composition. No text or words.`
 
@@ -102,9 +101,6 @@ Output PURE JSON only, no markdown, no explanation.`,
     const ext = mimeType.split('/')[1] ?? 'png'
     const imageBytes = Uint8Array.from(atob(base64Image), (c) => c.charCodeAt(0))
     const fileName = `${gent_id}/portrait-${Date.now()}.${ext}`
-
-    const { createClient } = await import('npm:@supabase/supabase-js@2')
-    const db = createClient(supabaseUrl, supabaseServiceKey)
 
     const { error: uploadError } = await db.storage
       .from('portraits')

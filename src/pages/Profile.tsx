@@ -24,7 +24,7 @@ function SectionDivider({ label }: { label: string }) {
 }
 
 // Compress and convert image file to base64 for AI analysis
-async function fileToBase64(file: File, maxWidth = 512): Promise<string> {
+async function fileToBase64(file: File, maxWidth = 400): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -36,7 +36,7 @@ async function fileToBase64(file: File, maxWidth = 512): Promise<string> {
         canvas.height = Math.round(img.height * scale)
         canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
         // Strip the data:image/...;base64, prefix — Gemini wants raw base64
-        resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1])
+        resolve(canvas.toDataURL('image/jpeg', 0.5).split(',')[1])
       }
       img.onerror = reject
       img.src = e.target?.result as string
