@@ -49,6 +49,13 @@ distinctive features, approximate age. Be specific. Return only the description,
     const appearance = analysisData.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
     if (!appearance) throw new Error('Could not extract appearance from photo')
 
+    // Save appearance to gents table for future scene generation
+    const { createClient: createEarly } = await import('npm:@supabase/supabase-js@2')
+    await createEarly(supabaseUrl, supabaseServiceKey)
+      .from('gents')
+      .update({ appearance_description: appearance })
+      .eq('id', gent_id)
+
     // Step 2: Generate portrait with Imagen using extracted appearance
     const imagePrompt = `Portrait of a gentleman: ${appearance}.
 Style: vintage gentleman's society membership card, dark obsidian background (#0D0D0D),

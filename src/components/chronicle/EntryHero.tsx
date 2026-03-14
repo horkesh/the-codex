@@ -62,12 +62,11 @@ export function EntryHero({ entry }: EntryHeroProps) {
           </div>
           {/* Large type icon centered as decoration */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <span
-              className="text-8xl opacity-10 select-none"
+            <meta.Icon
+              size={96}
+              className="opacity-10 select-none"
               aria-hidden="true"
-            >
-              {meta.icon}
-            </span>
+            />
           </div>
         </motion.div>
       )}

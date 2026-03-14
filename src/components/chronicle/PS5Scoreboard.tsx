@@ -137,7 +137,7 @@ export function PS5Scoreboard({ entry }: PS5ScoreboardProps) {
     <Card variant="glass" className="p-4 space-y-4">
       {/* Header */}
       <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold">
-        🎮 Match Records
+        Match Records
       </p>
 
       {/* Match list */}

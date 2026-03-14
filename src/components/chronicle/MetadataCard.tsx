@@ -28,7 +28,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 function MissionMeta({ entry }: { entry: EntryWithParticipants }) {
   return (
     <Card variant="glass" className="p-4">
-      <SectionLabel>✈️ Destination</SectionLabel>
+      <SectionLabel>Destination</SectionLabel>
       <div className="space-y-2">
         {entry.city && <Row label="City" value={entry.city} />}
         {entry.country && (
@@ -61,7 +61,7 @@ function SteakMeta({ entry }: { entry: EntryWithParticipants }) {
 
   return (
     <Card variant="glass" className="p-4">
-      <SectionLabel>🥩 The Verdict</SectionLabel>
+      <SectionLabel>The Verdict</SectionLabel>
       <div className="space-y-2">
         {restaurant && <Row label="Restaurant" value={restaurant} />}
         {entry.location && !restaurant && <Row label="Venue" value={entry.location} />}
@@ -115,7 +115,7 @@ function PlaystationMeta({ entry }: { entry: EntryWithParticipants }) {
 
   return (
     <Card variant="glass" className="p-4">
-      <SectionLabel>🎮 Scoreboard</SectionLabel>
+      <SectionLabel>Scoreboard</SectionLabel>
       <div className="space-y-2">
         <Row label="Matches played" value={totalMatches} />
         {leader && leader !== 'tied' && (

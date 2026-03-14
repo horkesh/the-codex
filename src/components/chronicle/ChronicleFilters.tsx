@@ -68,9 +68,7 @@ export function ChronicleFilters({ filters, onChange }: ChronicleFiltersProps) {
                   : 'bg-slate-light text-ivory-muted border-white/10 hover:text-ivory hover:border-white/20',
               )}
             >
-              <span role="img" aria-hidden="true" className="leading-none text-sm">
-                {meta.icon}
-              </span>
+              <meta.Icon size={14} aria-hidden="true" />
               {meta.label}
             </button>
           )

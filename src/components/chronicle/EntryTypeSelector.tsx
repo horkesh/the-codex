@@ -77,11 +77,11 @@ export function EntryTypeSelector({ onSelect }: EntryTypeSelectorProps) {
                     {/* Icon with colored background dot */}
                     <div
                       className={cn(
-                        'w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0',
+                        'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
                         meta.bg,
                       )}
                     >
-                      {meta.icon}
+                      <meta.Icon size={20} aria-hidden="true" />
                     </div>
                     {/* Label + description */}
                     <div>
@@ -130,11 +130,11 @@ export function EntryTypeSelector({ onSelect }: EntryTypeSelectorProps) {
                   <div className="p-4 flex flex-row items-center gap-4">
                     <div
                       className={cn(
-                        'w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0',
+                        'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
                         meta.bg,
                       )}
                     >
-                      {meta.icon}
+                      <meta.Icon size={20} aria-hidden="true" />
                     </div>
                     <div className="flex-1">
                       <p

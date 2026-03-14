@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MoreVertical, Sparkles, Share2, Trash2 } from 'lucide-react'
+import { MoreVertical, Sparkles, Share2, Trash2, ImagePlay } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Avatar } from '@/components/ui'
@@ -21,18 +22,17 @@ interface OptionsMenuProps {
   isOpen: boolean
   onClose: () => void
   hasLore: boolean
+  canGenerateScene: boolean
+  generatingScene: boolean
   onGenerateLore: () => void
+  onGenerateScene: () => void
   onExport: () => void
   onDelete: () => void
 }
 
 function OptionsMenu({
-  isOpen,
-  onClose,
-  hasLore,
-  onGenerateLore,
-  onExport,
-  onDelete,
+  isOpen, onClose, hasLore, canGenerateScene, generatingScene,
+  onGenerateLore, onGenerateScene, onExport, onDelete,
 }: OptionsMenuProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Entry Options">
@@ -45,6 +45,19 @@ function OptionsMenu({
           >
             <Sparkles size={18} className="text-gold shrink-0" />
             <span className="font-body text-sm">Generate Lore</span>
+          </button>
+        )}
+        {canGenerateScene && (
+          <button
+            type="button"
+            disabled={generatingScene}
+            className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors disabled:opacity-40"
+            onClick={() => { onGenerateScene(); onClose() }}
+          >
+            <ImagePlay size={18} className="text-gold shrink-0" />
+            <span className="font-body text-sm">
+              {generatingScene ? 'Generating scene…' : 'Generate Scene'}
+            </span>
           </button>
         )}
         <button
@@ -161,6 +174,7 @@ export default function EntryDetail() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [generatingScene, setGeneratingScene] = useState(false)
 
   function handleExportToStudio() {
     navigate(`/studio?entry=${id}`)
@@ -183,6 +197,24 @@ export default function EntryDetail() {
       addToast('Could not delete entry. Try again.', 'error')
       setDeleting(false)
       setDeleteOpen(false)
+    }
+  }
+
+  async function handleGenerateScene() {
+    if (!entry) return
+    setGeneratingScene(true)
+    try {
+      const participant_ids = entry.participants.map((p) => p.id)
+      const { data, error } = await supabase.functions.invoke('generate-cover', {
+        body: { entry: { id: entry.id, type: entry.type, title: entry.title, location: entry.location, city: (entry.metadata as Record<string, unknown>)?.city }, participant_ids },
+      })
+      if (error || !data?.cover_url) throw new Error(error?.message ?? 'No image returned')
+      setEntry({ ...entry, cover_image_url: data.cover_url })
+      addToast('Scene generated.', 'success')
+    } catch {
+      addToast('Scene generation failed. Try again.', 'error')
+    } finally {
+      setGeneratingScene(false)
     }
   }
 
@@ -338,7 +370,10 @@ export default function EntryDetail() {
         isOpen={menuOpen}
         onClose={() => setMenuOpen(false)}
         hasLore={!!entry.lore}
+        canGenerateScene={entry.type === 'mission' || entry.type === 'night_out'}
+        generatingScene={generatingScene}
         onGenerateLore={handleGenerateLoreFromMenu}
+        onGenerateScene={handleGenerateScene}
         onExport={handleExportToStudio}
         onDelete={() => setDeleteOpen(true)}
       />

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { MapPin, Trophy, Globe } from 'lucide-react'
 import { stampReveal } from '@/lib/animations'
 import { cn, flagEmoji } from '@/lib/utils'
 import type { PassportStamp } from '@/types/app'
@@ -12,9 +13,13 @@ function StampPlaceholder({ stamp }: { stamp: PassportStamp }) {
   if (stamp.type === 'mission') {
     return (
       <div className="w-20 h-20 rounded-full bg-slate-light flex items-center justify-center">
-        <span className="text-2xl leading-none" role="img" aria-label={stamp.country ?? 'location'}>
-          {stamp.country_code ? flagEmoji(stamp.country_code) : '📍'}
-        </span>
+        {stamp.country_code ? (
+          <span className="text-2xl leading-none" role="img" aria-label={stamp.country ?? 'location'}>
+            {flagEmoji(stamp.country_code)}
+          </span>
+        ) : (
+          <MapPin size={20} aria-hidden="true" className="text-ivory-muted" />
+        )}
       </div>
     )
   }
@@ -22,9 +27,7 @@ function StampPlaceholder({ stamp }: { stamp: PassportStamp }) {
   if (stamp.type === 'achievement') {
     return (
       <div className="w-20 h-20 rounded-full bg-gold/10 border border-gold/40 flex items-center justify-center">
-        <span className="text-2xl leading-none" role="img" aria-label="achievement">
-          🏆
-        </span>
+        <Trophy size={20} aria-hidden="true" className="text-gold" />
       </div>
     )
   }
@@ -32,9 +35,7 @@ function StampPlaceholder({ stamp }: { stamp: PassportStamp }) {
   // diplomatic
   return (
     <div className="w-20 h-20 rounded-full bg-slate-mid border border-gold/30 flex items-center justify-center">
-      <span className="text-2xl leading-none" role="img" aria-label="diplomatic">
-        🕊️
-      </span>
+      <Globe size={20} aria-hidden="true" className="text-ivory-muted" />
     </div>
   )
 }

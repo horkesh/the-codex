@@ -121,7 +121,7 @@ function EntryCardItem({ entry, isActive, onClick }: EntryCardProps) {
     >
       {/* Type badge */}
       <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-base leading-none">{meta.icon}</span>
+        <meta.Icon size={14} aria-hidden="true" className="text-ivory-dim shrink-0" />
         <span className="text-[10px] font-body tracking-widest uppercase text-ivory-dim">
           {meta.label}
         </span>
@@ -331,9 +331,7 @@ export default function Studio() {
             animate="animate"
             className="mx-4 mt-4 mb-5 px-4 py-3 rounded-xl bg-slate-mid border border-white/8 flex items-center gap-3"
           >
-            <span className="text-xl leading-none">
-              {ENTRY_TYPE_META[selectedEntry.type].icon}
-            </span>
+            {(() => { const { Icon: EntryIcon } = ENTRY_TYPE_META[selectedEntry.type]; return <EntryIcon size={20} aria-hidden="true" className="shrink-0 text-ivory-muted" /> })()}
             <div className="min-w-0">
               <p className="font-display text-sm text-ivory truncate">
                 {selectedEntry.title}
@@ -370,7 +368,6 @@ export default function Studio() {
 
               {availableTemplates.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 gap-2">
-                  <span className="text-3xl">💭</span>
                   <p className="text-sm text-ivory-dim font-body text-center">
                     No export templates available for{' '}
                     <span className="text-ivory">
@@ -477,7 +474,6 @@ export default function Studio() {
             animate="animate"
             className="flex flex-col items-center justify-center py-24 px-8 gap-4"
           >
-            <span className="text-5xl">🎨</span>
             <p className="font-display text-lg text-ivory text-center">
               The Studio is Ready
             </p>

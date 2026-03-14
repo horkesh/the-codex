@@ -221,7 +221,7 @@ export default function PublicInvite() {
               className="mt-8"
             >
               <p className="text-[#C9A84C] text-center text-base">
-                See you there! 🥂
+                See you there.
               </p>
             </motion.div>
           )}

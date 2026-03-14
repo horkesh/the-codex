@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router'
+import { MapPin, Trophy, Globe } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { cn, flagEmoji, formatDate } from '@/lib/utils'
@@ -51,9 +52,13 @@ function StampCircle({ stamp }: { stamp: PassportStamp }) {
           'flex items-center justify-center',
         )}
       >
-        <span className="text-6xl leading-none" role="img" aria-label={stamp.country ?? 'location'}>
-          {stamp.country_code ? flagEmoji(stamp.country_code) : '📍'}
-        </span>
+        {stamp.country_code ? (
+          <span className="text-6xl leading-none" role="img" aria-label={stamp.country ?? 'location'}>
+            {flagEmoji(stamp.country_code)}
+          </span>
+        ) : (
+          <MapPin size={32} aria-hidden="true" className="text-ivory-muted" />
+        )}
       </div>
     )
   }
@@ -67,7 +72,7 @@ function StampCircle({ stamp }: { stamp: PassportStamp }) {
           'flex items-center justify-center',
         )}
       >
-        <span className="text-6xl leading-none" role="img" aria-label="achievement">🏆</span>
+        <Trophy size={32} aria-hidden="true" className="text-gold" />
       </div>
     )
   }
@@ -80,7 +85,7 @@ function StampCircle({ stamp }: { stamp: PassportStamp }) {
         'flex items-center justify-center',
       )}
     >
-      <span className="text-6xl leading-none" role="img" aria-label="diplomatic">🕊️</span>
+      <Globe size={32} aria-hidden="true" className="text-ivory-muted" />
     </div>
   )
 }

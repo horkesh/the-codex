@@ -21,10 +21,10 @@ export function Badge({ type, label, size = 'default', className, color }: Badge
   )
 
   if (type) {
-    const { bg, icon, label: typeLabel } = ENTRY_TYPE_META[type]
+    const { bg, Icon, label: typeLabel } = ENTRY_TYPE_META[type]
     return (
       <span className={cn(base, bg, className)}>
-        <span role="img" aria-hidden="true" className="leading-none">{icon}</span>
+        <Icon size={12} aria-hidden="true" />
         {typeLabel}
       </span>
     )

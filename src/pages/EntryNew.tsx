@@ -222,10 +222,10 @@ export default function EntryNew() {
         {/* Type badge */}
         <div className="flex items-center gap-2 pt-1">
           <div
-            className="w-8 h-8 rounded-md flex items-center justify-center text-base shrink-0"
+            className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
             style={{ background: `color-mix(in srgb, ${typeMeta?.borderColor} 60%, transparent)` }}
           >
-            {typeMeta?.icon}
+            {typeMeta && <typeMeta.Icon size={16} aria-hidden="true" />}
           </div>
           <span className="text-ivory-muted font-body text-sm">{typeMeta?.label}</span>
         </div>

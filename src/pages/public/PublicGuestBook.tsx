@@ -226,7 +226,6 @@ export default function PublicGuestBook() {
               style={{ perspective: 800 }}
             >
               <div className="text-center py-12">
-                <div className="text-4xl mb-4">🥂</div>
                 <h2
                   className="text-2xl text-[#F0EDE8]"
                   style={{ fontFamily: 'var(--font-display)', fontWeight: 600 }}
