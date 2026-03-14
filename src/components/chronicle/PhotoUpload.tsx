@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Spinner } from '@/components/ui'
@@ -96,50 +96,58 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, on
         return
       }
 
-      // If entryId is available, upload immediately
-      if (entryId) {
-        const currentCount = photos.length
-        for (let i = 0; i < newPhotos.length; i++) {
-          const photo = newPhotos[i]
-          const sortOrder = currentCount + i
+      // Upload immediately
+      const currentCount = photos.length
+      for (let i = 0; i < newPhotos.length; i++) {
+        const photo = newPhotos[i]
+        const sortOrder = currentCount + i
 
+        setPhotos((prev) =>
+          prev.map((p) => (p.id === photo.id ? { ...p, uploading: true, progress: 10 } : p)),
+        )
+
+        try {
+          const url = await uploadEntryPhoto(entryId, photo.file, sortOrder)
           setPhotos((prev) =>
-            prev.map((p) => (p.id === photo.id ? { ...p, uploading: true, progress: 10 } : p)),
+            prev.map((p) =>
+              p.id === photo.id
+                ? { ...p, uploading: false, progress: 100, uploadedUrl: url }
+                : p,
+            ),
           )
-
-          try {
-            const url = await uploadEntryPhoto(entryId, photo.file, sortOrder)
-            setPhotos((prev) =>
-              prev.map((p) =>
-                p.id === photo.id
-                  ? { ...p, uploading: false, progress: 100, uploadedUrl: url }
-                  : p,
-              ),
-            )
-            onUpload?.(url)
-          } catch {
-            setPhotos((prev) =>
-              prev.map((p) =>
-                p.id === photo.id
-                  ? { ...p, uploading: false, error: 'Upload failed' }
-                  : p,
-              ),
-            )
-          }
+          onUpload?.(url)
+        } catch {
+          setPhotos((prev) =>
+            prev.map((p) =>
+              p.id === photo.id
+                ? { ...p, uploading: false, error: 'Upload failed' }
+                : p,
+            ),
+          )
         }
       }
     },
     [entryId, photos.length, onUpload, onFilesAdded],
   )
 
-  function removePhoto(id: string) {
+  const removePhoto = useCallback((id: string) => {
     setPhotos((prev) => {
       const photo = prev.find((p) => p.id === id)
       if (photo?.previewUrl) URL.revokeObjectURL(photo.previewUrl)
       if (photo && !entryId) onFileRemoved?.(photo.file)
       return prev.filter((p) => p.id !== id)
     })
-  }
+  }, [entryId, onFileRemoved])
+
+  // Revoke all blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      setPhotos((prev) => {
+        prev.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+        return prev
+      })
+    }
+  }, [])
 
   const canAddMore = photos.length < MAX_PHOTOS
   const hasPhotos = photos.length > 0
