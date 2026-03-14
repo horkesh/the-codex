@@ -28,7 +28,7 @@ Deno.serve(async (req: Request) => {
             parts: [
               {
                 text: `Analyze this user photo. Return a JSON object with exactly two fields:
-"appearance": a detailed visual description of their face, hair, clothes, and style.
+"appearance": a detailed visual description including skin tone, hair colour and style, eye colour, facial structure, any facial hair, approximate age, and overall style/vibe.
 "traits": an array of exactly 6 personality trait words guessed from the photo.
 Output PURE JSON only, no markdown, no explanation.`,
               },
@@ -63,7 +63,7 @@ Output PURE JSON only, no markdown, no explanation.`,
 
     // Step 2: Generate avatar — Tonight's buildAvatarPrompt
     const traitList = traits.join(', ')
-    const imagePrompt = `Abstract artistic portrait avatar. Subject: ${appearance}. Personality: ${traitList}. Style: Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, high-end digital art, dramatic shadows and highlights, sophisticated composition. No text or words.`
+    const imagePrompt = `Stylised portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: High-end digital painting, cinematic dramatic lighting, rich natural colours preserving the subject's actual skin tone and hair colour, sharp facial detail, sophisticated artistic composition, dark elegant background. No text or labels.`
 
     const imageResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${googleApiKey}`,
