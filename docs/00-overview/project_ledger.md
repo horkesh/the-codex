@@ -4,6 +4,50 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-13 (008)
+
+**Goal**: Studio AI-generated backgrounds; new templates; polish.
+
+**Done**:
+- Created `generate-template-bg` Supabase Edge Function (Imagen 4) — generates cinematic dark backgrounds per entry type; stores in `covers/template-bgs/`; supports `1:1`, `3:4`, `9:16` aspect ratios
+- Created `BackgroundLayer` shared template component — full-bleed bg image + gradient overlay (zIndex 0/1); all content goes to zIndex 2
+- Updated all 6 existing templates to accept `backgroundUrl?: string` and render `BackgroundLayer`: NightOutCard, MissionCarousel, SteakVerdict, PS5MatchCard, GatheringInviteCard, CountdownCard
+- Removed `flagEmoji` from MissionCarousel (no emojis in templates)
+- Created `ToastCard.tsx` (1080×1350) — whisky/spirit session card; supports `spirit`, `dram`, `occasion` metadata
+- Created `InterludeCard.tsx` (1080×1080) — contemplative pull-quote card with corner brackets; lore as primary display
+- Created `src/ai/templateBg.ts` — client-side helper invoking the edge function
+- Studio.tsx wired up: "Generate AI Background" / "Regenerate AI Background" button; `bgUrl` + `generatingBg` state; background clears on template/entry change (aspect ratios differ)
+- Added `TemplateId` union type — `TemplateRenderer` switch is now type-safe; new template without a case = TS error
+- Added AbortController pattern (cancelled flag) to entries fetch — prevents stale setState on unmount
+- Deployed `generate-template-bg` to project `biioztjlsrkgwjyfegey`
+- Deployed to Vercel: https://the-codex-sepia.vercel.app
+
+**Status**: All 8 Studio templates have AI background support. Zero TS errors.
+
+---
+
+## Session — 2026-03-13 (007)
+
+**Goal**: UI redesign — more modern, slick. Integrate gold logo.
+
+**Done**:
+- Warmer colour palette: obsidian `#0d0b0f`, slate-dark `#141019`, slate-mid `#1e1a28`, slate-light `#2c2638`
+- Body warm glow: `body::before` radial gradient `rgba(201,168,76,0.04)` at top
+- `--font-display` switched from `'Syne'` (not self-hosted, fell back to system-ui) → `'Playfair Display'` (already self-hosted)
+- Grain opacity increased `0.025 → 0.04`
+- Floating island bottom nav: pill-shaped, glass morphism, Framer Motion `layoutId` spring for active tab highlight
+- Logo integration (`/logo.png` — circular gold emblem): hero on landing, 24px in TopBar when `logo` prop set
+- `EntryCard` editorial redesign: 215px image, type badge overlay, date pill, `font-display` title, gold border hover
+- `Card` component: removed `border-l-4` entry variant, all variants `rounded-xl`
+- `PageWrapper`: `pb-24 → pb-28` for floating nav clearance
+- `TopBar`: added `logo?: boolean` prop; warmer glass background
+- BrandMark + GoldRule: converted to inline styles only (Tailwind classes don't resolve in html-to-image)
+- Deployed to Vercel
+
+**Status**: Design significantly elevated. No emojis anywhere in UI.
+
+---
+
 ## Session — 2026-03-14
 
 **Goal**: Get all 3 gents able to log in; deploy Edge Functions; fix magic link.

@@ -89,6 +89,18 @@ At session end, Chronicle agent:
 
 ---
 
+26. **Migration timestamps must be unique** — Two migration files with the same timestamp (e.g. `20260314000001_a.sql` and `20260314000001_b.sql`) share a schema_migrations primary key. The second one will always fail with a duplicate key error. Use distinct timestamps. _(Added 2026-03-14)_
+
+27. **Make migrations idempotent** — Use `CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`, and `DO $$ ... $$` blocks for `CREATE POLICY` (which doesn't support IF NOT EXISTS). This prevents partial-apply failures from blocking future pushes. _(Added 2026-03-14)_
+
+28. **Supabase CLI access token lives in Windows Credential Manager** — Target: `Supabase CLI:supabase`. Read with PowerShell DPAPI/CredRead. Use it to call `POST https://api.supabase.com/v1/projects/{ref}/database/query` to fix corrupted schema_migrations entries that `db push` can't recover from. _(Added 2026-03-14)_
+
+29. **LocationFill `overwrite` flag** — `overwrite: false` (or undefined) = fill empty fields only (used for EXIF auto-detect). `overwrite: true` = force-replace all location fields (used when user explicitly taps a saved place chip). Entry forms check this flag in the `detectedLocation` useEffect. _(Added 2026-03-14)_
+
+30. **EXIF geo uses `exifr`** — `exifr.gps(file)` for coordinates, `exifr.parse(file, ['DateTimeOriginal'])` for date. Reverse-geocode with Nominatim `zoom=14` (neighbourhood level). Always set `User-Agent: TheGentsChronicles/1.0`. _(Added 2026-03-14)_
+
+---
+
 ## Shell / environment
 
 24. **Windows environment** — This is Windows 11. Use forward slashes in paths where possible. Use `pnpm` not `npm`. Bash shell available via Git Bash. _(Added 2026-03-13)_

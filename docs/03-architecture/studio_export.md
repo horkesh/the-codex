@@ -6,11 +6,12 @@ The Studio converts any Chronicle entry into an Instagram-ready image. No design
 
 ## Principles
 
-1. **Light backgrounds** — Instagram performs better with light-coloured posts. Studio templates use ivory/white with gold accents, not the dark app UI.
-2. **Brand consistent** — Every export carries the `THE GENTS CHRONICLES` wordmark. Playfair Display + Instrument Sans.
+1. **Dark cinematic** — Templates are dark luxury cards (`#0D0B0F` base), not the earlier ivory/light concept. AI-generated backgrounds add depth via Imagen 4.
+2. **Brand consistent** — Every export carries the `THE GENTS CHRONICLES` wordmark (BrandMark component) and GoldRule dividers.
 3. **Purpose-designed** — Templates are not screenshots of the app. They're designed specifically for Instagram dimensions.
-4. **One click** — Select entry → select template → download. No editing.
+4. **One click** — Select entry → select template → optionally generate AI background → export. No editing.
 5. **Rendered client-side** — `html-to-image` captures an off-screen React component. No server needed.
+6. **Inline styles only** — Tailwind CSS classes do not resolve inside html-to-image. All template styling is inline.
 
 ---
 
@@ -18,10 +19,9 @@ The Studio converts any Chronicle entry into an Instagram-ready image. No design
 
 | Format | Pixels | Use case |
 |---|---|---|
-| Post (square) | 1080 × 1080 | Standard post |
-| Post (portrait) | 1080 × 1350 | Taller post — more feed real estate |
-| Story | 1080 × 1920 | Story / reel cover |
-| Carousel slide | 1080 × 1080 | One slide of a multi-slide post |
+| Post (4:5 portrait) | 1080 × 1350 | **All templates** — maximises feed real estate |
+
+All Studio export templates are 4:5 (1080×1350). Imagen aspect ratio used for AI backgrounds: `3:4` (closest supported; `background-size: cover` handles the minor crop).
 
 ---
 
@@ -30,14 +30,13 @@ The Studio converts any Chronicle entry into an Instagram-ready image. No design
 ### Night Out Card
 **Format**: Post (portrait) — 1080×1350
 **Content**:
-- Entry date (top left, small, Mono font, gold)
-- Venue name (large, Playfair Display)
-- City (Instrument Sans, muted)
-- Vibe rating (5 gold stars, partially filled)
-- Special moment quote (italic, large, centre)
-- Gents who were there (small avatars at bottom)
-- Brand mark (bottom right)
-- Background: soft ivory with subtle grain
+- Venue name (large, Playfair Display, 80px)
+- Location with inline dash dividers (gold)
+- Date (uppercase, muted)
+- Ornamental dot divider
+- Lore/description (italic, clamp 3 lines)
+- Top + bottom GoldRule + BrandMark
+- Background: `#0D0B0F` or AI-generated bar interior scene
 
 ### Mission Dispatch
 **Format**: Carousel (multiple slides)
@@ -136,18 +135,36 @@ Generated after a Gathering is published (post-event phase complete).
 Generated from a Gathering entry in `gathering_pre` state (before the event).
 
 **Content**:
-- Background: dark navy or deep charcoal with grain
-- `T MINUS` (small caps, gold, top)
-- Number of days (very large, Playfair Display, gold) — e.g., `14`
-- `DAYS TO` (small caps, gold)
-- Event title (large, Playfair Display italic, ivory)
-- Location (Instrument Sans, muted)
-- Date (Mono font, gold, bottom)
-- The Gents Chronicles wordmark (bottom centre)
+- `Until` label (gold, spaced)
+- Number of days (240px, Playfair Display, gold glow)
+- `Days` label (muted, spaced)
+- GoldRule
+- Event title + date + location
+- BrandMark (absolute bottom)
+- Background: `#0D0B0F` or AI-generated scene
 
-Example: "14 DAYS TO HERZEGOVINA SUMMER"
+### Toast Card _(new)_
+**Format**: Post (portrait) — 1080×1350
+**Content**:
+- `The Toast` / occasion label (gold, spaced)
+- Session title (76px Playfair Display)
+- Spirit + dram detail with inline dash dividers
+- Location + date
+- Ornamental dot divider
+- Lore (italic, clamp 4 lines)
+- Top + bottom GoldRule + BrandMark
+- Background: `#0D0B0F` or AI-generated whisky glass scene
 
-Share path: Exported from Studio → shared as an Instagram story to build anticipation.
+### Interlude Card _(new)_
+**Format**: Post (square) — 1080×1080
+**Content**:
+- Corner bracket marks (thin gold lines at 4 corners)
+- Large decorative opening quotation mark (muted gold)
+- Pull quote: `entry.lore` if present, else `entry.title`
+- Thin gold rule
+- Entry title (if lore shown above) + date
+- BrandMark (absolute bottom centre)
+- Background: `#0D0B0F` or AI-generated rainy window / city night scene
 
 ---
 
@@ -185,26 +202,43 @@ export async function exportTemplate(
 
 ```tsx
 // src/export/templates/NightOutCard.tsx
-// This component is rendered off-screen (position: fixed, opacity: 0, left: -9999px)
-// Only rendered when export is triggered
-
 interface NightOutCardProps {
   entry: Entry
-  gents: Gent[]
+  backgroundUrl?: string   // AI-generated image URL from generate-template-bg
 }
 
-export function NightOutCard({ entry, gents }: NightOutCardProps) {
-  // Always renders at 1080×1350 — no responsive sizing
-  return (
-    <div
-      style={{ width: 1080, height: 1350, fontFamily: 'Playfair Display' }}
-      className="bg-ivory relative overflow-hidden"
-    >
-      {/* Template content */}
-    </div>
-  )
-}
+export const NightOutCard = React.forwardRef<HTMLDivElement, NightOutCardProps>(
+  ({ entry, backgroundUrl }, ref) => {
+    return (
+      <div ref={ref} style={{ width: '1080px', height: '1350px', backgroundColor: '#0D0B0F', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {/* 1. BackgroundLayer always first — zIndex 0+1 */}
+        <BackgroundLayer url={backgroundUrl} gradient="strong" />
+
+        {/* 2. All content siblings at zIndex 2 */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          {/* template content — ALL inline styles, no Tailwind */}
+        </div>
+      </div>
+    )
+  }
+)
 ```
+
+### AI background flow
+
+```
+User clicks "Generate AI Background"
+  → src/ai/templateBg.ts → supabase.functions.invoke('generate-template-bg')
+  → Edge function → Imagen 4 API → base64 image
+  → Upload to covers/template-bgs/{type}-{ts}.webp in Supabase Storage
+  → Return public URL
+  → Studio sets bgUrl state → passes as backgroundUrl prop to template
+  → BackgroundLayer renders the image behind all content
+```
+
+Imagen 4 supports: `1:1`, `3:4`, `9:16`. Does NOT support `4:5`. All templates are now 1080×1350 → always use `3:4`. CSS `background-size: cover` handles the minor crop difference.
+
+AI prompts include the gents naturally in every scene — three stylish men placed contextually (at a bar, exploring a city, gaming, toasting). Seen from behind or at distance; never portrait close-ups (that's `generate-portrait`).
 
 ### Fonts in exports
 

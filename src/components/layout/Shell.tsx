@@ -13,7 +13,7 @@ interface ShellProps {
  */
 export function Shell({ children }: ShellProps) {
   return (
-    <div className="min-h-screen bg-obsidian flex flex-col">
+    <div className="min-h-dvh bg-obsidian flex flex-col relative">
       {/* Page content — flex-1 so it fills between top and bottom chrome */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {children}

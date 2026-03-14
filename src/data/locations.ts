@@ -1,9 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { SavedLocation, LocationType } from '@/types/app'
 
-// 'locations' table not yet in generated types — cast until types are regenerated after migration
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const locs = () => (supabase as any).from('locations')
+const locs = () => supabase.from('locations')
 
 const COLUMNS = 'id, name, type, city, country, country_code, lat, lng, address, created_by, created_at'
 

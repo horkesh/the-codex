@@ -23,4 +23,11 @@ Active constraints and decisions that shape ongoing development.
 ## Export Templates
 - All templates use `React.forwardRef<HTMLDivElement, Props>` — parent needs the ref for html-to-image
 - Templates use fixed pixel dimensions (never Tailwind responsive) — they are image canvases, not UI
-- Standard root style: `{ width: '1080px', height: 'Npx', backgroundColor: '#0D0D0D', overflow: 'hidden', position: 'relative' }`
+- Standard root style: `{ width: '1080px', height: 'Npx', backgroundColor: '#0D0B0F', overflow: 'hidden', position: 'relative' }`
+- Templates use INLINE STYLES ONLY — Tailwind classes do not resolve reliably inside html-to-image
+- All templates accept `backgroundUrl?: string` → render `<BackgroundLayer url={backgroundUrl} gradient="strong" />` as first child
+- When BackgroundLayer is present, all content siblings need `position: 'relative', zIndex: 2` to float above it
+- BackgroundLayer gradient presets: `'strong'` (0→50→88% opacity) for story/portrait, `'default'` for square
+- All export templates are 4:5 format (1080×1350) — use `3:4` when calling Imagen (closest supported ratio; CSS cover handles the minor crop)
+- All AI image generations (covers + template backgrounds) should include the gents naturally in the scene — three stylish men, seen from behind or at distance, contextually placed. No close-up portraits (that's `generate-portrait`)
+- No emojis in templates — use text dividers and ornamental CSS elements instead

@@ -48,15 +48,15 @@ Deno.serve(async (req: Request) => {
       imagePrompt = `Cinematic wide photograph titled "${title}". Setting: ${setting}. Featuring ${peopleDesc}. Shot from a slight distance, full environment visible, subjects naturally posed. Style: editorial travel photography, film grain, atmospheric, 35mm lens, golden hour or evening light. No text.`
     } else {
       const typePrompts: Record<string, string> = {
-        mission: `Cinematic travel photograph, ${location} landmark or skyline, golden hour, sophisticated atmosphere, no people`,
-        night_out: `Upscale nightlife, moody bar or lounge in ${location}, warm amber lighting, dark luxury atmosphere, no people`,
-        steak: `Fine dining, premium rib-eye on dark plate, candlelight, upscale restaurant, dark elegant atmosphere`,
-        playstation: `Modern gaming setup, PS5 controller, ambient lighting, sleek dark aesthetic`,
-        toast: `Crystal cocktail glasses, premium spirits, warm dim lighting, sophisticated bar`,
-        gathering: `Elegant private venue, warm ambient lighting, intimate atmosphere`,
-        interlude: `Contemplative cityscape at night, soft bokeh, dark moody tones`,
+        mission: `Three stylish well-dressed men exploring ${location}, seen from behind at a famous landmark or city street, golden hour, cinematic atmosphere`,
+        night_out: `Three stylish men at an upscale bar or lounge in ${location}, warm amber lighting, dark luxury atmosphere, seen from behind or at distance`,
+        steak: `Three well-dressed men at a fine dining table, candlelight, dark marble, wine glasses, hands visible, elegant atmosphere`,
+        playstation: `Three friends in a dark room facing a screen, controllers in hand, ambient LED glow, relaxed and competitive`,
+        toast: `Three men raising whisky glasses in a toast, dramatic rim lighting, amber tones, bokeh background`,
+        gathering: `Three well-dressed men at an elegant private event, warm candlelight, intimate atmosphere, seen at middle distance`,
+        interlude: `A lone silhouetted figure at a rain-streaked window overlooking city lights at night, contemplative, cinematic`,
       }
-      imagePrompt = `${typePrompts[entry.type] || 'Dark luxury lifestyle photography'}. Style: cinematic, high-end editorial, muted dark palette with gold accents. No text.`
+      imagePrompt = `${typePrompts[entry.type] || 'Three stylish men in a dark luxury setting, cinematic'}. Style: cinematic, high-end editorial, muted dark palette with gold accents. No text.`
     }
 
     // Call Imagen 4
@@ -67,7 +67,7 @@ Deno.serve(async (req: Request) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           instances: [{ prompt: imagePrompt }],
-          parameters: { sampleCount: 1, aspectRatio: '1:1', safetyFilterLevel: 'block_only_high' },
+          parameters: { sampleCount: 1, aspectRatio: '3:4', safetyFilterLevel: 'block_only_high' },
         }),
       }
     )

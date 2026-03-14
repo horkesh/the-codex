@@ -91,7 +91,7 @@ export function useUpcomingGatherings(): { upcoming: EntryWithParticipants[]; lo
       // Fetch participants
       const { data: participantRows, error: pErr } = await supabase
         .from('entry_participants')
-        .select('gent_id, entry_id, gents:gent_id (id, alias, display_name, full_alias, avatar_url, bio)')
+        .select('gent_id, entry_id, gents:gent_id (id, alias, display_name, full_alias, avatar_url, bio, portrait_url, status, status_expires_at)')
         .in('entry_id', entryIds)
 
       if (pErr) throw pErr

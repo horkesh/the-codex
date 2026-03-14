@@ -75,6 +75,67 @@ export type Database = {
           },
         ]
       }
+      bucket_list: {
+        Row: {
+          added_by: string | null
+          category: string | null
+          city: string | null
+          converted_entry_id: string | null
+          country: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          added_by?: string | null
+          category?: string | null
+          city?: string | null
+          converted_entry_id?: string | null
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          added_by?: string | null
+          category?: string | null
+          city?: string | null
+          converted_entry_id?: string | null
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bucket_list_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "gent_stats"
+            referencedColumns: ["gent_id"]
+          },
+          {
+            foreignKeyName: "bucket_list_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "gents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bucket_list_converted_entry_id_fkey"
+            columns: ["converted_entry_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entries: {
         Row: {
           city: string | null
@@ -90,6 +151,7 @@ export type Database = {
           lore: string | null
           lore_generated_at: string | null
           metadata: Json
+          scene_url: string | null
           status: string
           title: string
           type: string
@@ -109,6 +171,7 @@ export type Database = {
           lore?: string | null
           lore_generated_at?: string | null
           metadata?: Json
+          scene_url?: string | null
           status?: string
           title: string
           type: string
@@ -128,6 +191,7 @@ export type Database = {
           lore?: string | null
           lore_generated_at?: string | null
           metadata?: Json
+          scene_url?: string | null
           status?: string
           title?: string
           type?: string
@@ -280,30 +344,42 @@ export type Database = {
       gents: {
         Row: {
           alias: string
+          appearance_description: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string | null
           display_name: string
           full_alias: string
           id: string
+          portrait_url: string | null
+          status: string | null
+          status_expires_at: string | null
         }
         Insert: {
           alias: string
+          appearance_description?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           display_name: string
           full_alias: string
           id: string
+          portrait_url?: string | null
+          status?: string | null
+          status_expires_at?: string | null
         }
         Update: {
           alias?: string
+          appearance_description?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           display_name?: string
           full_alias?: string
           id?: string
+          portrait_url?: string | null
+          status?: string | null
+          status_expires_at?: string | null
         }
         Relationships: []
       }
@@ -338,6 +414,63 @@ export type Database = {
             columns: ["entry_id"]
             isOneToOne: false
             referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locations: {
+        Row: {
+          address: string | null
+          city: string
+          country: string
+          country_code: string
+          created_at: string | null
+          created_by: string
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          type: string
+        }
+        Insert: {
+          address?: string | null
+          city: string
+          country: string
+          country_code: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          type?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string
+          country?: string
+          country_code?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gent_stats"
+            referencedColumns: ["gent_id"]
+          },
+          {
+            foreignKeyName: "locations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gents"
             referencedColumns: ["id"]
           },
         ]
@@ -395,6 +528,7 @@ export type Database = {
       people: {
         Row: {
           added_by: string | null
+          category: string | null
           created_at: string | null
           id: string
           instagram: string | null
@@ -405,9 +539,14 @@ export type Database = {
           name: string
           notes: string | null
           photo_url: string | null
+          poi_intel: string | null
+          poi_source_gent: string | null
+          poi_source_url: string | null
+          poi_visibility: string | null
         }
         Insert: {
           added_by?: string | null
+          category?: string | null
           created_at?: string | null
           id?: string
           instagram?: string | null
@@ -418,9 +557,14 @@ export type Database = {
           name: string
           notes?: string | null
           photo_url?: string | null
+          poi_intel?: string | null
+          poi_source_gent?: string | null
+          poi_source_url?: string | null
+          poi_visibility?: string | null
         }
         Update: {
           added_by?: string | null
+          category?: string | null
           created_at?: string | null
           id?: string
           instagram?: string | null
@@ -431,6 +575,10 @@ export type Database = {
           name?: string
           notes?: string | null
           photo_url?: string | null
+          poi_intel?: string | null
+          poi_source_gent?: string | null
+          poi_source_url?: string | null
+          poi_visibility?: string | null
         }
         Relationships: [
           {
@@ -452,6 +600,20 @@ export type Database = {
             columns: ["met_at_entry"]
             isOneToOne: false
             referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_poi_source_gent_fkey"
+            columns: ["poi_source_gent"]
+            isOneToOne: false
+            referencedRelation: "gent_stats"
+            referencedColumns: ["gent_id"]
+          },
+          {
+            foreignKeyName: "people_poi_source_gent_fkey"
+            columns: ["poi_source_gent"]
+            isOneToOne: false
+            referencedRelation: "gents"
             referencedColumns: ["id"]
           },
         ]
@@ -501,6 +663,188 @@ export type Database = {
             columns: ["person_id"]
             isOneToOne: false
             referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospects: {
+        Row: {
+          city: string | null
+          converted_entry_id: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          dress_code: string | null
+          estimated_price: string | null
+          event_date: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          source_thumbnail_url: string | null
+          source_url: string | null
+          status: string | null
+          venue_name: string | null
+          vibe: string | null
+        }
+        Insert: {
+          city?: string | null
+          converted_entry_id?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          dress_code?: string | null
+          estimated_price?: string | null
+          event_date?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          source_thumbnail_url?: string | null
+          source_url?: string | null
+          status?: string | null
+          venue_name?: string | null
+          vibe?: string | null
+        }
+        Update: {
+          city?: string | null
+          converted_entry_id?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          dress_code?: string | null
+          estimated_price?: string | null
+          event_date?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          source_thumbnail_url?: string | null
+          source_url?: string | null
+          status?: string | null
+          venue_name?: string | null
+          vibe?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_converted_entry_id_fkey"
+            columns: ["converted_entry_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gent_stats"
+            referencedColumns: ["gent_id"]
+          },
+          {
+            foreignKeyName: "prospects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reactions: {
+        Row: {
+          created_at: string | null
+          entry_id: string | null
+          gent_id: string | null
+          id: string
+          reaction_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          entry_id?: string | null
+          gent_id?: string | null
+          id?: string
+          reaction_type: string
+        }
+        Update: {
+          created_at?: string | null
+          entry_id?: string | null
+          gent_id?: string | null
+          id?: string
+          reaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reactions_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reactions_gent_id_fkey"
+            columns: ["gent_id"]
+            isOneToOne: false
+            referencedRelation: "gent_stats"
+            referencedColumns: ["gent_id"]
+          },
+          {
+            foreignKeyName: "reactions_gent_id_fkey"
+            columns: ["gent_id"]
+            isOneToOne: false
+            referencedRelation: "gents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          cover_url: string | null
+          created_at: string | null
+          created_by: string | null
+          entry_ids: string[] | null
+          id: string
+          lore: string | null
+          stamp_url: string | null
+          status: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entry_ids?: string[] | null
+          id?: string
+          lore?: string | null
+          stamp_url?: string | null
+          status?: string | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entry_ids?: string[] | null
+          id?: string
+          lore?: string | null
+          stamp_url?: string | null
+          status?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gent_stats"
+            referencedColumns: ["gent_id"]
+          },
+          {
+            foreignKeyName: "stories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gents"
             referencedColumns: ["id"]
           },
         ]

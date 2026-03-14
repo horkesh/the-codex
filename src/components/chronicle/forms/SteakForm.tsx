@@ -18,6 +18,7 @@ interface SteakFormProps {
   onSubmit: (data: SteakFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  initialData?: Partial<SteakFormData>
 }
 
 const CUTS = ['Ribeye', 'Wagyu', 'T-Bone', 'Striploin', 'Fillet', 'Other']
@@ -38,8 +39,8 @@ interface FieldErrors {
   score?: string
 }
 
-export function SteakForm({ onSubmit, loading, detectedLocation }: SteakFormProps) {
-  const [form, setForm] = useState<SteakFormData>(empty)
+export function SteakForm({ onSubmit, loading, detectedLocation, initialData }: SteakFormProps) {
+  const [form, setForm] = useState<SteakFormData>(() => ({ ...empty, ...initialData }))
 
   useEffect(() => {
     if (!detectedLocation) return

@@ -10,7 +10,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { supabase } from '@/lib/supabase'
-import { updateGent } from '@/data/gents'
+import { updateGent, updateGentStatus } from '@/data/gents'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 
 function SectionDivider({ label }: { label: string }) {
@@ -57,6 +57,8 @@ export default function Profile() {
   const [saving, setSaving] = useState(false)
   const [generatingPortrait, setGeneratingPortrait] = useState(false)
   const [portraitSeconds, setPortraitSeconds] = useState(0)
+  const [showStatusInput, setShowStatusInput] = useState(false)
+  const [statusInput, setStatusInput] = useState('')
 
   const photoInputRef = useRef<HTMLInputElement>(null)
 
@@ -122,6 +124,51 @@ export default function Profile() {
       addToast('Portrait generation failed. Try again.', 'error')
     } finally {
       setGeneratingPortrait(false)
+    }
+  }
+
+  async function handleGeneratePortrait() {
+    if (!gent) return
+    setGeneratingPortrait(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-portrait', {
+        body: { gent_id: gent.id, display_name: gent.display_name },
+      })
+      if (error) throw error
+      if (data?.portrait_url) {
+        setGent({ ...gent, portrait_url: data.portrait_url })
+        addToast('Portrait generated.', 'success')
+      }
+    } catch {
+      addToast('Portrait generation failed.', 'error')
+    } finally {
+      setGeneratingPortrait(false)
+    }
+  }
+
+  async function handleSetStatus() {
+    if (!gent) return
+    const trimmed = statusInput.trim()
+    if (!trimmed) return
+    try {
+      await updateGentStatus(gent.id, trimmed, null)
+      setGent({ ...gent, status: trimmed })
+      setShowStatusInput(false)
+      setStatusInput('')
+      addToast('Status updated.', 'success')
+    } catch {
+      addToast('Failed to update status.', 'error')
+    }
+  }
+
+  async function handleClearStatus() {
+    if (!gent) return
+    try {
+      await updateGentStatus(gent.id, null, null)
+      setGent({ ...gent, status: null, status_expires_at: null })
+      addToast('Status cleared.', 'success')
+    } catch {
+      addToast('Failed to clear status.', 'error')
     }
   }
 
@@ -191,6 +238,48 @@ export default function Profile() {
             </button>
           </motion.div>
 
+          {/* Portrait */}
+          <motion.div variants={staggerItem} className="w-full max-w-sm mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs tracking-[0.25em] uppercase text-ivory-dim font-body">Portrait</h2>
+            </div>
+            {gent.portrait_url ? (
+              <div className="flex items-center gap-4">
+                <img
+                  src={gent.portrait_url}
+                  alt="Portrait"
+                  className="w-24 h-24 rounded-full border border-gold/30 object-cover"
+                />
+                <div>
+                  <p className="text-xs text-ivory-muted font-body">AI-generated character portrait</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleGeneratePortrait}
+                    loading={generatingPortrait}
+                    className="mt-2 text-xs"
+                  >
+                    Regenerate
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-slate-dark border border-white/5 rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+                <p className="text-xs text-ivory-dim font-body leading-relaxed">
+                  Generate an AI portrait — a stylised character illustration used on your Calling Card export.
+                </p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleGeneratePortrait}
+                  loading={generatingPortrait}
+                >
+                  Generate Portrait
+                </Button>
+              </div>
+            )}
+          </motion.div>
+
           {/* Identity */}
           <motion.div variants={staggerItem} className="text-center mb-1">
             <h1 className="font-display text-2xl text-ivory">{gent.full_alias}</h1>
@@ -257,6 +346,54 @@ export default function Profile() {
               </span>
               <ChevronRight size={15} className="text-ivory-dim" />
             </button>
+
+            {/* Status */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs tracking-[0.25em] uppercase text-ivory-dim font-body">Status</h2>
+                {gent.status && (
+                  <button
+                    type="button"
+                    onClick={handleClearStatus}
+                    className="text-xs text-ivory-dim hover:text-ivory font-body transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {gent.status ? (
+                <div className="bg-slate-dark border border-gold/20 rounded-xl px-4 py-3 flex items-center justify-between">
+                  <span className="text-sm text-ivory font-body">{gent.status}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setStatusInput(gent.status ?? ''); setShowStatusInput(true) }}
+                    className="text-xs text-gold hover:text-gold/80 font-body transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowStatusInput(true)}
+                  className="w-full text-left bg-slate-dark border border-white/5 rounded-xl px-4 py-3 text-sm text-ivory-dim font-body hover:border-white/10 transition-colors"
+                >
+                  Set a status — "Out tonight · Mayfair"
+                </button>
+              )}
+              {showStatusInput && (
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    value={statusInput}
+                    onChange={(e) => setStatusInput((e.target as HTMLInputElement).value)}
+                    placeholder='Out tonight · Mayfair'
+                    maxLength={60}
+                    className="flex-1"
+                  />
+                  <Button size="sm" variant="primary" onClick={handleSetStatus}>Set</Button>
+                </div>
+              )}
+            </div>
 
             {/* Account */}
             <SectionDivider label="Account" />

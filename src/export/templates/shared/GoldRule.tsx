@@ -1,18 +1,13 @@
-import { cn } from '@/lib/utils'
-
 interface GoldRuleProps {
   thick?: boolean
-  className?: string
 }
 
-export function GoldRule({ thick = false, className }: GoldRuleProps) {
+export function GoldRule({ thick = false }: GoldRuleProps) {
   return (
-    <div
-      className={cn(
-        'w-full bg-gradient-to-r from-transparent via-gold/60 to-transparent',
-        thick ? 'h-0.5' : 'h-px',
-        className,
-      )}
-    />
+    <div style={{
+      width: '100%',
+      height: thick ? '2px' : '1px',
+      background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.6), transparent)',
+    }} />
   )
 }

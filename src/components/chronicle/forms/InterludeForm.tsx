@@ -12,6 +12,7 @@ export interface InterludeFormData {
 interface InterludeFormProps {
   onSubmit: (data: InterludeFormData) => Promise<void>
   loading: boolean
+  initialData?: Partial<InterludeFormData>
 }
 
 const empty: InterludeFormData = {
@@ -25,8 +26,8 @@ interface FieldErrors {
   date?: string
 }
 
-export function InterludeForm({ onSubmit, loading }: InterludeFormProps) {
-  const [form, setForm] = useState<InterludeFormData>(empty)
+export function InterludeForm({ onSubmit, loading, initialData }: InterludeFormProps) {
+  const [form, setForm] = useState<InterludeFormData>(() => ({ ...empty, ...initialData }))
   const [errors, setErrors] = useState<FieldErrors>({})
 
   function set(field: keyof InterludeFormData, value: string) {

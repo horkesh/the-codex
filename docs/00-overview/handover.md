@@ -4,17 +4,16 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-## Current state (2026-03-14)
+## Current state (2026-03-13)
 
 **Phase**: **FULLY LIVE.** App deployed, all users seeded, Edge Functions deployed, AI secrets set.
 
-**What was just done** (post-launch session):
-- Pre-created 3 Supabase auth users (no email sent, `email_confirm: true` via Admin API)
-- Seeded `gents` table rows for all 3 users (alias, display_name, full_alias)
-- Deployed all 7 Edge Functions via `supabase functions deploy`
-- Set `ANTHROPIC_API_KEY` and `GOOGLE_AI_API_KEY` as Supabase secrets
-- Fixed magic link redirect (was pointing to localhost — updated `site_url` in config.toml to Vercel URL)
-- Custom magic link email template (`supabase/templates/magic_link.html`) — dark gold branded design
+**What was just done** (Sessions 007 + 008):
+- **UI redesign**: warmer dark palette (#0d0b0f obsidian), Playfair Display as `--font-display`, floating island bottom nav with Framer Motion spring, gold logo medallion on landing + TopBar, editorial EntryCard, no emojis anywhere
+- **Studio AI backgrounds**: "Generate AI Background" button in Studio calls `generate-template-bg` edge function (Imagen 4) — produces cinematic dark backgrounds per entry type; passed to template as `backgroundUrl`
+- **2 new Studio templates**: `ToastCard` (1080×1350 — whisky sessions) and `InterludeCard` (1080×1080 — pull-quote reflection)
+- **All 8 templates** now accept `backgroundUrl?: string` via shared `BackgroundLayer` component
+- `generate-template-bg` edge function deployed to Supabase project `biioztjlsrkgwjyfegey`
 
 **Gent auth accounts** (pre-created, no signup needed):
 - `haris.daul@gmail.com` → alias: `lorekeeper` (Haris)
@@ -28,9 +27,11 @@ _Updated at the end of every session. Read this first when resuming._
 - Circle — people directory with RLS-enforced private notes
 - Ledger — per-gent stats, PS5 H2H rivalry, Mission timeline, Claude Wrapped narrative
 - Gathering lifecycle — creation, invite, RSVP, guestbook (public pages, no auth), post-event view
-- Studio — 9 Instagram-ready export templates via html-to-image
-- Profile — avatar upload, bio edit, sign out
-- PWA — installable, service worker, precache
+- Studio — 8 dark cinematic export templates (NightOut, Mission, Steak, PS5, GatheringInvite, Countdown, Toast, Interlude); AI-generated backgrounds via Imagen 4
+- Profile — avatar upload (AI portrait), name/role/bio edit, sign out
+- Saved Places — shared POI database, GPS detection, chip bar in entry forms, EXIF proximity match
+- EXIF geo-extraction — photo upload auto-fills location + date from image metadata
+- PWA — installable (no SW caching)
 
 **What's left** (future sessions):
 - Seed Budapest 2023 Instagram profiles into Circle
@@ -59,4 +60,4 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-_← Updated 2026-03-14_
+_← Updated 2026-03-13 (Sessions 007 + 008)_

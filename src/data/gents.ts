@@ -32,3 +32,11 @@ export async function updateGent(id: string, updates: Partial<Omit<Gent, 'id' | 
   if (error || !data) return null
   return data as Gent
 }
+
+export async function updateGentStatus(id: string, status: string | null, expiresAt: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('gents')
+    .update({ status, status_expires_at: expiresAt })
+    .eq('id', id)
+  if (error) throw error
+}

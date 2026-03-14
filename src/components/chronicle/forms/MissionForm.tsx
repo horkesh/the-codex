@@ -18,6 +18,7 @@ interface MissionFormProps {
   onSubmit: (data: MissionFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  initialData?: Partial<MissionFormData>
 }
 
 const empty: MissionFormData = {
@@ -37,8 +38,8 @@ interface FieldErrors {
   country?: string
 }
 
-export function MissionForm({ onSubmit, loading, detectedLocation }: MissionFormProps) {
-  const [form, setForm] = useState<MissionFormData>(empty)
+export function MissionForm({ onSubmit, loading, detectedLocation, initialData }: MissionFormProps) {
+  const [form, setForm] = useState<MissionFormData>(() => ({ ...empty, ...initialData }))
   const [errors, setErrors] = useState<FieldErrors>({})
 
   useEffect(() => {

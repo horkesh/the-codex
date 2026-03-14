@@ -24,6 +24,9 @@ export interface Gent {
   full_alias: string
   avatar_url: string | null
   bio: string | null
+  portrait_url: string | null
+  status: string | null
+  status_expires_at: string | null
 }
 
 export interface Entry {
@@ -39,6 +42,7 @@ export interface Entry {
   lore: string | null
   lore_generated_at: string | null
   cover_image_url: string | null
+  scene_url: string | null
   status: EntryStatus
   metadata: Record<string, unknown>
   created_by: string
@@ -74,6 +78,11 @@ export interface Person {
   notes: string | null
   labels: string[]
   added_by: string
+  category: PersonCategory
+  poi_source_url: string | null
+  poi_intel: string | null
+  poi_source_gent: string | null
+  poi_visibility: POIVisibility
 }
 
 export interface PersonWithPrivateNote extends Person {
@@ -133,4 +142,110 @@ export interface GatheringMetadata {
   qr_code_url: string | null
   guest_book_count: number
   phase: 'pre' | 'post'
+}
+
+// Person of Interest (subcategory of people)
+export type PersonCategory = 'contact' | 'person_of_interest'
+export type POIVisibility = 'private' | 'circle'
+
+// Prospect (possible future event scouted from Instagram)
+export interface Prospect {
+  id: string
+  created_by: string
+  source_url: string | null
+  source_thumbnail_url: string | null
+  venue_name: string | null
+  location: string | null
+  city: string | null
+  country: string | null
+  event_date: string | null
+  estimated_price: string | null
+  vibe: string | null
+  dress_code: string | null
+  notes: string | null
+  status: 'prospect' | 'passed' | 'converted'
+  converted_entry_id: string | null
+  created_at: string
+}
+
+// Story (curated multi-entry narrative arc for Passport)
+export interface Story {
+  id: string
+  title: string
+  subtitle: string | null
+  cover_url: string | null
+  lore: string | null
+  stamp_url: string | null
+  created_by: string
+  entry_ids: string[]
+  status: 'draft' | 'published'
+  created_at: string
+  updated_at: string
+}
+
+// Reaction (gent reaction to an entry)
+export type ReactionType = 'legendary' | 'classic' | 'ruthless' | 'noted'
+export interface Reaction {
+  id: string
+  entry_id: string
+  gent_id: string
+  reaction_type: ReactionType
+  created_at: string
+}
+
+// Bucket list item
+export interface BucketListItem {
+  id: string
+  title: string
+  category: EntryType | 'other' | null
+  city: string | null
+  country: string | null
+  notes: string | null
+  added_by: string
+  status: 'open' | 'done' | 'passed'
+  converted_entry_id: string | null
+  created_at: string
+}
+
+// Gent status (live status, set manually)
+export interface GentStatus {
+  status: string | null
+  status_expires_at: string | null
+}
+
+// Whereabouts (ephemeral, not persisted)
+export interface GentWhereabouts {
+  gent_id: string
+  lat: number
+  lng: number
+  neighborhood: string
+  shared_at: number
+  expires_at: number
+}
+
+// Instagram analysis result
+export interface InstagramAnalysis {
+  // Event/venue mode
+  venue_name?: string
+  location?: string
+  city?: string
+  country?: string
+  event_date?: string | null
+  estimated_price?: string
+  dress_code?: string
+  vibe?: string
+  confidence?: number
+  // Profile mode
+  display_name?: string
+  username?: string
+  bio?: string
+  apparent_location?: string
+  apparent_interests?: string
+  suggested_approach?: string
+  notable_details?: string
+  // Screenshot specific
+  post_count?: string
+  follower_count?: string
+  following_count?: string
+  recent_post_themes?: string[]
 }

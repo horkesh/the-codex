@@ -3,6 +3,8 @@ import { Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useChronicle, useUpcomingGatherings } from '@/hooks/useChronicle'
 import { EntryCard } from '@/components/chronicle/EntryCard'
+import { AlmanacWidget } from '@/components/chronicle/AlmanacWidget'
+import { WhereaboutsWidget } from '@/components/whereabouts/WhereaboutsWidget'
 import { ChronicleFilters } from '@/components/chronicle/ChronicleFilters'
 import { TopBar } from '@/components/layout'
 import { PageWrapper } from '@/components/layout'
@@ -24,6 +26,7 @@ export default function Chronicle() {
     <>
       <TopBar
         title="The Chronicle"
+        logo
         right={
           gent ? (
             <button
@@ -43,6 +46,9 @@ export default function Chronicle() {
       />
 
       <PageWrapper padded={false} className="flex flex-col">
+        <AlmanacWidget />
+        <WhereaboutsWidget />
+
         {/* Upcoming gatherings strip */}
         <AnimatePresence>
           {upcoming.length > 0 && (
@@ -118,7 +124,7 @@ export default function Chronicle() {
         transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.3 }}
         whileTap={{ scale: 0.92 }}
         className="fixed right-4 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-gold text-obsidian font-body font-semibold shadow-[0_0_40px_rgba(201,168,76,0.3)]"
-        style={{ bottom: '80px' }}
+        style={{ bottom: '90px' }}
       >
         <Plus size={24} strokeWidth={2.5} />
       </motion.button>

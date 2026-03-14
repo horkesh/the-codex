@@ -19,6 +19,12 @@ import Ledger from '@/pages/Ledger'
 import Profile from '@/pages/Profile'
 import Help from '@/pages/Help'
 import Places from '@/pages/Places'
+import EntryEdit from '@/pages/EntryEdit'
+import Prospects from '@/pages/Prospects'
+import StoryNew from '@/pages/StoryNew'
+import StoryDetail from '@/pages/StoryDetail'
+import DossierMap from '@/pages/DossierMap'
+import BucketList from '@/pages/BucketList'
 
 // Public pages (no auth)
 import PublicInvite from '@/pages/public/PublicInvite'
@@ -45,6 +51,12 @@ function AnimatedRoutes() {
         <Route path="/chronicle" element={<ProtectedRoute><Chronicle /></ProtectedRoute>} />
         <Route path="/chronicle/new" element={<ProtectedRoute><EntryNew /></ProtectedRoute>} />
         <Route path="/chronicle/:id" element={<ProtectedRoute><EntryDetail /></ProtectedRoute>} />
+        <Route path="/chronicle/:id/edit" element={<ProtectedRoute><EntryEdit /></ProtectedRoute>} />
+        <Route path="/prospects" element={<ProtectedRoute><Prospects /></ProtectedRoute>} />
+        <Route path="/passport/stories/new" element={<ProtectedRoute><StoryNew /></ProtectedRoute>} />
+        <Route path="/passport/stories/:id" element={<ProtectedRoute><StoryDetail /></ProtectedRoute>} />
+        <Route path="/dossier" element={<ProtectedRoute><DossierMap /></ProtectedRoute>} />
+        <Route path="/bucket-list" element={<ProtectedRoute><BucketList /></ProtectedRoute>} />
         <Route path="/gathering/new" element={<ProtectedRoute><GatheringNew /></ProtectedRoute>} />
         <Route path="/gathering/:id" element={<ProtectedRoute><GatheringDetail /></ProtectedRoute>} />
         <Route path="/passport" element={<ProtectedRoute><Passport /></ProtectedRoute>} />

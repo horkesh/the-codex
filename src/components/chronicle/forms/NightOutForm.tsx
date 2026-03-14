@@ -15,6 +15,7 @@ interface NightOutFormProps {
   onSubmit: (data: NightOutFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  initialData?: Partial<NightOutFormData>
 }
 
 const empty: NightOutFormData = {
@@ -29,8 +30,8 @@ interface FieldErrors {
   date?: string
 }
 
-export function NightOutForm({ onSubmit, loading, detectedLocation }: NightOutFormProps) {
-  const [form, setForm] = useState<NightOutFormData>(empty)
+export function NightOutForm({ onSubmit, loading, detectedLocation, initialData }: NightOutFormProps) {
+  const [form, setForm] = useState<NightOutFormData>(() => ({ ...empty, ...initialData }))
 
   useEffect(() => {
     if (!detectedLocation) return

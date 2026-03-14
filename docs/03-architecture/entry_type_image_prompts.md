@@ -4,9 +4,25 @@ Standalone prompts for **entry-type category images**, **empty-state illustratio
 
 ---
 
+## Dimensions rationale (use this so you only generate once)
+
+| # | Asset | Dimensions | Where used | Why this size |
+|---|--------|------------|------------|----------------|
+| 1–7 | Entry-type images | **1080×608 (16:9)** | EntryTypeSelector (card bg), EntryCard (feed, no cover), EntryHero (detail, no cover) | Feed card and hero are landscape; selector uses same image with `object-fit: cover`. Landscape avoids centre-crop waste. |
+| 8 | Chronicle empty | **1080×1080 (1:1)** | Chronicle page, centered above “The Chronicle awaits…” + button | Centered illustration in a column; displayed at ~240–320px. Square fits and scales down cleanly. |
+| 9 | Circle empty | **1080×1080 (1:1)** | Circle page, centered above “Your circle is empty” + button | Same as above. |
+| 10 | Passport empty | **1080×1080 (1:1)** | Passport StampGrid, “No stamps yet” (and Missions tab empty) | Centered above short text. Square. |
+| 11 | Passport achievements empty | **1080×1080 (1:1)** | Passport StampGrid, Achievements tab “No achievement stamps yet” | Centered above short text. Square. |
+| 12 | Grain | **512×512 (1:1)** | App background overlay, CSS `background-repeat` | Tilable texture; 512 is enough for seamless repeat at low opacity. |
+| 13 | Guilloche | **1080×1080 (1:1)** | Passport/stamp decoration, `background-image` or tiled | Tiled or full-panel; square tiles cleanly. |
+
+Generate each asset once at the size in the table; the prompts below match these dimensions.
+
+---
+
 ## Brand reference: attach this image
 
-**Attach the reference image** (e.g. **docs/01 Gold logo.png**) **only for prompts that say "Match the attached reference image"**—Mission (passport/stamp), Passport empty, Passport achievements empty, Guilloche. Those are the only images where the circular emblem style fits. The generator only sees the prompt and the attached image—it does not know about “the app.” Describe the style in the prompt; the attachment shows the exact gold tone and level of detail.
+**Attach the reference image** (e.g. **docs/01 Gold logo.png**) **only for prompts that say "Match the attached reference image"**—Mission (passport/stamp), Chronicle empty, Passport empty, Passport achievements empty, Guilloche. Those are the only images where the circular emblem style fits. The generator only sees the prompt and the attached image—it does not know about “the app.” Describe the style in the prompt; the attachment shows the exact gold tone and level of detail.
 
 **What the reference shows:** A circular emblem: three silhouetted figures, warm gold (#c9a84c) on solid black, minimalist line-art, classic high-end. No text. **All other prompts** use the same colour discipline (gold and black, plus type accent where stated) but do **not** need the logo attached—they are cinematic/editorial, not emblematic.
 
@@ -17,7 +33,7 @@ Standalone prompts for **entry-type category images**, **empty-state illustratio
 ## 1. Mission — attach logo
 
 ```
-Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Match the attached reference image: circular emblem in warm gold (#c9a84c) on solid black, minimalist line-art or silhouette, classic high-end. Use only that gold and black (plus the type colour below); no text, no logos, no clutter. Dark luxury atmosphere, cinematic composition, shallow depth of field. Add deep purple tones (#3d2b6b) for this type. No text, no logos, no people's faces. Scene: A passport or travel document in soft focus, corner of a vintage map, or a single gold stamp seal on dark leather. Evokes travel, missions, and adventure. Deep purple shadows, one subtle gold highlight. No emojis, no flags, no text. Output size: 1080×1080.
+Image dimensions: 1080 pixels wide by 608 pixels tall, landscape 16:9. Match the attached reference image: circular emblem in warm gold (#c9a84c) on solid black, minimalist line-art or silhouette, classic high-end. Use only that gold and black (plus the type colour below); no text, no logos, no clutter. Dark luxury atmosphere, cinematic composition, shallow depth of field. Add deep purple tones (#3d2b6b) for this type. No text, no logos, no people's faces. Scene: A passport or travel document in soft focus, corner of a vintage map, or a single gold stamp seal on dark leather. Evokes travel, missions, and adventure. Deep purple shadows, one subtle gold highlight. No emojis, no flags, no text. Output size: 1080×608.
 ```
 
 ---
@@ -25,7 +41,7 @@ Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Match the at
 ## 2. Night Out
 
 ```
-Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), navy blue (#0f2038), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: City skyline at night, or neon glow reflected on wet pavement, or the rim of a glass in a dark bar with one gold reflection. Evokes nights out, the city after dark. Navy and black dominant, one subtle gold accent. No text, no signs with readable words. Output size: 1080×1080.
+Image dimensions: 1080 pixels wide by 608 pixels tall, landscape 16:9. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), navy blue (#0f2038), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: City skyline at night, or neon glow reflected on wet pavement, or the rim of a glass in a dark bar with one gold reflection. Evokes nights out, the city after dark. Navy and black dominant, one subtle gold accent. No text, no signs with readable words. Output size: 1080×608.
 ```
 
 ---
@@ -33,7 +49,7 @@ Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury 
 ## 3. The Table (Steak)
 
 ```
-Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), deep brown (#3d1a0a), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: A premium cut of meat on a dark plate, or silver cutlery on a dark tablecloth with candlelight, or the edge of a grill with warm ember glow. Evokes the table, steak, a proper meal. Rich browns and black, one gold highlight on metal or rim. No text, no menus. Output size: 1080×1080.
+Image dimensions: 1080 pixels wide by 608 pixels tall, landscape 16:9. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), deep brown (#3d1a0a), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: A premium cut of meat on a dark plate, or silver cutlery on a dark tablecloth with candlelight, or the edge of a grill with warm ember glow. Evokes the table, steak, a proper meal. Rich browns and black, one gold highlight on metal or rim. No text, no menus. Output size: 1080×608.
 ```
 
 ---
@@ -41,7 +57,7 @@ Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury 
 ## 4. The Pitch (PlayStation)
 
 ```
-Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), dark teal-green (#0a2420), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: A PlayStation-style controller (DualShock shape, symmetric thumbsticks) in silhouette or soft focus on a dark surface—nothing else in frame, no shield, no crest, no emblem beside it. Alternative: stadium-style lighting in deep green and black, or the glow of a screen in a dark room. Evokes the pitch, competition, match day. Teal-green and black dominant, one gold accent. No readable UI, no brand logos. Output size: 1080×1080.
+Image dimensions: 1080 pixels wide by 608 pixels tall, landscape 16:9. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), dark teal-green (#0a2420), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: A PlayStation-style controller (DualShock shape, symmetric thumbsticks) in silhouette or soft focus on a dark surface—nothing else in frame, no shield, no crest, no emblem beside it. Alternative: stadium-style lighting in deep green and black, or the glow of a screen in a dark room. Evokes the pitch, competition, match day. Teal-green and black dominant, one gold accent. No readable UI, no brand logos. Output size: 1080×608.
 ```
 
 ---
@@ -49,7 +65,7 @@ Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury 
 ## 5. The Toast
 
 ```
-Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), warm amber-brown (#3d2010), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: A whisky glass or cocktail glass on a dark bar, or a bottle and tumbler in soft focus, or amber liquid catching one gold light. Evokes the toast, cocktails, a session. Amber and brown dominant, one gold highlight. No labels, no text. Output size: 1080×1080.
+Image dimensions: 1080 pixels wide by 608 pixels tall, landscape 16:9. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), warm amber-brown (#3d2010), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: A whisky glass or cocktail glass on a dark bar, or a bottle and tumbler in soft focus, or amber liquid catching one gold light. Evokes the toast, cocktails, a session. Amber and brown dominant, one gold highlight. No labels, no text. Output size: 1080×608.
 ```
 
 ---
@@ -57,7 +73,7 @@ Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury 
 ## 6. Gathering
 
 ```
-Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), deep forest green (#1a2a1a), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: Candlelight in a dark room, or the backs of silhouetted figures at a dinner table, or an empty chair and glass at a set table. Evokes a hosted gathering, a curated event. Deep green and black, one gold candle or reflection. No text, no signage. Output size: 1080×1080.
+Image dimensions: 1080 pixels wide by 608 pixels tall, landscape 16:9. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), deep forest green (#1a2a1a), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: Candlelight in a dark room, or the backs of silhouetted figures at a dinner table, or an empty chair and glass at a set table. Evokes a hosted gathering, a curated event. Deep green and black, one gold candle or reflection. No text, no signage. Output size: 1080×608.
 ```
 
 ---
@@ -65,21 +81,21 @@ Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury 
 ## 7. Interlude
 
 ```
-Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), muted indigo (#1a1a2e), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: An open book or journal in soft focus, or a single window with dim light, or a quiet still life—pen, paper, one gold detail. Evokes an interlude, a moment worth noting, reflection. Indigo and black dominant, one subtle gold. No readable text. Output size: 1080×1080.
+Image dimensions: 1080 pixels wide by 608 pixels tall, landscape 16:9. Dark luxury atmosphere, cinematic composition, shallow depth of field. Colour palette: near-black (#0d0b0f), muted indigo (#1a1a2e), and a single accent of warm gold (#c9a84c). No text, no logos, no people's faces. Scene: An open book or journal in soft focus, or a single window with dim light, or a quiet still life—pen, paper, one gold detail. Evokes an interlude, a moment worth noting, reflection. Indigo and black dominant, one subtle gold. No readable text. Output size: 1080×608.
 ```
 
 ---
 
 ## Empty-state illustrations
 
-Used when a list or section has no data (Chronicle feed, Circle, Passport). One illustration per screen so the empty state feels intentional, not blank.
+Used when a list or section has no data (Chronicle feed, Circle, Passport). One illustration per screen so the empty state feels intentional, not blank. **Prompt 9 (Circle empty):** optional attach logo—the emblem is three figures in a circle, so it fits "your circle" thematically; not required.
 
 ---
 
-## 8. Chronicle empty (“The Chronicle awaits its first entry”)
+## 8. Chronicle empty — attach logo (“The Chronicle awaits its first entry”)
 
 ```
-Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Dark luxury atmosphere, editorial illustration style. Colour palette: near-black (#0d0b0f), slate tones (#141019, #1e1a28), and a single accent of warm gold (#c9a84c). No text, no logos. Scene: An open leather-bound journal or chronicle book in soft focus, or a quill and inkwell on a dark desk, or a subtle monument or obelisk silhouette—evokes “the chronicle awaits,” something momentous about to be written. One subtle gold highlight. No readable text, no emojis. Output size: 1080×1080.
+Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Use the attached reference ONLY for style and palette (gold on black, minimalist)—do NOT draw the circular emblem or three figures in this image. Match only the colour and tone: warm gold (#c9a84c) on solid black, minimalist line-art or silhouette, classic high-end. Use only that gold and black (plus slate tones #141019, #1e1a28 if needed); no text, no logos, no clutter. Scene: An open leather-bound journal or chronicle book in soft focus, or a quill and inkwell on a dark desk, or a subtle monument or obelisk silhouette—evokes “the chronicle awaits,” something momentous about to be written. One subtle gold highlight. No readable text, no emojis. Output size: 1080×1080.
 ```
 
 ---
@@ -130,15 +146,15 @@ Image dimensions: 1080 pixels wide by 1080 pixels tall, square 1:1. Match the at
 
 ## File naming (for implementation)
 
-**Entry types (1–7):**
+**Entry types (1–7):** Save as PNG from generator; convert to WebP for production (e.g. `npx sharp-cli -i 01-mission.png -o 01-mission.webp -f webp -q 85`). App uses the .webp paths.
 ```
-public/entry-types/mission.png
-public/entry-types/night_out.png
-public/entry-types/steak.png
-public/entry-types/playstation.png
-public/entry-types/toast.png
-public/entry-types/gathering.png
-public/entry-types/interlude.png
+public/entry-types/01-mission.webp
+public/entry-types/02-night-out.webp
+public/entry-types/03-the-table.webp
+public/entry-types/04-the-pitch.webp
+public/entry-types/05-the-toast.webp
+public/entry-types/06-gathering.webp
+public/entry-types/07-interlude.webp
 ```
 
 **Empty states (8–11):**
@@ -161,15 +177,15 @@ public/textures/guilloche.png
 
 **Entry types (1–7)**
 
-| #  | Entry type   | Filename       | Dimensions  | Semantic colour |
-|----|-------------|----------------|------------|------------------|
-| 1  | mission     | mission.png    | 1080×1080  | #3d2b6b         |
-| 2  | night_out   | night_out.png  | 1080×1080  | #0f2038         |
-| 3  | steak       | steak.png      | 1080×1080  | #3d1a0a         |
-| 4  | playstation | playstation.png| 1080×1080  | #0a2420         |
-| 5  | toast       | toast.png      | 1080×1080  | #3d2010         |
-| 6  | gathering   | gathering.png  | 1080×1080  | #1a2a1a         |
-| 7  | interlude   | interlude.png  | 1080×1080  | #1a1a2e         |
+| #  | Entry type   | Filename          | Dimensions  | Semantic colour |
+|----|-------------|-------------------|------------|------------------|
+| 1  | mission     | 01-mission.webp    | 1080×608   | #3d2b6b         |
+| 2  | night_out   | 02-night-out.webp  | 1080×608   | #0f2038         |
+| 3  | steak       | 03-the-table.webp  | 1080×608   | #3d1a0a         |
+| 4  | playstation | 04-the-pitch.webp  | 1080×608   | #0a2420         |
+| 5  | toast       | 05-the-toast.webp  | 1080×608   | #3d2010         |
+| 6  | gathering   | 06-gathering.webp  | 1080×608   | #1a2a1a         |
+| 7  | interlude   | 07-interlude.webp  | 1080×608   | #1a1a2e         |
 
 **Empty states & decorative (8–13)**
 

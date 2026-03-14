@@ -15,6 +15,7 @@ export interface PlaystationFormData {
 interface PlaystationFormProps {
   onSubmit: (data: PlaystationFormData) => Promise<void>
   loading: boolean
+  initialData?: Partial<PlaystationFormData>
 }
 
 const ALIASES: GentAlias[] = ['keys', 'bass', 'lorekeeper']
@@ -87,10 +88,10 @@ function computeHeadToHead(matches: PS5Match[]): HeadToHead[] {
   return result
 }
 
-export function PlaystationForm({ onSubmit, loading }: PlaystationFormProps) {
-  const [title, setTitle] = useState('')
-  const [date, setDate] = useState('')
-  const [matches, setMatches] = useState<PS5Match[]>([emptyMatch(1)])
+export function PlaystationForm({ onSubmit, loading, initialData }: PlaystationFormProps) {
+  const [title, setTitle] = useState(initialData?.title ?? '')
+  const [date, setDate] = useState(initialData?.date ?? '')
+  const [matches, setMatches] = useState<PS5Match[]>(initialData?.matches?.length ? initialData.matches : [emptyMatch(1)])
   const [errors, setErrors] = useState<FieldErrors>({})
 
   function addMatch() {

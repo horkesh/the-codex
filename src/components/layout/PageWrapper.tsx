@@ -24,7 +24,7 @@ export function PageWrapper({
       animate="animate"
       exit="exit"
       className={cn(
-        'flex-1 pt-2 pb-24',
+        'flex-1 pt-2 pb-28',
         scrollable && 'overflow-y-auto',
         padded && 'px-4',
         className,

@@ -6,6 +6,9 @@ import { StatGrid } from '@/components/ledger/StatGrid'
 import { PS5Rivalry } from '@/components/ledger/PS5Rivalry'
 import { MissionTimeline } from '@/components/ledger/MissionTimeline'
 import { WrappedSection } from '@/components/ledger/WrappedSection'
+import { VerdictBoard } from '@/components/ledger/VerdictBoard'
+import { SommelierSection } from '@/components/ledger/SommelierSection'
+import { RivalryIndex } from '@/components/ledger/RivalryIndex'
 import { fadeIn } from '@/lib/animations'
 
 // Years available for selection — from the Gents' first year to current
@@ -60,8 +63,11 @@ export default function Ledger() {
             className="flex flex-col"
           >
             <StatGrid stats={stats} />
+            <VerdictBoard />
             <PS5Rivalry h2h={ps5H2H} />
+            <RivalryIndex />
             <MissionTimeline missionsByYear={missionsByYear} />
+            <SommelierSection />
             <WrappedSection stats={stats} selectedYear={selectedYear} />
           </motion.div>
         )}

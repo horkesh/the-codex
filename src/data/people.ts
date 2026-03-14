@@ -193,3 +193,21 @@ export async function fetchAllLabels(): Promise<string[]> {
   const unique = Array.from(new Set(allLabels)).sort()
   return unique
 }
+
+export async function fetchPeopleByCategory(category: 'contact' | 'person_of_interest'): Promise<Person[]> {
+  const { data, error } = await supabase
+    .from('people')
+    .select('*')
+    .eq('category', category)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as Person[]
+}
+
+export async function convertPOIToContact(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('people')
+    .update({ category: 'contact', poi_visibility: 'private' })
+    .eq('id', id)
+  if (error) throw error
+}

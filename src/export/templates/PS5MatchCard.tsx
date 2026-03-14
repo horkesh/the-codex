@@ -1,14 +1,15 @@
 import React from 'react'
 import { Entry, PS5Match } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer } from '@/export/templates/shared'
 
 interface PS5MatchCardProps {
   entry: Entry
+  backgroundUrl?: string
 }
 
 export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
-  ({ entry }, ref) => {
+  ({ entry, backgroundUrl }, ref) => {
     const meta = entry.metadata as {
       matches?: PS5Match[]
       total_matches?: number
@@ -44,8 +45,8 @@ export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
         ref={ref}
         style={{
           width: '1080px',
-          height: '1080px',
-          backgroundColor: '#0D0D0D',
+          height: '1350px',
+          backgroundColor: '#0D0B0F',
           fontFamily: 'var(--font-body)',
           overflow: 'hidden',
           position: 'relative',
@@ -56,23 +57,29 @@ export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
           paddingRight: '80px',
         }}
       >
+        <BackgroundLayer url={backgroundUrl} gradient="strong" />
+
         {/* Grid/circuit texture overlay */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(201,168,76,0.025) 60px, rgba(201,168,76,0.025) 61px), repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(201,168,76,0.025) 60px, rgba(201,168,76,0.025) 61px)',
-            pointerEvents: 'none',
-          }}
-        />
+        {!backgroundUrl && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage:
+                'repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(201,168,76,0.025) 60px, rgba(201,168,76,0.025) 61px), repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(201,168,76,0.025) 60px, rgba(201,168,76,0.025) 61px)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        )}
 
         {/* PS5 SESSION label */}
         <div
           style={{
             paddingTop: '64px',
             width: '100%',
-            zIndex: 1,
+            position: 'relative',
+            zIndex: 2,
           }}
         >
           <span
@@ -100,7 +107,8 @@ export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
             letterSpacing: '-0.02em',
             margin: '20px 0 0 0',
             alignSelf: 'flex-start',
-            zIndex: 1,
+            position: 'relative',
+            zIndex: 2,
           }}
         >
           {entry.title}
@@ -115,14 +123,15 @@ export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
             alignSelf: 'flex-start',
             marginTop: '16px',
             marginBottom: '48px',
-            zIndex: 1,
+            position: 'relative',
+            zIndex: 2,
           }}
         >
           <span
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: '15px',
-              color: '#8C8680',
+              color: backgroundUrl ? '#A09890' : '#8C8680',
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
             }}
@@ -150,7 +159,8 @@ export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
             flexDirection: 'column',
             gap: '16px',
             marginBottom: '40px',
-            zIndex: 1,
+            position: 'relative',
+            zIndex: 2,
           }}
         >
           {pairings.map(({ p1, p2, p1wins, p2wins }) => (
@@ -209,7 +219,8 @@ export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
               display: 'flex',
               gap: '24px',
               marginBottom: '40px',
-              zIndex: 1,
+              position: 'relative',
+              zIndex: 2,
             }}
           >
             {Object.entries(winCounts).map(([gent, wins]) => (
@@ -242,7 +253,7 @@ export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
                   style={{
                     fontFamily: 'var(--font-body)',
                     fontSize: '13px',
-                    color: '#8C8680',
+                    color: backgroundUrl ? '#A09890' : '#8C8680',
                     letterSpacing: '0.15em',
                     textTransform: 'uppercase',
                     textAlign: 'center',
@@ -256,14 +267,15 @@ export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
         )}
 
         {/* Spacer + BrandMark */}
-        <div style={{ flex: 1, zIndex: 1 }} />
+        <div style={{ flex: 1, position: 'relative', zIndex: 2 }} />
         <div
           style={{
             paddingBottom: '56px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            zIndex: 1,
+            position: 'relative',
+            zIndex: 2,
           }}
         >
           <BrandMark size="md" />

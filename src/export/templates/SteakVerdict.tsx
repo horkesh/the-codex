@@ -1,14 +1,15 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, GoldRule } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer } from '@/export/templates/shared'
 
 interface SteakVerdictProps {
   entry: Entry
+  backgroundUrl?: string
 }
 
 export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
-  ({ entry }, ref) => {
+  ({ entry, backgroundUrl }, ref) => {
     const meta = entry.metadata as { cut?: string; score?: number; verdict?: string }
 
     return (
@@ -17,7 +18,7 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
         style={{
           width: '1080px',
           height: '1350px',
-          backgroundColor: '#0D0D0D',
+          backgroundColor: '#0D0B0F',
           fontFamily: 'var(--font-body)',
           overflow: 'hidden',
           position: 'relative',
@@ -28,6 +29,8 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
           paddingRight: '80px',
         }}
       >
+        <BackgroundLayer url={backgroundUrl} gradient="strong" />
+
         {/* Top spacer + THE VERDICT label */}
         <div
           style={{
@@ -36,6 +39,8 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
             flexDirection: 'column',
             alignItems: 'center',
             width: '100%',
+            position: 'relative',
+            zIndex: 2,
           }}
         >
           <span
@@ -70,6 +75,8 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0',
+            position: 'relative',
+            zIndex: 2,
           }}
         >
           {/* Score display */}
@@ -149,7 +156,7 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
                 fontFamily: 'var(--font-display)',
                 fontStyle: 'italic',
                 fontSize: '24px',
-                color: '#8C8680',
+                color: backgroundUrl ? '#C8C0B0' : '#8C8680',
                 textAlign: 'center',
                 lineHeight: '1.65',
                 maxWidth: '840px',
@@ -170,7 +177,7 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: '20px',
-                color: '#8C8680',
+                color: backgroundUrl ? '#A09890' : '#8C8680',
                 letterSpacing: '0.05em',
                 marginBottom: '12px',
               }}
@@ -182,7 +189,7 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: '15px',
-              color: '#8C8680',
+              color: backgroundUrl ? '#A09890' : '#8C8680',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               marginBottom: '56px',
@@ -201,6 +208,8 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
             alignItems: 'center',
             gap: '20px',
             width: '100%',
+            position: 'relative',
+            zIndex: 2,
           }}
         >
           <GoldRule />

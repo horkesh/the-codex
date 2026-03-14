@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ImageIcon, Share2 } from 'lucide-react'
+import { ImageIcon, Share2, Sparkles } from 'lucide-react'
 
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner } from '@/components/ui'
@@ -10,24 +10,45 @@ import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { formatDate } from '@/lib/utils'
 import { staggerContainer, staggerItem, fadeUp } from '@/lib/animations'
 import { exportAndShare } from '@/export/exporter'
+import { generateTemplateBg } from '@/ai/templateBg'
 import type { Entry } from '@/types/app'
 
-// Template imports — all written by the templates agent
+// Template imports
 import { NightOutCard } from '@/export/templates/NightOutCard'
 import { MissionCarousel } from '@/export/templates/MissionCarousel'
 import { SteakVerdict } from '@/export/templates/SteakVerdict'
 import { PS5MatchCard } from '@/export/templates/PS5MatchCard'
 import { GatheringInviteCard } from '@/export/templates/GatheringInviteCard'
 import { CountdownCard } from '@/export/templates/CountdownCard'
+import { ToastCard } from '@/export/templates/ToastCard'
+import { InterludeCard } from '@/export/templates/InterludeCard'
+import { PassportPageExport } from '@/export/templates/PassportPageExport'
+import { GatheringRecap } from '@/export/templates/GatheringRecap'
+import { WrappedCard } from '@/export/templates/WrappedCard'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
+type TemplateId =
+  | 'night_out_card'
+  | 'mission_carousel'
+  | 'steak_verdict'
+  | 'ps5_match_card'
+  | 'gathering_invite'
+  | 'countdown'
+  | 'toast_card'
+  | 'interlude_card'
+  | 'passport_page'
+  | 'gathering_recap'
+  | 'wrapped_card'
+
 interface TemplateConfig {
-  id: string
+  id: TemplateId
   label: string
   dims: string
+  /** Which aspect ratio to pass when generating an AI background */
+  bgAspect?: '1:1' | '3:4' | '9:16'
 }
 
 // ---------------------------------------------------------------------------
@@ -35,16 +56,22 @@ interface TemplateConfig {
 // ---------------------------------------------------------------------------
 
 const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
-  night_out:   [{ id: 'night_out_card',     label: 'Night Out Card',  dims: '1080×1350' }],
-  mission:     [{ id: 'mission_carousel',   label: 'Mission Card',    dims: '1080×1080' }],
-  steak:       [{ id: 'steak_verdict',      label: 'Steak Verdict',   dims: '1080×1350' }],
-  playstation: [{ id: 'ps5_match_card',     label: 'Battle Card',     dims: '1080×1080' }],
-  gathering:   [
-    { id: 'gathering_invite', label: 'Invite Card',      dims: '1080×1350' },
-    { id: 'countdown',        label: 'Countdown Story',  dims: '1080×1920' },
+  night_out:   [{ id: 'night_out_card',   label: 'Night Out Card',  dims: '1080×1350', bgAspect: '3:4' }],
+  mission:     [
+    { id: 'mission_carousel', label: 'Mission Card',   dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'passport_page',    label: 'Passport Page',  dims: '1080×1350', bgAspect: '3:4' },
   ],
-  toast:       [{ id: 'night_out_card',     label: 'Toast Card',      dims: '1080×1350' }],
-  interlude:   [],
+  steak:       [{ id: 'steak_verdict',    label: 'Steak Verdict',   dims: '1080×1350', bgAspect: '3:4' }],
+  playstation: [{ id: 'ps5_match_card',   label: 'Battle Card',     dims: '1080×1350', bgAspect: '3:4' }],
+  gathering:   [
+    { id: 'gathering_invite', label: 'Invite Card',      dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'countdown',        label: 'Countdown Card',   dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'gathering_recap',  label: 'Gathering Recap',  dims: '1080×1350', bgAspect: '3:4' },
+  ],
+  toast:       [{ id: 'toast_card',       label: 'Toast Card',      dims: '1080×1350', bgAspect: '3:4' }],
+  interlude:   [{ id: 'interlude_card',   label: 'Interlude Card',  dims: '1080×1350', bgAspect: '3:4' }],
+  // annual is a standalone type for year-in-review exports (no entry required)
+  annual:      [{ id: 'wrapped_card',     label: 'Wrapped Card',    dims: '1080×1350', bgAspect: '3:4' }],
 }
 
 // Scale factor for the in-page preview
@@ -67,25 +94,50 @@ function previewContainerHeight(dims: string): number {
 // ---------------------------------------------------------------------------
 
 interface TemplateRendererProps {
-  templateId: string
+  templateId: TemplateId
   entry: Entry
   innerRef: React.Ref<HTMLDivElement>
+  backgroundUrl?: string
 }
 
-function TemplateRenderer({ templateId, entry, innerRef }: TemplateRendererProps) {
+function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl }: TemplateRendererProps) {
   switch (templateId) {
     case 'night_out_card':
-      return <NightOutCard ref={innerRef} entry={entry} />
+      return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'mission_carousel':
-      return <MissionCarousel ref={innerRef} entry={entry} />
+      return <MissionCarousel ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'steak_verdict':
-      return <SteakVerdict ref={innerRef} entry={entry} />
+      return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'ps5_match_card':
-      return <PS5MatchCard ref={innerRef} entry={entry} />
+      return <PS5MatchCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'gathering_invite':
-      return <GatheringInviteCard ref={innerRef} entry={entry} />
+      return <GatheringInviteCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'countdown':
-      return <CountdownCard ref={innerRef} entry={entry} />
+      return <CountdownCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+    case 'toast_card':
+      return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+    case 'interlude_card':
+      return <InterludeCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+    case 'passport_page':
+      return <PassportPageExport ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+    case 'gathering_recap':
+      return <GatheringRecap ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+    case 'wrapped_card':
+      // WrappedCard is a standalone annual export — it does not take an entry prop.
+      // Stats are aggregated at the page level in the full implementation; here we
+      // render a shell with the current year and zero-state counters so the preview
+      // is visible and the template can be exported as a placeholder.
+      return (
+        <WrappedCard
+          ref={innerRef}
+          year={new Date().getFullYear()}
+          totalMissions={0}
+          totalCountries={0}
+          totalSteaks={0}
+          totalNightsOut={0}
+          totalToasts={0}
+        />
+      )
     default:
       return null
   }
@@ -201,16 +253,20 @@ export default function Studio() {
 
   const [entries, setEntries] = useState<Entry[]>([])
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId | null>(null)
   const [exporting, setExporting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [bgUrl, setBgUrl] = useState<string | null>(null)
+  const [generatingBg, setGeneratingBg] = useState(false)
 
   const templateRef = useRef<HTMLDivElement>(null)
 
   // Load entries on mount; honour ?entry= param
   useEffect(() => {
+    let cancelled = false
     fetchEntries({})
       .then((fetched) => {
+        if (cancelled) return
         setEntries(fetched)
         if (preselectedEntryId) {
           const match = fetched.find((x) => x.id === preselectedEntryId)
@@ -223,15 +279,34 @@ export default function Studio() {
         }
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [preselectedEntryId])
 
-  // When entry changes, reset template selection (unless same entry)
+  // When entry changes, reset template selection and background
   function handleSelectEntry(entry: Entry) {
     if (selectedEntry?.id === entry.id) return
     setSelectedEntry(entry)
+    setBgUrl(null)
     const templates = TEMPLATES_BY_TYPE[entry.type] ?? []
     setSelectedTemplate(templates.length > 0 ? templates[0].id : null)
+  }
+
+  // When template changes, clear the background
+  function handleSelectTemplate(templateId: TemplateId) {
+    setSelectedTemplate(templateId)
+    setBgUrl(null)
+  }
+
+  async function handleGenerateBg() {
+    if (!selectedEntry || !activeTemplateConfig) return
+    setGeneratingBg(true)
+    try {
+      const url = await generateTemplateBg(selectedEntry, activeTemplateConfig.bgAspect ?? '3:4')
+      if (url) setBgUrl(url)
+    } finally {
+      setGeneratingBg(false)
+    }
   }
 
   async function handleExport() {
@@ -388,7 +463,7 @@ export default function Studio() {
                       key={tpl.id}
                       config={tpl}
                       isActive={selectedTemplate === tpl.id}
-                      onClick={() => setSelectedTemplate(tpl.id)}
+                      onClick={() => handleSelectTemplate(tpl.id)}
                     />
                   ))}
                 </motion.div>
@@ -420,7 +495,7 @@ export default function Studio() {
 
               {/* Preview wrapper */}
               <div
-                className="w-full rounded-xl overflow-hidden border border-white/8 bg-obsidian mb-5"
+                className="w-full rounded-xl overflow-hidden border border-white/8 bg-obsidian mb-4"
                 style={{
                   height: previewContainerHeight(activeTemplateConfig.dims),
                 }}
@@ -438,14 +513,28 @@ export default function Studio() {
                     templateId={selectedTemplate}
                     entry={selectedEntry}
                     innerRef={templateRef}
+                    backgroundUrl={bgUrl ?? undefined}
                   />
                 </div>
               </div>
 
               {/* Dims label */}
-              <p className="text-[11px] font-mono text-ivory-dim text-center mb-5">
+              <p className="text-[11px] font-mono text-ivory-dim text-center mb-4">
                 {activeTemplateConfig.dims} px · PNG · 3×
               </p>
+
+              {/* AI Background button */}
+              <Button
+                variant="ghost"
+                size="md"
+                fullWidth
+                loading={generatingBg}
+                onClick={handleGenerateBg}
+                className="gap-2 mb-3 border border-white/10 hover:border-gold/30"
+              >
+                {!generatingBg && <Sparkles size={14} strokeWidth={1.5} className="text-gold" />}
+                {generatingBg ? 'Generating background…' : bgUrl ? 'Regenerate AI Background' : 'Generate AI Background'}
+              </Button>
 
               {/* Export button */}
               <Button

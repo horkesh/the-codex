@@ -15,6 +15,7 @@ interface ToastFormProps {
   onSubmit: (data: ToastFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  initialData?: Partial<ToastFormData>
 }
 
 const empty: ToastFormData = {
@@ -29,8 +30,8 @@ interface FieldErrors {
   date?: string
 }
 
-export function ToastForm({ onSubmit, loading, detectedLocation }: ToastFormProps) {
-  const [form, setForm] = useState<ToastFormData>(empty)
+export function ToastForm({ onSubmit, loading, detectedLocation, initialData }: ToastFormProps) {
+  const [form, setForm] = useState<ToastFormData>(() => ({ ...empty, ...initialData }))
 
   useEffect(() => {
     if (!detectedLocation) return

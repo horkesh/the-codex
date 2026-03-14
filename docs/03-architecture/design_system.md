@@ -12,10 +12,10 @@ The old Gents palette (ember red + teal) belongs to The Toast. This is a differe
 
 ### Core surfaces
 ```css
---color-obsidian:    #0a0a0f;   /* App background — true dark */
---color-slate-dark:  #12121a;   /* Card background */
---color-slate-mid:   #1e1e2e;   /* Elevated surface */
---color-slate-light: #2a2a3d;   /* Hover state, borders */
+--color-obsidian:    #0d0b0f;   /* App background — warm obsidian */
+--color-slate-dark:  #141019;   /* Card background */
+--color-slate-mid:   #1e1a28;   /* Elevated surface */
+--color-slate-light: #2c2638;   /* Hover state, borders */
 ```
 
 ### Gold system
@@ -211,12 +211,15 @@ Use Lucide React. Consistent stroke weight (1.5). Ivory coloured by default, gol
 ## Instagram export design
 
 All Studio export templates must:
-- Use white or near-white background (Instagram performs better with light cards)
+- Use dark background (`#0D0B0F`) — cinematic dark luxury, NOT ivory/light
 - Use gold accents from the brand palette
-- Include the brand wordmark: `THE GENTS CHRONICLES` in Playfair Display small caps
-- Use consistent padding (32px all sides for 1:1 format)
+- Include the brand wordmark: `THE GENTS CHRONICLES` via `BrandMark` component
+- Use consistent 80px padding on most templates
 - Output at 1080×1080 (post), 1080×1920 (story), 1080×1350 (portrait post)
 - Never look like a screenshot of the app — they're purpose-designed cards
+- Use inline styles only — Tailwind classes don't resolve inside html-to-image
+- Support `backgroundUrl?: string` prop → render `BackgroundLayer` as first child
+- No emojis — use CSS ornamental elements (dividers, corner marks, dot bullets)
 
 ---
 

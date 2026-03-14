@@ -267,7 +267,7 @@ export default function Places() {
         transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.2 }}
         whileTap={{ scale: 0.92 }}
         className="fixed right-4 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-gold text-obsidian shadow-[0_0_40px_rgba(201,168,76,0.3)]"
-        style={{ bottom: '84px' }}
+        style={{ bottom: '90px' }}
       >
         <Plus size={24} strokeWidth={2.5} />
       </motion.button>

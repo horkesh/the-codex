@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MoreVertical, Sparkles, Share2, Trash2, ImagePlay } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { MoreVertical, Sparkles, Share2, Trash2, ImagePlay, Edit2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Avatar } from '@/components/ui'
 import { EntryHero } from '@/components/chronicle/EntryHero'
 import { LoreSection } from '@/components/chronicle/LoreSection'
+import { EntryReactions } from '@/components/chronicle/EntryReactions'
+import { generateScene } from '@/ai/scene'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
 import { MetadataCard } from '@/components/chronicle/MetadataCard'
 import { PS5Scoreboard } from '@/components/chronicle/PS5Scoreboard'
@@ -26,13 +27,14 @@ interface OptionsMenuProps {
   generatingScene: boolean
   onGenerateLore: () => void
   onGenerateScene: () => void
+  onEdit: () => void
   onExport: () => void
   onDelete: () => void
 }
 
 function OptionsMenu({
   isOpen, onClose, hasLore, canGenerateScene, generatingScene,
-  onGenerateLore, onGenerateScene, onExport, onDelete,
+  onGenerateLore, onGenerateScene, onEdit, onExport, onDelete,
 }: OptionsMenuProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Entry Options">
@@ -60,6 +62,14 @@ function OptionsMenu({
             </span>
           </button>
         )}
+        <button
+          type="button"
+          className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
+          onClick={() => { onEdit(); onClose() }}
+        >
+          <Edit2 size={18} className="text-ivory-muted shrink-0" />
+          <span className="font-body text-sm">Edit Entry</span>
+        </button>
         <button
           type="button"
           className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
@@ -201,18 +211,16 @@ export default function EntryDetail() {
   }
 
   async function handleGenerateScene() {
-    if (!entry) return
+    if (!entry || generatingScene) return
     setGeneratingScene(true)
     try {
-      const participant_ids = entry.participants.map((p) => p.id)
-      const { data, error } = await supabase.functions.invoke('generate-cover', {
-        body: { entry: { id: entry.id, type: entry.type, title: entry.title, location: entry.location, city: (entry.metadata as Record<string, unknown>)?.city }, participant_ids },
-      })
-      if (error || !data?.cover_url) throw new Error(error?.message ?? 'No image returned')
-      setEntry({ ...entry, cover_image_url: data.cover_url })
-      addToast('Scene generated.', 'success')
+      const url = await generateScene(entry, entry.participants ?? [])
+      if (url) {
+        setEntry(prev => prev ? { ...prev, scene_url: url } : prev)
+        addToast('Scene generated.', 'success')
+      }
     } catch {
-      addToast('Scene generation failed. Try again.', 'error')
+      addToast('Scene generation failed.', 'error')
     } finally {
       setGeneratingScene(false)
     }
@@ -312,6 +320,30 @@ export default function EntryDetail() {
               />
             </motion.div>
 
+            {/* Scene image */}
+            {entry.scene_url && (
+              <motion.div variants={staggerItem}>
+                <div className="px-4 pb-4">
+                  <img
+                    src={entry.scene_url}
+                    alt="AI Scene"
+                    className="w-full rounded-xl border border-white/5 object-cover"
+                    style={{ maxHeight: '320px' }}
+                  />
+                  <p className="text-[10px] tracking-[0.2em] uppercase text-ivory-dim/50 text-center mt-2 font-body">AI Scene</p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Entry reactions */}
+            {entry.status === 'published' && (
+              <motion.div variants={staggerItem}>
+                <div className="px-4 pt-2 pb-4">
+                  <EntryReactions entryId={entry.id} />
+                </div>
+              </motion.div>
+            )}
+
             {/* Photo grid */}
             {photos.length > 0 && (
               <motion.div variants={staggerItem}>
@@ -338,6 +370,15 @@ export default function EntryDetail() {
 
             {/* Actions */}
             <motion.div variants={staggerItem} className="space-y-3 pt-2">
+              <Button
+                variant="outline"
+                size="md"
+                fullWidth
+                onClick={() => navigate(`/chronicle/${entry.id}/edit`)}
+              >
+                <Edit2 size={16} />
+                Edit Entry
+              </Button>
               <Button
                 variant="outline"
                 size="md"
@@ -370,10 +411,11 @@ export default function EntryDetail() {
         isOpen={menuOpen}
         onClose={() => setMenuOpen(false)}
         hasLore={!!entry.lore}
-        canGenerateScene={entry.type === 'mission' || entry.type === 'night_out'}
+        canGenerateScene={['mission', 'night_out', 'toast', 'gathering', 'interlude'].includes(entry.type)}
         generatingScene={generatingScene}
         onGenerateLore={handleGenerateLoreFromMenu}
         onGenerateScene={handleGenerateScene}
+        onEdit={() => navigate(`/chronicle/${entry.id}/edit`)}
         onExport={handleExportToStudio}
         onDelete={() => setDeleteOpen(true)}
       />

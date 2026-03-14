@@ -4,6 +4,45 @@ Chronological record of every session. Most recent first.
 
 ---
 
+## 2026-03-14 — Session 006: Profile Polish + EXIF Geo + Saved Places
+
+**Agent**: Claude Sonnet 4.6
+**Status**: Live and stable. locations table applied, types regenerated.
+
+### What happened
+- **Profile identity polish**: White h1 = `gent.full_alias` (editable role); gold line = `gent.display_name` (real name). Settings renamed to Name + Role + Bio. Role saves to `full_alias`. Real names shown (Haris/Almedin/Vedad).
+- **EXIF geo-extraction**: Uploading a photo to an entry now extracts GPS + `DateTimeOriginal` via `exifr`. Reverse-geocodes via Nominatim (zoom=14) to auto-fill city/country/country_code/date fields. Only fills fields that are empty (no overwrite).
+- **Saved Places** (`/places`): Shared POI database for all 3 gents. Types: restaurant, bar, home, venue, other. GPS detection on add ("Use current location"). Management page linked from Profile. Route: `/places`.
+- **SavedPlacesBar component**: Horizontal chip strip shown above entry forms for location-aware types. Tapping a place force-fills all location fields (overwrite: true).
+- **EXIF proximity match**: If EXIF GPS is within 200m of a saved place, auto-uses the place's name as the location field.
+- **LocationFill interface** in `src/lib/geo.ts`: `overwrite?: boolean` — false = fill-if-empty (EXIF), true = force-overwrite (place selection).
+- **DB migration**: `supabase/migrations/20260314000003_locations.sql` — locations table with RLS. Applied successfully after fixing timestamp collision with gents_appearance migration.
+- **TypeScript types**: Regenerated `src/types/database.ts` after applying migration. Removed `any` cast from `src/data/locations.ts`.
+
+### Key decisions
+- `exifr` for EXIF extraction — works in browser with File objects, no server needed.
+- Nominatim for reverse geocoding — free, no API key, User-Agent required.
+- Haversine formula for proximity: 200m threshold for auto-matching saved places.
+- `overwrite` flag on LocationFill: EXIF fills empty fields only; explicit place selection overwrites all.
+- Migration files must have unique timestamps — two files with the same timestamp collide on the schema_migrations unique key.
+- Management API trick: use `sbp_*` personal access token with `POST /v1/projects/{ref}/database/query` to fix corrupted schema_migrations entries when `db push` deadlocks.
+
+### Files changed
+- `src/pages/Profile.tsx` — identity display + Saved Places nav button
+- `src/lib/geo.ts` — `LocationFill` interface, `haversineMetres`, `extractLocationFromPhoto`
+- `src/components/chronicle/PhotoUpload.tsx` — EXIF extraction + proximity check on upload
+- `src/components/chronicle/SavedPlacesBar.tsx` — NEW: horizontal chip strip of saved places
+- `src/components/chronicle/forms/MissionForm.tsx` (+ NightOut, Steak, Toast) — `detectedLocation` prop, `overwrite` logic
+- `src/pages/EntryNew.tsx` — `locationFill` state, `savedPlaces` state, SavedPlacesBar wired up
+- `src/data/locations.ts` — NEW: CRUD for locations table
+- `src/pages/Places.tsx` — NEW: management page
+- `src/App.tsx` — `/places` route
+- `supabase/migrations/20260314000003_locations.sql` — DB migration (renamed from 000001 due to timestamp collision)
+- `supabase/migrations/20260314000001_gents_appearance.sql` — made idempotent (DO block for policies)
+- `src/types/database.ts` — regenerated with locations table
+
+---
+
 ## 2026-03-13 — Session 005: Portrait Fix + Spinning Circle Root Cause
 
 **Agent**: Claude Sonnet 4.6

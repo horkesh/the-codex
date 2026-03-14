@@ -37,7 +37,7 @@ export function useAuthListener(): { loading: boolean } {
 }
 
 /**
- * Send a magic-link sign-in email. Throws on error.
+ * Send a 6-digit OTP sign-in email. Throws on error.
  * No new accounts created (shouldCreateUser: false).
  */
 export async function signIn(email: string): Promise<void> {
@@ -45,6 +45,16 @@ export async function signIn(email: string): Promise<void> {
     email,
     options: { shouldCreateUser: false },
   })
+  if (error) throw error
+}
+
+/**
+ * Verify the 6-digit OTP code the user received by email.
+ * On success, onAuthStateChange fires and the session is established.
+ * Throws on error.
+ */
+export async function verifyCode(email: string, token: string): Promise<void> {
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
   if (error) throw error
 }
 
