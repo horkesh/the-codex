@@ -1,0 +1,195 @@
+import { supabase } from '@/lib/supabase'
+import type { Person, PersonWithPrivateNote } from '@/types/app'
+
+const PERSON_COLUMNS = 'id, name, instagram, photo_url, met_at_entry, met_date, met_location, notes, labels, added_by'
+
+export async function fetchPeople(filters?: {
+  search?: string
+  label?: string
+}): Promise<Person[]> {
+  let query = supabase
+    .from('people')
+    .select(PERSON_COLUMNS)
+    .order('name', { ascending: true })
+
+  if (filters?.search) {
+    query = query.or(
+      `name.ilike.%${filters.search}%,instagram.ilike.%${filters.search}%`
+    )
+  }
+
+  if (filters?.label) {
+    query = query.contains('labels', [filters.label])
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+  return (data ?? []) as unknown as Person[]
+}
+
+export async function fetchPerson(id: string): Promise<Person | null> {
+  const { data, error } = await supabase
+    .from('people')
+    .select(PERSON_COLUMNS)
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
+  if (!data) return null
+  return data as unknown as Person
+}
+
+export async function fetchPersonWithNote(
+  id: string,
+  gentId: string
+): Promise<PersonWithPrivateNote | null> {
+  const person = await fetchPerson(id)
+  if (!person) return null
+
+  const { data: noteRow, error: noteError } = await supabase
+    .from('people_notes')
+    .select('note')
+    .eq('gent_id', gentId)
+    .eq('person_id', id)
+    .single()
+
+  if (noteError && noteError.code !== 'PGRST116') throw noteError
+
+  const private_note = noteRow ? (noteRow as unknown as { note: string }).note : null
+
+  return { ...person, private_note }
+}
+
+export async function createPerson(data: {
+  name: string
+  instagram?: string
+  photo_url?: string
+  met_at_entry?: string
+  met_date?: string
+  met_location?: string
+  notes?: string
+  labels?: string[]
+  added_by: string
+}): Promise<Person> {
+  const { data: rawPerson, error } = await supabase
+    .from('people')
+    .insert({
+      name: data.name,
+      instagram: data.instagram ?? null,
+      photo_url: data.photo_url ?? null,
+      met_at_entry: data.met_at_entry ?? null,
+      met_date: data.met_date ?? null,
+      met_location: data.met_location ?? null,
+      notes: data.notes ?? null,
+      labels: data.labels ?? [],
+      added_by: data.added_by,
+    })
+    .select(PERSON_COLUMNS)
+    .single()
+
+  if (error) throw error
+  return rawPerson as unknown as Person
+}
+
+export async function updatePerson(
+  id: string,
+  data: Partial<Person>
+): Promise<Person> {
+  const { data: rawPerson, error } = await supabase
+    .from('people')
+    .update(data as unknown as Record<string, unknown>)
+    .eq('id', id)
+    .select(PERSON_COLUMNS)
+    .single()
+
+  if (error) throw error
+  return rawPerson as unknown as Person
+}
+
+export async function deletePerson(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('people')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function upsertPrivateNote(
+  personId: string,
+  gentId: string,
+  note: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('people_notes')
+    .upsert(
+      {
+        person_id: personId,
+        gent_id: gentId,
+        note,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'gent_id,person_id' }
+    )
+
+  if (error) throw error
+}
+
+export async function fetchPrivateNote(
+  personId: string,
+  gentId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('people_notes')
+    .select('note')
+    .eq('person_id', personId)
+    .eq('gent_id', gentId)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
+
+  return data ? (data as unknown as { note: string }).note : null
+}
+
+export async function uploadPersonPhoto(
+  personId: string,
+  file: File
+): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${personId}/photo-${Date.now()}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('people-photos')
+    .upload(path, file, { upsert: false })
+
+  if (uploadError) throw uploadError
+
+  const { data: urlData } = supabase.storage
+    .from('people-photos')
+    .getPublicUrl(path)
+
+  const publicUrl = urlData.publicUrl
+
+  await updatePerson(personId, { photo_url: publicUrl })
+
+  return publicUrl
+}
+
+export async function fetchAllLabels(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('people')
+    .select('labels')
+
+  if (error) throw error
+
+  const rows = (data ?? []) as unknown as Array<{ labels: string[] | null }>
+  const allLabels = rows.flatMap((row) => row.labels ?? [])
+  const unique = Array.from(new Set(allLabels)).sort()
+  return unique
+}

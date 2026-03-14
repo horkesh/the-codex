@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+@theme {
+  /* Core surfaces */
+  --color-obsidian: #0a0a0f;
+  --color-slate-dark: #12121a;
+  --color-slate-mid: #1e1e2e;
+  --color-slate-light: #2a2a3d;
+
+  /* Gold system */
+  --color-gold: #c9a84c;
+  --color-gold-light: #e8c97d;
+  --color-gold-muted: #a67c35;
+  --color-gold-dim: #6b5128;
+
+  /* Text */
+  --color-ivory: #f5f0e8;
+  --color-ivory-muted: #c8c0b0;
+  --color-ivory-dim: #7a7268;
+
+  /* Entry type semantic colours */
+  --color-mission: #3d2b6b;
+  --color-night-out: #0f2038;
+  --color-steak: #3d1a0a;
+  --color-playstation: #0a2420;
+  --color-toast: #3d2010;
+  --color-gathering: #1a2a1a;
+  --color-interlude: #1a1a2e;
+
+  /* Status */
+  --color-success: #2d6a4f;
+  --color-error: #7d1c1c;
+  --color-warning: #6b4e1a;
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* Shadows */
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 8px 48px rgba(0, 0, 0, 0.6);
+  --shadow-gold: 0 0 20px rgba(201, 168, 76, 0.15);
+  --shadow-gold-strong: 0 0 40px rgba(201, 168, 76, 0.3);
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* Self-hosted fonts — loaded from /public/fonts/ */
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('/fonts/PlayfairDisplay-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('/fonts/PlayfairDisplay-Italic-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('/fonts/InstrumentSans-Variable.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-Variable.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-obsidian);
+  color: var(--color-ivory);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+/* Grain overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
+  animation: grain 8s steps(10) infinite;
+}
+
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2%, -3%); }
+  20% { transform: translate(3%, 1%); }
+  30% { transform: translate(-1%, 4%); }
+  40% { transform: translate(2%, -2%); }
+  50% { transform: translate(-3%, 2%); }
+  60% { transform: translate(1%, -4%); }
+  70% { transform: translate(-2%, 3%); }
+  80% { transform: translate(3%, -1%); }
+  90% { transform: translate(-1%, 2%); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-gold-dim); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-gold-muted); }
+
+/* Safe area for mobile notch/home indicator */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Gold shimmer animation for stamp reveals */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.shimmer-gold {
+  background: linear-gradient(
+    90deg,
+    var(--color-gold-dim) 0%,
+    var(--color-gold-light) 50%,
+    var(--color-gold-dim) 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer 2s linear infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+}

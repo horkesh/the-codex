@@ -1,0 +1,71 @@
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router'
+import { AnimatePresence } from 'framer-motion'
+import { useAuthStore } from '@/store/auth'
+import { useAuthListener } from '@/hooks/useAuth'
+import { Shell } from '@/components/layout'
+
+// Pages
+import Landing from '@/pages/Landing'
+import Chronicle from '@/pages/Chronicle'
+import EntryDetail from '@/pages/EntryDetail'
+import EntryNew from '@/pages/EntryNew'
+import GatheringNew from '@/pages/GatheringNew'
+import GatheringDetail from '@/pages/GatheringDetail'
+import Passport from '@/pages/Passport'
+import Circle from '@/pages/Circle'
+import PersonDetail from '@/pages/PersonDetail'
+import Studio from '@/pages/Studio'
+import Ledger from '@/pages/Ledger'
+import Profile from '@/pages/Profile'
+
+// Public pages (no auth)
+import PublicInvite from '@/pages/public/PublicInvite'
+import PublicGuestBook from '@/pages/public/PublicGuestBook'
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { gent } = useAuthStore()
+  if (!gent) return <Navigate to="/" replace />
+  return <Shell>{children}</Shell>
+}
+
+function AnimatedRoutes() {
+  const location = useLocation()
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* Public routes — no Shell */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/g/:slug" element={<PublicInvite />} />
+        <Route path="/g/:slug/guestbook" element={<PublicGuestBook />} />
+
+        {/* Protected routes — wrapped in Shell via ProtectedRoute */}
+        <Route path="/chronicle" element={<ProtectedRoute><Chronicle /></ProtectedRoute>} />
+        <Route path="/chronicle/new" element={<ProtectedRoute><EntryNew /></ProtectedRoute>} />
+        <Route path="/chronicle/:id" element={<ProtectedRoute><EntryDetail /></ProtectedRoute>} />
+        <Route path="/gathering/new" element={<ProtectedRoute><GatheringNew /></ProtectedRoute>} />
+        <Route path="/gathering/:id" element={<ProtectedRoute><GatheringDetail /></ProtectedRoute>} />
+        <Route path="/passport" element={<ProtectedRoute><Passport /></ProtectedRoute>} />
+        <Route path="/circle" element={<ProtectedRoute><Circle /></ProtectedRoute>} />
+        <Route path="/circle/:id" element={<ProtectedRoute><PersonDetail /></ProtectedRoute>} />
+        <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+        <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      </Routes>
+    </AnimatePresence>
+  )
+}
+
+// Single auth listener — mounted once for the entire app lifetime
+function AppContent() {
+  useAuthListener()
+  return <AnimatedRoutes />
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  )
+}
