@@ -29,6 +29,7 @@ export default function Profile() {
   const [bio, setBio] = useState(gent?.bio ?? '')
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [generatingPortrait, setGeneratingPortrait] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -97,6 +98,26 @@ export default function Profile() {
     }
   }
 
+  async function handleGeneratePortrait() {
+    if (!gent) return
+    setGeneratingPortrait(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-portrait', {
+        body: { gent_id: gent.id, display_name: gent.display_name, alias: gent.full_alias },
+      })
+      if (error || !data?.portrait_url) throw new Error(error?.message ?? 'No portrait returned')
+      const updated = await updateGent(gent.id, { avatar_url: data.portrait_url })
+      if (updated) {
+        setGent({ ...gent, avatar_url: data.portrait_url })
+        addToast('Portrait generated.', 'success')
+      }
+    } catch {
+      addToast('Portrait generation failed. Try again.', 'error')
+    } finally {
+      setGeneratingPortrait(false)
+    }
+  }
+
   async function handleSignOut() {
     try {
       await supabase.auth.signOut()
@@ -119,27 +140,19 @@ export default function Profile() {
         >
           {/* Avatar */}
           <motion.div variants={staggerItem} className="relative mb-4">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="relative group focus:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded-full"
-              disabled={uploadingAvatar}
-              aria-label="Change avatar"
-            >
+            <div className="relative">
               <Avatar
                 src={gent.avatar_url}
                 name={gent.display_name}
                 size="xl"
                 active
               />
-              {/* Overlay on hover */}
-              <div className="absolute inset-0 rounded-full bg-obsidian/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                {uploadingAvatar ? (
+              {(uploadingAvatar || generatingPortrait) && (
+                <div className="absolute inset-0 rounded-full bg-obsidian/70 flex items-center justify-center">
                   <Spinner size="sm" />
-                ) : (
-                  <span className="text-ivory text-xs font-body">Change</span>
-                )}
-              </div>
-            </button>
+                </div>
+              )}
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -147,6 +160,24 @@ export default function Profile() {
               className="hidden"
               onChange={handleAvatarUpload}
             />
+          </motion.div>
+
+          {/* Avatar actions */}
+          <motion.div variants={staggerItem} className="flex gap-2 mb-6">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar || generatingPortrait}
+              className="text-xs text-ivory-dim font-body border border-white/10 rounded-full px-4 py-1.5 hover:border-white/30 transition-colors disabled:opacity-40"
+            >
+              {uploadingAvatar ? 'Uploading…' : 'Upload photo'}
+            </button>
+            <button
+              onClick={handleGeneratePortrait}
+              disabled={uploadingAvatar || generatingPortrait}
+              className="text-xs text-gold font-body border border-gold/30 rounded-full px-4 py-1.5 hover:border-gold/60 transition-colors disabled:opacity-40"
+            >
+              {generatingPortrait ? 'Generating…' : 'AI portrait'}
+            </button>
           </motion.div>
 
           {/* Identity */}
