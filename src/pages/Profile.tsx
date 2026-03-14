@@ -52,7 +52,7 @@ export default function Profile() {
   const addToast = useUIStore((s) => s.addToast)
 
   const [name, setName] = useState(gent?.display_name ?? '')
-  const [role, setRole] = useState(gent?.alias ?? '')
+  const [role, setRole] = useState(gent?.full_alias ?? '')
   const [bio, setBio] = useState(gent?.bio ?? '')
   const [saving, setSaving] = useState(false)
   const [generatingPortrait, setGeneratingPortrait] = useState(false)
@@ -77,9 +77,9 @@ export default function Profile() {
     if (!gent) return
     setSaving(true)
     try {
-      const updated = await updateGent(gent.id, { display_name: name, alias: role, bio })
+      const updated = await updateGent(gent.id, { display_name: name, full_alias: role, bio })
       if (updated) {
-        setGent({ ...gent, display_name: name, alias: role, bio })
+        setGent({ ...gent, display_name: name, full_alias: role, bio })
         addToast('Profile updated.', 'success')
       } else {
         addToast('Failed to save profile.', 'error')
@@ -193,7 +193,7 @@ export default function Profile() {
 
           {/* Identity */}
           <motion.div variants={staggerItem} className="text-center mb-1">
-            <h1 className="font-display text-2xl text-ivory">{gent.alias}</h1>
+            <h1 className="font-display text-2xl text-ivory">{gent.full_alias}</h1>
           </motion.div>
           <motion.div variants={staggerItem} className="text-center mb-3">
             <span className="text-gold text-sm font-body">{gent.display_name}</span>
