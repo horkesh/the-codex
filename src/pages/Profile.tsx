@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar } from '@/components/ui/Avatar'
@@ -30,6 +30,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [generatingPortrait, setGeneratingPortrait] = useState(false)
+  const [portraitSeconds, setPortraitSeconds] = useState(0)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -97,6 +98,12 @@ export default function Profile() {
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
+
+  useEffect(() => {
+    if (!generatingPortrait) { setPortraitSeconds(0); return }
+    const t = setInterval(() => setPortraitSeconds((s) => s + 1), 1000)
+    return () => clearInterval(t)
+  }, [generatingPortrait])
 
   async function handleGeneratePortrait() {
     if (!gent) return
@@ -176,7 +183,10 @@ export default function Profile() {
               disabled={uploadingAvatar || generatingPortrait}
               className="text-xs text-gold font-body border border-gold/30 rounded-full px-4 py-1.5 hover:border-gold/60 transition-colors disabled:opacity-40"
             >
-              {generatingPortrait ? 'Generating…' : 'AI portrait'}
+              {generatingPortrait
+                ? portraitSeconds < 3 ? 'Generating…'
+                  : `Working… ${portraitSeconds}s`
+                : 'AI portrait'}
             </button>
           </motion.div>
 
