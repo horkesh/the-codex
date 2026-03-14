@@ -15,15 +15,19 @@ export function useAuthListener(): { loading: boolean } {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Resolve loading immediately — don't hold the auth lock
+      if (event === 'INITIAL_SESSION') setLoading(false)
+
       if (session?.user) {
-        const gent = await fetchGentById(session.user.id)
-        setGent(gent)
+        // Defer the Supabase data fetch outside the auth lock to avoid deadlock
+        const userId = session.user.id
+        setTimeout(() => {
+          fetchGentById(userId).then(setGent)
+        }, 0)
       } else {
         setGent(null)
       }
-      // INITIAL_SESSION fires synchronously on mount — marks the initial check done
-      if (event === 'INITIAL_SESSION') setLoading(false)
     })
 
     return () => subscription.unsubscribe()
