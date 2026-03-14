@@ -17,7 +17,7 @@ Deno.serve(async (req: Request) => {
     if (!googleApiKey) throw new Error('GOOGLE_AI_API_KEY not set')
     if (!gent_id || !photo_base64) throw new Error('Missing gent_id or photo_base64')
 
-    // Step 1: Extract detailed appearance description
+    // Step 1: Analyse photo to extract appearance + traits
     const analysisResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`,
       {
@@ -27,12 +27,15 @@ Deno.serve(async (req: Request) => {
           contents: [{
             parts: [
               {
-                text: `Describe this person's appearance in precise detail. Include: approximate age, skin tone, face shape, eye colour, hair colour and style, and ALL facial hair in exact detail (e.g. "thick dark moustache", "short beard", "clean-shaven" — whatever applies). Also note any other distinctive features. One paragraph, no commentary.`,
+                text: `Analyze this person's photo. Return a JSON object with:
+1. "appearance": detailed description of their face, hair (colour, length, style), eye colour, skin tone, all facial hair (moustache, beard, stubble — exact details), distinctive features, approximate age.
+2. "traits": array of 3 personality/vibe words inferred from their look (e.g. "sharp", "relaxed", "intense").
+Output PURE JSON only.`,
               },
               { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
             ],
           }],
-          generationConfig: { maxOutputTokens: 300 },
+          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 512 },
         }),
       }
     )
@@ -42,7 +45,15 @@ Deno.serve(async (req: Request) => {
     }
 
     const analysisData = await analysisResponse.json()
-    const appearance = analysisData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
+    const rawText = analysisData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
+
+    let appearance = rawText
+    let traits: string[] = ['distinguished', 'sharp', 'sophisticated']
+    try {
+      const parsed = JSON.parse(rawText)
+      appearance = parsed.appearance ?? rawText
+      traits = parsed.traits ?? traits
+    } catch { /* fallback to raw text */ }
 
     // Save appearance for future scene generation
     const { createClient: createEarly } = await import('npm:@supabase/supabase-js@2')
@@ -51,8 +62,9 @@ Deno.serve(async (req: Request) => {
       .update({ appearance_description: appearance })
       .eq('id', gent_id)
 
-    // Step 2: img2img — photo + appearance description reinforces features, style transforms the look
-    const imagePrompt = `Paint a cinematic digital portrait of the person in this photo. Subject: ${appearance}. Render their face and all features faithfully — do not omit or alter facial hair, hair style, or distinctive features. Style: dramatic Rembrandt lighting, dark obsidian background, warm gold rim light on the edges, rich shadows, high-end digital painting — photorealistic enough to be recognisable, not abstract. No text, no watermarks. Square format.`
+    // Step 2: Text-to-image — abstract cinematic avatar (Tonight style)
+    const traitList = traits.join(', ')
+    const imagePrompt = `Abstract artistic portrait avatar. Subject: ${appearance}. Personality: ${traitList}. Style: minimalist geometric forms, cinematic noir lighting, moody desaturated colour palette with deep blacks and subtle gold accents, high-end digital art, dramatic shadows and highlights, sophisticated composition. No text, no words, no watermarks. Square format.`
 
     const imageResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${googleApiKey}`,
@@ -60,15 +72,8 @@ Deno.serve(async (req: Request) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: imagePrompt },
-              { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
-            ],
-          }],
-          generationConfig: {
-            responseModalities: ['TEXT', 'IMAGE'],
-          },
+          contents: [{ parts: [{ text: imagePrompt }] }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
         }),
       }
     )
