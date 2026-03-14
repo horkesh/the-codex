@@ -221,7 +221,7 @@ export default function Landing() {
                   />
 
                   {errorMsg && (
-                    <p className="text-xs text-center font-body" style={{ color: '#c0392b' }}>
+                    <p className="text-xs text-center font-body text-[--color-error]">
                       {errorMsg}
                     </p>
                   )}

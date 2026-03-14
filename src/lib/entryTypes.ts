@@ -19,6 +19,28 @@ export const ENTRY_TYPE_META: Record<EntryType, EntryTypeMeta> = {
   interlude:   { label: 'Interlude',  Icon: BookOpen,  bg: 'bg-interlude',   borderColor: '#1a1a2e' },
 }
 
+/** Tailwind badge classes for entry-type pills in story timeline / selection UI. */
+export const STORY_TYPE_COLORS: Record<string, string> = {
+  mission:     'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  night_out:   'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  steak:       'bg-red-500/20 text-red-300 border-red-500/30',
+  playstation: 'bg-green-500/20 text-green-300 border-green-500/30',
+  toast:       'bg-amber-500/20 text-amber-300 border-amber-500/30',
+  gathering:   'bg-gold/20 text-gold border-gold/30',
+  interlude:   'bg-slate-light text-ivory-dim border-white/10',
+}
+
+/** Short labels used in story timeline / selection badges. */
+export const STORY_TYPE_LABELS: Record<string, string> = {
+  mission:     'Mission',
+  night_out:   'Night Out',
+  steak:       'Steak',
+  playstation: 'PlayStation',
+  toast:       'Toast',
+  gathering:   'Gathering',
+  interlude:   'Interlude',
+}
+
 /** Entry-type category images (public/entry-types/), WebP for smaller size. Used in selector, card and hero when no cover. */
 export const ENTRY_TYPE_IMAGES: Record<EntryType, string> = {
   mission:     '/entry-types/01-mission.webp',

@@ -35,6 +35,8 @@ export function useWhereabouts() {
 
     return () => {
       channel.unsubscribe()
+      supabase.removeChannel(channel)
+      channelRef.current = null
       clearInterval(pruneInterval)
     }
   }, [gent?.id])

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { fetchReactions, upsertReaction, deleteReaction } from '@/data/reactions'
 import { useAuthStore } from '@/store/auth'
@@ -46,9 +46,12 @@ export function EntryReactions({ entryId, compact = false }: EntryReactionsProps
     ? reactions.find((r) => r.gent_id === gent.id)?.reaction_type ?? null
     : null
 
-  // Count per type
-  const countByType = (type: ReactionType): number =>
-    reactions.filter((r) => r.reaction_type === type).length
+  // Count per type — single pass, memoized
+  const countMap = useMemo<Record<ReactionType, number>>(() => {
+    const map: Record<ReactionType, number> = { legendary: 0, classic: 0, ruthless: 0, noted: 0 }
+    for (const r of reactions) map[r.reaction_type] = (map[r.reaction_type] ?? 0) + 1
+    return map
+  }, [reactions])
 
   const totalCount = reactions.length
 
@@ -94,7 +97,7 @@ export function EntryReactions({ entryId, compact = false }: EntryReactionsProps
   if (compact) {
     if (!loaded || totalCount === 0) return null
     // Find the most common reaction type to show its symbol
-    const dominant = REACTIONS.map((r) => ({ ...r, count: countByType(r.type) }))
+    const dominant = REACTIONS.map((r) => ({ ...r, count: countMap[r.type] }))
       .sort((a, b) => b.count - a.count)[0]
     return (
       <span className="inline-flex items-center gap-1 font-mono text-xs text-ivory-dim">
@@ -109,7 +112,7 @@ export function EntryReactions({ entryId, compact = false }: EntryReactionsProps
   return (
     <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Entry reactions">
       {REACTIONS.map(({ type, symbol, label }) => {
-        const count = countByType(type)
+        const count = countMap[type]
         const isMyReaction = myReaction === type
 
         return (

@@ -40,6 +40,7 @@ The old Gents palette (ember red + teal) belongs to The Toast. This is a differe
 --color-steak:      #3d1a0a;    /* Deep brown — Steaks */
 --color-playstation:#0a2420;    /* Dark teal-green — PlayStation */
 --color-toast:      #3d2010;    /* Warm amber-brown — Toast sessions */
+--color-gathering:  #1a2a1a;    /* Dark green — Gatherings */
 --color-interlude:  #1a1a2e;    /* Neutral dark — Interludes */
 ```
 

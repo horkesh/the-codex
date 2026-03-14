@@ -8,8 +8,7 @@ import { WhereaboutsWidget } from '@/components/whereabouts/WhereaboutsWidget'
 import { ChronicleFilters } from '@/components/chronicle/ChronicleFilters'
 import { TopBar } from '@/components/layout'
 import { PageWrapper } from '@/components/layout'
-import { Spinner } from '@/components/ui'
-import { Button } from '@/components/ui'
+import { Spinner, Button, EmptyStateImage } from '@/components/ui'
 import { Avatar } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
 import { staggerContainer, fadeIn } from '@/lib/animations'
@@ -85,6 +84,7 @@ export default function Chronicle() {
           </div>
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-8 gap-4 text-center">
+            <EmptyStateImage src="/empty-states/chronicle.webp" className="mb-1" />
             <p className="font-body text-ivory-dim text-sm leading-relaxed">
               The Chronicle awaits its first entry.
             </p>
@@ -124,7 +124,7 @@ export default function Chronicle() {
         transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.3 }}
         whileTap={{ scale: 0.92 }}
         className="fixed right-4 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-gold text-obsidian font-body font-semibold shadow-[0_0_40px_rgba(201,168,76,0.3)]"
-        style={{ bottom: '90px' }}
+        style={{ bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))' }}
       >
         <Plus size={24} strokeWidth={2.5} />
       </motion.button>

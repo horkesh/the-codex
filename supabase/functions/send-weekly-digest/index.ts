@@ -158,35 +158,26 @@ Close with a single line of encouragement or wit. 100-150 words total. No emojis
       year: 'numeric',
     })
 
-    // Send emails
+    // Send emails in parallel
     let sentCount = 0
 
     if (!testMode && gentEmails.length > 0) {
-      for (const { display_name, email } of gentEmails) {
-        const emailRes = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: 'The Codex <digest@thecodex.app>',
-            to: [email],
-            subject: `The Chronicle — Week of ${formattedDate}`,
-            html: `<div style="background:#0d0b0f;color:#f5f0e8;font-family:Georgia,serif;padding:40px;max-width:600px;margin:0 auto;"><h2 style="color:#c9a84c;font-size:14px;letter-spacing:0.3em;text-transform:uppercase;">The Chronicle</h2><p style="font-size:16px;line-height:1.7;">${digestText.replace(/\n/g, '<br>')}</p></div>`,
-          }),
-        })
+      const emailHtml = `<div style="background:#0d0b0f;color:#f5f0e8;font-family:Georgia,serif;padding:40px;max-width:600px;margin:0 auto;"><h2 style="color:#c9a84c;font-size:14px;letter-spacing:0.3em;text-transform:uppercase;">The Chronicle</h2><p style="font-size:16px;line-height:1.7;">${digestText.replace(/\n/g, '<br>')}</p></div>`
+      const subject = `The Chronicle — Week of ${formattedDate}`
 
-        if (emailRes.ok) {
-          sentCount++
-        } else {
-          const errText = await emailRes.text()
-          console.error(`Failed to send to ${email}: ${errText}`)
-        }
-      }
-    } else if (testMode) {
-      // In test mode, count the gents but don't send
-      sentCount = 0
+      const results = await Promise.all(
+        gentEmails.map(({ email }) =>
+          fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from: 'The Codex <digest@thecodex.app>', to: [email], subject, html: emailHtml }),
+          }).then(async (res) => {
+            if (!res.ok) console.error(`Failed to send to ${email}: ${await res.text()}`)
+            return res.ok
+          })
+        )
+      )
+      sentCount = results.filter(Boolean).length
     }
 
     return new Response(

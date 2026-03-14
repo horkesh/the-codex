@@ -6,6 +6,7 @@ import { fetchEntries } from '@/data/entries'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Spinner } from '@/components/ui'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
+import { flagEmoji, formatDate } from '@/lib/utils'
 import { fadeIn, fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryWithParticipants, EntryType } from '@/types/app'
 
@@ -64,15 +65,6 @@ function groupByLocation(entries: EntryWithParticipants[]): CountryGroup[] {
       }
     })
     .sort((a, b) => b.totalEntries - a.totalEntries)
-}
-
-function flagEmoji(code: string | null): string {
-  if (!code || code.length !== 2) return ''
-  return code
-    .toUpperCase()
-    .split('')
-    .map((c) => String.fromCodePoint(c.charCodeAt(0) + 127397))
-    .join('')
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -162,7 +154,7 @@ function SidePanel({ cityGroup, onClose, onEntryClick }: SidePanelProps) {
               <div className="min-w-0">
                 <h2 className="text-base font-display text-ivory truncate">{cityGroup.city}</h2>
                 <p className="text-xs text-ivory-dim font-body mt-0.5">
-                  {flagEmoji(cityGroup.country_code)} {cityGroup.country} &middot; {cityGroup.entries.length} {cityGroup.entries.length === 1 ? 'entry' : 'entries'}
+                  {cityGroup.country_code && flagEmoji(cityGroup.country_code)} {cityGroup.country} &middot; {cityGroup.entries.length} {cityGroup.entries.length === 1 ? 'entry' : 'entries'}
                 </p>
               </div>
               <button
@@ -192,7 +184,7 @@ function SidePanel({ cityGroup, onClose, onEntryClick }: SidePanelProps) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-body text-ivory truncate">{entry.title}</p>
                       <p className="text-xs text-ivory-dim font-body mt-0.5">
-                        {meta.label} &middot; {new Date(entry.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {meta.label} &middot; {formatDate(entry.date)}
                       </p>
                     </div>
                     <ChevronRight size={13} className="text-ivory-dim mt-1 shrink-0" />
@@ -290,7 +282,7 @@ export default function DossierMap() {
                       <div className="flex items-center gap-2">
                         <div className="w-0.5 h-4 bg-gold rounded-full" />
                         <h2 className="text-xs tracking-[0.22em] uppercase font-body text-gold font-semibold">
-                          {flagEmoji(countryGroup.country_code)} {countryGroup.country}
+                          {countryGroup.country_code && flagEmoji(countryGroup.country_code)} {countryGroup.country}
                         </h2>
                       </div>
                       <span className="text-[10px] text-ivory-dim font-mono tabular-nums">

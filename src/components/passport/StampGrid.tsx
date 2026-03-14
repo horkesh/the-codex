@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { StampCard } from './StampCard'
+import { EmptyStateImage } from '@/components/ui/EmptyStateImage'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import type { PassportStamp } from '@/types/app'
@@ -81,8 +82,15 @@ export function StampGrid({ stamps, onStampPress }: StampGridProps) {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="flex items-center justify-center py-16"
+            className="flex flex-col items-center justify-center py-16 gap-3"
           >
+            <EmptyStateImage
+              src={
+                activeTab === 'achievement'
+                  ? '/empty-states/passport-achievements.webp'
+                  : '/empty-states/passport.webp'
+              }
+            />
             <p className="text-ivory-dim text-sm text-center">
               {currentTab.emptyText}
             </p>

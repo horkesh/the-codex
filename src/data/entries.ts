@@ -8,6 +8,7 @@ export async function fetchEntries(filters?: {
   type?: string
   gentId?: string
   year?: number
+  ids?: string[]
 }): Promise<EntryWithParticipants[]> {
   // Build the entries query
   let query = supabase
@@ -15,6 +16,11 @@ export async function fetchEntries(filters?: {
     .select(ENTRY_COLUMNS)
     .in('status', ['published', 'gathering_post'])
     .order('date', { ascending: false })
+
+  if (filters?.ids) {
+    if (filters.ids.length === 0) return []
+    query = query.in('id', filters.ids)
+  }
 
   if (filters?.type) {
     query = query.eq('type', filters.type)

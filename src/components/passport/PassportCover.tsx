@@ -65,15 +65,22 @@ export function PassportCover({ gent, onOpen, stampCount, countryCount }: Passpo
       className="flex items-center justify-center min-h-[calc(100vh-56px)] px-4 py-8"
     >
       {/* Passport body */}
-      <div
-        className={cn(
-          'w-full max-w-sm mx-auto',
-          'bg-slate-dark',
-          'border-2 border-gold/30 rounded-xl',
-          'shadow-[0_8px_40px_rgba(0,0,0,0.6),0_0_0_1px_rgba(201,168,76,0.08),inset_0_1px_0_rgba(201,168,76,0.1)]',
-          'overflow-hidden',
-        )}
-      >
+      <div className="relative w-full max-w-sm mx-auto">
+        {/* Optional guilloche texture — add public/textures/guilloche.webp to enable */}
+        <div
+          className="absolute inset-0 rounded-xl pointer-events-none opacity-[0.06] bg-repeat"
+          style={{ backgroundImage: "url('/textures/guilloche.webp')" }}
+          aria-hidden
+        />
+        <div
+          className={cn(
+            'relative w-full',
+            'bg-slate-dark',
+            'border-2 border-gold/30 rounded-xl',
+            'shadow-[0_8px_40px_rgba(0,0,0,0.6),0_0_0_1px_rgba(201,168,76,0.08),inset_0_1px_0_rgba(201,168,76,0.1)]',
+            'overflow-hidden',
+          )}
+        >
         {/* Spine accent line */}
         <div className="h-1 w-full bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
 
@@ -173,6 +180,7 @@ export function PassportCover({ gent, onOpen, stampCount, countryCount }: Passpo
 
         {/* Bottom spine accent */}
         <div className="h-1 w-full bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
+        </div>
       </div>
     </motion.div>
   )

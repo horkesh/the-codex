@@ -4,6 +4,24 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-13 (009)
+
+**Goal**: Implement every feature in the master roadmap; code review + simplify.
+
+**Done**:
+- Built 15 new pages/components: EntryEdit, Prospects, StoryNew, StoryDetail, BucketList, DossierMap, WhereaboutsWidget, AlmanacWidget, VerdictBoard, RivalryIndex, SommelierSection, EntryReactions, POIModal, StoryCard, PassportPageExport/GatheringRecap/WrappedCard Studio templates
+- 6 new Supabase Edge Functions: `analyze-instagram`, `generate-story-arc`, `generate-throwback`, `generate-scene`, `generate-story-stamp`, `send-weekly-digest`
+- 2 new Supabase migrations: `20260315000001_new_features.sql` (gents/entries/people columns + 4 new tables), `20260315000002_new_storage_policies.sql` (scene-images, story-stamps buckets)
+- 6 new routes in App.tsx: `/chronicle/:id/edit`, `/prospects`, `/passport/stories/new`, `/passport/stories/:id`, `/dossier`, `/bucket-list`
+- Added `ids` filter to `fetchEntries()` for batch-fetch by specific IDs
+- Simplify pass: extracted STORY_TYPE_COLORS/LABELS to entryTypes.ts; removed duplicate flagEmoji from DossierMap; replaced inline date format with formatDate(); useMemo for StoryDetail stats + EntryReactions countMap + BucketList grouping; parallelised send-weekly-digest emails; fixed Realtime channel leak in useWhereabouts (removeChannel on cleanup)
+- Fixed 3 TypeScript errors: DossierMap backTo prop, Studio WrappedCard stats prop, whereabouts store unused get parameter
+- Deployed to Vercel: https://the-codex-sepia.vercel.app
+
+**Status**: All master roadmap features shipped. Zero TS errors.
+
+---
+
 ## Session — 2026-03-13 (008)
 
 **Goal**: Studio AI-generated backgrounds; new templates; polish.

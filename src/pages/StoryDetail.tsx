@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { MapPin, BarChart3, RefreshCw, Camera } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -10,29 +10,8 @@ import { fetchEntries } from '@/data/entries'
 import { generateStoryArc } from '@/ai/storyArc'
 import { useUIStore } from '@/store/ui'
 import { cn, formatDate } from '@/lib/utils'
+import { STORY_TYPE_COLORS as TYPE_COLORS, STORY_TYPE_LABELS as TYPE_LABELS } from '@/lib/entryTypes'
 import type { Story, Entry } from '@/types/app'
-
-// ─── Type config ──────────────────────────────────────────────────────────────
-
-const TYPE_COLORS: Record<string, string> = {
-  mission: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  night_out: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-  steak: 'bg-red-500/20 text-red-300 border-red-500/30',
-  playstation: 'bg-green-500/20 text-green-300 border-green-500/30',
-  toast: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  gathering: 'bg-gold/20 text-gold border-gold/30',
-  interlude: 'bg-slate-light text-ivory-dim border-white/10',
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  mission: 'Mission',
-  night_out: 'Night Out',
-  steak: 'Steak',
-  playstation: 'PlayStation',
-  toast: 'Toast',
-  gathering: 'Gathering',
-  interlude: 'Interlude',
-}
 
 // ─── Section divider ──────────────────────────────────────────────────────────
 
@@ -75,11 +54,9 @@ export default function StoryDetail() {
         setStory(s)
 
         if (s.entry_ids.length > 0) {
-          const all = await fetchEntries()
+          const all = await fetchEntries({ ids: s.entry_ids })
           if (!cancelled) {
-            const linked = all
-              .filter((e) => s.entry_ids.includes(e.id))
-              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            const linked = [...all].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             setLinkedEntries(linked)
           }
         }
@@ -95,23 +72,24 @@ export default function StoryDetail() {
   }, [id])
 
   // ── Derived stats ──
-  const dates = linkedEntries.map((e) => new Date(e.date)).sort((a, b) => a.getTime() - b.getTime())
-  const earliest = dates[0]
-  const latest = dates[dates.length - 1]
-  const spanDays = earliest && latest
-    ? Math.round((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24))
-    : 0
-
-  const uniquePlaces = Array.from(
-    new Set(
-      linkedEntries.flatMap((e) => {
-        const parts = [e.city, e.country].filter(Boolean)
-        return parts.length ? [`${e.city ?? ''}${e.country ? `, ${e.country}` : ''}`] : []
-      })
+  const { earliest, latest, spanDays, uniquePlaces, uniqueCities } = useMemo(() => {
+    const dates = linkedEntries.map((e) => new Date(e.date)).sort((a, b) => a.getTime() - b.getTime())
+    const earliest = dates[0]
+    const latest = dates[dates.length - 1]
+    const spanDays = earliest && latest
+      ? Math.round((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24))
+      : 0
+    const uniquePlaces = Array.from(
+      new Set(
+        linkedEntries.flatMap((e) => {
+          const parts = [e.city, e.country].filter(Boolean)
+          return parts.length ? [`${e.city ?? ''}${e.country ? `, ${e.country}` : ''}`] : []
+        })
+      )
     )
-  )
-
-  const uniqueCities = Array.from(new Set(linkedEntries.map((e) => e.city).filter(Boolean))) as string[]
+    const uniqueCities = Array.from(new Set(linkedEntries.map((e) => e.city).filter(Boolean))) as string[]
+    return { earliest, latest, spanDays, uniquePlaces, uniqueCities }
+  }, [linkedEntries])
 
   // ── Regenerate arc ──
   const handleRegenerate = async () => {

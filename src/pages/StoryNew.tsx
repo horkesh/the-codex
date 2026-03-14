@@ -11,29 +11,8 @@ import { generateStoryArc } from '@/ai/storyArc'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { cn, formatDate } from '@/lib/utils'
+import { STORY_TYPE_COLORS as TYPE_COLORS, STORY_TYPE_LABELS as TYPE_LABELS } from '@/lib/entryTypes'
 import type { Entry } from '@/types/app'
-
-// ─── Entry type config ────────────────────────────────────────────────────────
-
-const TYPE_COLORS: Record<string, string> = {
-  mission: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  night_out: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-  steak: 'bg-red-500/20 text-red-300 border-red-500/30',
-  playstation: 'bg-green-500/20 text-green-300 border-green-500/30',
-  toast: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  gathering: 'bg-gold/20 text-gold border-gold/30',
-  interlude: 'bg-slate-light text-ivory-dim border-white/10',
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  mission: 'Mission',
-  night_out: 'Night Out',
-  steak: 'Steak',
-  playstation: 'PlayStation',
-  toast: 'Toast',
-  gathering: 'Gathering',
-  interlude: 'Interlude',
-}
 
 // ─── Step 1: Name it ──────────────────────────────────────────────────────────
 

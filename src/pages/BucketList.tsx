@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, MoreVertical, Plus } from 'lucide-react'
 import { TopBar, PageWrapper } from '@/components/layout'
@@ -479,10 +479,16 @@ export default function BucketList() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Derived buckets
-  const openItems   = items.filter((i) => i.status === 'open')
-  const doneItems   = items.filter((i) => i.status === 'done')
-  const passedItems = items.filter((i) => i.status === 'passed')
+  // Derived buckets — single pass
+  const { openItems, doneItems, passedItems } = useMemo(() => {
+    const open: typeof items = [], done: typeof items = [], passed: typeof items = []
+    for (const i of items) {
+      if (i.status === 'open') open.push(i)
+      else if (i.status === 'done') done.push(i)
+      else passed.push(i)
+    }
+    return { openItems: open, doneItems: done, passedItems: passed }
+  }, [items])
 
   // ── Mutation handlers ─────────────────────────────────────────────────────
 

@@ -26,7 +26,7 @@ export function TopBar({
     <header
       className={cn(
         'sticky top-0 z-40 safe-top',
-        !transparent && 'backdrop-blur-xl border-b border-white/[0.04]',
+        !transparent && 'backdrop-blur-xl border-b border-gold/10',
       )}
       style={!transparent ? { background: 'rgba(20, 16, 25, 0.92)' } : undefined}
     >

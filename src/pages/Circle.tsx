@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { Plus, Users, Radar } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
-import { Button, Spinner } from '@/components/ui'
+import { Button, Spinner, EmptyStateImage } from '@/components/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import { useCircle } from '@/hooks/useCircle'
 import { PersonCard } from '@/components/circle/PersonCard'
@@ -133,6 +133,7 @@ export default function Circle() {
           ) : people.length === 0 ? (
             /* Empty state */
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+              <EmptyStateImage src="/empty-states/circle.webp" className="mb-1" />
               <Users size={40} className="text-ivory-dim opacity-40" />
               <p className="text-ivory-dim text-sm font-body">
                 {filters.search || filters.label
@@ -187,6 +188,7 @@ export default function Circle() {
           ) : poiPeople.length === 0 ? (
             /* Empty state */
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+              <EmptyStateImage src="/empty-states/circle.webp" className="mb-1" />
               <Radar size={40} className="text-ivory-dim opacity-40" />
               <p className="text-ivory-dim text-sm font-body">No one on the radar yet.</p>
               <Button
