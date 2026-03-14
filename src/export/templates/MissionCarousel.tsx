@@ -6,10 +6,12 @@ import { BrandMark, BackgroundLayer } from '@/export/templates/shared'
 interface MissionCarouselProps {
   entry: Entry
   backgroundUrl?: string
+  rewardKeys?: Set<string>
 }
 
 export const MissionCarousel = React.forwardRef<HTMLDivElement, MissionCarouselProps>(
-  ({ entry, backgroundUrl }, ref) => {
+  ({ entry, backgroundUrl, rewardKeys }, ref) => {
+    const isVeteran = rewardKeys?.has('veteran_stamp') ?? false
     return (
       <div
         ref={ref}
@@ -27,6 +29,28 @@ export const MissionCarousel = React.forwardRef<HTMLDivElement, MissionCarouselP
         }}
       >
         <BackgroundLayer url={backgroundUrl} gradient="strong" />
+
+        {/* Veteran stamp — threshold reward */}
+        {isVeteran && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '120px',
+              right: '72px',
+              zIndex: 3,
+              border: '1px solid rgba(201,168,76,0.5)',
+              borderRadius: '2px',
+              padding: '5px 10px',
+              fontFamily: 'var(--font-body)',
+              fontSize: '9px',
+              letterSpacing: '0.4em',
+              textTransform: 'uppercase' as const,
+              color: 'rgba(201,168,76,0.7)',
+            }}
+          >
+            Veteran
+          </div>
+        )}
 
         {/* Diagonal lines texture overlay */}
         {!backgroundUrl && (

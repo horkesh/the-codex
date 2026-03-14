@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Entry, EntryWithParticipants, Gent } from '@/types/app'
+import { checkAndAwardAchievements } from '@/data/achievements'
+import { checkAndAwardThresholds } from '@/data/thresholds'
 
 export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, status, metadata, created_by, created_at, updated_at'
 const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio'
@@ -134,7 +136,11 @@ export async function createEntry(data: {
     .single()
 
   if (error) throw error
-  return rawEntry as unknown as Entry
+  const entry = rawEntry as unknown as Entry
+  // Fire-and-forget: check milestones after publish
+  checkAndAwardAchievements(data.created_by).catch(() => {})
+  checkAndAwardThresholds(data.created_by).catch(() => {})
+  return entry
 }
 
 export async function updateEntry(id: string, data: Partial<Entry>): Promise<Entry> {

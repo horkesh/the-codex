@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router'
+import { fetchAllStats } from '@/data/stats'
+import { useThresholds } from '@/hooks/useThresholds'
+import type { GentStats, GentAlias } from '@/types/app'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ImageIcon, Share2, Sparkles } from 'lucide-react'
 
@@ -25,6 +28,7 @@ import { InterludeCard } from '@/export/templates/InterludeCard'
 import { PassportPageExport } from '@/export/templates/PassportPageExport'
 import { GatheringRecap } from '@/export/templates/GatheringRecap'
 import { WrappedCard } from '@/export/templates/WrappedCard'
+import { RivalryCard } from '@/export/templates/RivalryCard'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,6 +46,7 @@ type TemplateId =
   | 'passport_page'
   | 'gathering_recap'
   | 'wrapped_card'
+  | 'rivalry_card'
 
 interface TemplateConfig {
   id: TemplateId
@@ -72,6 +77,8 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
   interlude:   [{ id: 'interlude_card',   label: 'Interlude Card',  dims: '1080×1350', bgAspect: '3:4' }],
   // annual is a standalone type for year-in-review exports (no entry required)
   annual:      [{ id: 'wrapped_card',     label: 'Wrapped Card',    dims: '1080×1350', bgAspect: '3:4' }],
+  // comparison is a standalone type — no entry required (driven by ?comparison= param)
+  comparison:  [{ id: 'rivalry_card',     label: 'The Rivalry',     dims: '1080×1350', bgAspect: '3:4' }],
 }
 
 // Scale factor for the in-page preview
@@ -98,20 +105,51 @@ interface TemplateRendererProps {
   entry: Entry
   innerRef: React.Ref<HTMLDivElement>
   backgroundUrl?: string
+  rewardKeys?: Set<string>
+  comparisonParam?: string
 }
 
-function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl }: TemplateRendererProps) {
+function RivalryCardWrapper({
+  innerRef,
+  backgroundUrl,
+  comparisonParam,
+}: {
+  innerRef: React.Ref<HTMLDivElement>
+  backgroundUrl?: string
+  comparisonParam?: string
+}) {
+  const [stats, setStats] = useState<GentStats[]>([])
+  useEffect(() => {
+    fetchAllStats().then(setStats).catch(() => {})
+  }, [])
+  const parts = (comparisonParam ?? 'keys:bass').split(':')
+  const aliasA = (parts[0] ?? 'keys') as GentAlias
+  const aliasB = (parts[1] ?? 'bass') as GentAlias
+  const statA = stats.find((s) => s.alias === aliasA)
+  const statB = stats.find((s) => s.alias === aliasB)
+  if (!statA || !statB) {
+    return (
+      <div
+        ref={innerRef as React.RefObject<HTMLDivElement>}
+        style={{ width: '1080px', height: '1350px', backgroundColor: '#0D0B0F' }}
+      />
+    )
+  }
+  return <RivalryCard ref={innerRef} gentA={statA} gentB={statB} backgroundUrl={backgroundUrl} />
+}
+
+function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam }: TemplateRendererProps) {
   switch (templateId) {
     case 'night_out_card':
       return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'mission_carousel':
-      return <MissionCarousel ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+      return <MissionCarousel ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} />
     case 'steak_verdict':
-      return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+      return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} />
     case 'ps5_match_card':
       return <PS5MatchCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'gathering_invite':
-      return <GatheringInviteCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+      return <GatheringInviteCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} />
     case 'countdown':
       return <CountdownCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'toast_card':
@@ -123,10 +161,6 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl }: Templa
     case 'gathering_recap':
       return <GatheringRecap ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'wrapped_card':
-      // WrappedCard is a standalone annual export — it does not take an entry prop.
-      // Stats are aggregated at the page level in the full implementation; here we
-      // render a shell with the current year and zero-state counters so the preview
-      // is visible and the template can be exported as a placeholder.
       return (
         <WrappedCard
           ref={innerRef}
@@ -138,6 +172,8 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl }: Templa
           totalToasts={0}
         />
       )
+    case 'rivalry_card':
+      return <RivalryCardWrapper innerRef={innerRef} backgroundUrl={backgroundUrl} comparisonParam={comparisonParam} />
     default:
       return null
   }
@@ -250,6 +286,9 @@ function TemplateOption({ config, isActive, onClick }: TemplateOptionProps) {
 export default function Studio() {
   const [searchParams] = useSearchParams()
   const preselectedEntryId = searchParams.get('entry')
+  const comparisonParam = searchParams.get('comparison')
+
+  const { rewardKeys } = useThresholds()
 
   const [entries, setEntries] = useState<Entry[]>([])
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
@@ -261,8 +300,14 @@ export default function Studio() {
 
   const templateRef = useRef<HTMLDivElement>(null)
 
-  // Load entries on mount; honour ?entry= param
+  // Load entries on mount; honour ?entry= and ?comparison= params
   useEffect(() => {
+    // Comparison mode — no entries needed
+    if (comparisonParam) {
+      setSelectedTemplate('rivalry_card')
+      setLoading(false)
+      return
+    }
     let cancelled = false
     fetchEntries({})
       .then((fetched) => {
@@ -281,7 +326,7 @@ export default function Studio() {
       })
       .catch(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [preselectedEntryId])
+  }, [preselectedEntryId, comparisonParam])
 
   // When entry changes, reset template selection and background
   function handleSelectEntry(entry: Entry) {
@@ -300,6 +345,7 @@ export default function Studio() {
 
   async function handleGenerateBg() {
     if (!selectedEntry || !activeTemplateConfig) return
+    // No AI background for standalone comparison card
     setGeneratingBg(true)
     try {
       const url = await generateTemplateBg(selectedEntry, activeTemplateConfig.bgAspect ?? '3:4')
@@ -310,13 +356,13 @@ export default function Studio() {
   }
 
   async function handleExport() {
-    if (!templateRef.current || !selectedEntry) return
+    if (!templateRef.current) return
     setExporting(true)
+    const filename = comparisonParam
+      ? `codex-rivalry-${comparisonParam}.png`
+      : `codex-${selectedEntry?.type ?? 'export'}-${selectedEntry?.date ?? Date.now()}.png`
     try {
-      await exportAndShare(
-        templateRef.current,
-        `codex-${selectedEntry.type}-${selectedEntry.date}.png`,
-      )
+      await exportAndShare(templateRef.current, filename)
     } finally {
       setExporting(false)
     }
@@ -362,8 +408,25 @@ export default function Studio() {
         {/* Step 1: Entry selector                                              */}
         {/* ------------------------------------------------------------------ */}
 
+        {/* Comparison mode banner */}
+        {comparisonParam && (
+          <motion.div
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            className="mx-4 mt-4 mb-5 px-4 py-3 rounded-xl bg-slate-mid border border-white/8 flex items-center gap-3"
+          >
+            <div className="min-w-0">
+              <p className="font-display text-sm text-ivory">The Rivalry</p>
+              <p className="text-[11px] font-mono text-ivory-dim mt-0.5">
+                {comparisonParam.replace(':', ' vs ')}
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Only show the full selector if there was no preselected param */}
-        {!preselectedEntryId && (
+        {!preselectedEntryId && !comparisonParam && (
           <motion.section
             variants={fadeUp}
             initial="initial"
@@ -398,8 +461,8 @@ export default function Studio() {
           </motion.section>
         )}
 
-        {/* When preselected: show a compact "selected entry" banner */}
-        {preselectedEntryId && selectedEntry && (
+        {/* When preselected: show a compact "selected entry" banner (not in comparison mode) */}
+        {preselectedEntryId && !comparisonParam && selectedEntry && (
           <motion.div
             variants={fadeUp}
             initial="initial"
@@ -419,7 +482,7 @@ export default function Studio() {
         )}
 
         {/* Divider */}
-        {selectedEntry && (
+        {(selectedEntry || comparisonParam) && (
           <div className="mx-4 border-t border-white/8 mb-0" />
         )}
 
@@ -477,9 +540,9 @@ export default function Studio() {
         {/* ------------------------------------------------------------------ */}
 
         <AnimatePresence mode="wait">
-          {selectedEntry && selectedTemplate && activeTemplateConfig && (
+          {(selectedEntry || comparisonParam) && selectedTemplate && (activeTemplateConfig || comparisonParam) && (
             <motion.section
-              key={selectedEntry.id + '-' + selectedTemplate}
+              key={(selectedEntry?.id ?? 'comparison') + '-' + selectedTemplate}
               variants={fadeUp}
               initial="initial"
               animate="animate"
@@ -497,7 +560,7 @@ export default function Studio() {
               <div
                 className="w-full rounded-xl overflow-hidden border border-white/8 bg-obsidian mb-4"
                 style={{
-                  height: previewContainerHeight(activeTemplateConfig.dims),
+                  height: previewContainerHeight(activeTemplateConfig?.dims ?? '1080×1350'),
                 }}
               >
                 {/* Scaled-down template canvas */}
@@ -511,16 +574,18 @@ export default function Studio() {
                 >
                   <TemplateRenderer
                     templateId={selectedTemplate}
-                    entry={selectedEntry}
+                    entry={selectedEntry ?? ({} as Entry)}
                     innerRef={templateRef}
                     backgroundUrl={bgUrl ?? undefined}
+                    rewardKeys={rewardKeys}
+                    comparisonParam={comparisonParam ?? undefined}
                   />
                 </div>
               </div>
 
               {/* Dims label */}
               <p className="text-[11px] font-mono text-ivory-dim text-center mb-4">
-                {activeTemplateConfig.dims} px · PNG · 3×
+                {activeTemplateConfig?.dims ?? '1080×1350'} px · PNG · 3×
               </p>
 
               {/* AI Background button */}

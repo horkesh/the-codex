@@ -6,11 +6,13 @@ import { BrandMark, GoldRule, BackgroundLayer } from '@/export/templates/shared'
 interface SteakVerdictProps {
   entry: Entry
   backgroundUrl?: string
+  rewardKeys?: Set<string>
 }
 
 export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
-  ({ entry, backgroundUrl }, ref) => {
+  ({ entry, backgroundUrl, rewardKeys }, ref) => {
     const meta = entry.metadata as { cut?: string; score?: number; verdict?: string }
+    const isConnoisseur = rewardKeys?.has('connoisseur_badge') ?? false
 
     return (
       <div
@@ -30,6 +32,28 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
         }}
       >
         <BackgroundLayer url={backgroundUrl} gradient="strong" />
+
+        {/* Connoisseur badge — threshold reward */}
+        {isConnoisseur && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '72px',
+              right: '80px',
+              zIndex: 3,
+              border: '1px solid #C9A84C',
+              borderRadius: '4px',
+              padding: '6px 14px',
+              fontFamily: 'var(--font-body)',
+              fontSize: '10px',
+              letterSpacing: '0.35em',
+              textTransform: 'uppercase' as const,
+              color: '#C9A84C',
+            }}
+          >
+            Connoisseur
+          </div>
+        )}
 
         {/* Top spacer + THE VERDICT label */}
         <div

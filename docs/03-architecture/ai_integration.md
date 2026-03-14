@@ -98,6 +98,47 @@ Each Gent's portrait for their calling card. Stylized, not photorealistic. Oil p
 #### `generate-achievement-stamp`
 Special achievement stamps with unique visual identity. More ornate than mission stamps.
 
+#### `scan-person-verdict`
+Vision analysis of a photo or Instagram screenshot. Single prompt handles eligibility check + full verdict.
+
+Input:
+```json
+{ "photo_base64": "...", "mime_type": "image/jpeg" }
+```
+
+Returns HTTP 422 if no person is identifiable (ineligible image). Otherwise returns:
+```json
+{
+  "eligible": true,
+  "appearance": "...",
+  "trait_words": ["confident", "well-dressed"],
+  "score": 8.5,
+  "verdict_label": "Circle Material",
+  "confidence": 0.85,
+  "vibe": "...",
+  "style_read": "...",
+  "why_interesting": "...",
+  "best_opener": "...",
+  "green_flags": ["..."],
+  "watchouts": ["..."]
+}
+```
+
+Score thresholds: ≥ 9.0 → `Immediate Interest`; 8.0–8.9 → `Circle Material`; 6.5–7.9 → `On the Radar`; < 6.5 → `Observe Further`. Score ≥ 8.0 routes to `contact`; < 8.0 routes to `person_of_interest`.
+
+#### `generate-person-portrait`
+AI portrait for a person in The Circle. Same prompt protocol as `generate-portrait` (Gent portraits).
+
+Input:
+```json
+{ "appearance": "...", "traits": ["confident", "well-dressed"], "scan_id": "uuid" }
+```
+
+Output: Portrait uploaded to `portraits/scans/{scan_id}/portrait-{ts}.png` → URL returned.
+```json
+{ "portrait_url": "https://storage.url/portraits/scans/..." }
+```
+
 ---
 
 ## Calling flow (client-side)
@@ -184,6 +225,8 @@ Additional context: ${JSON.stringify(metadata)}`
 | Entry published | Gemini: generate-cover | If no user photo uploaded |
 | Year-end Wrapped | Claude: generate-wrapped | Manual trigger in Ledger |
 | First load of Calling Card | Gemini: generate-portrait | Once per Gent, cached |
+| Verdict intake — photo uploaded | Gemini: scan-person-verdict | Blocks review step; 422 = ineligible |
+| Verdict intake — scan created | Gemini: generate-person-portrait | Non-blocking background; shimmer in review |
 
 ## Cost estimate (3 users, light usage)
 

@@ -4,6 +4,26 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-15 (010)
+
+**Goal**: Implement Verdict & Dossier — AI-powered person intake for The Circle.
+
+**Done**:
+- Migration `20260316000001_verdict_dossier.sql`: `portrait_url` + `instagram_source_url` on `people`; new `person_scans` table with full RLS; global unique index on `lower(instagram)`
+- 2 new Supabase Edge Functions: `scan-person-verdict` (Gemini 2.5 Flash vision — eligibility + score + full dossier fields, HTTP 422 on ineligible images), `generate-person-portrait` (same protocol as `generate-portrait`, stores to `portraits/scans/{scan_id}/`)
+- New lib: `src/lib/instagram.ts` — `normalizeInstagramHandle`, `getInstagramProfileUrl`
+- New data layer: `src/data/personScans.ts` (scan CRUD + `uploadPersonScanPhoto`); `findPersonByInstagram` added to `people.ts`; `createPersonFromScan` added to `people.ts`
+- New AI clients: `src/ai/personVerdict.ts`, `src/ai/personPortrait.ts`
+- New components: `VerdictCard.tsx` (verdict label, score pill, confidence caution, green flags / watchouts), `POIModal.tsx` (full intake: screenshot/photo tabs → analyzing → review-first → saving)
+- New hook: `useVerdictIntake.ts` — parallel FileReader + storage upload, async portrait shimmer (`portraitLoading` separate state), `CONTACT_SCORE_THRESHOLD = 8.0`, `createEmptyDossier()` factory
+- `PersonDetail.tsx`: AI portrait displayed alongside source photo when available
+- Simplify pass: `findPersonByInstagram` moved from `personScans.ts` → `people.ts`; upload extracted from hook into `personScans.ts`; `Promise.all` for parallel base64 + upload; `EMPTY_DOSSIER` constant → factory function; `portraitLoading` lifted out of `VerdictResult`
+- Deployed to Vercel: https://the-codex-sepia.vercel.app
+
+**Status**: Verdict & Dossier fully operational. Zero TS errors.
+
+---
+
 ## Session — 2026-03-13 (009)
 
 **Goal**: Implement every feature in the master roadmap; code review + simplify.

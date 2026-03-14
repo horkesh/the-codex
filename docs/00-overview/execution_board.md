@@ -85,7 +85,21 @@
 - [x] Post-event phase view (guest book messages, export to Studio)
 - [x] Upcoming Gatherings strip in Chronicle feed
 
-### E10: The Toast Auto-Sync
+### E10: Verdict & Dossier ✅
+- [x] `person_scans` table (audit trail for AI intake flow)
+- [x] `portrait_url` + `instagram_source_url` columns on `people`
+- [x] Global unique index on `lower(instagram)` (deduplication across all gents)
+- [x] `scan-person-verdict` Edge Function (Gemini 2.5 Flash vision — eligibility + full scoring)
+- [x] `generate-person-portrait` Edge Function (same portrait protocol as Gent portraits)
+- [x] `src/lib/instagram.ts` — `normalizeInstagramHandle` + `getInstagramProfileUrl`
+- [x] `src/data/personScans.ts` — scan CRUD + `uploadPersonScanPhoto`
+- [x] `src/ai/personVerdict.ts` + `src/ai/personPortrait.ts` — client-side AI helpers
+- [x] `src/components/circle/VerdictCard.tsx` — verdict label, score, confidence, flags/watchouts
+- [x] `src/components/circle/POIModal.tsx` — full intake flow (input → analyzing → review → saving)
+- [x] `src/hooks/useVerdictIntake.ts` — orchestrates all intake state + async portrait shimmer
+- [x] PersonDetail updated to show AI portrait alongside source photo
+
+### E11: The Toast Auto-Sync
 - [ ] Toast app webhook / integration point _(future)_
 
 ## Backlog (future)
@@ -98,4 +112,4 @@
 - Seed Budapest 2023 Instagram profiles into Circle
 
 ## Completed
-All E1–E9 epics shipped 2026-03-13.
+All E1–E9 epics shipped 2026-03-13. E10 (Verdict & Dossier) shipped 2026-03-15.

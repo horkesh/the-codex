@@ -243,23 +243,71 @@ The Circle — people the Gents meet.
 
 ```sql
 create table people (
-  id            uuid primary key default gen_random_uuid(),
-  name          text not null,
-  instagram     text,             -- Handle (no @)
-  photo_url     text,             -- Supabase Storage or external
-  met_at_entry  uuid references entries(id),
-  met_date      date,
-  met_location  text,
-  notes         text,             -- Shared notes visible to all Gents
-  labels        text[],           -- Custom labels e.g. {'legend', 'BACHATA', 'recurring'}
-  added_by      uuid references gents(id),
-  created_at    timestamptz default now()
+  id                   uuid primary key default gen_random_uuid(),
+  name                 text not null,
+  instagram            text,             -- Handle (no @)
+  photo_url            text,             -- Supabase Storage or external
+  portrait_url         text,             -- AI-generated portrait (from Verdict & Dossier flow)
+  instagram_source_url text,             -- URL of Instagram post/profile used as source
+  met_at_entry         uuid references entries(id),
+  met_date             date,
+  met_location         text,
+  notes                text,             -- Shared notes visible to all Gents (used as bio for POIs)
+  labels               text[],           -- Custom labels e.g. {'legend', 'BACHATA', 'recurring'}
+  added_by             uuid references gents(id),
+  category             text default 'contact',  -- 'contact' | 'person_of_interest'
+  tier                 text default 'acquaintance',  -- 'inner_circle' | 'outer_circle' | 'acquaintance'
+  poi_source_url       text,
+  poi_intel            text,             -- AI-generated intel block (why interesting, opener, flags)
+  poi_source_gent      uuid references gents(id),
+  poi_visibility       text default 'private',  -- 'private' | 'circle'
+  created_at           timestamptz default now()
 );
+
+-- Global deduplication: one row per Instagram handle across all gents
+create unique index uidx_people_instagram_lower
+  on people (lower(instagram)) where instagram is not null;
 ```
 
 `labels` is a text array. Labels are defined by the Gents organically — no fixed taxonomy. Examples: `"legend"`, `"BACHATA"`, `"recurring"`, `"Sarajevo crew"`.
 
-Storage bucket: `people-photos`
+Storage buckets: `people-photos` (profile photos), `person-scans` (source photos from the Verdict intake flow)
+
+---
+
+### `person_scans`
+Audit trail for the Verdict & Dossier AI intake flow. Every scan attempt is stored here — the `people` table only gets a row after the Gent confirms the dossier.
+
+```sql
+create table person_scans (
+  id                      uuid primary key default gen_random_uuid(),
+  created_by              uuid not null references gents(id),
+  person_id               uuid references people(id),         -- null until confirmed
+  status                  text not null default 'draft',       -- 'draft' | 'confirmed' | 'discarded'
+  source_type             text not null,                       -- 'photo' | 'instagram_screenshot'
+  source_photo_url        text,                                -- uploaded source image
+  appearance_description  text,
+  trait_words             text[],
+  score                   numeric(4,2),                        -- 0.0–10.0
+  verdict_label           text,                                -- 'Immediate Interest' | 'Circle Material' | 'On the Radar' | 'Observe Further'
+  confidence              numeric(4,2),                        -- 0.0–1.0
+  recommended_category    text,                                -- 'contact' | 'person_of_interest'
+  display_name            text,
+  bio                     text,
+  why_interesting         text,
+  best_opener             text,
+  green_flags             text[],
+  watchouts               text[],
+  instagram_handle        text,
+  instagram_source_url    text,
+  generated_avatar_url    text,
+  review_payload          jsonb,                               -- full raw AI verdict JSON
+  created_at              timestamptz default now(),
+  updated_at              timestamptz default now()
+);
+```
+
+RLS: `created_by = auth.uid()` on all operations — each Gent can only see their own scans.
 
 ---
 
@@ -359,7 +407,8 @@ group by g.id, g.alias;
 | `people-photos` | Private (auth required) | Photos of people in The Circle |
 | `stamps` | Private (auth required) | Generated stamp images |
 | `covers` | Private (auth required) | Entry cover images |
-| `portraits` | Private (auth required) | Gent calling card portraits |
+| `portraits` | Private (auth required) | Gent calling card portraits + AI portraits from Verdict flow (`scans/{scan_id}/`) |
+| `person-scans` | Private (auth required) | Source photos uploaded during Verdict & Dossier intake |
 | `gatherings` | Public (read) / Auth (write) | Invite card images, QR codes — must be shareable without login |
 
 ---
@@ -378,6 +427,7 @@ group by g.id, g.alias;
 | `people_notes` | `gent_id = auth.uid()` only | `gent_id = auth.uid()` only | `gent_id = auth.uid()` only | `gent_id = auth.uid()` only |
 | `gathering_rsvps` | Any authenticated | Anon (via Edge Function) | — | Any authenticated |
 | `guest_book_messages` | Any authenticated | Anon (via Edge Function) | — | Any authenticated |
+| `person_scans` | `created_by = auth.uid()` only | `created_by = auth.uid()` only | `created_by = auth.uid()` only | `created_by = auth.uid()` only |
 
 No public SELECT access to any table. RSVP and guest book inserts go through a dedicated Edge Function that validates the gathering entry exists and is in `gathering_pre` or `gathering_post` state.
 

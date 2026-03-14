@@ -3,17 +3,24 @@ import { BrandMark, GoldRule, BackgroundLayer } from '@/export/templates/shared'
 import { formatDate } from '@/lib/utils'
 import type { Entry } from '@/types/app'
 
-interface Props { entry: Entry; backgroundUrl?: string }
+interface Props { entry: Entry; backgroundUrl?: string; rewardKeys?: Set<string> }
 
-const GatheringInviteCard = React.forwardRef<HTMLDivElement, Props>(({ entry, backgroundUrl }, ref) => {
+const GatheringInviteCard = React.forwardRef<HTMLDivElement, Props>(({ entry, backgroundUrl, rewardKeys }, ref) => {
   const metadata = (entry.metadata ?? {}) as Record<string, unknown>
   const eventDate = (metadata.event_date as string) || entry.date
   const location = (metadata.location as string) || entry.location || ''
   const cocktailMenu = (metadata.cocktail_menu as string[]) || []
+  const isHost = rewardKeys?.has('host_seal') ?? false
 
   return (
     <div ref={ref} style={{ width: '1080px', height: '1350px', backgroundColor: '#0D0B0F', fontFamily: 'var(--font-body)', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px', boxSizing: 'border-box' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
+      {/* Host seal — threshold reward */}
+      {isHost && (
+        <div style={{ position: 'absolute', top: '56px', right: '72px', zIndex: 3, width: '72px', height: '72px', border: '1.5px solid #C9A84C', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: '10px', letterSpacing: '0.3em', textTransform: 'uppercase' as const, color: '#C9A84C' }}>Host</span>
+        </div>
+      )}
       <div style={{ width: '100%', marginBottom: '48px', position: 'relative', zIndex: 2 }}><GoldRule /></div>
       <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '32px', textAlign: 'center', position: 'relative', zIndex: 2 }}>You Are Invited</p>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '72px', color: '#F0EDE8', textAlign: 'center', lineHeight: 1.15, marginBottom: '40px', fontWeight: 400, position: 'relative', zIndex: 2 }}>{entry.title}</h1>
