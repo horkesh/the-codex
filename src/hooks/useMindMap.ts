@@ -17,18 +17,11 @@ export function useMindMap() {
 
   useEffect(() => {
     setLoading(true)
-    // Gents + people are required — appearances are optional (table may not exist yet)
-    Promise.all([fetchAllGents(), fetchPeople()])
-      .then(([g, p]) => {
-        setGents(g)
-        setPeople(p)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-
-    fetchAllAppearances()
-      .then(setAppearances)
-      .catch(() => {})
+    // Each fetch is independent — a failure in one must not block the others
+    const g = fetchAllGents().then(setGents).catch(() => {})
+    const p = fetchPeople().then(setPeople).catch(() => {})
+    const a = fetchAllAppearances().then(setAppearances).catch(() => {})
+    Promise.all([g, p, a]).finally(() => setLoading(false))
   }, [])
 
   const graphData = useMemo(

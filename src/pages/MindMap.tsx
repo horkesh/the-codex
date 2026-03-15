@@ -1,8 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { ReactFlow, Background, type NodeMouseHandler } from '@xyflow/react'
-import { ArrowLeft } from 'lucide-react'
 import { Spinner } from '@/components/ui'
+import { TopBar, SectionNav } from '@/components/layout'
 import { GentNode } from '@/components/mindmap/GentNode'
 import { PersonNode } from '@/components/mindmap/PersonNode'
 import { NodeDetailSheet } from '@/components/mindmap/NodeDetailSheet'
@@ -27,7 +26,6 @@ const GENT_CHIPS: Array<{ value: 'all' | GentAlias; label: string }> = [
 ]
 
 export default function MindMap() {
-  const navigate = useNavigate()
   const {
     loading, nodes, edges, filters,
     toggleGentFocus, setTierFilter, setGentFilter, updatePersonTier,
@@ -43,7 +41,6 @@ export default function MindMap() {
 
   const onNodeClick: NodeMouseHandler = useCallback((_event, node) => {
     const data = node.data as unknown as GentNodeData | PersonNodeData
-
     if (data.type === 'gent') {
       toggleGentFocus(data.gent.id)
     } else if (data.type === 'person') {
@@ -54,92 +51,80 @@ export default function MindMap() {
 
   const handleTierChange = useCallback(async (personId: string, tier: PersonTier) => {
     await updatePersonTier(personId, tier)
-    // Update the local selected person so sheet reflects change
     setSelectedPerson(prev => prev && prev.id === personId ? { ...prev, tier } : prev)
   }, [updatePersonTier])
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center flex-1 bg-obsidian">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
-
   return (
-    <div className="relative w-full flex-1 bg-obsidian" style={{ minHeight: 0 }}>
-      {/* Back button */}
-      <button
-        type="button"
-        onClick={() => navigate('/circle')}
-        className="absolute top-4 left-4 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-slate-dark/80 backdrop-blur-sm text-ivory hover:bg-slate-dark transition-colors"
-        aria-label="Back to Circle"
-      >
-        <ArrowLeft size={18} />
-      </button>
+    <>
+      <TopBar title="Mind Map" back />
+      <SectionNav />
 
-      {/* Filter chips */}
-      <div className="absolute top-4 left-14 right-4 z-10 flex flex-col gap-2">
-        {/* Tier filter */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {TIER_CHIPS.map(c => (
-            <button
-              key={c.value}
-              type="button"
-              onClick={() => setTierFilter(c.value)}
-              className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-body tracking-wide transition-colors ${
-                filters.tier === c.value
-                  ? 'bg-gold/20 text-gold border border-gold/40'
-                  : 'bg-slate-dark/60 text-ivory-dim border border-white/10 backdrop-blur-sm'
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
+      {loading ? (
+        <div className="flex items-center justify-center flex-1 bg-obsidian">
+          <Spinner size="lg" />
         </div>
+      ) : (
+        /* Canvas wrapper — fills all remaining space after TopBar + SectionNav */
+        <div className="relative bg-obsidian" style={{ flex: '1 1 0%', minHeight: 0 }}>
+          {/* Filter chips — float over canvas */}
+          <div className="absolute top-3 left-3 right-3 z-10 flex flex-col gap-2">
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+              {TIER_CHIPS.map(c => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setTierFilter(c.value)}
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-body tracking-wide transition-colors ${
+                    filters.tier === c.value
+                      ? 'bg-gold/20 text-gold border border-gold/40'
+                      : 'bg-slate-dark/70 text-ivory-dim border border-white/10 backdrop-blur-sm'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+              {GENT_CHIPS.map(c => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setGentFilter(c.value)}
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-body tracking-wide transition-colors ${
+                    filters.gent === c.value
+                      ? 'bg-gold/20 text-gold border border-gold/40'
+                      : 'bg-slate-dark/70 text-ivory-dim border border-white/10 backdrop-blur-sm'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        {/* Gent filter */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {GENT_CHIPS.map(c => (
-            <button
-              key={c.value}
-              type="button"
-              onClick={() => setGentFilter(c.value)}
-              className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-body tracking-wide transition-colors ${
-                filters.gent === c.value
-                  ? 'bg-gold/20 text-gold border border-gold/40'
-                  : 'bg-slate-dark/60 text-ivory-dim border border-white/10 backdrop-blur-sm'
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodeClick={onNodeClick}
+            fitView
+            fitViewOptions={{ padding: 0.3 }}
+            minZoom={0.3}
+            maxZoom={3}
+            proOptions={{ hideAttribution: true }}
+            style={{ width: '100%', height: '100%' }}
+          >
+            <Background color="rgba(201,168,76,0.04)" gap={40} />
+          </ReactFlow>
+
+          <NodeDetailSheet
+            person={selectedPerson}
+            isOpen={sheetOpen}
+            onClose={() => setSheetOpen(false)}
+            onTierChange={handleTierChange}
+          />
         </div>
-      </div>
-
-      {/* React Flow canvas */}
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodeClick={onNodeClick}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-        minZoom={0.3}
-        maxZoom={3}
-        proOptions={{ hideAttribution: true }}
-        className="touch-none"
-      >
-        <Background color="rgba(201,168,76,0.04)" gap={40} />
-      </ReactFlow>
-
-      {/* Person detail sheet */}
-      <NodeDetailSheet
-        person={selectedPerson}
-        isOpen={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        onTierChange={handleTierChange}
-      />
-    </div>
+      )}
+    </>
   )
 }
