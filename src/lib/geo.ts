@@ -97,8 +97,13 @@ export async function extractLocationFromPhoto(file: File): Promise<LocationFill
         result.city = addr.city || addr.town || addr.village || addr.municipality
         result.country = addr.country
         result.country_code = addr.country_code?.toUpperCase()
+        // Prefer the named POI fields Nominatim returns at zoom=18 (amenity, leisure,
+        // tourism, shop) over display_name which can be a street address instead.
+        const poiName = addr.amenity || addr.leisure || addr.tourism || addr.shop
         const first = data.display_name?.split(',')[0]?.trim()
-        if (first) result.location = first
+        const location = poiName || first
+        if (location) result.location = location
+        console.debug('[geo] Nominatim addr:', addr, '→ location:', location)
       }
     }
 
