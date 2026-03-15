@@ -10,14 +10,14 @@ const SUB_SECTIONS = [
     label: 'Wishlist',
     subtitle: 'Places to go, things to do',
     path: '/agenda/wishlist',
-    image: '/images/sections/bucket-list.png',
+    image: '/images/sections/bucket-list.webp',
   },
   {
     id: 'scouting',
     label: 'Scouting',
     subtitle: 'Events on the radar',
     path: '/agenda/scouting',
-    image: '/images/sections/scouting.png',
+    image: '/images/sections/scouting.webp',
   },
 ]
 

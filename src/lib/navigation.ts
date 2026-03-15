@@ -53,6 +53,6 @@ export const NAV_SECTIONS = [
     path: '/agenda',
     icon: List,
     subtitle: 'Wishlist & scouting',
-    image: '/images/sections/bucket-list.png',
+    image: '/images/sections/bucket-list.webp',
   },
 ] as const
