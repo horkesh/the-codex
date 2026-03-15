@@ -78,10 +78,7 @@ export function LoreSection({ entry, onLoreGenerated }: LoreSectionProps) {
             exit="exit"
             className="space-y-2"
           >
-            <p
-              className="shimmer-gold font-display italic text-base leading-relaxed"
-              style={{ WebkitTextFillColor: 'transparent' }}
-            >
+            <p className="text-gold/90 font-display italic text-base leading-relaxed">
               {localLore}
             </p>
             {localLoreDate && (
