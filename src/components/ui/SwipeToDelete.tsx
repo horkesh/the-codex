@@ -14,9 +14,9 @@ export function SwipeToDelete({ onDelete, children }: SwipeToDeleteProps) {
   const x = useMotionValue(0)
   const [isOpen, setIsOpen] = useState(false)
 
-  // Fade the trash button in as the card slides left
-  const trashOpacity = useTransform(x, [OPEN_X, -30], [1, 0])
-  const trashScale  = useTransform(x, [OPEN_X, -30], [1, 0.6])
+  // Delete zone: invisible until drag starts, fully visible when snapped open
+  const deleteZoneOpacity = useTransform(x, [-10, OPEN_X], [0, 1])
+  const trashScale = useTransform(x, [OPEN_X, -30], [1, 0.6])
 
   function snapTo(target: number) {
     setIsOpen(target !== 0)
@@ -30,42 +30,47 @@ export function SwipeToDelete({ onDelete, children }: SwipeToDeleteProps) {
   }
 
   async function handleDelete() {
-    // Slide the card fully off screen, then notify parent
     await animate(x, -600, { type: 'tween', duration: 0.22, ease: 'easeIn' })
     onDelete()
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
-      {/* Delete zone — sits behind the card */}
-      <div className="absolute inset-y-0 right-0 w-20 flex items-center justify-center rounded-r-xl bg-red-950/90">
-        <motion.button
+    <div className="relative rounded-xl overflow-hidden">
+      {/* Delete zone — sits behind the card, hidden until drag reveals it */}
+      <motion.div
+        className="absolute inset-y-0 right-0 w-20 flex items-center justify-center bg-red-950"
+        style={{ opacity: deleteZoneOpacity }}
+      >
+        <button
           type="button"
           onClick={handleDelete}
-          style={{ opacity: trashOpacity, scale: trashScale }}
           className="flex flex-col items-center gap-1"
           aria-label="Delete entry"
         >
-          <Trash2 size={18} className="text-red-400" />
+          <motion.div style={{ scale: trashScale }}>
+            <Trash2 size={18} className="text-red-400" />
+          </motion.div>
           <span className="text-[10px] text-red-400 font-body tracking-wide">Delete</span>
-        </motion.button>
-      </div>
+        </button>
+      </motion.div>
 
-      {/* Draggable card */}
+      {/* Draggable card — opaque background covers delete zone at rest */}
       <motion.div
         drag="x"
         dragConstraints={{ left: OPEN_X, right: 0 }}
         dragElastic={{ left: 0.05, right: 0.15 }}
         style={{ x }}
         onDragEnd={handleDragEnd}
+        className="rounded-xl bg-slate-dark"
       >
         {children}
       </motion.div>
 
-      {/* Invisible overlay when open — tapping anywhere on the card closes it */}
+      {/* Overlay when open — only covers the card area, not the delete zone */}
       {isOpen && (
         <div
-          className="absolute inset-0 z-10"
+          className="absolute inset-y-0 left-0 z-10"
+          style={{ right: `${Math.abs(OPEN_X)}px` }}
           onClick={() => snapTo(0)}
         />
       )}
