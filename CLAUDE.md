@@ -6,7 +6,7 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 ## Stack
 - **Frontend**: React 19 + TypeScript + Vite 6 + Tailwind v4 + Framer Motion + Zustand 5
 - **Backend**: Supabase (Auth + Postgres + Storage + Edge Functions on Deno)
-- **AI**: Anthropic Claude (`claude-haiku-4-5-20251001` for Instagram analysis, `claude-sonnet-4-6` for lore/narrative) + Google Gemini (`gemini-2.0-flash` for photo vision, `imagen-4.0-generate-001` for image generation)
+- **AI**: Anthropic Claude (`claude-haiku-4-5-20251001` for Instagram analysis, `claude-sonnet-4-6` for lore/narrative) + Google Gemini (`gemini-2.5-flash` for photo vision, `imagen-4.0-generate-001` for image generation)
 - **Deploy**: `git push` to `main` — GitHub Actions (`.github/workflows/deploy.yml`) auto-deploys Vercel + all Supabase Edge Functions. See `docs/05-dev-ops/runbook.md`.
 
 ## Key architecture decisions
@@ -22,12 +22,12 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 |---|---|---|
 | Lore generation | `claude-sonnet-4-6` | Best narrative voice |
 | Instagram screenshot analysis | `claude-haiku-4-5-20251001` | Reliable JSON, no refusals on profile data |
-| Photo/camera scan (POI) | `gemini-2.0-flash` | Claude refuses appearance scoring; Gemini does not |
+| Photo/camera scan (POI) | `gemini-2.5-flash` | Claude refuses appearance scoring; Gemini does not |
 | Portrait image generation | `imagen-4.0-generate-001` | Imagen 4 via `:predict` endpoint |
 | Cover/scene/stamp image generation | `imagen-4.0-generate-001` | Same |
 
 **Critical model notes:**
-- `gemini-2.5-flash` is preview — returns non-2xx HTTP errors intermittently in production. Always use `gemini-2.0-flash`.
+- `gemini-2.0-flash` is deprecated for new API keys (404 "no longer available to new users"). Use `gemini-2.5-flash`.
 - Claude refuses prompts that ask for appearance scoring, social categorisation ("Immediate Interest"), or openers for meeting someone. Do not send photo analysis to Claude.
 - All Gemini `fetch()` calls in Edge Functions must use an `AbortController` with a 20s timeout — Supabase free tier kills functions at ~25s at the infrastructure level, which returns a non-2xx that our catch block cannot intercept.
 

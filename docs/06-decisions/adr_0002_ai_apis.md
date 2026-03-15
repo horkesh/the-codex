@@ -14,7 +14,7 @@ Use Anthropic Claude for narrative text and Instagram screenshot analysis. Use G
 |---|---|---|
 | Lore, Wrapped, calling cards | `claude-sonnet-4-6` | Anthropic Messages API |
 | Instagram screenshot scan | `claude-haiku-4-5-20251001` | Anthropic Messages API |
-| Photo/camera POI scan | `gemini-2.0-flash` | Gemini generateContent |
+| Photo/camera POI scan | `gemini-2.5-flash` | Gemini generateContent |
 | Portrait generation | `imagen-4.0-generate-001` | Imagen `:predict` endpoint |
 | Entry cover / scene / stamp images | `imagen-4.0-generate-001` | Imagen `:predict` endpoint |
 
@@ -30,9 +30,9 @@ The app requires:
 
 Claude reliably extracts structured data (names, handles, traits) from Instagram screenshots and outputs clean JSON. However, Claude refuses prompts that ask it to **score a person's appearance** or **suggest openers for meeting someone**, describing them as "social/romantic evaluation framework that commodifies individuals." This refusal is prompt-level — the image content is irrelevant. Photo scan prompts by nature include scoring, so they cannot be routed through Claude.
 
-## Why Gemini 2.0 Flash for photo scan, not 2.5 Flash
+## Why Gemini 2.5 Flash for photo scan
 
-`gemini-2.5-flash` is a preview model that intermittently returns non-2xx HTTP errors at the Google API level. These errors escape our catch block and Supabase returns them as infrastructure-level failures. `gemini-2.0-flash` is GA, stable, and faster. Do not use `gemini-2.5-flash` in production.
+`gemini-2.0-flash` was deprecated for new API keys (returns 404 "no longer available to new users"). Switched to `gemini-2.5-flash`. Previous stability concern (intermittent non-2xx) is mitigated by: (1) 20s `AbortController` timeout on all Gemini `fetch()` calls, and (2) explicit `status: 200` on all `new Response()` calls including the catch block — Supabase infrastructure can no longer return a non-2xx that bypasses our error handling.
 
 ## Why Imagen 4 for image generation
 

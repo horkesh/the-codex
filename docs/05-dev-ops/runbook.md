@@ -106,8 +106,8 @@ Fix: Remove `staggerContainer`/`staggerItem` variants from section cards in `src
 
 **"Edge Function returned a non-2xx status code"**
 This is infrastructure-level (Supabase killed the function), not a code error — our catch block never ran.
-Causes: function timeout > 25s, or using `gemini-2.5-flash` (preview, unstable).
-Rules: (1) All `new Response(...)` calls must include `status: 200` explicitly. (2) All Gemini `fetch()` calls must use a 20s `AbortController` timeout. (3) Use `gemini-2.0-flash`, not `gemini-2.5-flash`.
+Causes: function timeout > 25s.
+Rules: (1) All `new Response(...)` calls must include `status: 200` explicitly. (2) All Gemini `fetch()` calls must use a 20s `AbortController` timeout. (3) Use `gemini-2.5-flash` — `gemini-2.0-flash` is deprecated for new API keys (returns 404 "no longer available to new users").
 
 **Claude refuses photo analysis**
 Claude refuses prompts that score appearance or suggest openers ("social/romantic evaluation framework that commodifies individuals"). Photo scan (`source_type: 'photo'`) must use `gemini-2.0-flash`. Do not route photos through Claude.
