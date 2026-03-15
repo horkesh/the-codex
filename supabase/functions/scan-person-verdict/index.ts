@@ -54,7 +54,11 @@ Score rubric:
             { inline_data: { mime_type, data: photo_base64 } },
             { text: prompt },
           ]}],
-          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1024 },
+          generationConfig: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 1024,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
         }),
       }
     )
@@ -68,7 +72,8 @@ Score rubric:
   }
 
   const result = JSON.parse(responseText)
-  const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
+  const parts: Array<{ text?: string }> = result.candidates?.[0]?.content?.parts ?? []
+  const rawText = parts.find((p) => p.text)?.text ?? '{}'
   console.log('Gemini raw:', rawText.slice(0, 200))
   return JSON.parse(rawText)
 }
