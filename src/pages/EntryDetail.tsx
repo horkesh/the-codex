@@ -280,7 +280,6 @@ export default function EntryDetail() {
       <TopBar
         title={entry.title}
         back
-        transparent
         right={
           <button
             type="button"
