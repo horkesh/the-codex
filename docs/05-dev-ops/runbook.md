@@ -14,6 +14,24 @@ pnpm dev
 
 ---
 
+## Deploy to production
+
+```bash
+git add <files> && git commit -m "..." && git push
+# GitHub Actions (.github/workflows/deploy.yml) handles everything:
+# 1. Installs deps
+# 2. Deploys frontend to Vercel (prod)
+# 3. Deploys all Supabase Edge Functions
+#
+# Watch progress: github.com/horkesh/the-codex/actions
+```
+
+Required GitHub secrets: `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN`
+Vercel project: `prj_iU3ov4FHk374t4L6kjtHH7mT4zEu` (team `team_SpPoZYOLWh3JTJjuvfZG10Xn`)
+Supabase project ref: `biioztjlsrkgwjyfegey`
+
+---
+
 ## First-time setup
 
 ```bash
@@ -26,33 +44,32 @@ cp .env.example .env.local
 
 # 3. Run database migrations
 supabase db push
-# (Or paste migrations manually in Supabase SQL editor)
 
-# 4. Deploy Edge Functions
-supabase functions deploy generate-lore
-supabase functions deploy generate-stamp
-supabase functions deploy generate-cover
-supabase functions deploy generate-portrait
-supabase functions deploy generate-wrapped
-
-# 5. Set Edge Function secrets
+# 4. Set Edge Function secrets (one-time)
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 supabase secrets set GOOGLE_AI_API_KEY=AIza...
 
-# 6. Start dev
+# 5. Start dev
 pnpm dev
 ```
 
 ---
 
-## Deploy to production
+## Emergency manual deploy (if CI is broken)
 
 ```bash
-# Push to main branch → Vercel auto-deploys
-git push origin main
+# Frontend
+npx vercel deploy --prod --token=<VERCEL_TOKEN>
 
-# Edge Functions (if changed)
-supabase functions deploy [function-name]
+# Edge Functions (all)
+npx supabase functions deploy --project-ref biioztjlsrkgwjyfegey
+# SUPABASE_ACCESS_TOKEN must be set in environment
+```
+
+To verify which version is live on Supabase:
+```bash
+npx supabase functions list
+# Check VERSION and UPDATED_AT columns — bump confirms the deploy landed
 ```
 
 ---
@@ -62,7 +79,7 @@ supabase functions deploy [function-name]
 Run after any schema change:
 
 ```bash
-supabase gen types typescript --project-id [your-project-id] > src/types/database.ts
+supabase gen types typescript --project-id biioztjlsrkgwjyfegey > src/types/database.ts
 ```
 
 ---
@@ -72,30 +89,40 @@ supabase gen types typescript --project-id [your-project-id] > src/types/databas
 ```bash
 supabase functions new [function-name]
 # Creates supabase/functions/[function-name]/index.ts
-
-# Deploy
-supabase functions deploy [function-name]
+# Will be auto-deployed on next git push
 ```
 
 ---
 
 ## Common issues
 
+**Home page blank on first hard load / redirects to Landing then back**
+Cause: `ProtectedRoute` was redirecting when `gent` was null before Zustand persist hydrated from localStorage.
+Current fix (`src/App.tsx`): render immediately if `gent` is already in store; return `null` only if `gent === null && !initialized`; redirect only once `initialized === true`. Do not simplify this back to `if (!gent) redirect` — that breaks first-load.
+
+**"Edge Function returned a non-2xx status code"**
+This is infrastructure-level (Supabase killed the function), not a code error — our catch block never ran.
+Causes: function timeout > 25s, or using `gemini-2.5-flash` (preview, unstable).
+Rules: (1) All `new Response(...)` calls must include `status: 200` explicitly. (2) All Gemini `fetch()` calls must use a 20s `AbortController` timeout. (3) Use `gemini-2.0-flash`, not `gemini-2.5-flash`.
+
+**Claude refuses photo analysis**
+Claude refuses prompts that score appearance or suggest openers ("social/romantic evaluation framework that commodifies individuals"). Photo scan (`source_type: 'photo'`) must use `gemini-2.0-flash`. Do not route photos through Claude.
+
+**Supabase Edge Function not updating after push**
+GitHub Actions deploys ALL functions on every push. Verify with `npx supabase functions list` — check VERSION increased. If stuck, the "Push edge functions" step in Actions may have failed silently.
+
 **Port 5173 in use**: `pnpm dev -- --port 5174`
 
-**Supabase types out of date**: Run the gen types command above.
+**Supabase types out of date**: Run gen types above.
 
-**Edge Function not updating**: Check `supabase functions deploy` ran successfully. Check Supabase dashboard → Edge Functions for error logs.
+**html-to-image fonts wrong**: Fonts must be self-hosted in `public/fonts/` with `@font-face` in `globals.css`. Google Fonts CDN fails inside html-to-image canvas rendering.
 
-**html-to-image fonts wrong**: Ensure fonts are self-hosted in `public/fonts/` and loaded via `@font-face` in `globals.css`. Google Fonts CDN is unreliable in html-to-image.
-
-**Supabase RLS blocking queries**: Check that the user is authenticated (`supabase.auth.getUser()` returns a user). Check RLS policies in Supabase dashboard.
+**Supabase RLS blocking queries**: Confirm user is authenticated. Check RLS policies in Supabase dashboard → Table Editor → RLS.
 
 ---
 
 ## Branch strategy
 
-`main` — production (auto-deploys to Vercel)
-`dev` — development (optional, for larger features)
+`main` — production (auto-deploys via GitHub Actions on every push)
 
-For 3 users building together: direct pushes to `main` are fine given the team size.
+Direct pushes to `main` are fine for a 3-person team.
