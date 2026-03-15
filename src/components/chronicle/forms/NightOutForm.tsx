@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,7 @@ interface NightOutFormProps {
   onSubmit: (data: NightOutFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  suggestedTitle?: string | null
   initialData?: Partial<NightOutFormData>
 }
 
@@ -30,8 +31,9 @@ interface FieldErrors {
   date?: string
 }
 
-export function NightOutForm({ onSubmit, loading, detectedLocation, initialData }: NightOutFormProps) {
+export function NightOutForm({ onSubmit, loading, detectedLocation, suggestedTitle, initialData }: NightOutFormProps) {
   const [form, setForm] = useState<NightOutFormData>(() => ({ ...empty, ...initialData }))
+  const titleEdited = useRef(!!initialData?.title)
 
   useEffect(() => {
     if (!detectedLocation) return
@@ -42,9 +44,16 @@ export function NightOutForm({ onSubmit, loading, detectedLocation, initialData 
       location: ow ? (detectedLocation.location ?? prev.location) : (prev.location || detectedLocation.location || prev.location),
     }))
   }, [detectedLocation])
+
+  useEffect(() => {
+    if (suggestedTitle && !titleEdited.current) {
+      setForm((prev) => ({ ...prev, title: suggestedTitle }))
+    }
+  }, [suggestedTitle])
   const [errors, setErrors] = useState<FieldErrors>({})
 
   function set(field: keyof NightOutFormData, value: string) {
+    if (field === 'title') titleEdited.current = true
     setForm((prev) => ({ ...prev, [field]: value }))
     if (errors[field as keyof FieldErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))

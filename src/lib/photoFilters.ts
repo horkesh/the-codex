@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-export type FilterId = 'raw' | 'chronicle' | 'pitch' | 'noir' | 'velvet' | 'havana' | 'dusk' | 'fade' | 'tokyo' | 'amber'
+export type FilterId = 'raw' | 'chronicle' | 'pitch' | 'noir' | 'velvet' | 'havana' | 'dusk' | 'fade' | 'tokyo' | 'amber' | 'ember' | 'frost' | 'haze' | 'slate' | 'midnight' | 'sepia'
 
 export interface PhotoFilter {
   id: FilterId
@@ -77,6 +77,48 @@ export const PHOTO_FILTERS: PhotoFilter[] = [
     name: 'Amber',
     css: 'contrast(1.06) saturate(0.92) brightness(0.97) sepia(0.30) hue-rotate(12deg)',
     vignette: 'radial-gradient(ellipse at center, transparent 52%, rgba(28,10,0,0.58) 100%)',
+  },
+  {
+    // Candlelit warmth, deep crimson undertone — intimate dinner
+    id: 'ember',
+    name: 'Ember',
+    css: 'contrast(1.14) saturate(1.24) brightness(0.86) sepia(0.18) hue-rotate(-5deg)',
+    vignette: 'radial-gradient(ellipse at center, transparent 38%, rgba(20,2,0,0.80) 100%)',
+  },
+  {
+    // Crisp desaturated cool — winter morning clarity
+    id: 'frost',
+    name: 'Frost',
+    css: 'contrast(1.04) saturate(0.48) brightness(1.08) hue-rotate(-10deg)',
+    vignette: 'radial-gradient(ellipse at center, transparent 60%, rgba(0,8,16,0.38) 100%)',
+  },
+  {
+    // Soft dreamy warmth, gentle bloom — lazy afternoon
+    id: 'haze',
+    name: 'Haze',
+    css: 'contrast(0.92) saturate(0.82) brightness(1.10) sepia(0.14)',
+    vignette: 'radial-gradient(ellipse at center, transparent 56%, rgba(12,6,0,0.42) 100%)',
+  },
+  {
+    // Cool desaturated grey-blue — modern editorial
+    id: 'slate',
+    name: 'Slate',
+    css: 'contrast(1.10) saturate(0.38) brightness(0.94) hue-rotate(-18deg)',
+    vignette: 'radial-gradient(ellipse at center, transparent 46%, rgba(4,6,14,0.70) 100%)',
+  },
+  {
+    // Deep dark blue, crushed shadows — late-night atmosphere
+    id: 'midnight',
+    name: 'Midnight',
+    css: 'contrast(1.20) saturate(0.68) brightness(0.78) hue-rotate(-28deg)',
+    vignette: 'radial-gradient(ellipse at center, transparent 34%, rgba(0,2,16,0.88) 100%)',
+  },
+  {
+    // Classic warm monochrome — vintage photograph
+    id: 'sepia',
+    name: 'Sepia',
+    css: 'contrast(1.04) saturate(0.30) brightness(0.96) sepia(0.52)',
+    vignette: 'radial-gradient(ellipse at center, transparent 48%, rgba(22,12,4,0.65) 100%)',
   },
 ]
 

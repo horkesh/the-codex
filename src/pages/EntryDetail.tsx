@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
 import { MoreVertical, Sparkles, Share2, Trash2, ImagePlay, Edit2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -186,6 +186,7 @@ export default function EntryDetail() {
 
   const { entry, photos, loading, notFound, setEntry } = useEntry(id)
   const { filterId, setFilter } = useEntryFilter(id ?? '')
+  const photoUrls = useMemo(() => photos.map((p) => p.url), [photos])
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -332,7 +333,7 @@ export default function EntryDetail() {
             <motion.div variants={staggerItem} id="lore-section">
               <LoreSection
                 entry={entry}
-                photoUrls={photos.map((p) => p.url)}
+                photoUrls={photoUrls}
                 onLoreGenerated={handleLoreGenerated}
               />
             </motion.div>

@@ -19,6 +19,7 @@ interface SteakFormProps {
   onSubmit: (data: SteakFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  suggestedTitle?: string | null
   initialData?: Partial<SteakFormData>
 }
 
@@ -40,7 +41,7 @@ interface FieldErrors {
   score?: string
 }
 
-export function SteakForm({ onSubmit, loading, detectedLocation, initialData }: SteakFormProps) {
+export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle, initialData }: SteakFormProps) {
   const [form, setForm] = useState<SteakFormData>(() => ({ ...empty, ...initialData }))
   const [vol, setVol] = useState<number | null>(null)
   const titleEdited = useRef(!!initialData?.title)
@@ -50,12 +51,17 @@ export function SteakForm({ onSubmit, loading, detectedLocation, initialData }: 
     fetchEntries({ type: 'steak' }).then((entries) => setVol(entries.length + 1)).catch(() => setVol(1))
   }, [])
 
-  // Auto-fill title from vol + location (unless user has manually edited it)
+  // Auto-fill title from AI suggestion (takes priority), or fall back to vol + location
   useEffect(() => {
-    if (vol === null || titleEdited.current) return
+    if (titleEdited.current) return
+    if (suggestedTitle && vol !== null) {
+      setForm((prev) => ({ ...prev, title: `${suggestedTitle} · Vol. ${vol}` }))
+      return
+    }
+    if (vol === null) return
     const locationPart = form.location ? ` at ${form.location}` : ''
     setForm((prev) => ({ ...prev, title: `The Table${locationPart} · Vol. ${vol}` }))
-  }, [vol, form.location]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [vol, form.location, suggestedTitle]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!detectedLocation) return

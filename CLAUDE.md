@@ -21,6 +21,7 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 | Feature | Model | Why |
 |---|---|---|
 | Lore generation | `claude-sonnet-4-6` | Best narrative voice |
+| Title generation from photo | `claude-haiku-4-5-20251001` | Fast vision, type-specific title inference |
 | Instagram screenshot analysis | `claude-haiku-4-5-20251001` | Reliable JSON, no refusals on profile data |
 | Photo/camera scan (POI) | `gemini-2.5-flash` | Claude refuses appearance scoring; Gemini does not |
 | Portrait image generation | `imagen-4.0-generate-001` | Imagen 4 via `:predict` endpoint |
@@ -59,6 +60,27 @@ Shell uses `min-h-dvh` (not `h-dvh`), so `flex-1` children have no definite heig
 
 ## Instagram photo auto-fetch
 When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/instagram/{handle}`. On edit, only updates if the handle actually changed.
+
+## Photo filters (`src/lib/photoFilters.ts`)
+16 CSS-based filters: Raw, Chronicle, The Pitch, Noir, Velvet, Havana, Dusk, Fade, Tokyo, Amber, Ember, Frost, Haze, Slate, Midnight, Sepia. Each filter has a CSS `filter` string and a `radial-gradient` vignette overlay. Default: `chronicle`. Stored per-entry in localStorage (`photo-filter:{entryId}`). Filters propagate to Studio export templates via `PhotoFilterContext`.
+
+## Lore generation (`supabase/functions/generate-lore/`)
+- Uses `claude-sonnet-4-6` with vision (up to 4 photos).
+- **Time-of-day is authoritative**: EXIF time from `entry.metadata.time_of_day` is explicitly marked as ground truth in the prompt. Claude must not infer a different time from photo lighting.
+- **Weekday/weekend awareness**: day-of-week + time-of-day derive a situational hint (e.g. "weekday lunch window — likely a lunch break rendezvous") that is passed as `Context:` in the prompt.
+- **Type-specific narrative directives**: each entry type (steak, playstation, toast, night_out, mission, gathering, interlude) has a tailored `entryTypeDirectives` block that tells Claude what to focus on (food details for Table, competitive energy for Pitch, drink references for Toast, etc.).
+
+## Title generation (`supabase/functions/generate-title/`)
+- Uses `claude-haiku-4-5-20251001` with vision on the first uploaded photo.
+- Client (`src/ai/title.ts`) compresses photo to 512px / 0.6 quality base64 before sending.
+- Type-specific instructions guide what to identify (cut of meat for Table, game on screen for Pitch, drinks for Toast, etc.).
+- Suggested title auto-fills the form's title field unless the user has manually edited it.
+- For Table and Pitch, the AI title is combined with the volume number (e.g. "Wagyu Tataki at Craft · Vol. 12").
+
+## Studio export (`src/pages/Studio.tsx`)
+- **Cover image as default background**: when an entry is selected, `cover_image_url` is immediately used as the template background.
+- **Background source picker**: two buttons — "Cover Photo" (real image) and "Generate AI" (AI-generated). User can switch freely between them. Active source is highlighted with gold border.
+- Templates render via `BackgroundLayer` which applies both the background image and photo filter CSS from context.
 
 ## Deployment workflow
 ```bash

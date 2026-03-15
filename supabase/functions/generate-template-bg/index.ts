@@ -9,6 +9,7 @@ const ASPECT_RATIOS: Record<string, string> = {
   '9:16': '9:16',
 }
 
+// Prompts for generating from scratch (no cover image available)
 const TYPE_PROMPTS: Record<string, (location: string) => string> = {
   mission:     (loc) => `Dark cinematic photograph of three stylish well-dressed men exploring ${loc || 'a city'} at night, seen from behind or at a slight distance, city lights and architecture around them, atmospheric shadows, dramatic urban lighting. Style: fine art travel photography, film noir, rich blacks.`,
   night_out:   (_)   => `Moody upscale bar interior, three stylish men seated or standing at a dark polished bar, deep amber candlelight, brass fixtures, shallow depth of field, bokeh highlights. Shot from behind or at distance, faces not prominent. Style: editorial nightlife photography.`,
@@ -19,13 +20,24 @@ const TYPE_PROMPTS: Record<string, (location: string) => string> = {
   interlude:   (_)   => `A lone figure standing at a rain-streaked dark window overlooking city lights at night, silhouette against the glow, contemplative mood, deep shadows, cinematic. Style: film noir, melancholic, rich blacks.`,
 }
 
+// Style directives when restyling an existing cover image
+const RESTYLE_PROMPTS: Record<string, string> = {
+  mission:     'Cinematic travel photography. Deep shadows, dramatic urban lighting, film noir colour grade, rich blacks and warm highlights.',
+  night_out:   'Moody editorial nightlife photography. Deep amber tones, candlelight warmth, shallow depth of field bokeh, dark polished atmosphere.',
+  steak:       'High-end food and dining photography. Warm candlelight, rich amber tones, dramatic shadows, cinematic depth, dark marble elegance.',
+  playstation: 'Atmospheric gaming photography. Cool blue-purple LED glow, deep shadows, screen-lit ambiance, cinematic mood.',
+  toast:       'Luxury spirits photography. Deep blacks, amber gold tones, dramatic rim lighting, smoky atmosphere, crystal clarity.',
+  gathering:   'Luxury events photography. Warm candlelight, intimate atmosphere, deep shadows, elegant soft focus.',
+  interlude:   'Film noir photography. Melancholic mood, deep shadows, rain-streaked atmosphere, rich blacks, contemplative tone.',
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { entry_type, title, location, city, country, aspect } = await req.json()
+    const { entry_type, title, location, city, country, aspect, cover_image_url } = await req.json()
     const googleApiKey = Deno.env.get('GOOGLE_AI_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -36,11 +48,45 @@ Deno.serve(async (req: Request) => {
     const db = createClient(supabaseUrl, supabaseServiceKey)
 
     const locationStr = location || city || (country ? `${country}` : '')
-    const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
-    const basePrompt = promptFn(locationStr)
-    const imagePrompt = `${basePrompt} Dark, cinematic, high contrast, suitable as full-bleed text background. Aspect ratio optimised for Instagram.`
-
     const aspectRatio = ASPECT_RATIOS[aspect] ?? '1:1'
+
+    // If cover image exists, download it and restyle; otherwise generate from scratch
+    let coverBase64: string | null = null
+    if (cover_image_url) {
+      try {
+        const controller = new AbortController()
+        setTimeout(() => controller.abort(), 10_000)
+        const imgRes = await fetch(cover_image_url, { signal: controller.signal })
+        if (imgRes.ok) {
+          const buf = await imgRes.arrayBuffer()
+          coverBase64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
+        }
+      } catch {
+        // Fall through to generate from scratch if download fails
+      }
+    }
+
+    let imagePrompt: string
+    // deno-lint-ignore no-explicit-any
+    let instances: any[]
+
+    if (coverBase64) {
+      // Restyle mode: use cover image as reference
+      const styleDirective = RESTYLE_PROMPTS[entry_type] ?? RESTYLE_PROMPTS['mission']
+      imagePrompt = `Restyle this photograph. ${styleDirective} Dark, cinematic, high contrast, suitable as full-bleed text background. Keep the subject and composition but transform the mood and colour grade.`
+      instances = [{
+        prompt: imagePrompt,
+        referenceImages: [{
+          referenceImage: { bytesBase64Encoded: coverBase64 },
+          referenceType: 'STYLE_IMAGE',
+        }],
+      }]
+    } else {
+      // From-scratch mode
+      const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
+      imagePrompt = `${promptFn(locationStr)} Dark, cinematic, high contrast, suitable as full-bleed text background. Aspect ratio optimised for Instagram.`
+      instances = [{ prompt: imagePrompt }]
+    }
 
     const imageResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
@@ -48,7 +94,7 @@ Deno.serve(async (req: Request) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{ prompt: imagePrompt }],
+          instances,
           parameters: {
             sampleCount: 1,
             aspectRatio,

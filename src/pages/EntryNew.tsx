@@ -19,6 +19,7 @@ import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { createEntry, addEntryParticipants, updateEntryCover } from '@/data/entries'
 import { fetchProspectById, updateProspect } from '@/data/prospects'
 import { generateLore } from '@/ai/lore'
+import { generateTitle } from '@/ai/title'
 import { notifyOthers } from '@/hooks/usePushNotifications'
 import { generateCover } from '@/ai/cover'
 import { useAuthStore } from '@/store/auth'
@@ -68,6 +69,10 @@ export default function EntryNew() {
     city: string
     country: string
   } | null>(null)
+  const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
+  const titleGenFired = useRef(false)
+  const locationFillRef = useRef(locationFill)
+  locationFillRef.current = locationFill
   const prospectHandled = useRef(false)
   const handleGeoDetected = useCallback((loc: LocationFill) => setLocationFill(loc), [])
 
@@ -98,7 +103,25 @@ export default function EntryNew() {
     }).catch(() => {})
   }, [searchParams])
 
-  const { pendingFiles, addFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos()
+  const { pendingFiles, addFiles: rawAddFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos()
+
+  // Wrap addFiles to trigger AI title generation on the first photo
+  const addFiles = useCallback((files: File[]) => {
+    rawAddFiles(files)
+    if (!titleGenFired.current && files.length > 0 && selectedType) {
+      titleGenFired.current = true
+      // Read locationFill from ref to get the latest value (geo detection is async)
+      const loc = locationFillRef.current
+      generateTitle(files[0], selectedType, {
+        location: loc?.location,
+        city: loc?.city,
+        country: loc?.country,
+        date: loc?.date,
+      }).then((title) => {
+        if (title) setSuggestedTitle(title)
+      })
+    }
+  }, [rawAddFiles, selectedType])
 
   function handleTypeSelect(type: EntryType) {
     if (type === 'gathering') {
@@ -326,6 +349,7 @@ export default function EntryNew() {
             onSubmit={submitMission}
             loading={submitting}
             detectedLocation={locationFill}
+            suggestedTitle={suggestedTitle}
             initialData={prospectPrefill ? {
               title: prospectPrefill.title,
               date: prospectPrefill.date,
@@ -340,6 +364,7 @@ export default function EntryNew() {
             onSubmit={submitNightOut}
             loading={submitting}
             detectedLocation={locationFill}
+            suggestedTitle={suggestedTitle}
             initialData={prospectPrefill ? {
               title: prospectPrefill.title,
               date: prospectPrefill.date,
@@ -348,16 +373,16 @@ export default function EntryNew() {
           />
         )}
         {selectedType === 'steak' && (
-          <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={locationFill} />
+          <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} />
         )}
         {selectedType === 'playstation' && (
-          <PlaystationForm onSubmit={submitPlaystation} loading={submitting} />
+          <PlaystationForm onSubmit={submitPlaystation} loading={submitting} suggestedTitle={suggestedTitle} />
         )}
         {selectedType === 'toast' && (
-          <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={locationFill} />
+          <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} />
         )}
         {selectedType === 'interlude' && (
-          <InterludeForm onSubmit={submitInterlude} loading={submitting} />
+          <InterludeForm onSubmit={submitInterlude} loading={submitting} suggestedTitle={suggestedTitle} />
         )}
 
         {/* Participants */}

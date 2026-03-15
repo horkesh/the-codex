@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { fetchAllStats } from '@/data/stats'
 import { useThresholds } from '@/hooks/useThresholds'
 import type { GentStats, GentAlias } from '@/types/app'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ImageIcon, Share2, Sparkles } from 'lucide-react'
+import { ImageIcon, Share2, Sparkles, Camera } from 'lucide-react'
 
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Button, Spinner, OnboardingTip } from '@/components/ui'
@@ -319,6 +319,9 @@ export default function Studio() {
           const match = fetched.find((x) => x.id === preselectedEntryId)
           if (match) {
             setSelectedEntry(match)
+            if (match.cover_image_url) {
+              setBgUrl(match.cover_image_url)
+            }
             // Auto-select first template for that type if available
             const templates = TEMPLATES_BY_TYPE[match.type] ?? []
             if (templates.length > 0) setSelectedTemplate(templates[0].id)
@@ -330,24 +333,22 @@ export default function Studio() {
     return () => { cancelled = true }
   }, [preselectedEntryId, comparisonParam])
 
-  // When entry changes, reset template selection and background
+  // When entry changes, reset template selection and use cover image as default background
   function handleSelectEntry(entry: Entry) {
     if (selectedEntry?.id === entry.id) return
     setSelectedEntry(entry)
-    setBgUrl(null)
+    setBgUrl(entry.cover_image_url ?? null)
     const templates = TEMPLATES_BY_TYPE[entry.type] ?? []
     setSelectedTemplate(templates.length > 0 ? templates[0].id : null)
   }
 
-  // When template changes, clear the background
+  // When template changes, keep the current background (cover or AI)
   function handleSelectTemplate(templateId: TemplateId) {
     setSelectedTemplate(templateId)
-    setBgUrl(null)
   }
 
   async function handleGenerateBg() {
     if (!selectedEntry || !activeTemplateConfig) return
-    // No AI background for standalone comparison card
     setGeneratingBg(true)
     try {
       const url = await generateTemplateBg(selectedEntry, activeTemplateConfig.bgAspect ?? '3:4')
@@ -355,6 +356,12 @@ export default function Studio() {
     } finally {
       setGeneratingBg(false)
     }
+  }
+
+  function handleUseCoverImage() {
+    if (!selectedEntry?.cover_image_url) return
+    setBgUrl(selectedEntry.cover_image_url)
+    setBgSource('cover')
   }
 
   async function handleExport() {
@@ -377,6 +384,16 @@ export default function Studio() {
   const activeTemplateConfig = selectedTemplate
     ? availableTemplates.find((t) => t.id === selectedTemplate) ?? null
     : null
+
+  const bgSource: 'cover' | 'ai' | null = useMemo(() => {
+    if (!bgUrl) return null
+    return bgUrl === selectedEntry?.cover_image_url ? 'cover' : 'ai'
+  }, [bgUrl, selectedEntry?.cover_image_url])
+
+  const filterContextValue = useMemo(
+    () => getFilter(getStoredFilter(selectedEntry?.id)).css,
+    [selectedEntry?.id],
+  )
 
   // ---------------------------------------------------------------------------
   // Render: loading
@@ -582,9 +599,7 @@ export default function Studio() {
                     pointerEvents: 'none',
                   }}
                 >
-                  <PhotoFilterContext.Provider
-                    value={getFilter(selectedEntry ? getStoredFilter(selectedEntry.id) : undefined).css}
-                  >
+                  <PhotoFilterContext.Provider value={filterContextValue}>
                     <TemplateRenderer
                       templateId={selectedTemplate}
                       entry={selectedEntry ?? ({} as Entry)}
@@ -602,18 +617,44 @@ export default function Studio() {
                 {activeTemplateConfig?.dims ?? '1080×1350'} px · PNG · 3×
               </p>
 
-              {/* AI Background button */}
-              <Button
-                variant="ghost"
-                size="md"
-                fullWidth
-                loading={generatingBg}
-                onClick={handleGenerateBg}
-                className="gap-2 mb-3 border border-white/10 hover:border-gold/30"
-              >
-                {!generatingBg && <Sparkles size={14} strokeWidth={1.5} className="text-gold" />}
-                {generatingBg ? 'Generating background…' : bgUrl ? 'Regenerate AI Background' : 'Generate AI Background'}
-              </Button>
+              {/* Background source picker */}
+              <div className="flex gap-2 mb-3">
+                {/* Cover image button — only if entry has a cover */}
+                {selectedEntry?.cover_image_url && (
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    fullWidth
+                    onClick={handleUseCoverImage}
+                    className={[
+                      'gap-2 border transition-all',
+                      bgSource === 'cover'
+                        ? 'border-gold/50 bg-gold/8 text-gold'
+                        : 'border-white/10 hover:border-white/25',
+                    ].join(' ')}
+                  >
+                    <Camera size={14} strokeWidth={1.5} />
+                    Cover Photo
+                  </Button>
+                )}
+                {/* AI background button */}
+                <Button
+                  variant="ghost"
+                  size="md"
+                  fullWidth
+                  loading={generatingBg}
+                  onClick={handleGenerateBg}
+                  className={[
+                    'gap-2 border transition-all',
+                    bgSource === 'ai'
+                      ? 'border-gold/50 bg-gold/8 text-gold'
+                      : 'border-white/10 hover:border-gold/30',
+                  ].join(' ')}
+                >
+                  {!generatingBg && <Sparkles size={14} strokeWidth={1.5} className="text-gold" />}
+                  {generatingBg ? 'Generating…' : bgSource === 'ai' ? 'AI Styled' : selectedEntry?.cover_image_url ? 'AI Restyle' : 'Generate AI'}
+                </Button>
+              </div>
 
               {/* Export button */}
               <Button

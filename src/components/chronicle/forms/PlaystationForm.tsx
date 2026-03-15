@@ -16,6 +16,7 @@ export interface PlaystationFormData {
 interface PlaystationFormProps {
   onSubmit: (data: PlaystationFormData) => Promise<void>
   loading: boolean
+  suggestedTitle?: string | null
   initialData?: Partial<PlaystationFormData>
 }
 
@@ -89,7 +90,7 @@ function computeHeadToHead(matches: PS5Match[]): HeadToHead[] {
   return result
 }
 
-export function PlaystationForm({ onSubmit, loading, initialData }: PlaystationFormProps) {
+export function PlaystationForm({ onSubmit, loading, suggestedTitle, initialData }: PlaystationFormProps) {
   const [title, setTitle] = useState(initialData?.title ?? '')
   const [date, setDate] = useState(initialData?.date ?? '')
   const [matches, setMatches] = useState<PS5Match[]>(initialData?.matches?.length ? initialData.matches : [emptyMatch(1)])
@@ -102,9 +103,14 @@ export function PlaystationForm({ onSubmit, loading, initialData }: PlaystationF
   }, [])
 
   useEffect(() => {
-    if (vol === null || titleEdited.current) return
+    if (titleEdited.current) return
+    if (suggestedTitle && vol !== null) {
+      setTitle(`${suggestedTitle} · Vol. ${vol}`)
+      return
+    }
+    if (vol === null) return
     setTitle(`The Pitch · Vol. ${vol}`)
-  }, [vol])
+  }, [vol, suggestedTitle])
 
   function addMatch() {
     setMatches((prev) => [...prev, emptyMatch(prev.length + 1)])

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -18,6 +18,7 @@ interface MissionFormProps {
   onSubmit: (data: MissionFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  suggestedTitle?: string | null
   initialData?: Partial<MissionFormData>
 }
 
@@ -38,9 +39,16 @@ interface FieldErrors {
   country?: string
 }
 
-export function MissionForm({ onSubmit, loading, detectedLocation, initialData }: MissionFormProps) {
+export function MissionForm({ onSubmit, loading, detectedLocation, suggestedTitle, initialData }: MissionFormProps) {
   const [form, setForm] = useState<MissionFormData>(() => ({ ...empty, ...initialData }))
   const [errors, setErrors] = useState<FieldErrors>({})
+  const titleEdited = useRef(!!initialData?.title)
+
+  useEffect(() => {
+    if (suggestedTitle && !titleEdited.current) {
+      setForm((prev) => ({ ...prev, title: suggestedTitle }))
+    }
+  }, [suggestedTitle])
 
   useEffect(() => {
     if (!detectedLocation) return
@@ -57,6 +65,7 @@ export function MissionForm({ onSubmit, loading, detectedLocation, initialData }
   }, [detectedLocation])
 
   function set(field: keyof MissionFormData, value: string) {
+    if (field === 'title') titleEdited.current = true
     setForm((prev) => ({ ...prev, [field]: value }))
     if (errors[field as keyof FieldErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -12,6 +12,7 @@ export interface InterludeFormData {
 interface InterludeFormProps {
   onSubmit: (data: InterludeFormData) => Promise<void>
   loading: boolean
+  suggestedTitle?: string | null
   initialData?: Partial<InterludeFormData>
 }
 
@@ -26,11 +27,19 @@ interface FieldErrors {
   date?: string
 }
 
-export function InterludeForm({ onSubmit, loading, initialData }: InterludeFormProps) {
+export function InterludeForm({ onSubmit, loading, suggestedTitle, initialData }: InterludeFormProps) {
   const [form, setForm] = useState<InterludeFormData>(() => ({ ...empty, ...initialData }))
   const [errors, setErrors] = useState<FieldErrors>({})
+  const titleEdited = useRef(!!initialData?.title)
+
+  useEffect(() => {
+    if (suggestedTitle && !titleEdited.current) {
+      setForm((prev) => ({ ...prev, title: suggestedTitle }))
+    }
+  }, [suggestedTitle])
 
   function set(field: keyof InterludeFormData, value: string) {
+    if (field === 'title') titleEdited.current = true
     setForm((prev) => ({ ...prev, [field]: value }))
     if (errors[field as keyof FieldErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
