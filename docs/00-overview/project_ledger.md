@@ -4,6 +4,50 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-18 (015)
+
+**Goal**: Phases 2–6 from `implementation_plan_v2.md` — Entry Comments, Prospect Voting, Convert Prospect→Entry + Wishlist Done, Streaks + Monthly Crown, Quick-Log Global FAB.
+
+**Done**:
+
+### Entry Comments (Phase 2)
+- Migration `20260318000004_entry_comments.sql`: `entry_comments` table (id, entry_id, gent_id, body ≤280 chars, created_at); RLS: select all, insert/delete own; cascade on entry delete; index on entry_id
+- `src/data/entryComments.ts`: `fetchComments`, `fetchCommentById`, `addComment` (returns full comment with gent join), `deleteComment`
+- `src/hooks/useComments.ts`: initial fetch + Supabase Realtime channel `entry_comments:{entryId}`; INSERT appends single new comment via `fetchCommentById` (avoids full re-fetch); DELETE uses optimistic filter; cleanup via `supabase.removeChannel`
+- `src/components/chronicle/CommentsSection.tsx`: avatar thread UI, 280-char pill input, Enter-to-send, delete button on own comments (group-hover)
+- `src/pages/EntryDetail.tsx`: `<CommentsSection entryId={entry.id} />` after PeoplePresent, gated on `status === 'published'`
+
+### Prospect Voting (Phase 3)
+- Migration `20260318000005_prospect_votes.sql`: `prospect_votes` table (id, prospect_id, gent_id, vote IN ('in','pass'), UNIQUE(prospect_id,gent_id)); RLS: select all, insert/update own
+- `src/data/prospectVotes.ts`: `fetchVotesForProspects(ids[])`, `upsertVote` (with onConflict), `removeVote`
+- `src/pages/Prospects.tsx`: `VoteStrip` component (emerald ring = in, red ring = pass; own vote shows remove on tap); "I'm In" / "Pass" buttons when unvoted; visible on shared prospects only; optimistic state updates
+
+### Convert Prospect → Entry (Phase 4)
+- `src/data/prospects.ts`: `fetchProspectById(id)` — single-row fetch returning null on error
+- `src/pages/Prospects.tsx`: "Log as Entry" in ProspectCard three-dot menu (hidden if already converted); navigates to `/chronicle/new?from=prospect&id={id}`
+- `src/pages/EntryNew.tsx`: reads `?from=prospect&id=` on mount (guarded by `prospectHandled` ref); fetches prospect, pre-fills title/date/location/city/country, pre-selects `night_out` type, jumps to `'form'` step; on submit marks prospect `status='converted', converted_entry_id=entry.id` (fire-and-forget)
+
+### Wishlist Linked Entry (Phase 4)
+- `src/pages/BucketList.tsx`: done items show gold chip `<Link>` to linked entry (`converted_entry_id`); MarkDoneModal adds "or" separator + "Create New Entry" ghost button → `/chronicle/new`
+
+### Streaks + Monthly Crown (Phase 5)
+- `src/components/ledger/StreaksSection.tsx`: fetches entry_participants bounded to last 4 years; per gent finds most-frequent entry type; `computeStreak` returns `{current, best}` via consecutive-month walk; renders gold Flame card with streak count + personal best; hidden if all zeros
+- `src/pages/Ledger.tsx`: `<StreaksSection />` between MissionTimeline and SommelierSection
+- `src/components/ledger/StatGrid.tsx`: useEffect queries current month's entry_participants; gent column header shows 👑 for monthly entry leader (most entries this month)
+
+### Quick-Log Global FAB (Phase 6)
+- `src/components/layout/BottomNav.tsx`: gold `+` button above nav pill, spring-animated via `AnimatePresence` (scale + opacity); hidden on `/chronicle/new`; navigates to `/chronicle/new`
+
+### Simplify fixes
+- `VoteStrip` className: `.join(' ')` → `cn()` utility
+- `StatGrid` monthEnd: hardcoded `31` → `new Date(Y, M+1, 0)` (last day of month)
+- `StreaksSection` query: bounded to `cutoff = 4 years ago` (was unbounded full table scan)
+- `useComments` INSERT: `fetchCommentById(payload.new.id)` instead of re-fetching all comments
+
+**Status**: Deployed to https://the-codex-sepia.vercel.app — commit `f6823ec`. Zero TS errors.
+
+---
+
 ## Session — 2026-03-18 (014)
 
 **Goal**: Gent profiles; prospect auto-expiry; share prospect with gents.

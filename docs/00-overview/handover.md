@@ -8,27 +8,29 @@ _Updated at the end of every session. Read this first when resuming._
 
 **Phase**: **FULLY LIVE.** Continued post-roadmap polish and new features.
 
-**What was just done** (Sessions 013–014):
+**What was just done** (Session 015 — implementation_plan_v2 phases 2–6):
 
-- Entry photo → cover image pipeline fixed: `entry-photos` storage bucket now has RLS policies; `updateEntryCover` awaited so errors surface
-- Scouting Instagram extraction: `event_name` extracted separately from `venue_name`; date as `YYYY-MM-DD`; OG image auto-saved as thumbnail
-- **Gent profiles** (`/gents/:alias`): portrait hero, stats chips, bio, recent Chronicle entries; participant avatars in EntryDetail now link here
-- **Prospect auto-expiry**: batch-marks overdue prospects as `passed` on every load; sorted upcoming-first
-- **Share with Gents**: `visibility` column on prospects; "Share with Gents" in three-dot menu; shared prospects show "Suggested" badge for other gents
+- **Entry Comments** — `entry_comments` table + Realtime subscription; CommentsSection with avatar thread UI; visible on published entries only
+- **Prospect Voting** — `prospect_votes` table; VoteStrip (emerald/red rings) with optimistic upsert/remove; on shared prospects
+- **Convert Prospect → Entry** — "Log as Entry" in ProspectCard menu; pre-fills EntryNew (title/date/location); marks prospect `converted` after submit
+- **Wishlist linked entries** — done BucketList items show gold chip linking to converted entry; MarkDoneModal "Create New Entry" shortcut
+- **Streaks** — StreaksSection on Ledger (most-frequent type per gent, current streak + personal best, bounded 4-year query)
+- **Monthly Crown** — 👑 in StatGrid column header for gent with most entries this month
+- **Quick-Log FAB** — gold `+` button above BottomNav, spring-animated, hidden on entry creation page
 
-**What was done before** (Sessions 011–012):
+**What was done before** (Sessions 013–014):
 
-- POI scanner fully repaired (gemini-2.5-flash, status:200, verify_jwt=false, 4096 tokens)
-- Portrait displayed as profile pic everywhere (portrait_url ?? photo_url fallback)
-- Mind map: concentric rings, gent-person edges by colour, focus mode, Tag People in EntryDetail
-- PersonDetail: Intel tab, tier selector, gent connection selector
-- Home: uniform 2×3 grid; Agenda hub (Wishlist + Scouting); Dossier in Chronicle; Our Places in Ledger
+- Entry photo → cover image pipeline fixed; `entry-photos` storage bucket RLS
+- Scouting: `event_name` extracted separately; date as `YYYY-MM-DD`; OG image as thumbnail
+- Gent profiles (`/gents/:alias`): portrait hero, stats chips, bio, chronicle
+- Prospect auto-expiry + Share with Gents (`visibility` column)
 
 **What's left / next ideas**:
-- Wishlist (Bucket List): Instagram URL input to auto-populate from event pages
+- Wishlist: Instagram URL input to auto-populate from event pages
 - Passport Stamps: `image_url` field exists but generation not hooked up
 - Toast entry type: to be removed (moving to separate app)
 - Ledger Sommelier: only populated by Toast entries — revisit once Toast removed
+- `implementation_plan_v2.md` Phase 1 (Gather push notifications) still open
 
 ---
 
@@ -126,4 +128,4 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-_← Updated 2026-03-18 (Session 014)_
+_← Updated 2026-03-18 (Session 015)_
