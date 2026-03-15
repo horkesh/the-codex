@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
+import { OnboardingTip } from '@/components/ui'
 
 const MotionLink = motion(Link)
 
@@ -28,6 +29,11 @@ export default function Agenda() {
       <SectionNav />
 
       <PageWrapper padded scrollable>
+        <OnboardingTip
+          tipKey="agenda"
+          title="Agenda"
+          body="Wishlist holds places and experiences you want to hit. Scouting tracks upcoming events sourced from Instagram — vote with the gents and log it as an entry when it happens."
+        />
         <div className="flex flex-col gap-3 pt-2 pb-6">
           {SUB_SECTIONS.map((s) => (
             <MotionLink

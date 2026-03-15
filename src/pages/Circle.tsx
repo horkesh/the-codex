@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { Plus, Users, Radar, Network } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
-import { Button, Spinner, EmptyStateImage } from '@/components/ui'
+import { Button, Spinner, EmptyStateImage, OnboardingTip } from '@/components/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import { useCircle } from '@/hooks/useCircle'
 import { PersonCard } from '@/components/circle/PersonCard'
@@ -129,6 +129,11 @@ export default function Circle() {
       {/* Contacts tab */}
       {activeTab === 'contacts' && (
         <PageWrapper>
+          <OnboardingTip
+            tipKey="circle"
+            title="The Circle"
+            body="People you've met and want to remember. Add someone via Instagram for an instant photo. Tag people on entries to build edges in the Mind Map."
+          />
           {/* Filters */}
           <CircleFilters
             filters={filters}

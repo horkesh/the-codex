@@ -7,7 +7,7 @@ import { AlmanacWidget } from '@/components/chronicle/AlmanacWidget'
 import { WhereaboutsWidget } from '@/components/whereabouts/WhereaboutsWidget'
 import { ChronicleFilters } from '@/components/chronicle/ChronicleFilters'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
-import { Spinner, Button, EmptyStateImage } from '@/components/ui'
+import { Spinner, Button, EmptyStateImage, OnboardingTip } from '@/components/ui'
 import { staggerContainer, fadeIn } from '@/lib/animations'
 import { daysUntil, formatDate } from '@/lib/utils'
 import type { EntryWithParticipants } from '@/types/app'
@@ -35,6 +35,11 @@ export default function Chronicle() {
       <SectionNav />
 
       <PageWrapper padded={false} className="flex flex-col">
+        <OnboardingTip
+          tipKey="chronicle"
+          title="The Chronicle"
+          body="Your shared logbook. Tap the gold + button to log a new entry — Mission, Night Out, The Table, PS5, Gathering, or Interlude."
+        />
         <AlmanacWidget />
         <WhereaboutsWidget />
 

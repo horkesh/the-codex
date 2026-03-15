@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ImageIcon, Share2, Sparkles } from 'lucide-react'
 
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
-import { Button, Spinner } from '@/components/ui'
+import { Button, Spinner, OnboardingTip } from '@/components/ui'
 import { fetchEntries } from '@/data/entries'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { formatDate } from '@/lib/utils'
@@ -405,6 +405,12 @@ export default function Studio() {
       <SectionNav />
 
       <PageWrapper padded={false} className="flex flex-col gap-0">
+
+        <OnboardingTip
+          tipKey="studio"
+          title="The Studio"
+          body="Pick any entry from the list below to generate a shareable export card. AI backgrounds are generated per entry type. Use Export to Studio from any entry detail page to jump straight here."
+        />
 
         {/* ------------------------------------------------------------------ */}
         {/* Step 1: Entry selector                                              */}

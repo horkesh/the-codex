@@ -7,7 +7,7 @@ import { PassportCover } from '@/components/passport/PassportCover'
 import { StampGrid } from '@/components/passport/StampGrid'
 import { StampDetail } from '@/components/passport/StampDetail'
 import { StoryCard } from '@/components/passport/StoryCard'
-import { Spinner } from '@/components/ui'
+import { Spinner, OnboardingTip } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
 import { fadeUp } from '@/lib/animations'
 import { fetchStories } from '@/data/stories'
@@ -83,6 +83,11 @@ export default function Passport() {
         {view === 'cover' ? (
           /* Cover view — no horizontal padding (PassportCover handles its own layout) */
           <PageWrapper key="cover" padded={false} scrollable={true}>
+            <OnboardingTip
+              tipKey="passport"
+              title="The Passport"
+              body="Stamps are earned automatically as you log entries — one per entry type per city. Tap the cover to open your stamp collection. Stories let you connect multiple entries into a narrative arc."
+            />
             <PassportCover
               gent={gentData}
               onOpen={() => setView('stamps')}

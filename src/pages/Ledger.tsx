@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router'
 import { MapPin } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
-import { Spinner } from '@/components/ui'
+import { Spinner, OnboardingTip } from '@/components/ui'
 import { useStats } from '@/hooks/useStats'
 import { StatGrid } from '@/components/ledger/StatGrid'
 import { PS5Rivalry } from '@/components/ledger/PS5Rivalry'
@@ -32,6 +32,11 @@ export default function Ledger() {
       <SectionNav />
 
       <PageWrapper scrollable>
+        <OnboardingTip
+          tipKey="ledger"
+          title="The Ledger"
+          body="Stats update automatically as you log entries. Check Streaks for consecutive-month runs, and the 👑 crown in the stats table for this month's most active gent."
+        />
         {/* Year selector */}
         <div className="mb-6 -mx-4 px-4 overflow-x-auto scrollbar-hide">
           <div
