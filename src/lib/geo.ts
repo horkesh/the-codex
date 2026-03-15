@@ -86,7 +86,7 @@ export function haversineMetres(
  */
 export async function extractLocationFromPhoto(file: File): Promise<LocationFill | null> {
   try {
-    const exif = await exifr.parse(file, { gps: true, pick: ['DateTimeOriginal'] })
+    const exif = await exifr.parse(file, { gps: true, tiff: true, exif: true, xmp: false, iptc: false, jfif: false, ihdr: false, icc: false })
     if (!exif) return null
 
     const result: LocationFill = {}
