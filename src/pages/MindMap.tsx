@@ -55,7 +55,7 @@ export default function MindMap() {
   }, [updatePersonTier])
 
   return (
-    <>
+    <div className="flex flex-col flex-1" style={{ minHeight: 0 }}>
       <TopBar title="Mind Map" back />
       <SectionNav />
 
@@ -125,6 +125,6 @@ export default function MindMap() {
           />
         </div>
       )}
-    </>
+    </div>
   )
 }
