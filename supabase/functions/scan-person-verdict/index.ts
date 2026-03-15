@@ -38,26 +38,38 @@ Score rubric:
 6.5-7.9  → "On the Radar"
 0.0-6.4  → "Observe Further"`
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [
-          { inline_data: { mime_type, data: photo_base64 } },
-          { text: prompt },
-        ]}],
-        generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1024 },
-      }),
-    }
-  )
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 20_000)
 
-  const responseText = await response.text()
-  if (!response.ok) throw new Error(`Gemini API error: ${response.status} ${responseText}`)
+  let responseText: string
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { inline_data: { mime_type, data: photo_base64 } },
+            { text: prompt },
+          ]}],
+          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1024 },
+        }),
+      }
+    )
+    responseText = await response.text()
+    if (!response.ok) throw new Error(`Gemini API error: ${response.status} — ${responseText.slice(0, 300)}`)
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') throw new Error('Gemini request timed out after 20s')
+    throw e
+  } finally {
+    clearTimeout(timeout)
+  }
 
   const result = JSON.parse(responseText)
   const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
+  console.log('Gemini raw:', rawText.slice(0, 200))
   return JSON.parse(rawText)
 }
 
