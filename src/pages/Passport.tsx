@@ -40,7 +40,7 @@ export default function Passport() {
       <>
         <TopBar title="Passport" />
         <SectionNav />
-        <div className="flex flex-col items-center justify-center flex-1 h-[calc(100vh-56px)]">
+        <div className="flex flex-col items-center justify-center flex-1 h-[calc(100vh-96px)]">
           <Spinner size="lg" />
         </div>
       </>

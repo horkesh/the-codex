@@ -17,14 +17,18 @@ export function useMindMap() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([fetchAllGents(), fetchPeople(), fetchAllAppearances()])
-      .then(([g, p, a]) => {
+    // Gents + people are required — appearances are optional (table may not exist yet)
+    Promise.all([fetchAllGents(), fetchPeople()])
+      .then(([g, p]) => {
         setGents(g)
         setPeople(p)
-        setAppearances(a)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
+
+    fetchAllAppearances()
+      .then(setAppearances)
+      .catch(() => {})
   }, [])
 
   const graphData = useMemo(

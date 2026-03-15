@@ -60,14 +60,14 @@ export default function MindMap() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center flex-1 bg-obsidian">
         <Spinner size="lg" />
       </div>
     )
   }
 
   return (
-    <div className="relative w-full h-full bg-obsidian">
+    <div className="relative w-full flex-1 bg-obsidian" style={{ minHeight: 0 }}>
       {/* Back button */}
       <button
         type="button"

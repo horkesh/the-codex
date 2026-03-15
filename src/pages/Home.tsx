@@ -1,123 +1,163 @@
-import { useNavigate } from 'react-router'
+import { Link } from 'react-router'
 import { motion } from 'framer-motion'
-import { BarChart2, Layers } from 'lucide-react'
-import { TopBar, PageWrapper } from '@/components/layout'
+import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { useAuthStore } from '@/store/auth'
 import { staggerContainer, staggerItem } from '@/lib/animations'
+import { NAV_SECTIONS } from '@/lib/navigation'
+import { cn } from '@/lib/utils'
 
-const SECTIONS = [
-  {
-    id: 'chronicle',
-    title: 'Chronicle',
-    subtitle: 'The complete record',
-    path: '/chronicle',
-    image: '/empty-states/chronicle.webp',
-  },
-  {
-    id: 'passport',
-    title: 'Passport',
-    subtitle: 'Stamps & achievements',
-    path: '/passport',
-    image: '/empty-states/passport.webp',
-  },
-  {
-    id: 'circle',
-    title: 'The Circle',
-    subtitle: 'People & connections',
-    path: '/circle',
-    image: '/empty-states/circle.webp',
-  },
-  {
-    id: 'ledger',
-    title: 'Ledger',
-    subtitle: 'Stats & intelligence',
-    path: '/ledger',
-    icon: BarChart2,
-  },
-  {
-    id: 'studio',
-    title: 'Studio',
-    subtitle: 'Export & create',
-    path: '/studio',
-    icon: Layers,
-  },
-] as const
+const MotionLink = motion(Link)
+
+type Section = typeof NAV_SECTIONS[number]
+
+// ── Section card ─────────────────────────────────────────────────────────────
+
+function SectionCard({ section, featured = false }: { section: Section; featured?: boolean }) {
+  return (
+    <MotionLink
+      to={section.path}
+      variants={staggerItem}
+      whileTap={{ scale: 0.965 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+      className={cn(
+        'relative block overflow-hidden rounded-2xl border border-white/8 bg-slate-mid',
+        featured ? 'h-52' : 'h-40',
+      )}
+    >
+      {/* Image — zooms on hover independently within clipped frame */}
+      <motion.div
+        className="absolute inset-0"
+        whileHover={{ scale: 1.08 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
+        <img
+          src={section.image}
+          alt=""
+          aria-hidden="true"
+          className="w-full h-full object-cover"
+          style={{ opacity: featured ? 0.6 : 0.55 }}
+        />
+      </motion.div>
+
+      {/* Gradient overlay — heavier at bottom so label always readable */}
+      <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/50 to-obsidian/10" />
+
+      {/* Top-left label shimmer line — featured only */}
+      {featured && (
+        <div className="absolute top-4 left-5">
+          <span className="text-[9px] tracking-[0.3em] uppercase font-body text-gold/60">
+            Featured
+          </span>
+        </div>
+      )}
+
+      {/* Content — bottom */}
+      <div className={cn('absolute bottom-0 left-0 right-0', featured ? 'p-5' : 'p-3.5')}>
+        <p className={cn(
+          'font-display text-ivory leading-tight',
+          featured ? 'text-[20px]' : 'text-[15px]',
+        )}>
+          {section.label}
+        </p>
+        <p className={cn(
+          'font-body text-ivory-dim/80 leading-snug mt-0.5',
+          featured ? 'text-[11px]' : 'text-[10px]',
+        )}>
+          {section.subtitle}
+        </p>
+      </div>
+
+      {/* Gold border — appears on hover */}
+      <motion.div
+        className="absolute inset-0 rounded-2xl pointer-events-none"
+        initial={{ opacity: 0 }}
+        whileHover={{ opacity: 1 }}
+        transition={{ duration: 0.18 }}
+        style={{ boxShadow: 'inset 0 0 0 1px rgba(201,168,76,0.55), 0 4px 24px rgba(201,168,76,0.12)' }}
+      />
+
+      {/* Featured card: persistent breathing glow */}
+      {featured && (
+        <motion.div
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          animate={{
+            boxShadow: [
+              'inset 0 0 0 1px rgba(201,168,76,0.06)',
+              'inset 0 0 0 1px rgba(201,168,76,0.22)',
+              'inset 0 0 0 1px rgba(201,168,76,0.06)',
+            ],
+          }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+    </MotionLink>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const navigate = useNavigate()
   const { gent } = useAuthStore()
+  const [featured, ...grid] = NAV_SECTIONS
 
   return (
     <>
       <TopBar />
+      <SectionNav />
+
       <PageWrapper padded scrollable>
         {/* Hero */}
         <div className="flex flex-col items-center gap-3 pt-6 pb-8">
-          <img
+          <motion.img
             src="/logo.png"
             alt="The Codex"
             className="w-20 h-20 rounded-full"
-            style={{ boxShadow: '0 0 40px rgba(201,168,76,0.25)' }}
+            style={{ boxShadow: '0 0 48px rgba(201,168,76,0.28), 0 0 0 1px rgba(201,168,76,0.12)' }}
+            initial={{ opacity: 0, scale: 0.75 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.55, ease: [0.34, 1.56, 0.64, 1] }}
           />
-          <div className="flex flex-col items-center gap-1">
+          <motion.div
+            className="flex flex-col items-center gap-1"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.18 }}
+          >
             <h1 className="font-display text-2xl text-ivory tracking-wide">The Codex</h1>
             {gent && (
-              <p className="text-ivory-dim text-xs font-body">
-                {gent.full_alias}
-              </p>
+              <p className="text-ivory-dim text-xs font-body">{gent.full_alias}</p>
             )}
-          </div>
-          <div className="flex items-center gap-2 mt-1">
+          </motion.div>
+          <motion.div
+            className="flex items-center gap-2 mt-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.45, delay: 0.3 }}
+          >
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-gold/30" />
-            <span className="text-gold/60 text-[10px] font-body uppercase tracking-[0.3em]">
+            <span className="text-gold/55 text-[10px] font-body uppercase tracking-[0.3em]">
               Private. Deliberate. Legendary.
             </span>
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-gold/30" />
-          </div>
+          </motion.div>
         </div>
 
-        {/* Section grid */}
+        {/* Section cards */}
         <motion.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          className="grid grid-cols-2 gap-3 pb-4"
+          className="flex flex-col gap-3 pb-6"
         >
-          {SECTIONS.map((section) => (
-            <motion.button
-              key={section.id}
-              variants={staggerItem}
-              type="button"
-              onClick={() => navigate(section.path)}
-              className="relative rounded-xl overflow-hidden border border-white/8 bg-slate-mid text-left group"
-              style={{ aspectRatio: '3/4', maxHeight: '220px' }}
-            >
-              {'image' in section ? (
-                <img
-                  src={section.image}
-                  alt=""
-                  aria-hidden="true"
-                  className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-75 transition-opacity duration-300"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:opacity-15 transition-opacity">
-                  <section.icon size={64} className="text-gold" strokeWidth={0.75} />
-                </div>
-              )}
+          {/* Featured — Chronicle, full width */}
+          <SectionCard section={featured} featured />
 
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-obsidian/90 via-obsidian/30 to-transparent" />
-
-              {/* Label */}
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <p className="font-display text-[15px] text-ivory leading-tight">{section.title}</p>
-                <p className="text-ivory-dim text-[10px] font-body mt-0.5">{section.subtitle}</p>
-              </div>
-
-              {/* Gold border on hover */}
-              <div className="absolute inset-0 rounded-xl border border-gold/0 group-hover:border-gold/25 transition-colors duration-300" />
-            </motion.button>
-          ))}
+          {/* 2 × 2 grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {grid.map((section) => (
+              <SectionCard key={section.id} section={section} />
+            ))}
+          </div>
         </motion.div>
       </PageWrapper>
     </>
