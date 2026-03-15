@@ -82,10 +82,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
   ) => {
     if (!gent) return
 
-    const [sourcePhotoUrl] = await Promise.all([
-      uploadPersonScanPhoto(gent.id, file),
-      Promise.resolve(),
-    ])
+    const sourcePhotoUrl = await uploadPersonScanPhoto(gent.id, file)
 
     const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/jpeg', source_type: sourceType })
 
@@ -144,65 +141,13 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     setStep('analyzing')
 
     try {
-      const [compressedBase64, sourcePhotoUrl] = await Promise.all([
-        compressImage(file),
-        uploadPersonScanPhoto(gent.id, file),
-      ])
-
-      const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/jpeg', source_type: sourceType })
-
-      const handle = verdict.instagram_handle ?? null
-
-      const scan = await createPersonScanDraft({
-        created_by: gent.id,
-        source_type: sourceType,
-        source_photo_url: sourcePhotoUrl,
-        appearance_description: verdict.appearance,
-        trait_words: verdict.trait_words,
-        score: verdict.score,
-        verdict_label: verdict.verdict_label,
-        confidence: verdict.confidence,
-        recommended_category: verdict.score >= CONTACT_SCORE_THRESHOLD ? 'contact' : 'person_of_interest',
-        display_name: verdict.display_name ?? null,
-        bio: null,
-        why_interesting: verdict.why_interesting,
-        best_opener: verdict.best_opener,
-        green_flags: verdict.green_flags,
-        watchouts: verdict.watchouts,
-        review_payload: verdict as unknown as Record<string, unknown>,
-        instagram_handle: handle,
-        instagram_source_url: null,
-        generated_avatar_url: null,
-      })
-
-      setDossier({
-        display_name: verdict.display_name ?? '',
-        instagram: handle ?? '',
-        bio: '',
-        why_interesting: verdict.why_interesting ?? '',
-        best_opener: verdict.best_opener ?? '',
-        green_flags: verdict.green_flags ?? [],
-        watchouts: verdict.watchouts ?? [],
-        category: verdict.score >= CONTACT_SCORE_THRESHOLD ? 'contact' : 'person_of_interest',
-        visibility: 'private',
-      })
-      setVerdictResult({ verdict, portraitUrl: null, sourcePhotoUrl, scanId: scan.id })
-      setPortraitLoading(true)
-      setStep('review')
-
-      generatePersonPortrait({ appearance: verdict.appearance, traits: verdict.trait_words, scan_id: scan.id })
-        .then((result) => {
-          setVerdictResult((prev) => prev ? { ...prev, portraitUrl: result.portrait_url } : prev)
-          updatePersonScan(scan.id, { generated_avatar_url: result.portrait_url }).catch(() => {})
-        })
-        .catch(() => {})
-        .finally(() => setPortraitLoading(false))
-
+      const compressedBase64 = await compressImage(file)
+      await runVerdictAnalysis(compressedBase64, file, sourceType)
     } catch (err) {
       setAnalyzeError((err as Error).message)
       setStep('input')
     }
-  }, [gent])
+  }, [gent, runVerdictAnalysis])
 
   // Instagram handle lookup — fetches profile picture via unavatar proxy
   const handleAnalyzeHandle = useCallback(async (handle: string) => {

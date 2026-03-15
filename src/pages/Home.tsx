@@ -2,7 +2,6 @@ import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { useAuthStore } from '@/store/auth'
-import { staggerContainer, staggerItem } from '@/lib/animations'
 import { NAV_SECTIONS } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
 
@@ -16,7 +15,6 @@ function SectionCard({ section, featured = false }: { section: Section; featured
   return (
     <MotionLink
       to={section.path}
-      variants={staggerItem}
       whileTap={{ scale: 0.965 }}
       transition={{ type: 'spring', stiffness: 400, damping: 28 }}
       className={cn(
@@ -145,12 +143,7 @@ export default function Home() {
         </div>
 
         {/* Section cards */}
-        <motion.div
-          variants={staggerContainer}
-          initial="initial"
-          animate="animate"
-          className="flex flex-col gap-3 pb-6"
-        >
+        <div className="flex flex-col gap-3 pb-6">
           {/* Featured — Chronicle, full width */}
           <SectionCard section={featured} featured />
 
@@ -160,7 +153,7 @@ export default function Home() {
               <SectionCard key={section.id} section={section} />
             ))}
           </div>
-        </motion.div>
+        </div>
       </PageWrapper>
     </>
   )
