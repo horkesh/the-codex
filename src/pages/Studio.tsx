@@ -361,7 +361,6 @@ export default function Studio() {
   function handleUseCoverImage() {
     if (!selectedEntry?.cover_image_url) return
     setBgUrl(selectedEntry.cover_image_url)
-    setBgSource('cover')
   }
 
   async function handleExport() {

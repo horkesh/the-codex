@@ -321,6 +321,15 @@ export default function EntryNew() {
           <span className="text-ivory-muted font-body text-sm">{typeMeta?.label}</span>
         </div>
 
+        {/* Photos — primary action, placed prominently at the top */}
+        <PhotoUpload
+          entryId={null}
+          onGeoDetected={handleGeoDetected}
+          onFilesAdded={addFiles}
+          onFileRemoved={removeFile}
+          className="w-full"
+        />
+
         {/* Saved places — shown for location-aware entry types */}
         {selectedType !== 'playstation' && selectedType !== 'interlude' && (
           <SavedPlacesBar places={savedPlaces} onSelect={setLocationFill} />
@@ -393,16 +402,6 @@ export default function EntryNew() {
           />
         </div>
 
-        {/* Photos — shown for all entry types */}
-        <div className="border-t border-white/8 pt-4">
-          <PhotoUpload
-            entryId={null}
-            onGeoDetected={handleGeoDetected}
-            onFilesAdded={addFiles}
-            onFileRemoved={removeFile}
-            className="w-full"
-          />
-        </div>
       </motion.div>
     )
   }
