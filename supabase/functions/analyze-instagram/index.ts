@@ -110,13 +110,21 @@ ${extractedText}`,
     const result = await response.json()
     const rawText = result.content?.[0]?.text?.trim() ?? '{}'
 
-    // Strip markdown code fences, then sanitize unescaped newlines inside JSON strings
+    // Strip markdown code fences, then walk char-by-char to escape control chars in strings
     const stripped = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
-    // Replace literal newlines inside JSON string values with \n escape
-    const sanitized = stripped.replace(
-      /"((?:[^"\\]|\\.)*)"/g,
-      (_match: string, inner: string) => `"${inner.replace(/\n/g, '\\n').replace(/\r/g, '')}"`
-    )
+    let sanitized = ''
+    let inString = false
+    let escaped = false
+    for (let i = 0; i < stripped.length; i++) {
+      const ch = stripped[i]
+      if (escaped) { sanitized += ch; escaped = false; continue }
+      if (ch === '\\' && inString) { sanitized += ch; escaped = true; continue }
+      if (ch === '"') { inString = !inString; sanitized += ch; continue }
+      if (inString && ch === '\n') { sanitized += '\\n'; continue }
+      if (inString && ch === '\r') continue
+      if (inString && ch === '\t') { sanitized += '\\t'; continue }
+      sanitized += ch
+    }
     const extracted = JSON.parse(sanitized)
 
     return new Response(JSON.stringify(extracted), {
