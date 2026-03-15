@@ -340,16 +340,16 @@ export default function PersonDetail() {
         {tab === 'intel' && scan && (
           <div className="space-y-5 mt-3">
             {/* Vibe + Style */}
-            {(scan.review_payload?.vibe || scan.review_payload?.style_read) && (
+            {Boolean(scan.review_payload?.vibe || scan.review_payload?.style_read) && (
               <div className="space-y-2">
-                {scan.review_payload?.vibe && (
+                {typeof scan.review_payload?.vibe === 'string' && (
                   <p className="text-sm text-ivory font-body leading-relaxed italic">
-                    "{scan.review_payload.vibe as string}"
+                    "{scan.review_payload.vibe}"
                   </p>
                 )}
-                {scan.review_payload?.style_read && (
+                {typeof scan.review_payload?.style_read === 'string' && (
                   <p className="text-xs text-ivory-dim font-body leading-relaxed">
-                    {scan.review_payload.style_read as string}
+                    {scan.review_payload.style_read}
                   </p>
                 )}
               </div>
