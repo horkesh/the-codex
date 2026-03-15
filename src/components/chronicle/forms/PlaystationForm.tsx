@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { staggerItem } from '@/lib/animations'
+import { fetchEntries } from '@/data/entries'
 import type { GentAlias, PS5Match } from '@/types/app'
 
 export interface PlaystationFormData {
@@ -93,6 +94,17 @@ export function PlaystationForm({ onSubmit, loading, initialData }: PlaystationF
   const [date, setDate] = useState(initialData?.date ?? '')
   const [matches, setMatches] = useState<PS5Match[]>(initialData?.matches?.length ? initialData.matches : [emptyMatch(1)])
   const [errors, setErrors] = useState<FieldErrors>({})
+  const [vol, setVol] = useState<number | null>(null)
+  const titleEdited = useRef(!!initialData?.title)
+
+  useEffect(() => {
+    fetchEntries({ type: 'playstation' }).then((entries) => setVol(entries.length + 1)).catch(() => setVol(1))
+  }, [])
+
+  useEffect(() => {
+    if (vol === null || titleEdited.current) return
+    setTitle(`The Pitch · Vol. ${vol}`)
+  }, [vol])
 
   function addMatch() {
     setMatches((prev) => [...prev, emptyMatch(prev.length + 1)])
@@ -159,6 +171,7 @@ export function PlaystationForm({ onSubmit, loading, initialData }: PlaystationF
         placeholder="e.g. FC 24, EA FC 25..."
         value={title}
         onChange={(e) => {
+          titleEdited.current = true
           setTitle(e.target.value)
           if (errors.title) setErrors((p) => ({ ...p, title: undefined }))
         }}

@@ -67,23 +67,33 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, on
           if (!loc || geoFiredRef.current) return
           geoFiredRef.current = true
 
-          // Proximity check: if GPS coords exist, prefer a saved place name within 200m
+          // Try to match against a saved place — GPS proximity first, name fallback second
           let finalLoc = loc
-          if (loc.lat != null && loc.lng != null) {
-            const saved = await fetchLocations()
-            const nearby = saved.find(
-              (p) => p.lat != null && p.lng != null &&
-                haversineMetres(loc.lat!, loc.lng!, p.lat!, p.lng!) <= 200,
-            )
-            if (nearby) {
-              finalLoc = {
-                ...loc,
-                location: nearby.name,
-                matchedPlaceName: nearby.name,
-                city: loc.city || nearby.city,
-                country: loc.country || nearby.country,
-                country_code: loc.country_code || nearby.country_code,
-              }
+          const saved = await fetchLocations()
+
+          // 1. GPS proximity: within 500m (tolerant of phone GPS drift)
+          let match = (loc.lat != null && loc.lng != null)
+            ? saved.find(
+                (p) => p.lat != null && p.lng != null &&
+                  haversineMetres(loc.lat!, loc.lng!, p.lat!, p.lng!) <= 500,
+              )
+            : undefined
+
+          // 2. Name fallback: Nominatim's first token matches a saved place name
+          //    (catches places added without a map pin, or photos without GPS)
+          if (!match && loc.location) {
+            const needle = loc.location.toLowerCase()
+            match = saved.find((p) => p.name.toLowerCase() === needle)
+          }
+
+          if (match) {
+            finalLoc = {
+              ...loc,
+              location: match.name,
+              matchedPlaceName: match.name,
+              city: loc.city || match.city,
+              country: loc.country || match.country,
+              country_code: loc.country_code || match.country_code,
             }
           }
 

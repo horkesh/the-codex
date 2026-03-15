@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { fetchEntries } from '@/data/entries'
 import type { LocationFill } from '@/lib/geo'
 
 export interface SteakFormData {
@@ -41,6 +42,20 @@ interface FieldErrors {
 
 export function SteakForm({ onSubmit, loading, detectedLocation, initialData }: SteakFormProps) {
   const [form, setForm] = useState<SteakFormData>(() => ({ ...empty, ...initialData }))
+  const [vol, setVol] = useState<number | null>(null)
+  const titleEdited = useRef(!!initialData?.title)
+
+  // Fetch vol number once on mount
+  useEffect(() => {
+    fetchEntries({ type: 'steak' }).then((entries) => setVol(entries.length + 1)).catch(() => setVol(1))
+  }, [])
+
+  // Auto-fill title from vol + location (unless user has manually edited it)
+  useEffect(() => {
+    if (vol === null || titleEdited.current) return
+    const locationPart = form.location ? ` at ${form.location}` : ''
+    setForm((prev) => ({ ...prev, title: `The Table${locationPart} · Vol. ${vol}` }))
+  }, [vol, form.location]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!detectedLocation) return
@@ -54,6 +69,7 @@ export function SteakForm({ onSubmit, loading, detectedLocation, initialData }: 
   const [errors, setErrors] = useState<FieldErrors>({})
 
   function set(field: keyof SteakFormData, value: string) {
+    if (field === 'title') titleEdited.current = true
     setForm((prev) => ({ ...prev, [field]: value }))
     if (errors[field as keyof FieldErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
