@@ -34,9 +34,9 @@ import PublicGuestBook from '@/pages/public/PublicGuestBook'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { gent, initialized } = useAuthStore()
+  if (gent) return <Shell>{children}</Shell>
   if (!initialized) return null
-  if (!gent) return <Navigate to="/" replace />
-  return <Shell>{children}</Shell>
+  return <Navigate to="/" replace />
 }
 
 function AnimatedRoutes() {
