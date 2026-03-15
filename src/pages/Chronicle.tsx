@@ -7,15 +7,31 @@ import { AlmanacWidget } from '@/components/chronicle/AlmanacWidget'
 import { WhereaboutsWidget } from '@/components/whereabouts/WhereaboutsWidget'
 import { ChronicleFilters } from '@/components/chronicle/ChronicleFilters'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
-import { Spinner, Button, EmptyStateImage, OnboardingTip } from '@/components/ui'
+import { Spinner, Button, EmptyStateImage, OnboardingTip, SwipeToDelete } from '@/components/ui'
+import { deleteEntry } from '@/data/entries'
+import { useAuthStore } from '@/store/auth'
+import { useUIStore } from '@/store/ui'
 import { staggerContainer, fadeIn } from '@/lib/animations'
 import { daysUntil, formatDate } from '@/lib/utils'
 import type { EntryWithParticipants } from '@/types/app'
 
 export default function Chronicle() {
   const navigate = useNavigate()
-  const { entries, loading, filters, setFilters } = useChronicle()
+  const { entries, loading, filters, setFilters, removeEntry, reload } = useChronicle()
   const { upcoming } = useUpcomingGatherings()
+  const { gent } = useAuthStore()
+  const { addToast } = useUIStore()
+
+  async function handleDelete(entryId: string) {
+    removeEntry(entryId) // optimistic
+    try {
+      await deleteEntry(entryId)
+      addToast('Entry deleted.', 'success')
+    } catch {
+      addToast('Failed to delete entry.', 'error')
+      reload()
+    }
+  }
 
   return (
     <>
@@ -99,11 +115,20 @@ export default function Chronicle() {
             className="flex flex-col gap-3 px-4 pt-1 pb-4"
           >
             {entries.map((entry) => (
-              <EntryCard
-                key={entry.id}
-                entry={entry}
-                onClick={() => navigate(`/chronicle/${entry.id}`)}
-              />
+              gent?.id === entry.created_by ? (
+                <SwipeToDelete key={entry.id} onDelete={() => handleDelete(entry.id)}>
+                  <EntryCard
+                    entry={entry}
+                    onClick={() => navigate(`/chronicle/${entry.id}`)}
+                  />
+                </SwipeToDelete>
+              ) : (
+                <EntryCard
+                  key={entry.id}
+                  entry={entry}
+                  onClick={() => navigate(`/chronicle/${entry.id}`)}
+                />
+              )
             ))}
           </motion.div>
         )}

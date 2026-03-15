@@ -6,7 +6,7 @@ interface ShellProps {
 
 export function Shell({ children }: ShellProps) {
   return (
-    <div className="min-h-dvh bg-obsidian flex flex-col relative">
+    <div className="h-dvh bg-obsidian flex flex-col relative overflow-hidden">
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {children}
       </div>

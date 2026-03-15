@@ -45,7 +45,11 @@ export function useChronicle() {
     return () => { supabase.removeChannel(channel) }
   }, [load])
 
-  return { entries, loading, filters, setFilters, reload: load }
+  const removeEntry = useCallback((id: string) => {
+    setEntries((prev) => prev.filter((e) => e.id !== id))
+  }, [])
+
+  return { entries, loading, filters, setFilters, reload: load, removeEntry }
 }
 
 export function useUpcomingGatherings(): { upcoming: EntryWithParticipants[]; loading: boolean } {
