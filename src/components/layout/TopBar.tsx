@@ -1,5 +1,7 @@
 import { Link, useNavigate } from 'react-router'
 import { ChevronLeft } from 'lucide-react'
+import { useAuthStore } from '@/store/auth'
+import { Avatar } from '@/components/ui'
 
 interface TopBarProps {
   title?: string
@@ -10,6 +12,7 @@ interface TopBarProps {
 
 export function TopBar({ title, subtitle, right, back = false }: TopBarProps) {
   const navigate = useNavigate()
+  const { gent } = useAuthStore()
 
   return (
     <header
@@ -63,6 +66,18 @@ export function TopBar({ title, subtitle, right, back = false }: TopBarProps) {
 
         {/* Right action slot */}
         {right ?? null}
+
+        {/* Profile avatar — always visible */}
+        {gent && (
+          <button
+            type="button"
+            onClick={() => navigate('/profile')}
+            className="flex items-center justify-center shrink-0 ml-1"
+            aria-label="Profile"
+          >
+            <Avatar src={gent.avatar_url} name={gent.display_name} size="sm" />
+          </button>
+        )}
       </div>
     </header>
   )

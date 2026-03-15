@@ -8,39 +8,18 @@ import { WhereaboutsWidget } from '@/components/whereabouts/WhereaboutsWidget'
 import { ChronicleFilters } from '@/components/chronicle/ChronicleFilters'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Spinner, Button, EmptyStateImage } from '@/components/ui'
-import { Avatar } from '@/components/ui'
-import { useAuthStore } from '@/store/auth'
 import { staggerContainer, fadeIn } from '@/lib/animations'
 import { daysUntil, formatDate } from '@/lib/utils'
 import type { EntryWithParticipants } from '@/types/app'
 
 export default function Chronicle() {
   const navigate = useNavigate()
-  const { gent } = useAuthStore()
   const { entries, loading, filters, setFilters } = useChronicle()
   const { upcoming } = useUpcomingGatherings()
 
   return (
     <>
-      <TopBar
-        title="Chronicle"
-        right={
-          gent ? (
-            <button
-              type="button"
-              onClick={() => navigate('/profile')}
-              className="flex items-center justify-center"
-              aria-label="Profile"
-            >
-              <Avatar
-                src={gent.avatar_url}
-                name={gent.display_name}
-                size="sm"
-              />
-            </button>
-          ) : undefined
-        }
-      />
+      <TopBar title="Chronicle" />
       <SectionNav />
 
       <PageWrapper padded={false} className="flex flex-col">
