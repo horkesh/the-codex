@@ -24,7 +24,7 @@ jobs:
 
       # ── Vercel (frontend) ────────────────────────────────────────────────────
       - name: Deploy to Vercel
-        run: pnpm exec vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: team_SpPoZYOLWh3JTJjuvfZG10Xn
           VERCEL_PROJECT_ID: prj_iU3ov4FHk374t4L6kjtHH7mT4zEu
