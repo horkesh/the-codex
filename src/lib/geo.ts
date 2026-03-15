@@ -8,8 +8,40 @@ export interface LocationFill {
   date?: string
   lat?: number
   lng?: number
+  /** Set when the GPS coords matched a saved Place within 200m. */
+  matchedPlaceName?: string
   /** If true, overwrite existing form values. If false/undefined, only fill empty fields. */
   overwrite?: boolean
+}
+
+export interface GeoAddress {
+  city?: string
+  country?: string
+  country_code?: string
+  address?: string
+}
+
+/**
+ * Reverse geocodes a lat/lng pair via Nominatim. Returns null on failure.
+ */
+export async function reverseGeocode(lat: number, lng: number): Promise<GeoAddress | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`,
+      { headers: { 'User-Agent': 'TheGentsChronicles/1.0' } },
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    const addr = data.address ?? {}
+    return {
+      city: addr.city || addr.town || addr.village || addr.municipality,
+      country: addr.country,
+      country_code: addr.country_code?.toUpperCase(),
+      address: [addr.road, addr.house_number].filter(Boolean).join(' ') || undefined,
+    }
+  } catch {
+    return null
+  }
 }
 
 /**

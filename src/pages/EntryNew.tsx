@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
+import { LocateFixed, X as XIcon } from 'lucide-react'
 import { TopBar } from '@/components/layout'
 import { PageWrapper } from '@/components/layout'
 import { EntryTypeSelector } from '@/components/chronicle/EntryTypeSelector'
@@ -244,6 +245,23 @@ export default function EntryNew() {
         {/* Saved places — shown for location-aware entry types */}
         {selectedType !== 'playstation' && selectedType !== 'interlude' && (
           <SavedPlacesBar places={savedPlaces} onSelect={setLocationFill} />
+        )}
+
+        {/* Place detected from photo */}
+        {locationFill?.matchedPlaceName && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gold/8 border border-gold/20">
+            <LocateFixed size={13} className="text-gold shrink-0" />
+            <span className="text-gold text-xs font-body flex-1">
+              Photo taken at: <span className="font-semibold">{locationFill.matchedPlaceName}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setLocationFill(undefined)}
+              className="text-gold/50 hover:text-gold transition-colors"
+            >
+              <XIcon size={13} />
+            </button>
+          </div>
         )}
 
         {/* The form */}

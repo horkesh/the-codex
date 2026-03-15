@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, Utensils, Wine, Home, MapPin, LocateFixed } from 'lucide-react'
+import { Plus, Pencil, Trash2, Utensils, Wine, Home, MapPin, LocateFixed, Map } from 'lucide-react'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
+import { MapPicker } from '@/components/places/MapPicker'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { fetchLocations, createLocation, updateLocation, deleteLocation } from '@/data/locations'
+import { reverseGeocode } from '@/lib/geo'
 import { staggerContainer, staggerItem, fadeUp } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import type { SavedLocation, LocationType } from '@/types/app'
@@ -62,6 +64,7 @@ export default function Places() {
   const [saving, setSaving] = useState(false)
   const [gpsLoading, setGpsLoading] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [mapPickerOpen, setMapPickerOpen] = useState(false)
 
   useEffect(() => {
     fetchLocations().then((data) => { setPlaces(data); setLoading(false) })
@@ -102,23 +105,16 @@ export default function Places() {
       async (pos) => {
         const { latitude, longitude } = pos.coords
         try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=14`,
-            { headers: { 'User-Agent': 'TheGentsChronicles/1.0' } },
-          )
-          if (res.ok) {
-            const data = await res.json()
-            const addr = data.address ?? {}
-            setForm((prev) => ({
-              ...prev,
-              city: addr.city || addr.town || addr.village || addr.municipality || prev.city,
-              country: addr.country || prev.country,
-              country_code: addr.country_code?.toUpperCase() || prev.country_code,
-              address: [addr.road, addr.house_number].filter(Boolean).join(' ') || prev.address,
-              lat: latitude,
-              lng: longitude,
-            }))
-          }
+          const geo = await reverseGeocode(latitude, longitude)
+          setForm((prev) => ({
+            ...prev,
+            city: geo?.city || prev.city,
+            country: geo?.country || prev.country,
+            country_code: geo?.country_code || prev.country_code,
+            address: geo?.address || prev.address,
+            lat: latitude,
+            lng: longitude,
+          }))
         } catch {
           addToast('Could not reverse-geocode location.', 'error')
         } finally {
@@ -131,6 +127,21 @@ export default function Places() {
       },
       { timeout: 10000 },
     )
+  }
+
+  async function handleMapConfirm(lat: number, lng: number) {
+    setMapPickerOpen(false)
+    setForm((prev) => ({ ...prev, lat, lng }))
+    const geo = await reverseGeocode(lat, lng)
+    if (geo) {
+      setForm((prev) => ({
+        ...prev,
+        city: prev.city || geo.city || '',
+        country: prev.country || geo.country || '',
+        country_code: prev.country_code || geo.country_code || '',
+        address: prev.address || geo.address || '',
+      }))
+    }
   }
 
   async function handleSave() {
@@ -325,16 +336,58 @@ export default function Places() {
                   required
                 />
 
-                {/* GPS button */}
-                <button
-                  type="button"
-                  onClick={handleGPS}
-                  disabled={gpsLoading}
-                  className="flex items-center gap-2 text-sm font-body text-gold hover:text-gold-light transition-colors disabled:opacity-50 self-start"
-                >
-                  {gpsLoading ? <Spinner size="sm" /> : <LocateFixed size={14} />}
-                  {gpsLoading ? 'Getting location…' : 'Use current GPS location'}
-                </button>
+                {/* Location controls */}
+                <div className="flex flex-col gap-2">
+                  <p className="text-ivory-dim text-xs uppercase tracking-widest font-body">Pin location</p>
+
+                  {/* Map preview when coords are set */}
+                  {form.lat != null && form.lng != null && (
+                    <div
+                      className="relative rounded-lg overflow-hidden border border-white/10 cursor-pointer h-32"
+                      onClick={() => setMapPickerOpen(true)}
+                    >
+                      <iframe
+                        title="map-preview"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${form.lng - 0.003},${form.lat - 0.002},${form.lng + 0.003},${form.lat + 0.002}&layer=mapnik&marker=${form.lat},${form.lng}`}
+                        className="w-full h-full pointer-events-none"
+                        style={{ border: 0 }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-obsidian/0 hover:bg-obsidian/20 transition-colors">
+                        <div className="bg-obsidian/70 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5">
+                          <Map size={11} className="text-gold" />
+                          <span className="text-ivory text-xs font-body">Adjust pin</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMapPickerOpen(true)}
+                      className="flex items-center gap-2 text-sm font-body text-gold hover:text-gold-light transition-colors"
+                    >
+                      <Map size={14} />
+                      {form.lat != null ? 'Reposition on map' : 'Pin on map'}
+                    </button>
+                    <span className="text-ivory-dim/40 text-sm">·</span>
+                    <button
+                      type="button"
+                      onClick={handleGPS}
+                      disabled={gpsLoading}
+                      className="flex items-center gap-2 text-sm font-body text-ivory-dim hover:text-ivory transition-colors disabled:opacity-50"
+                    >
+                      {gpsLoading ? <Spinner size="sm" /> : <LocateFixed size={14} />}
+                      {gpsLoading ? 'Getting…' : 'Use GPS'}
+                    </button>
+                  </div>
+
+                  {form.lat != null && form.lng != null && (
+                    <p className="text-ivory-dim text-[11px] font-mono">
+                      {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
+                    </p>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <Input
@@ -382,6 +435,16 @@ export default function Places() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Map picker overlay */}
+      {mapPickerOpen && (
+        <MapPicker
+          lat={form.lat}
+          lng={form.lng}
+          onConfirm={handleMapConfirm}
+          onClose={() => setMapPickerOpen(false)}
+        />
+      )}
     </>
   )
 }

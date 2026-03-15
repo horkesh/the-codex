@@ -79,6 +79,7 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, on
               finalLoc = {
                 ...loc,
                 location: nearby.name,
+                matchedPlaceName: nearby.name,
                 city: loc.city || nearby.city,
                 country: loc.country || nearby.country,
                 country_code: loc.country_code || nearby.country_code,
