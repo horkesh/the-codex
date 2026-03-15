@@ -207,24 +207,48 @@ export async function fetchEntryPhotos(entryId: string): Promise<Array<{
   }>
 }
 
+// Convert any image file to a JPEG blob via canvas.
+// Handles HEIC/HEIF (iOS), WebP, PNG, and files with empty/unknown MIME types.
+// Safari/iOS can decode HEIC natively; other browsers handle JPEG/PNG/WebP.
+function toJpegBlob(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width  = img.naturalWidth
+      canvas.height = img.naturalHeight
+      canvas.getContext('2d')!.drawImage(img, 0, 0)
+      URL.revokeObjectURL(objectUrl)
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('Canvas conversion failed')),
+        'image/jpeg',
+        0.92,
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Image failed to load')) }
+    img.src = objectUrl
+  })
+}
+
 export async function uploadEntryPhoto(
   entryId: string,
   file: File,
   sortOrder: number
 ): Promise<string> {
-  // Sanitize filename: replace anything outside a-z/0-9/.-_ with underscore,
-  // then normalise the extension (handles HEIC, spaces, accented chars, etc.)
-  const ext      = (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+  // Convert to JPEG — eliminates HEIC/HEIF rejection and ensures consistent MIME type
+  const blob = await toJpegBlob(file)
+
   const baseName = file.name
-    .replace(/\.[^.]+$/, '')                // strip extension
-    .replace(/[^a-zA-Z0-9._-]/g, '_')      // sanitise
-    .replace(/_{2,}/g, '_')                 // collapse runs
-    .slice(0, 60)                           // cap length
-  const path = `${entryId}/${Date.now()}-${baseName}.${ext}`
+    .replace(/\.[^.]+$/, '')               // strip original extension
+    .replace(/[^a-zA-Z0-9._-]/g, '_')     // sanitise
+    .replace(/_{2,}/g, '_')                // collapse runs
+    .slice(0, 60)                          // cap length
+  const path = `${entryId}/${Date.now()}-${baseName}.jpg`
 
   const { error: uploadError } = await supabase.storage
     .from('entry-photos')
-    .upload(path, file, { upsert: false })
+    .upload(path, blob, { upsert: false, contentType: 'image/jpeg' })
 
   if (uploadError) throw uploadError
 
