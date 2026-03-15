@@ -35,12 +35,12 @@ function SectionCard({ section, featured = false }: { section: Section; featured
           alt=""
           aria-hidden="true"
           className="w-full h-full object-cover"
-          style={{ opacity: featured ? 0.6 : 0.55 }}
+          style={{ opacity: featured ? 0.75 : 0.7 }}
         />
       </motion.div>
 
-      {/* Gradient overlay — heavier at bottom so label always readable */}
-      <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/50 to-obsidian/10" />
+      {/* Gradient overlay — only covers bottom third for label readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-obsidian/90 via-obsidian/30 to-transparent" />
 
       {/* Top-left label shimmer line — featured only */}
       {featured && (
