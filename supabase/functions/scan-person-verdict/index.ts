@@ -39,7 +39,7 @@ Score rubric:
 0.0-6.4  → "Observe Further"`
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,9 +53,10 @@ Score rubric:
     }
   )
 
-  if (!response.ok) throw new Error(`Gemini API error: ${response.status} ${await response.text()}`)
+  const responseText = await response.text()
+  if (!response.ok) throw new Error(`Gemini API error: ${response.status} ${responseText}`)
 
-  const result = await response.json()
+  const result = JSON.parse(responseText)
   const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
   return JSON.parse(rawText)
 }
@@ -150,18 +151,20 @@ Deno.serve(async (req: Request) => {
     if (!p.eligible) {
       return new Response(
         JSON.stringify({ eligible: false, rejection_reason: p.rejection_reason ?? 'Image not eligible' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     return new Response(JSON.stringify(parsed), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('scan-person-verdict error:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error('scan-person-verdict error:', msg)
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: msg }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
