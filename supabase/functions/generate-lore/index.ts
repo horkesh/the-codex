@@ -13,6 +13,13 @@ const entryTypeLabels: Record<string, string> = {
   interlude: 'Interlude (moment worth noting)',
 }
 
+// Visual identification guide for The Gents (used when photos are present)
+const GENT_IDENTITIES = `The Gents — visual identification:
+- Haris (alias "Lorekeeper"): bald, bearded
+- Vedad (alias "Bass"): has hair, fully bearded
+- Almedin (alias "Keys"): has hair, no beard (clean-shaven)
+Use their first names naturally in the narrative when you can identify them in photos.`
+
 // Type-specific narrative voice and focus
 const entryTypeDirectives: Record<string, string> = {
   steak: `This is a Table entry — a steak dinner. The prose should savour the ritual: the cut of meat, the sear, the sides, how the table was set, the restaurant or kitchen atmosphere. Reference the food as a centrepiece of the occasion. If photos show the steak, plates, or table setting, describe them with appetite. The tone is reverent — these men take their steaks seriously.`,
@@ -77,7 +84,7 @@ ${timeContext}${situationalHint ? `\nContext: ${situationalHint}` : ''}
 Location: ${[entry.city, entry.country].filter(Boolean).join(', ') || entry.location || 'undisclosed location'}
 Present: ${participantNames}
 Description: ${entry.description || 'No additional details provided.'}
-${typeDirective ? `\n${typeDirective}` : ''}${photos.length > 0 ? `\nYou have been provided ${photos.length} photo(s) from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If someone looks subdued or distracted, let that texture show.` : ''}
+${typeDirective ? `\n${typeDirective}` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
 IMPORTANT: The Day and Time fields above are from the camera's EXIF data and are authoritative. Always use them to set the time of day in the narrative — do NOT infer a different time of day from photo lighting or ambiance. If the Context field is present, weave that situational awareness into the prose naturally.
 Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text. Just the narrative.`
 

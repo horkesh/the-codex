@@ -112,12 +112,14 @@ export default function EntryNew() {
       titleGenFired.current = true
       // Read locationFill from ref to get the latest value (geo detection is async)
       const loc = locationFillRef.current
+      console.debug('[title-gen] firing for', selectedType, 'with', files.length, 'file(s)')
       generateTitle(files[0], selectedType, {
         location: loc?.location,
         city: loc?.city,
         country: loc?.country,
         date: loc?.date,
       }).then((title) => {
+        console.debug('[title-gen] result:', title)
         if (title) setSuggestedTitle(title)
       })
     }
