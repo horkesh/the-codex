@@ -13,10 +13,12 @@ export async function scanPersonVerdict(req: VerdictRequest): Promise<PersonVerd
   })
 
   if (error) {
-    // Extract the actual response body for a meaningful error message
     const body = error.context instanceof Response
       ? await error.context.text().catch(() => '')
       : ''
+    if (body.includes('Invalid JWT') || body.includes('401')) {
+      throw new Error('Session expired. Please sign out and sign back in.')
+    }
     const detail = body ? `: ${body.slice(0, 200)}` : ''
     throw new Error(`Scan failed (${error.name})${detail}`)
   }
