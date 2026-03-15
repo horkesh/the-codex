@@ -10,9 +10,9 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { photo_base64, mime_type = 'image/jpeg' } = await req.json()
-    const googleApiKey = Deno.env.get('GOOGLE_AI_API_KEY')
+    const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
 
-    if (!googleApiKey) throw new Error('GOOGLE_AI_API_KEY not set')
+    if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
     if (!photo_base64) throw new Error('photo_base64 required')
 
     const prompt = `You are a sharp social intelligence analyst for a private gentlemen's collective.
@@ -27,9 +27,9 @@ If eligible, return JSON with exactly these fields:
   "eligible": true,
   "appearance": "detailed visual description: skin tone, hair colour and style, eye colour, facial structure, any facial hair, approximate age range, style and fashion sense, overall vibe",
   "trait_words": ["trait1","trait2","trait3","trait4","trait5","trait6"],
-  "score": <number 0.0–10.0 to one decimal place>,
+  "score": <number 0.0-10.0 to one decimal place>,
   "verdict_label": <"Immediate Interest" | "Circle Material" | "On the Radar" | "Observe Further">,
-  "confidence": <number 0.00–1.00>,
+  "confidence": <number 0.00-1.00>,
   "vibe": "one sentence vibe read",
   "style_read": "one sentence style and fashion observation",
   "why_interesting": "two to three sentences on what makes this person worth noting",
@@ -39,54 +39,44 @@ If eligible, return JSON with exactly these fields:
 }
 
 Score rubric:
-9.0–10.0 → "Immediate Interest"
-8.0–8.9  → "Circle Material"
-6.5–7.9  → "On the Radar"
-0.0–6.4  → "Observe Further"
+9.0-10.0 → "Immediate Interest"
+8.0-8.9  → "Circle Material"
+6.5-7.9  → "On the Radar"
+0.0-6.4  → "Observe Further"
 
 Output PURE JSON only. No markdown, no explanation.`
 
-    const analysisResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type, data: photo_base64 } },
-            ],
-          }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            maxOutputTokens: 1000,
-          },
-        }),
-      }
-    )
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mime_type, data: photo_base64 },
+            },
+            { type: 'text', text: prompt },
+          ],
+        }],
+      }),
+    })
 
-    if (!analysisResponse.ok) {
-      throw new Error(`Gemini API error: ${analysisResponse.status} ${await analysisResponse.text()}`)
+    if (!response.ok) {
+      throw new Error(`Claude API error: ${response.status} ${await response.text()}`)
     }
 
-    const analysisResult = await analysisResponse.json()
-    const rawText = analysisResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
-    // Gemini returns literal control chars inside string values; walk char-by-char to fix them
-    let sanitized = ''
-    let inString = false
-    let escaped = false
-    for (let i = 0; i < rawText.length; i++) {
-      const ch = rawText[i]
-      if (escaped) { sanitized += ch; escaped = false; continue }
-      if (ch === '\\' && inString) { sanitized += ch; escaped = true; continue }
-      if (ch === '"') { inString = !inString; sanitized += ch; continue }
-      if (inString && ch === '\n') { sanitized += '\\n'; continue }
-      if (inString && ch === '\r') continue
-      if (inString && ch === '\t') { sanitized += '\\t'; continue }
-      sanitized += ch
-    }
-    const parsed = JSON.parse(sanitized)
+    const result = await response.json()
+    const rawText = result.content?.[0]?.text?.trim() ?? '{}'
+    const jsonText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+    const parsed = JSON.parse(jsonText)
 
     if (!parsed.eligible) {
       return new Response(
