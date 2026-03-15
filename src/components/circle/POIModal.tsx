@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ImagePlus, Camera, AtSign } from 'lucide-react'
+import { ImagePlus, Camera, Search, ScanFace } from 'lucide-react'
 import { Modal, Button, Input } from '@/components/ui'
 import { VerdictCard } from '@/components/circle/VerdictCard'
 import { useVerdictIntake } from '@/hooks/useVerdictIntake'
@@ -18,7 +18,12 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [handleInput, setHandleInput] = useState('')
 
-  const { step, setStep, tab, setTab, analyzeError, verdictResult, portraitLoading, dossier, setDossier, duplicateWarning, handleAnalyzeFile, handleAnalyzeHandle, handleSave, reset } = useVerdictIntake((personId) => {
+  const {
+    step, setStep, mode, setMode,
+    analyzeError, verdictResult, portraitLoading,
+    dossier, setDossier, duplicateWarning,
+    handleAnalyzeFile, handleAnalyzeHandle, handleSave, reset,
+  } = useVerdictIntake((personId) => {
     onSaved(personId)
     onClose()
   })
@@ -47,73 +52,58 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
             exit="exit"
             className="flex flex-col gap-4"
           >
-            {/* Tabs */}
+            {/* Mode toggle */}
             <div className="flex rounded-lg overflow-hidden border border-white/10">
               <button
                 type="button"
-                onClick={() => setTab('screenshot')}
+                onClick={() => setMode('research')}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-body transition-colors',
-                  tab === 'screenshot' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
+                  mode === 'research' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
                 )}
               >
-                <ImagePlus size={13} />
-                Screenshot
+                <Search size={13} />
+                Research
               </button>
               <button
                 type="button"
-                onClick={() => setTab('photo')}
+                onClick={() => setMode('scan')}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-body transition-colors',
-                  tab === 'photo' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
+                  mode === 'scan' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
                 )}
               >
-                <Camera size={13} />
-                Photo
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab('handle')}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-body transition-colors',
-                  tab === 'handle' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
-                )}
-              >
-                <AtSign size={13} />
-                Handle
+                <ScanFace size={13} />
+                Scan
               </button>
             </div>
 
-            {/* Drop zone — shown for screenshot and photo tabs */}
-            {tab !== 'handle' && (
-              <div
-                onClick={() => (tab === 'screenshot' ? screenshotInputRef : photoInputRef).current?.click()}
-                onPaste={(e) => {
-                  const item = Array.from(e.clipboardData.items).find((i) => i.type.startsWith('image/'))
-                  if (item) { const f = item.getAsFile(); if (f) handleAnalyzeFile(f) }
-                }}
-                className="border-2 border-dashed border-white/15 rounded-xl p-8 flex flex-col items-center gap-2 cursor-pointer hover:border-gold/30 transition-colors focus:outline-none"
-                tabIndex={0}
-              >
-                {tab === 'screenshot' ? (
-                  <>
-                    <ImagePlus size={24} className="text-ivory-dim" />
-                    <p className="text-sm text-ivory-muted font-body text-center">Upload or paste Instagram screenshot</p>
-                    <p className="text-xs text-ivory-dim font-body text-center">Works with private profiles · Ctrl+V to paste</p>
-                  </>
-                ) : (
-                  <>
-                    <Camera size={24} className="text-ivory-dim" />
-                    <p className="text-sm text-ivory-muted font-body text-center">Upload, paste or take a photo</p>
-                    <p className="text-xs text-ivory-dim font-body text-center">AI will analyze and generate a portrait</p>
-                  </>
-                )}
-              </div>
-            )}
+            {/* Research mode — screenshot + handle */}
+            {mode === 'research' && (
+              <>
+                {/* Screenshot drop zone */}
+                <div
+                  onClick={() => screenshotInputRef.current?.click()}
+                  onPaste={(e) => {
+                    const item = Array.from(e.clipboardData.items).find((i) => i.type.startsWith('image/'))
+                    if (item) { const f = item.getAsFile(); if (f) handleAnalyzeFile(f, 'instagram_screenshot') }
+                  }}
+                  className="border-2 border-dashed border-white/15 rounded-xl p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-gold/30 transition-colors focus:outline-none"
+                  tabIndex={0}
+                >
+                  <ImagePlus size={22} className="text-ivory-dim" />
+                  <p className="text-sm text-ivory-muted font-body text-center">Upload or paste Instagram screenshot</p>
+                  <p className="text-xs text-ivory-dim font-body text-center">Works with private profiles · Ctrl+V to paste</p>
+                </div>
 
-            {/* Handle input — shown for handle tab */}
-            {tab === 'handle' && (
-              <div className="flex flex-col gap-3">
+                {/* Divider */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-white/8" />
+                  <span className="text-xs text-ivory-dim font-body">or</span>
+                  <div className="flex-1 h-px bg-white/8" />
+                </div>
+
+                {/* Handle input */}
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -130,7 +120,24 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
                     Scan
                   </Button>
                 </div>
-                <p className="text-xs text-ivory-dim font-body text-center">Fetches profile picture via Instagram · Public profiles only</p>
+                <p className="text-xs text-ivory-dim font-body text-center -mt-2">Public profiles only</p>
+              </>
+            )}
+
+            {/* Scan mode — camera/photo */}
+            {mode === 'scan' && (
+              <div
+                onClick={() => photoInputRef.current?.click()}
+                onPaste={(e) => {
+                  const item = Array.from(e.clipboardData.items).find((i) => i.type.startsWith('image/'))
+                  if (item) { const f = item.getAsFile(); if (f) handleAnalyzeFile(f, 'photo') }
+                }}
+                className="border-2 border-dashed border-white/15 rounded-xl p-8 flex flex-col items-center gap-2 cursor-pointer hover:border-gold/30 transition-colors focus:outline-none"
+                tabIndex={0}
+              >
+                <Camera size={24} className="text-ivory-dim" />
+                <p className="text-sm text-ivory-muted font-body text-center">Take a photo or upload from gallery</p>
+                <p className="text-xs text-ivory-dim font-body text-center">AI will analyze and generate a portrait</p>
               </div>
             )}
 
@@ -140,7 +147,7 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAnalyzeFile(f) }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAnalyzeFile(f, 'instagram_screenshot') }}
             />
             <input
               ref={photoInputRef}
@@ -148,7 +155,7 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAnalyzeFile(f) }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAnalyzeFile(f, 'photo') }}
             />
 
             {analyzeError && (

@@ -10,7 +10,7 @@ import type { PersonVerdict, DossierDraft, VerdictSourceType } from '@/types/app
 const CONTACT_SCORE_THRESHOLD = 8.0
 
 export type IntakeStep = 'input' | 'analyzing' | 'review' | 'saving'
-export type IntakeTab = 'screenshot' | 'photo' | 'handle'
+export type IntakeMode = 'research' | 'scan'
 
 export interface VerdictResult {
   verdict: PersonVerdict
@@ -56,7 +56,7 @@ function compressImage(file: File): Promise<string> {
 export function useVerdictIntake(onSaved: (personId: string) => void) {
   const { gent } = useAuthStore()
   const [step, setStep] = useState<IntakeStep>('input')
-  const [tab, setTab] = useState<IntakeTab>('screenshot')
+  const [mode, setMode] = useState<IntakeMode>('research')
   const [analyzeError, setAnalyzeError] = useState('')
   const [verdictResult, setVerdictResult] = useState<VerdictResult | null>(null)
   const [portraitLoading, setPortraitLoading] = useState(false)
@@ -65,7 +65,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
 
   const reset = useCallback(() => {
     setStep('input')
-    setTab('screenshot')
+    setMode('research')
     setAnalyzeError('')
     setVerdictResult(null)
     setPortraitLoading(false)
@@ -138,7 +138,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
   }, [gent])
 
   // File upload (screenshot or photo)
-  const handleAnalyzeFile = useCallback(async (file: File) => {
+  const handleAnalyzeFile = useCallback(async (file: File, sourceType: VerdictSourceType) => {
     if (!gent) return
     setAnalyzeError('')
     setStep('analyzing')
@@ -149,7 +149,6 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         uploadPersonScanPhoto(gent.id, file),
       ])
 
-      const sourceType: VerdictSourceType = tab === 'screenshot' ? 'instagram_screenshot' : 'photo'
       const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/jpeg', source_type: sourceType })
 
       const handle = verdict.instagram_handle ?? null
@@ -203,7 +202,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
       setAnalyzeError((err as Error).message)
       setStep('input')
     }
-  }, [gent, tab])
+  }, [gent])
 
   // Instagram handle lookup — fetches profile picture via unavatar proxy
   const handleAnalyzeHandle = useCallback(async (handle: string) => {
@@ -282,7 +281,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
   }, [gent, dossier, verdictResult, onSaved])
 
   return {
-    step, setStep, tab, setTab,
+    step, setStep, mode, setMode,
     analyzeError,
     verdictResult,
     portraitLoading,
