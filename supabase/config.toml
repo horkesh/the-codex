@@ -388,6 +388,9 @@ verify_jwt = false
 [functions.generate-template-bg]
 verify_jwt = false
 
+[functions.generate-title]
+verify_jwt = false
+
 [functions.generate-throwback]
 verify_jwt = false
 
