@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import type { Entry, EntryWithParticipants, Gent } from '@/types/app'
 import { checkAndAwardAchievements } from '@/data/achievements'
 import { checkAndAwardThresholds } from '@/data/thresholds'
+import { imageToJpegBlob } from '@/lib/image'
 
 export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, status, metadata, created_by, created_at, updated_at'
 const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio'
@@ -207,37 +208,12 @@ export async function fetchEntryPhotos(entryId: string): Promise<Array<{
   }>
 }
 
-// Convert any image file to a JPEG blob via canvas.
-// Handles HEIC/HEIF (iOS), WebP, PNG, and files with empty/unknown MIME types.
-// Safari/iOS can decode HEIC natively; other browsers handle JPEG/PNG/WebP.
-function toJpegBlob(file: File): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const objectUrl = URL.createObjectURL(file)
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width  = img.naturalWidth
-      canvas.height = img.naturalHeight
-      canvas.getContext('2d')!.drawImage(img, 0, 0)
-      URL.revokeObjectURL(objectUrl)
-      canvas.toBlob(
-        (blob) => blob ? resolve(blob) : reject(new Error('Canvas conversion failed')),
-        'image/jpeg',
-        0.92,
-      )
-    }
-    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Image failed to load')) }
-    img.src = objectUrl
-  })
-}
-
 export async function uploadEntryPhoto(
   entryId: string,
   file: File,
   sortOrder: number
 ): Promise<string> {
-  // Convert to JPEG — eliminates HEIC/HEIF rejection and ensures consistent MIME type
-  const blob = await toJpegBlob(file)
+  const blob = await imageToJpegBlob(file)
 
   const baseName = file.name
     .replace(/\.[^.]+$/, '')               // strip original extension

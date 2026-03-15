@@ -39,6 +39,8 @@ function CityMap({ cityGroups, onCitySelect }: CityMapProps) {
 
     let cancelled = false
     let i = 0
+    // Accumulate new coords in memory so we don't re-parse localStorage on every iteration
+    const accumulated = { ...cached }
 
     const geocodeNext = async () => {
       if (cancelled || i >= toFetch.length) return
@@ -52,8 +54,8 @@ function CityMap({ cityGroups, onCitySelect }: CityMapProps) {
         const results = await res.json() as Array<{ lat: string; lon: string }>
         if (results[0] && !cancelled) {
           const coord: [number, number] = [parseFloat(results[0].lat), parseFloat(results[0].lon)]
-          const next  = { ...loadCoordsCache(), [key]: coord }
-          localStorage.setItem(COORDS_CACHE_KEY, JSON.stringify(next))
+          accumulated[key] = coord
+          localStorage.setItem(COORDS_CACHE_KEY, JSON.stringify(accumulated))
           setCoords((prev) => ({ ...prev, [key]: coord }))
         }
       } catch { /* silent */ }

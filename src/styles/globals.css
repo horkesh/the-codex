@@ -129,7 +129,6 @@ button, a, [role="button"] {
   user-select: none;
 }
 
-
 /* Subtle warm radial glow — anchors the gold palette */
 body::before {
   content: '';

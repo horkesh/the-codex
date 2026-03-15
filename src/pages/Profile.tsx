@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase'
 import { updateGent, updateGentStatus } from '@/data/gents'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
+import { imageToJpegBase64 } from '@/lib/image'
 
 function SectionDivider({ label }: { label: string }) {
   return (
@@ -25,28 +26,6 @@ function SectionDivider({ label }: { label: string }) {
   )
 }
 
-// Compress and convert image file to base64 for AI analysis
-async function fileToBase64(file: File, maxWidth = 400): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const img = new Image()
-      img.onload = () => {
-        const scale = Math.min(1, maxWidth / Math.max(img.width, img.height))
-        const canvas = document.createElement('canvas')
-        canvas.width = Math.round(img.width * scale)
-        canvas.height = Math.round(img.height * scale)
-        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
-        // Strip the data:image/...;base64, prefix — Gemini wants raw base64
-        resolve(canvas.toDataURL('image/jpeg', 0.5).split(',')[1])
-      }
-      img.onerror = reject
-      img.src = e.target?.result as string
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -111,7 +90,7 @@ export default function Profile() {
 
     setGeneratingPortrait(true)
     try {
-      const photo_base64 = await fileToBase64(file)
+      const photo_base64 = await imageToJpegBase64(file, { maxPx: 400, quality: 0.5 })
 
       const { data, error } = await supabase.functions.invoke('generate-portrait', {
         body: { gent_id: gent.id, display_name: gent.display_name, photo_base64 },

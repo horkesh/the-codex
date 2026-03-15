@@ -114,22 +114,21 @@ export default function Chronicle() {
             animate="animate"
             className="flex flex-col gap-3 px-4 pt-1 pb-4"
           >
-            {entries.map((entry) => (
-              gent?.id === entry.created_by ? (
-                <SwipeToDelete key={entry.id} onDelete={() => handleDelete(entry.id)}>
-                  <EntryCard
-                    entry={entry}
-                    onClick={() => navigate(`/chronicle/${entry.id}`)}
-                  />
-                </SwipeToDelete>
-              ) : (
+            {entries.map((entry) => {
+              const card = (
                 <EntryCard
-                  key={entry.id}
                   entry={entry}
                   onClick={() => navigate(`/chronicle/${entry.id}`)}
                 />
               )
-            ))}
+              return gent?.id === entry.created_by ? (
+                <SwipeToDelete key={entry.id} onDelete={() => handleDelete(entry.id)}>
+                  {card}
+                </SwipeToDelete>
+              ) : (
+                <div key={entry.id}>{card}</div>
+              )
+            })}
           </motion.div>
         )}
       </PageWrapper>
