@@ -7,11 +7,10 @@ import { createPersonFromScan, findPersonByInstagram } from '@/data/people'
 import { normalizeInstagramHandle } from '@/lib/instagram'
 import type { PersonVerdict, DossierDraft, VerdictSourceType } from '@/types/app'
 
-// Score at or above this routes to 'contact'; below routes to 'person_of_interest'
 const CONTACT_SCORE_THRESHOLD = 8.0
 
 export type IntakeStep = 'input' | 'analyzing' | 'review' | 'saving'
-export type IntakeTab = 'screenshot' | 'photo'
+export type IntakeTab = 'screenshot' | 'photo' | 'handle'
 
 export interface VerdictResult {
   verdict: PersonVerdict
@@ -20,7 +19,6 @@ export interface VerdictResult {
   scanId: string
 }
 
-// Factory avoids sharing array references across resets
 function createEmptyDossier(): DossierDraft {
   return {
     display_name: '',
@@ -33,6 +31,26 @@ function createEmptyDossier(): DossierDraft {
     category: 'person_of_interest',
     visibility: 'private',
   }
+}
+
+// Compress any image file to JPEG ≤1024px — keeps payloads small for the edge function
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const MAX = 1024
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', 0.82).split(',')[1])
+    }
+    img.onerror = reject
+    img.src = url
+  })
 }
 
 export function useVerdictIntake(onSaved: (personId: string) => void) {
@@ -55,40 +73,87 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     setDuplicateWarning(null)
   }, [])
 
+  // Shared analysis runner — used by both file upload and handle lookup
+  const runVerdictAnalysis = useCallback(async (
+    compressedBase64: string,
+    file: File,
+    sourceType: VerdictSourceType,
+    knownHandle?: string,
+  ) => {
+    if (!gent) return
+
+    const [sourcePhotoUrl] = await Promise.all([
+      uploadPersonScanPhoto(gent.id, file),
+      Promise.resolve(),
+    ])
+
+    const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/jpeg', source_type: sourceType })
+
+    const handle = knownHandle ?? verdict.instagram_handle ?? null
+
+    const scan = await createPersonScanDraft({
+      created_by: gent.id,
+      source_type: sourceType,
+      source_photo_url: sourcePhotoUrl,
+      appearance_description: verdict.appearance,
+      trait_words: verdict.trait_words,
+      score: verdict.score,
+      verdict_label: verdict.verdict_label,
+      confidence: verdict.confidence,
+      recommended_category: verdict.score >= CONTACT_SCORE_THRESHOLD ? 'contact' : 'person_of_interest',
+      display_name: verdict.display_name ?? null,
+      bio: null,
+      why_interesting: verdict.why_interesting,
+      best_opener: verdict.best_opener,
+      green_flags: verdict.green_flags,
+      watchouts: verdict.watchouts,
+      review_payload: verdict as unknown as Record<string, unknown>,
+      instagram_handle: handle,
+      instagram_source_url: null,
+      generated_avatar_url: null,
+    })
+
+    setDossier({
+      display_name: verdict.display_name ?? '',
+      instagram: handle ?? '',
+      bio: '',
+      why_interesting: verdict.why_interesting ?? '',
+      best_opener: verdict.best_opener ?? '',
+      green_flags: verdict.green_flags ?? [],
+      watchouts: verdict.watchouts ?? [],
+      category: verdict.score >= CONTACT_SCORE_THRESHOLD ? 'contact' : 'person_of_interest',
+      visibility: 'private',
+    })
+    setVerdictResult({ verdict, portraitUrl: null, sourcePhotoUrl, scanId: scan.id })
+    setPortraitLoading(true)
+    setStep('review')
+
+    generatePersonPortrait({ appearance: verdict.appearance, traits: verdict.trait_words, scan_id: scan.id })
+      .then((result) => {
+        setVerdictResult((prev) => prev ? { ...prev, portraitUrl: result.portrait_url } : prev)
+        updatePersonScan(scan.id, { generated_avatar_url: result.portrait_url }).catch(() => {})
+      })
+      .catch(() => {})
+      .finally(() => setPortraitLoading(false))
+  }, [gent])
+
+  // File upload (screenshot or photo)
   const handleAnalyzeFile = useCallback(async (file: File) => {
     if (!gent) return
     setAnalyzeError('')
     setStep('analyzing')
 
     try {
-      // Compress image to JPEG before sending — screenshots are PNG (3-5MB) which
-      // exceed the Edge Function body limit as base64. Cap at 1024px, quality 0.82.
-      // Run in parallel with storage upload since both only need the original file.
       const [compressedBase64, sourcePhotoUrl] = await Promise.all([
-        new Promise<string>((resolve, reject) => {
-          const img = new Image()
-          const url = URL.createObjectURL(file)
-          img.onload = () => {
-            URL.revokeObjectURL(url)
-            const MAX = 1024
-            const scale = Math.min(1, MAX / Math.max(img.width, img.height))
-            const canvas = document.createElement('canvas')
-            canvas.width = Math.round(img.width * scale)
-            canvas.height = Math.round(img.height * scale)
-            canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
-            resolve(canvas.toDataURL('image/jpeg', 0.82).split(',')[1])
-          }
-          img.onerror = reject
-          img.src = url
-        }),
+        compressImage(file),
         uploadPersonScanPhoto(gent.id, file),
       ])
 
-      // AI verdict uses compressed JPEG (~200-400KB) not the raw file
       const sourceType: VerdictSourceType = tab === 'screenshot' ? 'instagram_screenshot' : 'photo'
       const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/jpeg', source_type: sourceType })
 
-      // Create draft scan record
+      const handle = verdict.instagram_handle ?? null
+
       const scan = await createPersonScanDraft({
         created_by: gent.id,
         source_type: sourceType,
@@ -106,15 +171,14 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         green_flags: verdict.green_flags,
         watchouts: verdict.watchouts,
         review_payload: verdict as unknown as Record<string, unknown>,
-        instagram_handle: verdict.instagram_handle ?? null,
+        instagram_handle: handle,
         instagram_source_url: null,
         generated_avatar_url: null,
       })
 
-      // Pre-fill dossier and advance to review immediately
       setDossier({
         display_name: verdict.display_name ?? '',
-        instagram: verdict.instagram_handle ?? '',
+        instagram: handle ?? '',
         bio: '',
         why_interesting: verdict.why_interesting ?? '',
         best_opener: verdict.best_opener ?? '',
@@ -127,7 +191,6 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
       setPortraitLoading(true)
       setStep('review')
 
-      // Generate portrait in background — don't block review
       generatePersonPortrait({ appearance: verdict.appearance, traits: verdict.trait_words, scan_id: scan.id })
         .then((result) => {
           setVerdictResult((prev) => prev ? { ...prev, portraitUrl: result.portrait_url } : prev)
@@ -142,6 +205,29 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     }
   }, [gent, tab])
 
+  // Instagram handle lookup — fetches profile picture via unavatar proxy
+  const handleAnalyzeHandle = useCallback(async (handle: string) => {
+    if (!gent) return
+    setAnalyzeError('')
+    setStep('analyzing')
+
+    const cleanHandle = normalizeInstagramHandle(handle) || handle.replace(/^@/, '').trim()
+
+    try {
+      const res = await fetch(`https://unavatar.io/instagram/${cleanHandle}?fallback=false`)
+      if (!res.ok) throw new Error(`@${cleanHandle} not found or profile is private`)
+
+      const blob = await res.blob()
+      const file = new File([blob], `${cleanHandle}.jpg`, { type: blob.type || 'image/jpeg' })
+
+      const compressedBase64 = await compressImage(file)
+      await runVerdictAnalysis(compressedBase64, file, 'instagram_screenshot', cleanHandle)
+    } catch (err) {
+      setAnalyzeError((err as Error).message)
+      setStep('input')
+    }
+  }, [gent, runVerdictAnalysis])
+
   const handleSave = useCallback(async () => {
     if (!gent || !dossier.display_name.trim()) return
     setStep('saving')
@@ -150,7 +236,6 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     try {
       const normalizedHandle = normalizeInstagramHandle(dossier.instagram)
 
-      // Duplicate check
       if (normalizedHandle) {
         const existingName = await findPersonByInstagram(normalizedHandle)
         if (existingName) {
@@ -204,6 +289,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     dossier, setDossier,
     duplicateWarning,
     handleAnalyzeFile,
+    handleAnalyzeHandle,
     handleSave,
     reset,
   }

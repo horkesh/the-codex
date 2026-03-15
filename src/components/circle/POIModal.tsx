@@ -1,6 +1,6 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ImagePlus, Camera } from 'lucide-react'
+import { ImagePlus, Camera, AtSign } from 'lucide-react'
 import { Modal, Button, Input } from '@/components/ui'
 import { VerdictCard } from '@/components/circle/VerdictCard'
 import { useVerdictIntake } from '@/hooks/useVerdictIntake'
@@ -16,14 +16,16 @@ interface ProspectIntakeModalProps {
 export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
   const screenshotInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
+  const [handleInput, setHandleInput] = useState('')
 
-  const { step, setStep, tab, setTab, analyzeError, verdictResult, portraitLoading, dossier, setDossier, duplicateWarning, handleAnalyzeFile, handleSave, reset } = useVerdictIntake((personId) => {
+  const { step, setStep, tab, setTab, analyzeError, verdictResult, portraitLoading, dossier, setDossier, duplicateWarning, handleAnalyzeFile, handleAnalyzeHandle, handleSave, reset } = useVerdictIntake((personId) => {
     onSaved(personId)
     onClose()
   })
 
   const handleClose = () => {
     reset()
+    setHandleInput('')
     onClose()
   }
 
@@ -69,27 +71,68 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
                 <Camera size={13} />
                 Photo
               </button>
+              <button
+                type="button"
+                onClick={() => setTab('handle')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-body transition-colors',
+                  tab === 'handle' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
+                )}
+              >
+                <AtSign size={13} />
+                Handle
+              </button>
             </div>
 
-            {/* Drop zone */}
-            <div
-              onClick={() => (tab === 'screenshot' ? screenshotInputRef : photoInputRef).current?.click()}
-              className="border-2 border-dashed border-white/15 rounded-xl p-8 flex flex-col items-center gap-2 cursor-pointer hover:border-gold/30 transition-colors"
-            >
-              {tab === 'screenshot' ? (
-                <>
-                  <ImagePlus size={24} className="text-ivory-dim" />
-                  <p className="text-sm text-ivory-muted font-body text-center">Upload Instagram screenshot</p>
-                  <p className="text-xs text-ivory-dim font-body text-center">Works with private profiles</p>
-                </>
-              ) : (
-                <>
-                  <Camera size={24} className="text-ivory-dim" />
-                  <p className="text-sm text-ivory-muted font-body text-center">Upload or take a photo</p>
-                  <p className="text-xs text-ivory-dim font-body text-center">AI will analyze and generate a portrait</p>
-                </>
-              )}
-            </div>
+            {/* Drop zone — shown for screenshot and photo tabs */}
+            {tab !== 'handle' && (
+              <div
+                onClick={() => (tab === 'screenshot' ? screenshotInputRef : photoInputRef).current?.click()}
+                onPaste={(e) => {
+                  const item = Array.from(e.clipboardData.items).find((i) => i.type.startsWith('image/'))
+                  if (item) { const f = item.getAsFile(); if (f) handleAnalyzeFile(f) }
+                }}
+                className="border-2 border-dashed border-white/15 rounded-xl p-8 flex flex-col items-center gap-2 cursor-pointer hover:border-gold/30 transition-colors focus:outline-none"
+                tabIndex={0}
+              >
+                {tab === 'screenshot' ? (
+                  <>
+                    <ImagePlus size={24} className="text-ivory-dim" />
+                    <p className="text-sm text-ivory-muted font-body text-center">Upload or paste Instagram screenshot</p>
+                    <p className="text-xs text-ivory-dim font-body text-center">Works with private profiles · Ctrl+V to paste</p>
+                  </>
+                ) : (
+                  <>
+                    <Camera size={24} className="text-ivory-dim" />
+                    <p className="text-sm text-ivory-muted font-body text-center">Upload, paste or take a photo</p>
+                    <p className="text-xs text-ivory-dim font-body text-center">AI will analyze and generate a portrait</p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Handle input — shown for handle tab */}
+            {tab === 'handle' && (
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="@username"
+                    value={handleInput}
+                    onChange={(e) => setHandleInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && handleInput.trim()) handleAnalyzeHandle(handleInput.trim()) }}
+                    className="flex-1 bg-slate-light/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim focus:outline-none focus:border-gold/40"
+                  />
+                  <Button
+                    onClick={() => handleAnalyzeHandle(handleInput.trim())}
+                    disabled={!handleInput.trim()}
+                  >
+                    Scan
+                  </Button>
+                </div>
+                <p className="text-xs text-ivory-dim font-body text-center">Fetches profile picture via Instagram · Public profiles only</p>
+              </div>
+            )}
 
             {/* Hidden file inputs */}
             <input
