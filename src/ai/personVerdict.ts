@@ -16,11 +16,8 @@ export async function scanPersonVerdict(req: VerdictRequest): Promise<PersonVerd
     const body = error.context instanceof Response
       ? await error.context.text().catch(() => '')
       : ''
-    if (body.includes('Invalid JWT') || body.includes('401')) {
-      throw new Error('Session expired. Please sign out and sign back in.')
-    }
     const detail = body ? `: ${body.slice(0, 200)}` : ''
-    throw new Error(`Scan failed (${error.name})${detail}`)
+    throw new Error(`Scan failed${detail}`)
   }
 
   if (data?.eligible === false) throw new Error(data.rejection_reason ?? 'Image not eligible for analysis')
