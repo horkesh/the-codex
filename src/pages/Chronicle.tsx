@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router'
-import { Plus } from 'lucide-react'
+import { Plus, Globe } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useChronicle, useUpcomingGatherings } from '@/hooks/useChronicle'
 import { EntryCard } from '@/components/chronicle/EntryCard'
@@ -19,7 +19,19 @@ export default function Chronicle() {
 
   return (
     <>
-      <TopBar title="Chronicle" />
+      <TopBar
+        title="Chronicle"
+        right={
+          <button
+            type="button"
+            onClick={() => navigate('/dossier')}
+            className="flex items-center justify-center w-8 h-8 text-ivory-muted hover:text-ivory transition-colors"
+            aria-label="Dossier map"
+          >
+            <Globe size={18} strokeWidth={1.75} />
+          </button>
+        }
+      />
       <SectionNav />
 
       <PageWrapper padded={false} className="flex flex-col">

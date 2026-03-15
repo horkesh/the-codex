@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router'
+import { MapPin } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Spinner } from '@/components/ui'
 import { useStats } from '@/hooks/useStats'
@@ -64,6 +66,21 @@ export default function Ledger() {
             animate="animate"
             className="flex flex-col"
           >
+            {/* Our Places card */}
+            <Link
+              to="/places"
+              className="flex items-center gap-4 rounded-xl border border-white/8 bg-slate-mid px-4 py-3.5 mb-2 hover:border-gold/30 transition-colors active:scale-[0.98]"
+            >
+              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gold/10 shrink-0">
+                <MapPin size={18} className="text-gold" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-base text-ivory leading-tight">Our Places</p>
+                <p className="font-body text-xs text-ivory-dim mt-0.5">Saved venues & locations</p>
+              </div>
+              <span className="text-ivory-dim text-xs font-body">›</span>
+            </Link>
+
             <StatGrid stats={stats} />
             <GentComparison stats={stats} />
             <VerdictBoard />

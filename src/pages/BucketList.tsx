@@ -522,7 +522,7 @@ export default function BucketList() {
 
   return (
     <>
-      <TopBar title="Bucket List" back />
+      <TopBar title="Wishlist" back />
 
       <PageWrapper scrollable>
         {loading ? (

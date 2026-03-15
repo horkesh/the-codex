@@ -47,12 +47,12 @@ export const NAV_SECTIONS = [
     image: '/images/sections/studio.webp',
   },
   {
-    id: 'bucket-list',
-    label: 'Bucket List',
-    navLabel: 'Wishlist',
-    path: '/bucket-list',
+    id: 'agenda',
+    label: 'Agenda',
+    navLabel: 'Agenda',
+    path: '/agenda',
     icon: List,
-    subtitle: 'The agenda ahead',
+    subtitle: 'Wishlist & scouting',
     image: '/images/sections/bucket-list.png',
   },
 ] as const
