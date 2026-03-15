@@ -6,6 +6,8 @@ export interface LocationFill {
   country_code?: string
   location?: string
   date?: string
+  /** Local time extracted from EXIF DateTimeOriginal, format HH:MM */
+  time?: string
   lat?: number
   lng?: number
   /** Set when the GPS coords matched a saved Place within 200m. */
@@ -98,6 +100,9 @@ export async function extractLocationFromPhoto(file: File): Promise<LocationFill
         : String(exif.DateTimeOriginal).replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3')
       const d = new Date(raw)
       if (!isNaN(d.getTime())) result.date = d.toISOString().split('T')[0]
+      // Extract local time directly from the raw string to avoid timezone conversion
+      const timeMatch = raw.match(/[T ](\d{2}):(\d{2})/)
+      if (timeMatch) result.time = `${timeMatch[1]}:${timeMatch[2]}`
     }
 
     // GPS reverse geocoding

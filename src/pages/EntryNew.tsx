@@ -134,7 +134,10 @@ export default function EntryNew() {
         country: formData.country ?? undefined,
         country_code: formData.country_code ?? undefined,
         description: formData.description ?? undefined,
-        metadata: formData.metadata ?? {},
+        metadata: {
+          ...(formData.metadata ?? {}),
+          ...(locationFill?.time ? { time_of_day: locationFill.time } : {}),
+        },
         created_by: gent.id,
       })
 
