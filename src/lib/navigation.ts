@@ -1,4 +1,4 @@
-import { BookOpen, Bookmark, Users, BarChart2, Layers } from 'lucide-react'
+import { BookOpen, Bookmark, Users, BarChart2, Layers, List } from 'lucide-react'
 
 export const NAV_SECTIONS = [
   {
@@ -45,5 +45,14 @@ export const NAV_SECTIONS = [
     icon: Layers,
     subtitle: 'Export & create',
     image: '/images/sections/studio.webp',
+  },
+  {
+    id: 'bucket-list',
+    label: 'Bucket List',
+    navLabel: 'Wishlist',
+    path: '/bucket-list',
+    icon: List,
+    subtitle: 'The agenda ahead',
+    image: '/images/sections/bucket-list.png',
   },
 ] as const
