@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { fetchReactions, upsertReaction, deleteReaction } from '@/data/reactions'
 import { useAuthStore } from '@/store/auth'
@@ -27,9 +27,12 @@ export function EntryReactions({ entryId, compact = false }: EntryReactionsProps
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [saving, setSaving] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [bursts, setBursts] = useState<Array<{ id: number; type: ReactionType; symbol: string }>>([])
+  const burstIdRef = useRef(0)
 
-  // Load reactions on mount and whenever entryId changes
+  // Load reactions on mount and whenever entryId changes; clear stale burst particles
   useEffect(() => {
+    setBursts([])
     setLoaded(false)
     fetchReactions(entryId)
       .then((data) => {
@@ -59,6 +62,11 @@ export function EntryReactions({ entryId, compact = false }: EntryReactionsProps
   const handleReaction = useCallback(
     async (type: ReactionType) => {
       if (!gent || saving) return
+
+      // Spawn burst particle
+      const burstId = ++burstIdRef.current
+      const symbol = REACTIONS.find((r) => r.type === type)!.symbol
+      setBursts((prev) => [...prev, { id: burstId, type, symbol }])
 
       setSaving(true)
       try {
@@ -125,37 +133,55 @@ export function EntryReactions({ entryId, compact = false }: EntryReactionsProps
             aria-pressed={isMyReaction}
             whileTap={{ scale: 0.92 }}
             className={[
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200',
+              'relative flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200',
               'bg-slate-dark disabled:opacity-50 disabled:pointer-events-none select-none',
               isMyReaction
                 ? 'border-gold/40 bg-gold/5'
                 : 'border-white/5 hover:border-white/15',
             ].join(' ')}
           >
-            {/* Symbol */}
-            <span
-              className={[
-                'font-mono text-sm leading-none',
-                isMyReaction ? 'text-gold' : 'text-ivory-dim',
-              ].join(' ')}
-              aria-hidden="true"
-            >
-              {symbol}
-            </span>
-
-            {/* Count */}
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span
-                key={count}
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.18 }}
-                className="text-xs font-body text-ivory-dim tabular-nums min-w-[1ch] text-center"
-              >
-                {count}
-              </motion.span>
+            {/* Burst particles */}
+            <AnimatePresence>
+              {bursts.filter((b) => b.type === type).map((burst) => (
+                <motion.span
+                  key={burst.id}
+                  initial={{ opacity: 1, y: 0, scale: 1 }}
+                  animate={{ opacity: 0, y: -32, scale: 1.6 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  onAnimationComplete={() =>
+                    setBursts((prev) => prev.filter((b) => b.id !== burst.id))
+                  }
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none font-mono text-sm text-gold"
+                  aria-hidden="true"
+                >
+                  {burst.symbol}
+                </motion.span>
+              ))}
             </AnimatePresence>
+              {/* Symbol */}
+              <span
+                className={[
+                  'font-mono text-sm leading-none',
+                  isMyReaction ? 'text-gold' : 'text-ivory-dim',
+                ].join(' ')}
+                aria-hidden="true"
+              >
+                {symbol}
+              </span>
+
+              {/* Count */}
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={count}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.18 }}
+                  className="text-xs font-body text-ivory-dim tabular-nums min-w-[1ch] text-center"
+                >
+                  {count}
+                </motion.span>
+              </AnimatePresence>
           </motion.button>
         )
       })}

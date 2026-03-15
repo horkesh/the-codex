@@ -1,5 +1,39 @@
 import { supabase } from '@/lib/supabase'
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface EarnedAchievement {
+  type: string
+  name: string
+  description: string
+  earned_at: string
+}
+
+export async function fetchEarnedAchievements(gentId: string): Promise<EarnedAchievement[]> {
+  const { data, error } = await supabase
+    .from('achievements')
+    .select('type, name, description, earned_at')
+    .eq('earned_by', gentId)
+    .order('earned_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as EarnedAchievement[]
+}
+
+// Emoji icon for each achievement/threshold type
+export const ACHIEVEMENT_ICONS: Record<string, string> = {
+  first_mission: '🎯',
+  five_missions: '🌍',
+  ten_missions: '🗺️',
+  ten_nights: '🌙',
+  five_countries: '🛂',
+  ten_steaks: '🥩',
+  ps5_100: '🎮',
+  threshold_veteran: '🎖️',
+  threshold_explorer: '🧭',
+  threshold_connoisseur: '🍷',
+  threshold_host: '🥂',
+}
+
 // Seed achievement definitions (call once)
 // Achievements are milestones earned automatically
 export const ACHIEVEMENT_DEFINITIONS = [
