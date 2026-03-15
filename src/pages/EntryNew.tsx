@@ -16,7 +16,7 @@ import { PlaystationForm } from '@/components/chronicle/forms/PlaystationForm'
 import { ToastForm } from '@/components/chronicle/forms/ToastForm'
 import { InterludeForm } from '@/components/chronicle/forms/InterludeForm'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
-import { createEntry, addEntryParticipants } from '@/data/entries'
+import { createEntry, addEntryParticipants, updateEntryCover } from '@/data/entries'
 import { generateLore } from '@/ai/lore'
 import { generateCover } from '@/ai/cover'
 import { useAuthStore } from '@/store/auth'
@@ -109,10 +109,14 @@ export default function EntryNew() {
         await addEntryParticipants(entry.id, allParticipantIds)
       }
 
-      // 3. Upload pending photos
+      // 3. Upload pending photos; promote first to cover image
+      let uploadedUrls: string[] = []
       if (pendingFiles.length > 0) {
-        await uploadAll(entry.id)
+        uploadedUrls = await uploadAll(entry.id)
         clearFiles()
+        if (uploadedUrls[0]) {
+          updateEntryCover(entry.id, uploadedUrls[0]).catch(() => {})
+        }
       }
 
       // 4. Fire generateLore async — don't await
@@ -124,9 +128,8 @@ export default function EntryNew() {
         // silently ignore — lore gen failures are non-critical
       })
 
-      // 5. Fire generateCover async for eligible types
-      const noCoverTypes: EntryType[] = ['playstation', 'interlude']
-      if (!noCoverTypes.includes(selectedType)) {
+      // 5. AI cover only when no photo was uploaded (interlude never gets AI cover)
+      if (uploadedUrls.length === 0 && selectedType !== 'interlude') {
         generateCover(entry).catch(() => {
           // silently ignore
         })
@@ -220,9 +223,6 @@ export default function EntryNew() {
   function renderForm() {
     if (!selectedType) return null
 
-    // Photo upload is shown for all types except playstation
-    const showPhotos = selectedType !== 'playstation'
-
     return (
       <motion.div
         key={selectedType}
@@ -292,18 +292,16 @@ export default function EntryNew() {
           />
         </div>
 
-        {/* Photos */}
-        {showPhotos && (
-          <div className="border-t border-white/8 pt-4">
-            <PhotoUpload
-              entryId={null}
-              onGeoDetected={handleGeoDetected}
-              onFilesAdded={addFiles}
-              onFileRemoved={removeFile}
-              className="w-full"
-            />
-          </div>
-        )}
+        {/* Photos — shown for all entry types */}
+        <div className="border-t border-white/8 pt-4">
+          <PhotoUpload
+            entryId={null}
+            onGeoDetected={handleGeoDetected}
+            onFilesAdded={addFiles}
+            onFileRemoved={removeFile}
+            className="w-full"
+          />
+        </div>
       </motion.div>
     )
   }
