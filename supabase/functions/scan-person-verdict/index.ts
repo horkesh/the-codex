@@ -76,8 +76,8 @@ Output PURE JSON only. No markdown, no explanation.`
 
     if (!parsed.eligible) {
       return new Response(
-        JSON.stringify({ eligible: false, error: parsed.rejection_reason ?? 'Image not eligible' }),
-        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ eligible: false, rejection_reason: parsed.rejection_reason ?? 'Image not eligible' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 

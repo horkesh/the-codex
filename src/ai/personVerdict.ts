@@ -11,19 +11,10 @@ export async function scanPersonVerdict(req: VerdictRequest): Promise<PersonVerd
     body: req,
   })
 
-  if (error) {
-    // Try to extract the rejection message from the error body
-    try {
-      const body = await (error as unknown as { context: Response }).context?.json?.()
-      if (body?.error) throw new Error(body.error)
-    } catch (inner) {
-      if (inner instanceof Error && inner.message !== error.message) throw inner
-    }
-    throw error
-  }
+  if (error) throw new Error('Could not reach analysis service. Try again.')
 
-  if (data?.error) throw new Error(data.error)
   if (data?.eligible === false) throw new Error(data.rejection_reason ?? 'Image not eligible for analysis')
+  if (data?.error) throw new Error(data.error)
 
   return data as PersonVerdict
 }
