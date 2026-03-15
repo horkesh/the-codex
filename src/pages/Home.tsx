@@ -36,6 +36,8 @@ function SectionCard({ section, featured = false }: { section: Section; featured
           aria-hidden="true"
           className="w-full h-full object-cover"
           style={{ opacity: featured ? 0.75 : 0.7 }}
+          loading="eager"
+          fetchPriority={featured ? 'high' : 'low'}
         />
       </motion.div>
 

@@ -61,19 +61,31 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     setStep('analyzing')
 
     try {
-      // Read base64 and upload source photo in parallel — both need only `file`
-      const [base64, sourcePhotoUrl] = await Promise.all([
+      // Compress image to JPEG before sending — screenshots are PNG (3-5MB) which
+      // exceed the Edge Function body limit as base64. Cap at 1024px, quality 0.82.
+      // Run in parallel with storage upload since both only need the original file.
+      const [compressedBase64, sourcePhotoUrl] = await Promise.all([
         new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve((reader.result as string).split(',')[1])
-          reader.onerror = reject
-          reader.readAsDataURL(file)
+          const img = new Image()
+          const url = URL.createObjectURL(file)
+          img.onload = () => {
+            URL.revokeObjectURL(url)
+            const MAX = 1024
+            const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+            const canvas = document.createElement('canvas')
+            canvas.width = Math.round(img.width * scale)
+            canvas.height = Math.round(img.height * scale)
+            canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+            resolve(canvas.toDataURL('image/jpeg', 0.82).split(',')[1])
+          }
+          img.onerror = reject
+          img.src = url
         }),
         uploadPersonScanPhoto(gent.id, file),
       ])
 
-      // AI verdict (needs base64 from above)
-      const verdict = await scanPersonVerdict({ photo_base64: base64, mime_type: file.type || 'image/jpeg' })
+      // AI verdict uses compressed JPEG (~200-400KB) not the raw file
+      const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/jpeg' })
 
       // Create draft scan record
       const sourceType: VerdictSourceType = tab === 'screenshot' ? 'instagram_screenshot' : 'photo'
