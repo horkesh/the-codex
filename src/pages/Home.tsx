@@ -98,7 +98,6 @@ function SectionCard({ section, featured = false }: { section: Section; featured
 
 export default function Home() {
   const { gent } = useAuthStore()
-  const [featured, ...grid] = NAV_SECTIONS
 
   return (
     <>
@@ -142,17 +141,11 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* Section cards */}
-        <div className="flex flex-col gap-3 pb-6">
-          {/* Featured — Chronicle, full width */}
-          <SectionCard section={featured} featured />
-
-          {/* 2 × 2 grid */}
-          <div className="grid grid-cols-2 gap-3">
-            {grid.map((section) => (
-              <SectionCard key={section.id} section={section} />
-            ))}
-          </div>
+        {/* Section cards — uniform 2 × 3 grid */}
+        <div className="grid grid-cols-2 gap-3 pb-6">
+          {NAV_SECTIONS.map((section) => (
+            <SectionCard key={section.id} section={section} />
+          ))}
         </div>
       </PageWrapper>
     </>
