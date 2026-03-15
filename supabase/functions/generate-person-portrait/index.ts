@@ -18,7 +18,7 @@ Deno.serve(async (req: Request) => {
     if (!appearance || !traits || !scan_id) throw new Error('appearance, traits, and scan_id required')
 
     const traitList = (traits as string[]).join(', ')
-    const imagePrompt = `Close-up portrait photograph of a person. ${appearance} Expression conveys: ${traitList}. Photorealistic, sharp facial detail, natural skin tones exactly as described, cinematic studio lighting with subtle rim light, deep dark background, high-end editorial photography style. Face fills most of the frame. No text, no watermarks.`
+    const imagePrompt = `Stylised portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: High-end digital painting, cinematic dramatic lighting, rich natural colours preserving the subject's actual skin tone and hair colour, sharp facial detail, sophisticated artistic composition, dark elegant background. No text or labels.`
 
     const imageResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
