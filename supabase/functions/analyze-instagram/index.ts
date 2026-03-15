@@ -12,6 +12,7 @@ Deno.serve(async (req: Request) => {
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
 
     let messageContent: unknown[]
+    let ogTags: Record<string, string> = {}
 
     if (mode === 'screenshot') {
       if (!screenshot_base64) throw new Error('screenshot_base64 required for screenshot mode')
@@ -36,7 +37,6 @@ Deno.serve(async (req: Request) => {
       const html = await fetch(url).then(r => r.text())
 
       // Extract OG meta tags
-      const ogTags: Record<string, string> = {}
       const ogRegex = /<meta[^>]+property="og:([^"]+)"[^>]+content="([^"]+)"/gi
       let match
       while ((match = ogRegex.exec(html)) !== null) {
@@ -69,7 +69,7 @@ Deno.serve(async (req: Request) => {
         messageContent = [
           {
             type: 'text',
-            text: `Extract event information from this Instagram page data. Return JSON only with these fields: venue_name, location, city, country, event_date (ISO string or null), estimated_price (string or null), dress_code (string or null), vibe (one sentence), confidence (number 0-1).
+            text: `Extract event information from this Instagram page data. Return JSON only with these fields: event_name (the specific event or night name, e.g. "Drumcode Night" or "Closing Party"), venue_name (the physical venue/club/restaurant), location, city, country, event_date (date only as YYYY-MM-DD, no time, null if unknown), estimated_price (string or null), dress_code (string or null), vibe (one sentence), confidence (number 0-1).
 
 Page data:
 ${extractedText}`,
@@ -126,6 +126,11 @@ ${extractedText}`,
       sanitized += ch
     }
     const extracted = JSON.parse(sanitized)
+
+    // Attach OG image directly — already extracted from page meta, no need to ask Claude
+    if (mode === 'event' && ogTags['image']) {
+      extracted.image_url = ogTags['image']
+    }
 
     return new Response(JSON.stringify(extracted), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

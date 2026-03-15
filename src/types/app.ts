@@ -169,6 +169,7 @@ export interface Prospect {
   created_by: string
   source_url: string | null
   source_thumbnail_url: string | null
+  event_name: string | null
   venue_name: string | null
   location: string | null
   city: string | null
@@ -303,7 +304,9 @@ export interface DossierDraft {
 // Instagram analysis result
 export interface InstagramAnalysis {
   // Event/venue mode
+  event_name?: string
   venue_name?: string
+  image_url?: string
   location?: string
   city?: string
   country?: string

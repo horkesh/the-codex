@@ -115,7 +115,7 @@ export default function EntryNew() {
         uploadedUrls = await uploadAll(entry.id)
         clearFiles()
         if (uploadedUrls[0]) {
-          updateEntryCover(entry.id, uploadedUrls[0]).catch(() => {})
+          await updateEntryCover(entry.id, uploadedUrls[0])
         }
       }
 

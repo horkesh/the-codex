@@ -4,6 +4,29 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-18 (013)
+
+**Goal**: Fix photo → cover image pipeline; fix entry-photos storage permissions; improve Scouting (Prospects) Instagram extraction — event name, correct date format, auto-save event image.
+
+**Done**:
+
+### Entry photo as cover image
+- **Root cause**: `entry-photos` Supabase Storage bucket had no RLS policies — all uploads were silently blocked. No other bucket had this gap.
+- **Fix**: Migration `20260318000001_entry_photos_storage_policies.sql` — added `entry_photos_public_read`, `entry_photos_auth_insert`, `entry_photos_auth_delete` policies on `storage.objects` for `bucket_id = 'entry-photos'`
+- **Fix**: `EntryNew.tsx` — `updateEntryCover()` is now `await`ed inside the try block (was fire-and-forget `.catch(() => {})`); errors now surface as the standard error toast
+
+### Scouting / Prospects Instagram improvements
+- **Event name** — `analyze-instagram` edge function event-mode prompt now explicitly requests `event_name` (the specific night/event name, e.g. "Drumcode Night") separate from `venue_name` (the physical venue). Previously only `venue_name` was extracted.
+- **Date format** — Prompt now specifies `YYYY-MM-DD` only (no time). DB column is `date` type; previous `2026-04-04T20:30:00` ISO datetime strings would cause silent Supabase insert failure.
+- **Event image** — OG image URL (`ogTags['image']`) is already extracted from the Instagram page HTML in the edge function; it's now attached directly to the response as `image_url` without asking Claude to re-extract it. Mapped into `source_thumbnail_url` on save so the event thumbnail appears on the card.
+- **Migration** `20260318000002_prospects_event_name.sql` — adds `event_name text` column to `prospects`
+- **Types**: `event_name` added to `Prospect` interface; `event_name` + `image_url` added to `InstagramAnalysis`
+- **UI**: `event_name` is the first field in the review form and primary card title (`event_name ?? venue_name`); venue shown as subtitle alongside city/country with `·` separators; save button requires either `event_name` or `venue_name`
+
+**Status**: Deployed. Zero TS errors. Edge function redeployed.
+
+---
+
 ## Session — 2026-03-15 (012)
 
 **Goal**: Bug fixes, UI polish, POI scanner repair, portrait pipeline, mind map + Tag People, PersonDetail Intel tab.

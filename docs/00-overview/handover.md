@@ -4,21 +4,26 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-## Current state (2026-03-15)
+## Current state (2026-03-18)
 
 **Phase**: **FULLY LIVE.** Continued post-roadmap polish and new features.
 
-**What was just done** (Sessions 011–012):
+**What was just done** (Session 013):
+
+- Entry photo → cover image pipeline fixed: `entry-photos` storage bucket now has RLS policies; `updateEntryCover` is awaited so errors surface
+- Scouting Instagram extraction improved: extracts `event_name` (specific event) separately from `venue_name` (venue); date returned as `YYYY-MM-DD` (DB-compatible); OG image auto-saved as event thumbnail
+- `event_name` column added to `prospects` table
+
+**What was done before** (Sessions 011–012):
 
 - POI scanner fully repaired (gemini-2.5-flash, status:200, verify_jwt=false, 4096 tokens)
 - Portrait displayed as profile pic everywhere (portrait_url ?? photo_url fallback in all avatar components)
 - Mind map implemented: concentric rings, gent-person edges by colour, focus mode, Tag People in EntryDetail
 - PersonDetail: Intel tab with full scan verdict, tier selector, gent connection selector
-- Home: uniform 2×3 section grid; Bucket List card added
-- TopBar: profile avatar on every page
+- Home: uniform 2×3 section grid; Agenda hub absorbs Bucket List (Wishlist) + Prospects (Scouting); Dossier accessible via globe icon in Chronicle TopBar; Our Places card in Ledger
 
 **What's left / next ideas**:
-- Bucket List: add Instagram URL input to auto-populate items from event pages (reuses `analyze-instagram` edge function in `event` mode)
+- Wishlist (Bucket List): add Instagram URL input to auto-populate items from event pages (reuses `analyze-instagram` edge function in `event` mode)
 - Passport Stamps: `image_url` field exists but generation not hooked up
 - PersonCard: portrait-bleed card style (visual upgrade, no new data needed)
 - Toast entry type: to be removed (moving to separate app)
@@ -120,4 +125,4 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-_← Updated 2026-03-13 (Session 009)_
+_← Updated 2026-03-18 (Session 013)_

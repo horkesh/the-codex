@@ -62,13 +62,11 @@ function ProspectCard({ prospect, onMarkPassed, onDelete }: ProspectCardProps) {
           {/* Main info */}
           <div className="flex-1 min-w-0">
             <h3 className="font-display text-base text-ivory leading-tight truncate">
-              {prospect.venue_name ?? 'Unnamed Venue'}
+              {prospect.event_name ?? prospect.venue_name ?? 'Unnamed Event'}
             </h3>
-            {(prospect.city || prospect.country) && (
-              <p className="text-xs text-ivory-dim mt-0.5 font-body">
-                {[prospect.city, prospect.country].filter(Boolean).join(', ')}
-              </p>
-            )}
+            <p className="text-xs text-ivory-dim mt-0.5 font-body truncate">
+              {[prospect.venue_name, prospect.city, prospect.country].filter(Boolean).join(' · ')}
+            </p>
           </div>
 
           {/* Three-dot menu */}
@@ -169,6 +167,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
 
   // Editable fields after analysis
   const [fields, setFields] = useState({
+    event_name: '',
     venue_name: '',
     city: '',
     country: '',
@@ -189,7 +188,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
     setAnalyzeError('')
     setSaving(false)
     setFields({
-      venue_name: '', city: '', country: '', location: '',
+      event_name: '', venue_name: '', city: '', country: '', location: '',
       event_date: '', estimated_price: '', dress_code: '',
       vibe: '', notes: '', source_url: '', source_thumbnail_url: '',
     })
@@ -211,6 +210,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
       const result = await analyzeInstagramUrl(url.trim(), 'event')
       setFields((prev) => ({
         ...prev,
+        event_name: result.event_name ?? '',
         venue_name: result.venue_name ?? '',
         city: result.city ?? '',
         country: result.country ?? '',
@@ -220,6 +220,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
         dress_code: result.dress_code ?? '',
         vibe: result.vibe ?? '',
         source_url: url.trim(),
+        source_thumbnail_url: result.image_url ?? '',
       }))
       setStep('review')
     } catch {
@@ -243,6 +244,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
       const result = await analyzeInstagramScreenshot(base64, file.type || 'image/png')
       setFields((prev) => ({
         ...prev,
+        event_name: result.event_name ?? '',
         venue_name: result.venue_name ?? '',
         city: result.city ?? '',
         country: result.country ?? '',
@@ -271,6 +273,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
         created_by: gent.id,
         source_url: fields.source_url || null,
         source_thumbnail_url: fields.source_thumbnail_url || null,
+        event_name: fields.event_name || null,
         venue_name: fields.venue_name || null,
         location: fields.location || null,
         city: fields.city || null,
@@ -420,7 +423,15 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
                 <Input
-                  label="Venue Name"
+                  label="Event Name"
+                  placeholder="Drumcode Night, Closing Party..."
+                  value={fields.event_name}
+                  onChange={setField('event_name')}
+                />
+              </div>
+              <div className="col-span-2">
+                <Input
+                  label="Venue"
                   placeholder="Club, restaurant, rooftop..."
                   value={fields.venue_name}
                   onChange={setField('venue_name')}
@@ -485,7 +496,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
                 fullWidth
                 loading={saving}
                 onClick={handleSave}
-                disabled={!fields.venue_name.trim()}
+                disabled={!fields.event_name.trim() && !fields.venue_name.trim()}
               >
                 Save Prospect
               </Button>
