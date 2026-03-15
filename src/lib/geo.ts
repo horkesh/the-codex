@@ -88,7 +88,7 @@ export async function extractLocationFromPhoto(file: File): Promise<LocationFill
       result.lng = exif.longitude
 
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${exif.latitude}&lon=${exif.longitude}&format=json&zoom=10`,
+        `https://nominatim.openstreetmap.org/reverse?lat=${exif.latitude}&lon=${exif.longitude}&format=json&zoom=18`,
         { headers: { 'User-Agent': 'TheGentsChronicles/1.0' } },
       )
       if (res.ok) {

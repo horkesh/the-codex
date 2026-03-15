@@ -79,11 +79,16 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, on
               )
             : undefined
 
-          // 2. Name fallback: Nominatim's first token matches a saved place name
+          // 2. Name fallback: Nominatim's POI name overlaps with a saved place name
           //    (catches places added without a map pin, or photos without GPS)
           if (!match && loc.location) {
             const needle = loc.location.toLowerCase()
-            match = saved.find((p) => p.name.toLowerCase() === needle)
+            match = saved.find((p) => {
+              const saved_name = p.name.toLowerCase()
+              return saved_name === needle
+                || needle.includes(saved_name)
+                || saved_name.includes(needle)
+            })
           }
 
           if (match) {
