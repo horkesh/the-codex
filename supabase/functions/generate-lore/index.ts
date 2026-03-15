@@ -64,7 +64,7 @@ Write the lore in first person plural ("We", "The Gents"). No hashtags, no emoji
   } catch (error) {
     console.error('generate-lore error:', error)
     return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

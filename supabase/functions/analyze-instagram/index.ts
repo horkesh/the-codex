@@ -133,7 +133,7 @@ ${extractedText}`,
   } catch (error) {
     console.error('analyze-instagram error:', error)
     return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

@@ -61,7 +61,7 @@ Deno.serve(async (req: Request) => {
     console.error('generate-person-portrait error:', error)
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

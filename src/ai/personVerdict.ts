@@ -12,7 +12,14 @@ export async function scanPersonVerdict(req: VerdictRequest): Promise<PersonVerd
     body: req,
   })
 
-  if (error) throw new Error(`Service error: ${error.message}`)
+  if (error) {
+    // Extract the actual response body for a meaningful error message
+    const body = error.context instanceof Response
+      ? await error.context.text().catch(() => '')
+      : ''
+    const detail = body ? `: ${body.slice(0, 200)}` : ''
+    throw new Error(`Scan failed (${error.name})${detail}`)
+  }
 
   if (data?.eligible === false) throw new Error(data.rejection_reason ?? 'Image not eligible for analysis')
   if (data?.error) throw new Error(data.error)

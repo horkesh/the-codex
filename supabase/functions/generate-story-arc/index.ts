@@ -73,7 +73,7 @@ Write a chapter-level narrative (200-300 words) that weaves these moments into o
   } catch (error) {
     console.error('generate-story-arc error:', error)
     return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

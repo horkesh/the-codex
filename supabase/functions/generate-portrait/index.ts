@@ -103,7 +103,7 @@ Output PURE JSON only, no markdown, no explanation.`,
   } catch (error) {
     console.error('generate-portrait error:', error)
     return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

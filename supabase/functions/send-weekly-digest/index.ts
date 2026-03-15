@@ -187,7 +187,7 @@ Close with a single line of encouragement or wit. 100-150 words total. No emojis
   } catch (error) {
     console.error('send-weekly-digest error:', error)
     return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

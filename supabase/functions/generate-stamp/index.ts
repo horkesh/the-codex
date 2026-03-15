@@ -65,7 +65,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error('generate-stamp error:', error)
     return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

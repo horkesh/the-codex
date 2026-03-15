@@ -43,7 +43,7 @@ Write 4-6 sentences in first person plural ("We"), past tense, in an eloquent pr
     })
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

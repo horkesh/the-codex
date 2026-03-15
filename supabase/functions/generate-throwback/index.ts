@@ -69,7 +69,7 @@ Write a short retrospective in first person plural ("We", "The Gents") from the 
   } catch (error) {
     console.error('generate-throwback error:', error)
     return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

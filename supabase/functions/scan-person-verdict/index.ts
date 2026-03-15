@@ -57,8 +57,8 @@ Score rubric:
           generationConfig: {
             responseMimeType: 'application/json',
             maxOutputTokens: 1024,
-            thinkingConfig: { thinkingBudget: 0 },
           },
+          thinkingConfig: { thinkingBudget: 0 },
         }),
       }
     )
