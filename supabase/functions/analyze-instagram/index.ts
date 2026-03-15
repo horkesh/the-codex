@@ -7,7 +7,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { url, mode, screenshot_base64 } = await req.json()
+    const { url, mode, screenshot_base64, screenshot_mime_type } = await req.json()
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
 
@@ -20,13 +20,13 @@ Deno.serve(async (req: Request) => {
           type: 'image',
           source: {
             type: 'base64',
-            media_type: 'image/jpeg',
+            media_type: screenshot_mime_type || 'image/png',
             data: screenshot_base64,
           },
         },
         {
           type: 'text',
-          text: 'Extract profile information from this Instagram profile screenshot. Return PURE JSON only, no markdown. Fields: display_name, username, bio, apparent_location, post_count, follower_count, following_count, recent_post_themes (array of 3 short strings), vibe (2 sentences max), suggested_approach (1 sentence), notable_details (1 sentence).',
+          text: 'Extract profile information from this Instagram profile screenshot. Return a single-line minified JSON object with no newlines inside string values. Fields: display_name, username, bio, apparent_location, post_count, follower_count, following_count, recent_post_themes (array of 3 short strings), vibe (2 sentences max), suggested_approach (1 sentence), notable_details (1 sentence). No markdown, no code fences, just the raw JSON.',
         },
       ]
     } else {
@@ -110,9 +110,14 @@ ${extractedText}`,
     const result = await response.json()
     const rawText = result.content?.[0]?.text?.trim() ?? '{}'
 
-    // Parse JSON from Claude's response — strip markdown code fences if present
-    const jsonText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-    const extracted = JSON.parse(jsonText)
+    // Strip markdown code fences, then sanitize unescaped newlines inside JSON strings
+    const stripped = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
+    // Replace literal newlines inside JSON string values with \n escape
+    const sanitized = stripped.replace(
+      /"((?:[^"\\]|\\.)*)"/g,
+      (_match: string, inner: string) => `"${inner.replace(/\n/g, '\\n').replace(/\r/g, '')}"`
+    )
+    const extracted = JSON.parse(sanitized)
 
     return new Response(JSON.stringify(extracted), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -240,7 +240,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
         reader.onerror = reject
         reader.readAsDataURL(file)
       })
-      const result = await analyzeInstagramScreenshot(base64)
+      const result = await analyzeInstagramScreenshot(base64, file.type || 'image/png')
       setFields((prev) => ({
         ...prev,
         venue_name: result.venue_name ?? '',
