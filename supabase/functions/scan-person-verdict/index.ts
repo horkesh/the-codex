@@ -54,11 +54,7 @@ Score rubric:
             { inline_data: { mime_type, data: photo_base64 } },
             { text: prompt },
           ]}],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            maxOutputTokens: 1024,
-          },
-          thinkingConfig: { thinkingBudget: 0 },
+          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1024 },
         }),
       }
     )
