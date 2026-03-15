@@ -72,7 +72,12 @@ Output PURE JSON only. No markdown, no explanation.`
 
     const analysisResult = await analysisResponse.json()
     const rawText = analysisResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
-    const parsed = JSON.parse(rawText)
+    // Gemini occasionally returns literal newlines inside string values; sanitize before parsing
+    const sanitized = rawText.replace(
+      /"((?:[^"\\]|\\.)*)"/g,
+      (_: string, inner: string) => `"${inner.replace(/\n/g, '\\n').replace(/\r/g, '')}"`
+    )
+    const parsed = JSON.parse(sanitized)
 
     if (!parsed.eligible) {
       return new Response(
