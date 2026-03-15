@@ -66,16 +66,13 @@ Output PURE JSON only, no markdown, no explanation.`,
     const imagePrompt = `Stylised portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: High-end digital painting, cinematic dramatic lighting, rich natural colours preserving the subject's actual skin tone and hair colour, sharp facial detail, sophisticated artistic composition, dark elegant background. No text or labels.`
 
     const imageResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${googleApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: imagePrompt }] }],
-          generationConfig: {
-            responseModalities: ['TEXT', 'IMAGE'],
-            imageConfig: { aspectRatio: '1:1' },
-          },
+          instances: [{ prompt: imagePrompt }],
+          parameters: { sampleCount: 1, aspectRatio: '1:1', safetyFilterLevel: 'block_only_high' },
         }),
       }
     )
@@ -85,26 +82,16 @@ Output PURE JSON only, no markdown, no explanation.`,
     }
 
     const imageResult = await imageResponse.json()
-    const parts = imageResult.candidates?.[0]?.content?.parts ?? []
-    let base64Image: string | null = null
-    let mimeType = 'image/png'
-    for (const part of parts) {
-      if (part.inlineData?.data) {
-        base64Image = part.inlineData.data
-        mimeType = part.inlineData.mimeType ?? 'image/png'
-        break
-      }
-    }
-    if (!base64Image) throw new Error('No image returned from Gemini')
+    const base64Image: string | null = imageResult.predictions?.[0]?.bytesBase64Encoded ?? null
+    if (!base64Image) throw new Error('No image returned from Imagen')
 
     // Step 3: Upload to Supabase Storage
-    const ext = mimeType.split('/')[1] ?? 'png'
     const imageBytes = Uint8Array.from(atob(base64Image), (c) => c.charCodeAt(0))
-    const fileName = `${gent_id}/portrait-${Date.now()}.${ext}`
+    const fileName = `${gent_id}/portrait-${Date.now()}.webp`
 
     const { error: uploadError } = await db.storage
       .from('portraits')
-      .upload(fileName, imageBytes, { contentType: mimeType, upsert: true })
+      .upload(fileName, imageBytes, { contentType: 'image/webp', upsert: true })
 
     if (uploadError) throw new Error(`Storage upload error: ${uploadError.message}`)
 

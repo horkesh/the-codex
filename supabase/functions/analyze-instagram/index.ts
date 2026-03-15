@@ -26,7 +26,7 @@ Deno.serve(async (req: Request) => {
         },
         {
           type: 'text',
-          text: 'Extract profile information from this Instagram profile screenshot. Return JSON with: display_name, username, bio, apparent_location, post_count, follower_count, following_count, recent_post_themes (array of 3 strings), vibe (one paragraph), suggested_approach (one sentence), notable_details.',
+          text: 'Extract profile information from this Instagram profile screenshot. Return PURE JSON only, no markdown. Fields: display_name, username, bio, apparent_location, post_count, follower_count, following_count, recent_post_themes (array of 3 short strings), vibe (2 sentences max), suggested_approach (1 sentence), notable_details (1 sentence).',
         },
       ]
     } else {
@@ -98,7 +98,7 @@ ${extractedText}`,
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 600,
+        max_tokens: 1024,
         messages: [{ role: 'user', content: messageContent }],
       }),
     })
