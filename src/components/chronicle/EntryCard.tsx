@@ -5,6 +5,8 @@ import { Avatar } from '@/components/ui/Avatar'
 import { formatDate } from '@/lib/utils'
 import { staggerItem } from '@/lib/animations'
 import { ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
+import { getFilter } from '@/lib/photoFilters'
+import { getStoredFilter } from '@/hooks/useEntryFilter'
 import type { EntryWithParticipants } from '@/types/app'
 
 interface EntryCardProps {
@@ -13,6 +15,7 @@ interface EntryCardProps {
 }
 
 export function EntryCard({ entry, onClick }: EntryCardProps) {
+  const filter = getFilter(getStoredFilter(entry.id))
 
   const locationLabel = (() => {
     if (entry.city) {
@@ -42,6 +45,7 @@ export function EntryCard({ entry, onClick }: EntryCardProps) {
             src={entry.cover_image_url}
             alt={entry.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            style={{ filter: filter.css }}
             draggable={false}
           />
         ) : (
@@ -51,6 +55,11 @@ export function EntryCard({ entry, onClick }: EntryCardProps) {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             aria-hidden
           />
+        )}
+
+        {/* Photo filter vignette — only when user has a cover photo */}
+        {entry.cover_image_url && (
+          <div className="absolute inset-0 pointer-events-none" style={{ background: filter.vignette }} />
         )}
 
         {/* Atmospheric overlay — darkens towards edges for text readability */}

@@ -4,13 +4,17 @@ import { Badge } from '@/components/ui'
 import { Avatar } from '@/components/ui'
 import { ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
 import { fadeIn } from '@/lib/animations'
+import { getFilter } from '@/lib/photoFilters'
+import type { FilterId } from '@/lib/photoFilters'
 import type { EntryWithParticipants } from '@/types/app'
 
 interface EntryHeroProps {
   entry: EntryWithParticipants
+  filterId?: FilterId
 }
 
-export function EntryHero({ entry }: EntryHeroProps) {
+export function EntryHero({ entry, filterId }: EntryHeroProps) {
+  const filter = getFilter(filterId)
 
   const hasLocation = entry.city || entry.country
   const locationParts: string[] = []
@@ -26,6 +30,7 @@ export function EntryHero({ entry }: EntryHeroProps) {
           src={entry.cover_image_url}
           alt={entry.title}
           className="absolute inset-0 w-full h-full object-cover"
+          style={{ filter: filter.css }}
           variants={fadeIn}
           initial="initial"
           animate="animate"
@@ -40,6 +45,11 @@ export function EntryHero({ entry }: EntryHeroProps) {
           initial="initial"
           animate="animate"
         />
+      )}
+
+      {/* Photo filter vignette — only when user has a cover photo */}
+      {entry.cover_image_url && (
+        <div className="absolute inset-0 pointer-events-none" style={{ background: filter.vignette }} />
       )}
 
       {/* Gradient overlay: bottom heavy so text is readable */}

@@ -9,11 +9,13 @@ import { LoreSection } from '@/components/chronicle/LoreSection'
 import { EntryReactions } from '@/components/chronicle/EntryReactions'
 import { generateScene } from '@/ai/scene'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
+import { FilterPicker } from '@/components/chronicle/FilterPicker'
 import { MetadataCard } from '@/components/chronicle/MetadataCard'
 import { PS5Scoreboard } from '@/components/chronicle/PS5Scoreboard'
 import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
 import { CommentsSection } from '@/components/chronicle/CommentsSection'
 import { useEntry } from '@/hooks/useEntry'
+import { useEntryFilter } from '@/hooks/useEntryFilter'
 import { deleteEntry, updateEntryCover } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
@@ -183,6 +185,7 @@ export default function EntryDetail() {
   const { addToast } = useUIStore()
 
   const { entry, photos, loading, notFound, setEntry } = useEntry(id)
+  const { filterId, setFilter } = useEntryFilter(id ?? '')
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -306,7 +309,7 @@ export default function EntryDetail() {
       />
 
       {/* Hero — full-bleed, no horizontal padding */}
-      <EntryHero entry={entry} />
+      <EntryHero entry={entry} filterId={filterId} />
 
       {/* Scrollable content */}
       <PageWrapper padded scrollable className="space-y-6 pt-4">
@@ -361,13 +364,17 @@ export default function EntryDetail() {
             {photos.length > 0 && (
               <motion.div variants={staggerItem}>
                 <div className="space-y-3">
-                  <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold">
-                    Photos
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold">
+                      Photos
+                    </p>
+                    <FilterPicker filterId={filterId} onChange={setFilter} />
+                  </div>
                   <PhotoGrid
                     photos={photos}
                     onSetAsCover={handleSetAsCover}
                     currentCoverUrl={entry.cover_image_url ?? undefined}
+                    filterId={filterId}
                   />
                 </div>
               </motion.div>

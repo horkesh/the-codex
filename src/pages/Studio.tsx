@@ -10,6 +10,8 @@ import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Button, Spinner, OnboardingTip } from '@/components/ui'
 import { fetchEntries } from '@/data/entries'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
+import { PhotoFilterContext, getFilter } from '@/lib/photoFilters'
+import { getStoredFilter } from '@/hooks/useEntryFilter'
 import { formatDate } from '@/lib/utils'
 import { staggerContainer, staggerItem, fadeUp } from '@/lib/animations'
 import { exportAndShare } from '@/export/exporter'
@@ -580,14 +582,18 @@ export default function Studio() {
                     pointerEvents: 'none',
                   }}
                 >
-                  <TemplateRenderer
-                    templateId={selectedTemplate}
-                    entry={selectedEntry ?? ({} as Entry)}
-                    innerRef={templateRef}
-                    backgroundUrl={bgUrl ?? undefined}
-                    rewardKeys={rewardKeys}
-                    comparisonParam={comparisonParam ?? undefined}
-                  />
+                  <PhotoFilterContext.Provider
+                    value={getFilter(selectedEntry ? getStoredFilter(selectedEntry.id) : undefined).css}
+                  >
+                    <TemplateRenderer
+                      templateId={selectedTemplate}
+                      entry={selectedEntry ?? ({} as Entry)}
+                      innerRef={templateRef}
+                      backgroundUrl={bgUrl ?? undefined}
+                      rewardKeys={rewardKeys}
+                      comparisonParam={comparisonParam ?? undefined}
+                    />
+                  </PhotoFilterContext.Provider>
                 </div>
               </div>
 

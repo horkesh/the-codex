@@ -4,6 +4,8 @@ import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
+import { getFilter } from '@/lib/photoFilters'
+import type { FilterId } from '@/lib/photoFilters'
 
 interface Photo {
   id: string
@@ -16,10 +18,12 @@ interface PhotoGridProps {
   className?: string
   onSetAsCover?: (url: string) => void
   currentCoverUrl?: string
+  filterId?: FilterId
 }
 
-export function PhotoGrid({ photos, className, onSetAsCover, currentCoverUrl }: PhotoGridProps) {
+export function PhotoGrid({ photos, className, onSetAsCover, currentCoverUrl, filterId }: PhotoGridProps) {
   const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null)
+  const filter = getFilter(filterId)
 
   if (photos.length === 0) return null
 
@@ -46,8 +50,11 @@ export function PhotoGrid({ photos, className, onSetAsCover, currentCoverUrl }: 
               src={photo.url}
               alt={photo.caption ?? ''}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              style={{ filter: filter.css }}
               draggable={false}
             />
+            {/* Photo filter vignette */}
+            <div className="absolute inset-0 pointer-events-none" style={{ background: filter.vignette }} />
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-obsidian/0 group-hover:bg-obsidian/20 transition-colors duration-200" />
           </motion.button>

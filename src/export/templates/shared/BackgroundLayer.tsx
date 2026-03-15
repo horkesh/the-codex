@@ -1,3 +1,5 @@
+import { usePhotoFilterCss } from '@/lib/photoFilters'
+
 interface BackgroundLayerProps {
   url?: string
   /** Gradient strength — 'default' suits portrait/square cards, 'strong' for story format */
@@ -5,11 +7,15 @@ interface BackgroundLayerProps {
 }
 
 /**
- * Full-bleed AI-generated background + dark gradient overlay.
+ * Full-bleed background + dark gradient overlay.
+ * Reads photo filter CSS from PhotoFilterContext — wrap the template tree in
+ * <PhotoFilterContext.Provider value={filterCss}> to apply a filter on export.
  * Position parent as `position: relative` and render this as the first child.
  * All sibling content should set `position: relative; z-index: 2` to float above.
  */
 export function BackgroundLayer({ url, gradient = 'default' }: BackgroundLayerProps) {
+  const filterCss = usePhotoFilterCss()
+
   if (!url) return null
 
   const overlayGradient = gradient === 'strong'
@@ -24,6 +30,7 @@ export function BackgroundLayer({ url, gradient = 'default' }: BackgroundLayerPr
         backgroundImage: `url(${url})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        filter: filterCss !== 'none' ? filterCss : undefined,
         zIndex: 0,
       }} />
       <div style={{
