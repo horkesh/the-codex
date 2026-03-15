@@ -10,10 +10,11 @@ import type { EntryWithParticipants } from '@/types/app'
 
 interface LoreSectionProps {
   entry: EntryWithParticipants
+  photoUrls?: string[]
   onLoreGenerated?: (lore: string) => void
 }
 
-export function LoreSection({ entry, onLoreGenerated }: LoreSectionProps) {
+export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionProps) {
   const [generating, setGenerating] = useState(false)
   const [localLore, setLocalLore] = useState<string | null>(entry.lore)
   const [localLoreDate, setLocalLoreDate] = useState<string | null>(entry.lore_generated_at)
@@ -23,7 +24,7 @@ export function LoreSection({ entry, onLoreGenerated }: LoreSectionProps) {
     setGenerating(true)
     setError(null)
     try {
-      const lore = await generateLore(entry)
+      const lore = await generateLore(entry, photoUrls)
       if (lore) {
         await updateEntryLore(entry.id, lore)
         const now = new Date().toISOString()

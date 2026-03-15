@@ -332,6 +332,7 @@ export default function EntryDetail() {
             <motion.div variants={staggerItem} id="lore-section">
               <LoreSection
                 entry={entry}
+                photoUrls={photos.map((p) => p.url)}
                 onLoreGenerated={handleLoreGenerated}
               />
             </motion.div>

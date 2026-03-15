@@ -9,7 +9,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { entry } = await req.json()
+    const { entry, photoUrls } = await req.json()
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
 
@@ -25,6 +25,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const participantNames = entry.participants?.map((p: { display_name: string }) => p.display_name).join(', ') || 'The Gents'
+    const photos: string[] = Array.isArray(photoUrls) ? photoUrls.slice(0, 4) : []
 
     const prompt = `You are the chronicler of The Gents — three sophisticated gentlemen who document their lives together with style and wit. Write exactly 2-3 sentences of narrative lore for their private chronicle. The prose should be eloquent, slightly self-aware, warm, and feel like an entry in a very exclusive private journal.
 
@@ -34,8 +35,17 @@ Date: ${entry.date}
 Location: ${[entry.city, entry.country].filter(Boolean).join(', ') || entry.location || 'undisclosed location'}
 Present: ${participantNames}
 Description: ${entry.description || 'No additional details provided.'}
-
+${photos.length > 0 ? `\nYou have been provided ${photos.length} photo(s) from this occasion. Let the visual atmosphere and captured moments subtly colour the narrative.` : ''}
 Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text. Just the narrative.`
+
+    // Build message content — images first, then the text prompt
+    type ContentBlock =
+      | { type: 'image'; source: { type: 'url'; url: string } }
+      | { type: 'text'; text: string }
+    const content: ContentBlock[] = [
+      ...photos.map((url) => ({ type: 'image' as const, source: { type: 'url' as const, url } })),
+      { type: 'text', text: prompt },
+    ]
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -47,7 +57,7 @@ Write the lore in first person plural ("We", "The Gents"). No hashtags, no emoji
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 400,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content }],
       }),
     })
 

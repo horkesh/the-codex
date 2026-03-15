@@ -1,10 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import type { EntryWithParticipants } from '@/types/app'
 
-export async function generateLore(entry: EntryWithParticipants): Promise<string | null> {
+export async function generateLore(entry: EntryWithParticipants, photoUrls?: string[]): Promise<string | null> {
   try {
     const { data, error } = await supabase.functions.invoke('generate-lore', {
-      body: { entry }
+      body: { entry, photoUrls },
     })
     if (error) throw error
     return data?.lore ?? null
