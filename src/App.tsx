@@ -33,7 +33,8 @@ import PublicInvite from '@/pages/public/PublicInvite'
 import PublicGuestBook from '@/pages/public/PublicGuestBook'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { gent } = useAuthStore()
+  const { gent, initialized } = useAuthStore()
+  if (!initialized) return null
   if (!gent) return <Navigate to="/" replace />
   return <Shell>{children}</Shell>
 }

@@ -11,13 +11,15 @@ import { fetchGentById } from '@/data/gents'
  * Returns { loading } — true until the initial session check resolves.
  */
 export function useAuthListener(): { loading: boolean } {
-  const { setGent } = useAuthStore()
+  const { setGent, setInitialized } = useAuthStore()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Resolve loading immediately — don't hold the auth lock
-      if (event === 'INITIAL_SESSION') setLoading(false)
+      if (event === 'INITIAL_SESSION') {
+        setLoading(false)
+        setInitialized()
+      }
 
       if (session?.user) {
         // Defer the Supabase data fetch outside the auth lock to avoid deadlock
@@ -25,13 +27,14 @@ export function useAuthListener(): { loading: boolean } {
         setTimeout(() => {
           fetchGentById(userId).then(setGent)
         }, 0)
-      } else {
+      } else if (event !== 'INITIAL_SESSION') {
+        // Only clear gent on explicit sign-out, not during initial load
         setGent(null)
       }
     })
 
     return () => subscription.unsubscribe()
-  }, [setGent])
+  }, [setGent, setInitialized])
 
   return { loading }
 }
