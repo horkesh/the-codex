@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { Plus, Users, Radar, Network } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { TopBar, PageWrapper } from '@/components/layout'
+import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Button, Spinner, EmptyStateImage } from '@/components/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import { useCircle } from '@/hooks/useCircle'
@@ -77,7 +77,7 @@ export default function Circle() {
   return (
     <div className="flex flex-col h-full">
       <TopBar
-        title="The Circle"
+        title="Circle"
         subtitle={
           activeTab === 'contacts'
             ? (loading ? undefined : `${people.length} contact${people.length !== 1 ? 's' : ''}`)
@@ -104,6 +104,7 @@ export default function Circle() {
           </div>
         }
       />
+      <SectionNav />
 
       {/* Tab bar */}
       <div className="flex border-b border-white/5 mx-4 mb-0">

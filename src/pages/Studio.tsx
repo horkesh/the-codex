@@ -6,7 +6,7 @@ import type { GentStats, GentAlias } from '@/types/app'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ImageIcon, Share2, Sparkles } from 'lucide-react'
 
-import { TopBar, PageWrapper } from '@/components/layout'
+import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Button, Spinner } from '@/components/ui'
 import { fetchEntries } from '@/data/entries'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
@@ -383,7 +383,8 @@ export default function Studio() {
   if (loading) {
     return (
       <>
-        <TopBar title="The Studio" />
+        <TopBar title="Studio" />
+        <SectionNav />
         <PageWrapper>
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <Spinner size="lg" />
@@ -400,7 +401,8 @@ export default function Studio() {
 
   return (
     <>
-      <TopBar title="The Studio" />
+      <TopBar title="Studio" />
+      <SectionNav />
 
       <PageWrapper padded={false} className="flex flex-col gap-0">
 

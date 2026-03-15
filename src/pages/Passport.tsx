@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen } from 'lucide-react'
-import { TopBar } from '@/components/layout'
-import { PageWrapper } from '@/components/layout'
+import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { usePassport } from '@/hooks/usePassport'
 import { PassportCover } from '@/components/passport/PassportCover'
 import { StampGrid } from '@/components/passport/StampGrid'
@@ -39,7 +38,8 @@ export default function Passport() {
   if (loading) {
     return (
       <>
-        <TopBar title="The Passport" />
+        <TopBar title="Passport" />
+        <SectionNav />
         <div className="flex flex-col items-center justify-center flex-1 h-[calc(100vh-56px)]">
           <Spinner size="lg" />
         </div>
@@ -63,7 +63,7 @@ export default function Passport() {
   return (
     <>
       <TopBar
-        title="The Passport"
+        title="Passport"
         right={
           view === 'stamps' ? (
             <button
@@ -77,6 +77,7 @@ export default function Passport() {
           ) : undefined
         }
       />
+      <SectionNav />
 
       <AnimatePresence mode="wait">
         {view === 'cover' ? (
@@ -132,7 +133,7 @@ export default function Passport() {
 
               {/* Stories tab */}
               {activeTab === 'stories' && (
-                <div className="px-4 pb-24">
+                <div className="px-4 pb-6">
                   {storiesLoading ? (
                     <div className="flex justify-center py-12"><Spinner size="md" /></div>
                   ) : stories.length === 0 ? (
@@ -170,7 +171,7 @@ export default function Passport() {
 
               {/* Achievements tab */}
               {activeTab === 'achievements' && (
-                <div className="px-4 pb-24" />
+                <div className="px-4 pb-6" />
               )}
             </motion.div>
           </PageWrapper>

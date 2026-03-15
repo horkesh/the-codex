@@ -6,6 +6,7 @@ import { Shell } from '@/components/layout'
 
 // Pages
 import Landing from '@/pages/Landing'
+import Home from '@/pages/Home'
 import Chronicle from '@/pages/Chronicle'
 import EntryDetail from '@/pages/EntryDetail'
 import EntryNew from '@/pages/EntryNew'
@@ -49,6 +50,7 @@ function AnimatedRoutes() {
         <Route path="/g/:slug/guestbook" element={<PublicGuestBook />} />
 
         {/* Protected routes — wrapped in Shell via ProtectedRoute */}
+        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/chronicle" element={<ProtectedRoute><Chronicle /></ProtectedRoute>} />
         <Route path="/chronicle/new" element={<ProtectedRoute><EntryNew /></ProtectedRoute>} />
         <Route path="/chronicle/:id" element={<ProtectedRoute><EntryDetail /></ProtectedRoute>} />

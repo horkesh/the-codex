@@ -20,7 +20,7 @@ export default function Landing() {
   const codeRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (gent) navigate('/chronicle', { replace: true })
+    if (gent) navigate('/home', { replace: true })
   }, [gent, navigate])
 
   // Focus code input when verify step appears

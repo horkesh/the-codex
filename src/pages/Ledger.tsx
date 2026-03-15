@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { TopBar, PageWrapper } from '@/components/layout'
+import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Spinner } from '@/components/ui'
 import { useStats } from '@/hooks/useStats'
 import { StatGrid } from '@/components/ledger/StatGrid'
@@ -25,7 +25,8 @@ export default function Ledger() {
 
   return (
     <>
-      <TopBar title="The Ledger" />
+      <TopBar title="Ledger" />
+      <SectionNav />
 
       <PageWrapper scrollable>
         {/* Year selector */}

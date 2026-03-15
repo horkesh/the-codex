@@ -204,7 +204,7 @@ export default function Places() {
   return (
     <>
       <TopBar title="Saved Places" back />
-      <PageWrapper padded scrollable className="pb-24">
+      <PageWrapper padded scrollable >
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner size="md" />

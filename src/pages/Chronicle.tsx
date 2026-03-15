@@ -6,8 +6,7 @@ import { EntryCard } from '@/components/chronicle/EntryCard'
 import { AlmanacWidget } from '@/components/chronicle/AlmanacWidget'
 import { WhereaboutsWidget } from '@/components/whereabouts/WhereaboutsWidget'
 import { ChronicleFilters } from '@/components/chronicle/ChronicleFilters'
-import { TopBar } from '@/components/layout'
-import { PageWrapper } from '@/components/layout'
+import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Spinner, Button, EmptyStateImage } from '@/components/ui'
 import { Avatar } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
@@ -24,8 +23,7 @@ export default function Chronicle() {
   return (
     <>
       <TopBar
-        title="The Chronicle"
-        logo
+        title="Chronicle"
         right={
           gent ? (
             <button
@@ -43,6 +41,7 @@ export default function Chronicle() {
           ) : undefined
         }
       />
+      <SectionNav />
 
       <PageWrapper padded={false} className="flex flex-col">
         <AlmanacWidget />

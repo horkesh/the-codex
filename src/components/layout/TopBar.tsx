@@ -1,76 +1,68 @@
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { ChevronLeft } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface TopBarProps {
-  title: string
+  title?: string
   subtitle?: string
   right?: React.ReactNode
   back?: boolean
-  transparent?: boolean
-  /** Show the brand logo mark beside the title — use on main hub pages */
-  logo?: boolean
 }
 
-export function TopBar({
-  title,
-  subtitle,
-  right,
-  back = false,
-  transparent = false,
-  logo = false,
-}: TopBarProps) {
+export function TopBar({ title, subtitle, right, back = false }: TopBarProps) {
   const navigate = useNavigate()
 
   return (
     <header
-      className={cn(
-        'sticky top-0 z-40 safe-top',
-        !transparent && 'backdrop-blur-xl border-b border-gold/10',
-      )}
-      style={!transparent ? { background: 'rgba(20, 16, 25, 0.92)' } : undefined}
+      className="sticky top-0 z-40 safe-top backdrop-blur-xl border-b border-gold/10"
+      style={{ background: 'rgba(20, 16, 25, 0.92)' }}
     >
-      <div className="flex h-14 items-center px-4 gap-3">
-        {/* Left — back button or spacer */}
-        <div className="w-8 shrink-0 flex items-center justify-start">
-          {back && (
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="flex items-center justify-center text-ivory-muted hover:text-ivory transition-colors duration-150 -ml-1 p-1"
-              aria-label="Go back"
-            >
-              <ChevronLeft size={20} strokeWidth={2} />
-            </button>
-          )}
-        </div>
+      <div className="flex h-14 items-center px-4 gap-2">
+        {/* Back button */}
+        {back && (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex items-center justify-center text-ivory-muted hover:text-ivory transition-colors -ml-1 p-1 shrink-0"
+            aria-label="Go back"
+          >
+            <ChevronLeft size={20} strokeWidth={2} />
+          </button>
+        )}
 
-        {/* Center — logo mark + title + optional subtitle */}
-        <div className="flex-1 flex flex-col items-center justify-center min-w-0">
-          <div className="flex items-center gap-2">
-            {logo && (
-              <img
-                src="/logo.png"
-                alt=""
-                aria-hidden="true"
-                className="w-6 h-6 rounded-full opacity-90"
-              />
-            )}
-            <h1 className="font-display text-[17px] text-ivory leading-tight tracking-wide truncate">
+        {/* Brand — always on left, always links to /home */}
+        <Link
+          to="/home"
+          className="flex items-center gap-1.5 shrink-0 select-none"
+          aria-label="Home"
+        >
+          <img src="/logo.png" alt="" aria-hidden="true" className="w-5 h-5 rounded-full opacity-90" />
+          <span className="font-display text-[15px] text-gold tracking-wide leading-none">
+            The Codex
+          </span>
+        </Link>
+
+        {/* Section / page title */}
+        {title && (
+          <>
+            <span className="text-ivory-dim/30 text-sm shrink-0 leading-none">·</span>
+            <span className="font-body text-[14px] text-ivory-muted truncate leading-none">
               {title}
-            </h1>
-          </div>
-          {subtitle && (
-            <p className="text-[10px] text-ivory-dim leading-tight mt-px tracking-widest uppercase truncate">
-              {subtitle}
-            </p>
-          )}
-        </div>
+            </span>
+          </>
+        )}
 
-        {/* Right — action slot or spacer */}
-        <div className="w-8 shrink-0 flex items-center justify-end">
-          {right ?? null}
-        </div>
+        {/* Subtitle as second line — kept for special cases */}
+        {subtitle && (
+          <span className="text-[10px] text-ivory-dim tracking-widest uppercase leading-none ml-1 shrink-0">
+            {subtitle}
+          </span>
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1 min-w-0" />
+
+        {/* Right action slot */}
+        {right ?? null}
       </div>
     </header>
   )
