@@ -100,6 +100,10 @@ supabase functions new [function-name]
 Cause: `ProtectedRoute` was redirecting when `gent` was null before Zustand persist hydrated from localStorage.
 Current fix (`src/App.tsx`): render immediately if `gent` is already in store; return `null` only if `gent === null && !initialized`; redirect only once `initialized === true`. Do not simplify this back to `if (!gent) redirect` — that breaks first-load.
 
+**Home section cards invisible on first load (appear after navigating away and back)**
+Cause: Section cards used `staggerItem` variant with `initial: { opacity: 0 }`. The stagger container mounts after Zustand persist hydrates, which is after `AnimatePresence`'s first render — so `initial={false}` on `AnimatePresence` no longer suppresses the initial state. Cards start invisible and the animate never fires reliably.
+Fix: Remove `staggerContainer`/`staggerItem` variants from section cards in `src/pages/Home.tsx`. Cards render immediately; `PageWrapper` `fadeUp` handles the page entrance. Do not add stagger variants back to these cards.
+
 **"Edge Function returned a non-2xx status code"**
 This is infrastructure-level (Supabase killed the function), not a code error — our catch block never ran.
 Causes: function timeout > 25s, or using `gemini-2.5-flash` (preview, unstable).
