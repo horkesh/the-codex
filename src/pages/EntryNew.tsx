@@ -147,13 +147,14 @@ export default function EntryNew() {
       // 3. Upload pending photos; promote first to cover image
       let uploadedUrls: string[] = []
       if (pendingFiles.length > 0) {
-        uploadedUrls = await uploadAll(entry.id)
+        const { urls, firstError } = await uploadAll(entry.id)
+        uploadedUrls = urls
         clearFiles()
         if (uploadedUrls[0]) {
           await updateEntryCover(entry.id, uploadedUrls[0])
         } else {
-          // All uploads failed — warn the user so they can retry after
-          addToast('Photos could not be uploaded. Entry saved without cover photo.', 'error')
+          // All uploads failed — show the actual error so we can diagnose
+          addToast(`Upload failed: ${firstError ?? 'unknown error'}`, 'error')
         }
       }
 

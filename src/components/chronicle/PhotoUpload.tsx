@@ -287,17 +287,22 @@ export function usePendingPhotos() {
   }, [])
 
   const uploadAll = useCallback(
-    async (entryId: string): Promise<string[]> => {
+    async (entryId: string): Promise<{ urls: string[]; firstError: string | null }> => {
       const urls: string[] = []
+      let firstError: string | null = null
       for (let i = 0; i < pendingFiles.length; i++) {
         try {
           const url = await uploadEntryPhoto(entryId, pendingFiles[i], i)
           urls.push(url)
         } catch (err) {
-          console.error(`Failed to upload photo ${i}:`, err, (err as {message?: string})?.message)
+          const msg = (err as { message?: string; error?: string })?.message
+            ?? (err as { message?: string; error?: string })?.error
+            ?? String(err)
+          console.error(`Failed to upload photo ${i}:`, msg)
+          if (!firstError) firstError = msg
         }
       }
-      return urls
+      return { urls, firstError }
     },
     [pendingFiles],
   )
