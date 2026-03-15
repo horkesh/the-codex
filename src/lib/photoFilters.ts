@@ -40,14 +40,18 @@ export const PHOTO_FILTERS: PhotoFilter[] = [
 
 export const DEFAULT_FILTER_ID: FilterId = 'chronicle'
 
+const FILTER_MAP: Record<FilterId, PhotoFilter> = Object.fromEntries(
+  PHOTO_FILTERS.map((f) => [f.id, f]),
+) as Record<FilterId, PhotoFilter>
+
 export function getFilter(id: FilterId | null | undefined): PhotoFilter {
-  return PHOTO_FILTERS.find((f) => f.id === id) ?? PHOTO_FILTERS.find((f) => f.id === DEFAULT_FILTER_ID)!
+  return FILTER_MAP[id!] ?? FILTER_MAP[DEFAULT_FILTER_ID]
 }
 
 /**
  * React context for propagating a filter CSS string into Studio export templates
  * without threading a prop through every template file.
- * Value is the resolved CSS filter string, e.g. 'contrast(1.08) saturate(0.78)...'
+ * Empty string = no filter (default when no Provider wraps the tree).
  */
-export const PhotoFilterContext = createContext<string>('none')
+export const PhotoFilterContext = createContext<string>('')
 export const usePhotoFilterCss = () => useContext(PhotoFilterContext)

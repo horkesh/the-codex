@@ -5,6 +5,7 @@ import type { FilterId } from '@/lib/photoFilters'
 const key = (entryId: string) => `photo-filter:${entryId}`
 
 export function getStoredFilter(entryId: string): FilterId {
+  if (!entryId) return DEFAULT_FILTER_ID
   return (localStorage.getItem(key(entryId)) as FilterId) ?? DEFAULT_FILTER_ID
 }
 

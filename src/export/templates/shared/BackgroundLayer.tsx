@@ -30,7 +30,7 @@ export function BackgroundLayer({ url, gradient = 'default' }: BackgroundLayerPr
         backgroundImage: `url(${url})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        filter: filterCss !== 'none' ? filterCss : undefined,
+        filter: filterCss || undefined,
         zIndex: 0,
       }} />
       <div style={{
