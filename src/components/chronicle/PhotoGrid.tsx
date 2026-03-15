@@ -14,9 +14,11 @@ interface Photo {
 interface PhotoGridProps {
   photos: Photo[]
   className?: string
+  onSetAsCover?: (url: string) => void
+  currentCoverUrl?: string
 }
 
-export function PhotoGrid({ photos, className }: PhotoGridProps) {
+export function PhotoGrid({ photos, className, onSetAsCover, currentCoverUrl }: PhotoGridProps) {
   const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null)
 
   if (photos.length === 0) return null
@@ -87,6 +89,17 @@ export function PhotoGrid({ photos, className }: PhotoGridProps) {
               <p className="text-sm text-ivory-muted text-center font-body px-2">
                 {lightboxPhoto.caption}
               </p>
+            )}
+
+            {/* Set as cover */}
+            {onSetAsCover && lightboxPhoto.url !== currentCoverUrl && (
+              <button
+                type="button"
+                onClick={() => { onSetAsCover(lightboxPhoto.url); setLightboxPhoto(null) }}
+                className="text-xs text-gold font-body border border-gold/30 rounded-full px-4 py-1.5 hover:border-gold/60 transition-colors self-center"
+              >
+                Set as cover image
+              </button>
             )}
           </div>
         )}

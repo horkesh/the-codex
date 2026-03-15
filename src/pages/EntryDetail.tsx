@@ -14,7 +14,7 @@ import { PS5Scoreboard } from '@/components/chronicle/PS5Scoreboard'
 import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
 import { CommentsSection } from '@/components/chronicle/CommentsSection'
 import { useEntry } from '@/hooks/useEntry'
-import { deleteEntry } from '@/data/entries'
+import { deleteEntry, updateEntryCover } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryWithParticipants } from '@/types/app'
@@ -213,6 +213,17 @@ export default function EntryDetail() {
     }
   }
 
+  async function handleSetAsCover(url: string) {
+    if (!entry) return
+    try {
+      await updateEntryCover(entry.id, url)
+      setEntry(prev => prev ? { ...prev, cover_image_url: url } : prev)
+      addToast('Cover updated.', 'success')
+    } catch {
+      addToast('Could not update cover.', 'error')
+    }
+  }
+
   async function handleGenerateScene() {
     if (!entry || generatingScene) return
     setGeneratingScene(true)
@@ -353,7 +364,11 @@ export default function EntryDetail() {
                   <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold">
                     Photos
                   </p>
-                  <PhotoGrid photos={photos} />
+                  <PhotoGrid
+                    photos={photos}
+                    onSetAsCover={handleSetAsCover}
+                    currentCoverUrl={entry.cover_image_url ?? undefined}
+                  />
                 </div>
               </motion.div>
             )}

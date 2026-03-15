@@ -150,6 +150,9 @@ export default function EntryNew() {
         clearFiles()
         if (uploadedUrls[0]) {
           await updateEntryCover(entry.id, uploadedUrls[0])
+        } else {
+          // All uploads failed — warn the user so they can retry after
+          addToast('Photos could not be uploaded. Entry saved without cover photo.', 'error')
         }
       }
 

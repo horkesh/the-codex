@@ -226,7 +226,8 @@ export async function uploadEntryPhoto(
 
   const publicUrl = urlData.publicUrl
 
-  const { error: insertError } = await supabase
+  // Insert metadata row — non-fatal; storage upload already succeeded so we always return the URL
+  await supabase
     .from('entry_photos')
     .insert({
       entry_id: entryId,
@@ -235,8 +236,6 @@ export async function uploadEntryPhoto(
       caption: null,
       taken_by: null,
     })
-
-  if (insertError) throw insertError
 
   return publicUrl
 }
