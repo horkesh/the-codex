@@ -4,6 +4,51 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-15 (012)
+
+**Goal**: Bug fixes, UI polish, POI scanner repair, portrait pipeline, mind map + Tag People, PersonDetail Intel tab.
+
+**Done**:
+
+### Bug fixes
+- **Home section cards invisible on first load** — removed `staggerContainer`/`staggerItem` variants from section cards; they mounted after Zustand persist hydration so `AnimatePresence initial={false}` no longer suppressed `opacity:0`
+- **POI scanner "Edge Function returned non-2xx"** — layered root causes fixed: `gemini-2.0-flash` deprecated → switched to `gemini-2.5-flash`; invalid `thinkingConfig` field removed (caused 400); all 15 edge function catch blocks changed from `status:500` → `status:200`; `verify_jwt = false` added for all 13 AI functions in `config.toml`; `maxOutputTokens` 1024 → 4096 (was truncating JSON)
+- **False "Session expired" error** — removed overly broad `body.includes('401')` check in `personVerdict.ts`; now surfaces actual error body
+- **`tsc -b` stricter than `tsc --noEmit`** — `review_payload` fields narrowed with `typeof === 'string'` and `Boolean()` wrapping before JSX render
+
+### Portrait pipeline
+- POI portrait prompt aligned to Tonight noir aesthetic: minimalist geometric forms, cinematic noir, moody desaturated palette, preserves actual appearance
+- Portrait saves as profile pic: all avatar displays now use `portrait_url ?? photo_url` (PersonCard, PersonNode, NodeDetailSheet, PeoplePresent ×2, Circle POI list)
+- PersonDetail hero: portrait is main large image, source scan photo shown as small thumbnail alongside
+
+### Mind map & Tag People (from plan `cuddly-sprouting-llama`)
+- Migration `20260315000003_mind_map_schema.sql`: `tier` column on `people` + `person_appearances` table with RLS
+- `src/data/personAppearances.ts`: CRUD for appearances
+- `src/lib/mindMapLayout.ts`: pure `computeGraphData()` → concentric rings by tier, gent-gent + gent-person + person-person edges
+- `src/hooks/useMindMap.ts`, `useTagPeople.ts`
+- `src/pages/MindMap.tsx`: React Flow canvas, filter chips, focus mode
+- `src/components/mindmap/GentNode.tsx`, `PersonNode.tsx`, `NodeDetailSheet.tsx`
+- `src/components/chronicle/PeoplePresent.tsx`: tag people section in EntryDetail
+- Routes: `/circle/map`; Network icon in Circle TopBar; `@xyflow/react` added
+
+### PersonDetail
+- Intel tab (scan data): score + verdict label pill, vibe, style read, trait chips, why notable, best opener card, green flags/watchouts grid, appearance, confidence %
+- Tier badge: tap to move between Inner Circle / Outer Circle / Acquaintance (updates mind map ring)
+- Connected-to badge: tap to reassign `added_by` gent (updates mind map edge colour)
+- `fetchScanByPerson()` added to `personScans.ts`
+
+### TopBar profile avatar
+- Avatar button in TopBar visible on all pages, navigates to `/profile`
+- Removed per-page avatar buttons from Chronicle
+
+### Home & Navigation
+- Bucket List added as section card: `navigation.ts` entry, `/images/sections/bucket-list.png`
+- Home switched from featured+2×2 to uniform 2×3 grid (6 equal cards)
+
+**Status**: Deployed. Zero TS errors (`tsc -b` clean).
+
+---
+
 ## Session — 2026-03-15 (011)
 
 **Goal**: Implement 6.9 Threshold System + 6.10 Gent Comparison (final two P3 items from master roadmap).
