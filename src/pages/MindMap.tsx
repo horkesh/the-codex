@@ -54,18 +54,20 @@ export default function MindMap() {
     setSelectedPerson(prev => prev && prev.id === personId ? { ...prev, tier } : prev)
   }, [updatePersonTier])
 
+  // TopBar h-14 = 56px, SectionNav h-10 = 40px → 96px total
+  const CANVAS_HEIGHT = 'calc(100dvh - 96px)'
+
   return (
-    <div className="flex flex-col flex-1" style={{ minHeight: 0 }}>
+    <>
       <TopBar title="Mind Map" back />
       <SectionNav />
 
       {loading ? (
-        <div className="flex items-center justify-center flex-1 bg-obsidian">
+        <div className="flex items-center justify-center bg-obsidian" style={{ height: CANVAS_HEIGHT }}>
           <Spinner size="lg" />
         </div>
       ) : (
-        /* Canvas wrapper — fills all remaining space after TopBar + SectionNav */
-        <div className="relative bg-obsidian" style={{ flex: '1 1 0%', minHeight: 0 }}>
+        <div className="relative bg-obsidian" style={{ height: CANVAS_HEIGHT }}>
           {/* Filter chips — float over canvas */}
           <div className="absolute top-3 left-3 right-3 z-10 flex flex-col gap-2">
             <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
@@ -125,6 +127,6 @@ export default function MindMap() {
           />
         </div>
       )}
-    </div>
+    </>
   )
 }
