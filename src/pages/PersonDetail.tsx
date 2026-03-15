@@ -119,15 +119,17 @@ export default function PersonDetail() {
         <div className="flex flex-col items-center gap-2 pt-4 pb-2">
           {person.portrait_url ? (
             <div className="flex items-end gap-3">
-              <Avatar src={person.photo_url} name={person.name} size="xl" />
-              <div className="flex flex-col items-center gap-1 mb-0.5">
-                <img
-                  src={person.portrait_url}
-                  alt={`${person.name} portrait`}
-                  className="w-14 h-14 rounded-xl object-cover border border-gold/30"
-                />
-                <span className="text-[9px] text-ivory-dim font-body">AI Portrait</span>
-              </div>
+              <img
+                src={person.portrait_url}
+                alt={`${person.name} portrait`}
+                className="w-20 h-20 rounded-2xl object-cover border border-gold/30"
+              />
+              {person.photo_url && (
+                <div className="flex flex-col items-center gap-1 mb-0.5">
+                  <Avatar src={person.photo_url} name={person.name} size="sm" />
+                  <span className="text-[9px] text-ivory-dim font-body">Photo</span>
+                </div>
+              )}
             </div>
           ) : (
             <Avatar src={person.photo_url} name={person.name} size="xl" />

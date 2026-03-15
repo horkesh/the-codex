@@ -233,9 +233,9 @@ export default function Circle() {
                     >
                       <div className="flex items-start gap-3">
                         {/* Avatar */}
-                        {person.photo_url ? (
+                        {(person.portrait_url ?? person.photo_url) ? (
                           <img
-                            src={person.photo_url}
+                            src={person.portrait_url ?? person.photo_url!}
                             alt={person.name}
                             className="w-10 h-10 rounded-full object-cover shrink-0 mt-0.5"
                           />

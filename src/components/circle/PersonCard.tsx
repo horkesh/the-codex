@@ -23,7 +23,7 @@ export function PersonCard({ person, onClick }: PersonCardProps) {
       <div className="flex items-start gap-3">
         {/* Avatar */}
         <Avatar
-          src={person.photo_url}
+          src={person.portrait_url ?? person.photo_url}
           name={person.name}
           size="md"
           className="shrink-0 mt-0.5"

@@ -28,7 +28,7 @@ export function NodeDetailSheet({ person, isOpen, onClose, onTierChange }: NodeD
         {/* Person info */}
         <div className="flex items-center gap-3">
           <Avatar
-            src={person.photo_url}
+            src={person.portrait_url ?? person.photo_url}
             name={person.name}
             size="lg"
           />

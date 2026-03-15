@@ -51,7 +51,7 @@ function PersonNodeInner({ data }: NodeProps) {
     >
       <div className={cn(config.borderClass, 'rounded-full')}>
         <Avatar
-          src={person.photo_url}
+          src={person.portrait_url ?? person.photo_url}
           name={person.name}
           size={config.avatarSize}
         />

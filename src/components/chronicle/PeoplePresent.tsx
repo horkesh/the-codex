@@ -53,7 +53,7 @@ export function PeoplePresent({ entryId }: PeoplePresentProps) {
             className="flex items-center gap-1.5 bg-slate-light/30 border border-white/5 rounded-full pl-1 pr-2.5 py-1"
           >
             <Avatar
-              src={person.photo_url}
+              src={person.portrait_url ?? person.photo_url}
               name={person.name}
               size="xs"
             />
@@ -121,7 +121,7 @@ export function PeoplePresent({ entryId }: PeoplePresentProps) {
                     }`}
                   >
                     <Avatar
-                      src={person.photo_url}
+                      src={person.portrait_url ?? person.photo_url}
                       name={person.name}
                       size="sm"
                     />
