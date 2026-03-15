@@ -8,26 +8,27 @@ _Updated at the end of every session. Read this first when resuming._
 
 **Phase**: **FULLY LIVE.** Continued post-roadmap polish and new features.
 
-**What was just done** (Session 013):
+**What was just done** (Sessions 013–014):
 
-- Entry photo → cover image pipeline fixed: `entry-photos` storage bucket now has RLS policies; `updateEntryCover` is awaited so errors surface
-- Scouting Instagram extraction improved: extracts `event_name` (specific event) separately from `venue_name` (venue); date returned as `YYYY-MM-DD` (DB-compatible); OG image auto-saved as event thumbnail
-- `event_name` column added to `prospects` table
+- Entry photo → cover image pipeline fixed: `entry-photos` storage bucket now has RLS policies; `updateEntryCover` awaited so errors surface
+- Scouting Instagram extraction: `event_name` extracted separately from `venue_name`; date as `YYYY-MM-DD`; OG image auto-saved as thumbnail
+- **Gent profiles** (`/gents/:alias`): portrait hero, stats chips, bio, recent Chronicle entries; participant avatars in EntryDetail now link here
+- **Prospect auto-expiry**: batch-marks overdue prospects as `passed` on every load; sorted upcoming-first
+- **Share with Gents**: `visibility` column on prospects; "Share with Gents" in three-dot menu; shared prospects show "Suggested" badge for other gents
 
 **What was done before** (Sessions 011–012):
 
 - POI scanner fully repaired (gemini-2.5-flash, status:200, verify_jwt=false, 4096 tokens)
-- Portrait displayed as profile pic everywhere (portrait_url ?? photo_url fallback in all avatar components)
-- Mind map implemented: concentric rings, gent-person edges by colour, focus mode, Tag People in EntryDetail
-- PersonDetail: Intel tab with full scan verdict, tier selector, gent connection selector
-- Home: uniform 2×3 section grid; Agenda hub absorbs Bucket List (Wishlist) + Prospects (Scouting); Dossier accessible via globe icon in Chronicle TopBar; Our Places card in Ledger
+- Portrait displayed as profile pic everywhere (portrait_url ?? photo_url fallback)
+- Mind map: concentric rings, gent-person edges by colour, focus mode, Tag People in EntryDetail
+- PersonDetail: Intel tab, tier selector, gent connection selector
+- Home: uniform 2×3 grid; Agenda hub (Wishlist + Scouting); Dossier in Chronicle; Our Places in Ledger
 
 **What's left / next ideas**:
-- Wishlist (Bucket List): add Instagram URL input to auto-populate items from event pages (reuses `analyze-instagram` edge function in `event` mode)
+- Wishlist (Bucket List): Instagram URL input to auto-populate from event pages
 - Passport Stamps: `image_url` field exists but generation not hooked up
-- PersonCard: portrait-bleed card style (visual upgrade, no new data needed)
 - Toast entry type: to be removed (moving to separate app)
-- Ledger Sommelier section: currently only populated by Toast entries — revisit once Toast is removed
+- Ledger Sommelier: only populated by Toast entries — revisit once Toast removed
 
 ---
 
@@ -125,4 +126,4 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-_← Updated 2026-03-18 (Session 013)_
+_← Updated 2026-03-18 (Session 014)_

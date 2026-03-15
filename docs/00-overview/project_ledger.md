@@ -4,6 +4,33 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-18 (014)
+
+**Goal**: Gent profiles; prospect auto-expiry; share prospect with gents.
+
+**Done**:
+
+### Gent profiles (`/gents/:alias`)
+- New `src/pages/GentProfile.tsx` — portrait hero (full-bleed `h-56` with gradient overlay + avatar ring at bottom), or large avatar fallback if no portrait; full_alias headline, display_name, status pill; stats chips row (Missions, Nights Out, Steaks, Countries, People); bio section; last 5 Chronicle entries with Badge + date
+- `src/data/gents.ts`: `GENT_COLUMNS` expanded to include `portrait_url, status, status_expires_at`; new `fetchGentByAlias(alias)` function
+- `src/App.tsx`: route `/gents/:alias` → `GentProfile`
+- `src/pages/EntryDetail.tsx`: participant names/avatars in "Who Was There" section now wrapped in `<Link to="/gents/:alias">` — tapping any gent navigates to their profile
+
+### Prospect auto-expiry
+- `src/data/prospects.ts`: `fetchProspects` runs a batch `.update({ status: 'passed' })` before fetching for any prospect where `status = 'prospect'` AND `event_date < today` AND `event_date IS NOT NULL`
+- List sorted upcoming-first: `.order('event_date', { ascending: true, nullsFirst: false })`
+
+### Share with Gents
+- Migration `20260318000003_prospects_visibility.sql`: adds `visibility text DEFAULT 'private' CHECK (visibility IN ('private', 'shared'))` to `prospects`
+- `src/types/app.ts`: `visibility: 'private' | 'shared'` added to `Prospect` interface
+- `src/data/prospects.ts`: `fetchProspects(currentGentId?)` filters `.or('created_by.eq.{id},visibility.eq.shared')`; new `shareProspect(id)` sets `visibility = 'shared'`
+- `src/pages/Prospects.tsx`: "Share with Gents" in three-dot menu (only own, active, not-yet-shared); shared prospects from other gents show gold "Suggested" badge; new `visibility: 'private'` default on create
+- `src/types/database.ts`: `event_name` and `visibility` added to prospects Row/Insert/Update (manual sync after migrations)
+
+**Status**: Deployed. Zero TS errors.
+
+---
+
 ## Session — 2026-03-18 (013)
 
 **Goal**: Fix photo → cover image pipeline; fix entry-photos storage permissions; improve Scouting (Prospects) Instagram extraction — event name, correct date format, auto-save event image.
