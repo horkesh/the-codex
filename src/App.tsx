@@ -28,6 +28,7 @@ import DossierMap from '@/pages/DossierMap'
 import BucketList from '@/pages/BucketList'
 import MindMap from '@/pages/MindMap'
 import Agenda from '@/pages/Agenda'
+import GentProfile from '@/pages/GentProfile'
 
 // Public pages (no auth)
 import PublicInvite from '@/pages/public/PublicInvite'
@@ -75,6 +76,7 @@ function AnimatedRoutes() {
         <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
         <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/gents/:alias" element={<ProtectedRoute><GentProfile /></ProtectedRoute>} />
         <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
         <Route path="/places" element={<ProtectedRoute><Places /></ProtectedRoute>} />
       </Routes>

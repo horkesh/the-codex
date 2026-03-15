@@ -181,6 +181,7 @@ export interface Prospect {
   notes: string | null
   status: 'prospect' | 'passed' | 'converted'
   converted_entry_id: string | null
+  visibility: 'private' | 'shared'
   created_at: string
 }
 

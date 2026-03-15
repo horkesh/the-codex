@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router'
+import { useParams, useNavigate, Link } from 'react-router'
 import { MoreVertical, Sparkles, Share2, Trash2, ImagePlay, Edit2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
@@ -148,24 +148,25 @@ function ParticipantsSection({ entry }: { entry: EntryWithParticipants }) {
       </p>
       <div className="flex flex-wrap gap-3">
         {entry.participants.map((gent) => (
-          <motion.div
-            key={gent.id}
-            variants={staggerItem}
-            className="flex items-center gap-2"
-          >
-            <Avatar
-              src={gent.avatar_url}
-              name={gent.display_name}
-              size="sm"
-            />
-            <div className="flex flex-col">
-              <span className="text-sm text-ivory font-body font-medium">
-                {gent.display_name}
-              </span>
-              <span className="text-xs text-ivory-dim font-body capitalize">
-                {gent.full_alias}
-              </span>
-            </div>
+          <motion.div key={gent.id} variants={staggerItem}>
+            <Link
+              to={`/gents/${gent.alias}`}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <Avatar
+                src={gent.avatar_url}
+                name={gent.display_name}
+                size="sm"
+              />
+              <div className="flex flex-col">
+                <span className="text-sm text-ivory font-body font-medium">
+                  {gent.display_name}
+                </span>
+                <span className="text-xs text-ivory-dim font-body capitalize">
+                  {gent.full_alias}
+                </span>
+              </div>
+            </Link>
           </motion.div>
         ))}
       </div>

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Input } from '@/components/ui'
 import { staggerContainer, staggerItem, fadeUp } from '@/lib/animations'
-import { fetchProspects, createProspect, updateProspect, deleteProspect } from '@/data/prospects'
+import { fetchProspects, createProspect, updateProspect, deleteProspect, shareProspect } from '@/data/prospects'
 import { analyzeInstagramUrl, analyzeInstagramScreenshot } from '@/ai/instagram'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -17,9 +17,11 @@ interface ProspectCardProps {
   prospect: Prospect
   onMarkPassed: () => void
   onDelete: () => void
+  onShare: () => void
+  currentGentId: string
 }
 
-function ProspectCard({ prospect, onMarkPassed, onDelete }: ProspectCardProps) {
+function ProspectCard({ prospect, onMarkPassed, onDelete, onShare, currentGentId }: ProspectCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -42,6 +44,13 @@ function ProspectCard({ prospect, onMarkPassed, onDelete }: ProspectCardProps) {
   }
 
   const { label: statusLabel, className: statusClass } = statusConfig[prospect.status]
+
+  const isOwn = prospect.created_by === currentGentId
+  const isSuggestedByOther = prospect.visibility === 'shared' && !isOwn
+  const canShare =
+    prospect.status !== 'passed' &&
+    isOwn &&
+    prospect.visibility !== 'shared'
 
   return (
     <div className="bg-slate-dark border border-white/6 rounded-xl overflow-hidden">
@@ -98,6 +107,15 @@ function ProspectCard({ prospect, onMarkPassed, onDelete }: ProspectCardProps) {
                       Mark as Passed
                     </button>
                   )}
+                  {canShare && (
+                    <button
+                      type="button"
+                      onClick={() => { setMenuOpen(false); onShare() }}
+                      className="w-full text-left px-3 py-2.5 text-xs text-ivory-muted hover:text-ivory hover:bg-slate-light transition-colors font-body"
+                    >
+                      Share with Gents
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => { setMenuOpen(false); onDelete() }}
@@ -126,7 +144,7 @@ function ProspectCard({ prospect, onMarkPassed, onDelete }: ProspectCardProps) {
           <p className="text-xs text-ivory-dim italic mt-2 font-body line-clamp-1">{prospect.vibe}</p>
         )}
 
-        {/* Footer: dress code + status pill */}
+        {/* Footer: dress code + badges + status pill */}
         <div className="flex items-center justify-between mt-3">
           {prospect.dress_code ? (
             <span className="text-[10px] uppercase tracking-widest text-ivory-dim font-body">
@@ -134,9 +152,16 @@ function ProspectCard({ prospect, onMarkPassed, onDelete }: ProspectCardProps) {
             </span>
           ) : <span />}
 
-          <span className={cn('text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full font-body', statusClass)}>
-            {statusLabel}
-          </span>
+          <div className="flex items-center gap-2">
+            {isSuggestedByOther && (
+              <span className="text-[10px] uppercase tracking-widest text-gold-muted font-body">
+                Suggested
+              </span>
+            )}
+            <span className={cn('text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full font-body', statusClass)}>
+              {statusLabel}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -285,6 +310,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
         notes: fields.notes || null,
         status: 'prospect',
         converted_entry_id: null,
+        visibility: 'private' as const,
       })
       addToast('Prospect added to radar', 'success')
       onSaved()
@@ -511,6 +537,7 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Prospects() {
+  const { gent } = useAuthStore()
   const { addToast } = useUIStore()
 
   const [prospects, setProspects] = useState<Prospect[]>([])
@@ -521,7 +548,7 @@ export default function Prospects() {
 
   const load = async () => {
     try {
-      const data = await fetchProspects()
+      const data = await fetchProspects(gent?.id)
       setProspects(data)
     } catch {
       addToast('Failed to load prospects', 'error')
@@ -540,6 +567,18 @@ export default function Prospects() {
       )
     } catch {
       addToast('Failed to update prospect', 'error')
+    }
+  }
+
+  const handleShare = async (prospect: Prospect) => {
+    try {
+      await shareProspect(prospect.id)
+      setProspects((prev) =>
+        prev.map((p) => p.id === prospect.id ? { ...p, visibility: 'shared' as const } : p)
+      )
+      addToast('Shared with The Circle', 'success')
+    } catch {
+      addToast('Failed to share prospect', 'error')
     }
   }
 
@@ -597,6 +636,8 @@ export default function Prospects() {
                   prospect={prospect}
                   onMarkPassed={() => handleMarkPassed(prospect)}
                   onDelete={() => setDeleteTarget(prospect)}
+                  onShare={() => handleShare(prospect)}
+                  currentGentId={gent?.id ?? ''}
                 />
               </motion.div>
             ))}

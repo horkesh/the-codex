@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Gent } from '@/types/app'
 
-const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio'
+const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio, portrait_url, status, status_expires_at'
 
 export async function fetchGentById(userId: string): Promise<Gent | null> {
   const { data, error } = await supabase
@@ -39,4 +39,14 @@ export async function updateGentStatus(id: string, status: string | null, expire
     .update({ status, status_expires_at: expiresAt })
     .eq('id', id)
   if (error) throw error
+}
+
+export async function fetchGentByAlias(alias: string): Promise<Gent | null> {
+  const { data, error } = await supabase
+    .from('gents')
+    .select(GENT_COLUMNS)
+    .eq('alias', alias)
+    .single()
+  if (error || !data) return null
+  return data as Gent
 }

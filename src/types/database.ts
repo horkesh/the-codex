@@ -828,6 +828,7 @@ export type Database = {
           dress_code: string | null
           estimated_price: string | null
           event_date: string | null
+          event_name: string | null
           id: string
           location: string | null
           notes: string | null
@@ -835,6 +836,7 @@ export type Database = {
           source_url: string | null
           status: string | null
           venue_name: string | null
+          visibility: string | null
           vibe: string | null
         }
         Insert: {
@@ -846,6 +848,7 @@ export type Database = {
           dress_code?: string | null
           estimated_price?: string | null
           event_date?: string | null
+          event_name?: string | null
           id?: string
           location?: string | null
           notes?: string | null
@@ -853,6 +856,7 @@ export type Database = {
           source_url?: string | null
           status?: string | null
           venue_name?: string | null
+          visibility?: string | null
           vibe?: string | null
         }
         Update: {
@@ -864,6 +868,7 @@ export type Database = {
           dress_code?: string | null
           estimated_price?: string | null
           event_date?: string | null
+          event_name?: string | null
           id?: string
           location?: string | null
           notes?: string | null
@@ -871,6 +876,7 @@ export type Database = {
           source_url?: string | null
           status?: string | null
           venue_name?: string | null
+          visibility?: string | null
           vibe?: string | null
         }
         Relationships: [
