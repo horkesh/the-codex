@@ -128,8 +128,13 @@ ${extractedText}`,
     const extracted = JSON.parse(sanitized)
 
     // Attach OG image directly — already extracted from page meta, no need to ask Claude
+    // Decode HTML entities in the URL (&amp; → &) since the regex captures raw HTML attribute values
     if (mode === 'event' && ogTags['image']) {
       extracted.image_url = ogTags['image']
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
     }
 
     return new Response(JSON.stringify(extracted), {
