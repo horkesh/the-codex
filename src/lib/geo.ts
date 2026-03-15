@@ -22,6 +22,24 @@ export interface GeoAddress {
 }
 
 /**
+ * Returns the device's current GPS position, or null if unavailable/denied.
+ * Uses a cached fix up to 60s old so it resolves instantly on repeat calls.
+ */
+export function getDevicePosition(): Promise<{ lat: number; lng: number } | null> {
+  return new Promise((resolve) => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      resolve(null)
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { timeout: 6000, maximumAge: 60_000 },
+    )
+  })
+}
+
+/**
  * Reverse geocodes a lat/lng pair via Nominatim. Returns null on failure.
  */
 export async function reverseGeocode(lat: number, lng: number): Promise<GeoAddress | null> {

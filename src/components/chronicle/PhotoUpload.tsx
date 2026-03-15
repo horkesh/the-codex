@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { Spinner } from '@/components/ui'
 import { uploadEntryPhoto } from '@/data/entries'
 import { fadeIn } from '@/lib/animations'
-import { extractLocationFromPhoto, haversineMetres } from '@/lib/geo'
+import { extractLocationFromPhoto, haversineMetres, getDevicePosition } from '@/lib/geo'
 import type { LocationFill } from '@/lib/geo'
 import { fetchLocations } from '@/data/locations'
 
@@ -71,11 +71,20 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, on
           let finalLoc = loc
           const saved = await fetchLocations()
 
+          // If photo has no GPS, ask the device for its current position as a fallback.
+          // The user is likely still at the location when they upload the photo.
+          let lat = loc.lat
+          let lng = loc.lng
+          if (lat == null || lng == null) {
+            const device = await getDevicePosition()
+            if (device) { lat = device.lat; lng = device.lng }
+          }
+
           // 1. GPS proximity: within 500m (tolerant of phone GPS drift)
-          let match = (loc.lat != null && loc.lng != null)
+          let match = (lat != null && lng != null)
             ? saved.find(
                 (p) => p.lat != null && p.lng != null &&
-                  haversineMetres(loc.lat!, loc.lng!, p.lat!, p.lng!) <= 500,
+                  haversineMetres(lat!, lng!, p.lat!, p.lng!) <= 500,
               )
             : undefined
 
