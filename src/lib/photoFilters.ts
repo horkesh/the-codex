@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-export type FilterId = 'raw' | 'chronicle' | 'pitch' | 'noir'
+export type FilterId = 'raw' | 'chronicle' | 'pitch' | 'noir' | 'velvet' | 'havana' | 'dusk' | 'fade' | 'tokyo' | 'amber'
 
 export interface PhotoFilter {
   id: FilterId
@@ -35,6 +35,48 @@ export const PHOTO_FILTERS: PhotoFilter[] = [
     name: 'Noir',
     css: 'grayscale(0.6) contrast(1.18) brightness(0.88)',
     vignette: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.78) 100%)',
+  },
+  {
+    // Deep, crushed blacks, rich saturation — velvet rope nightclub
+    id: 'velvet',
+    name: 'Velvet',
+    css: 'contrast(1.22) saturate(1.12) brightness(0.84)',
+    vignette: 'radial-gradient(ellipse at center, transparent 35%, rgba(5,0,12,0.85) 100%)',
+  },
+  {
+    // Warm golden, tropical evenings, old stock film
+    id: 'havana',
+    name: 'Havana',
+    css: 'contrast(1.06) saturate(1.18) brightness(0.96) sepia(0.22) hue-rotate(8deg)',
+    vignette: 'radial-gradient(ellipse at center, transparent 50%, rgba(30,10,0,0.60) 100%)',
+  },
+  {
+    // Blue hour, twilight purple cast — golden hour just passed
+    id: 'dusk',
+    name: 'Dusk',
+    css: 'contrast(1.1) saturate(0.72) brightness(0.90) hue-rotate(-22deg)',
+    vignette: 'radial-gradient(ellipse at center, transparent 48%, rgba(0,5,22,0.72) 100%)',
+  },
+  {
+    // Lifted blacks, low contrast, bleached matte — editorial print
+    id: 'fade',
+    name: 'Fade',
+    css: 'contrast(0.88) saturate(0.72) brightness(1.06)',
+    vignette: 'radial-gradient(ellipse at center, transparent 62%, rgba(0,0,0,0.32) 100%)',
+  },
+  {
+    // High contrast, cool cyan tinge — neon city at night
+    id: 'tokyo',
+    name: 'Tokyo',
+    css: 'contrast(1.16) saturate(1.06) brightness(0.88) hue-rotate(-15deg)',
+    vignette: 'radial-gradient(ellipse at center, transparent 44%, rgba(0,10,18,0.76) 100%)',
+  },
+  {
+    // Golden hour warmth, orange-amber cast — summer evening
+    id: 'amber',
+    name: 'Amber',
+    css: 'contrast(1.06) saturate(0.92) brightness(0.97) sepia(0.30) hue-rotate(12deg)',
+    vignette: 'radial-gradient(ellipse at center, transparent 52%, rgba(28,10,0,0.58) 100%)',
   },
 ]
 

@@ -365,12 +365,10 @@ export default function EntryDetail() {
             {photos.length > 0 && (
               <motion.div variants={staggerItem}>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold">
-                      Photos
-                    </p>
-                    <FilterPicker filterId={filterId} onChange={setFilter} />
-                  </div>
+                  <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold">
+                    Photos
+                  </p>
+                  <FilterPicker filterId={filterId} onChange={setFilter} />
                   <PhotoGrid
                     photos={photos}
                     onSetAsCover={handleSetAsCover}
