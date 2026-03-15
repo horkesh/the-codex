@@ -11,7 +11,7 @@ export async function scanPersonVerdict(req: VerdictRequest): Promise<PersonVerd
     body: req,
   })
 
-  if (error) throw new Error('Could not reach analysis service. Try again.')
+  if (error) throw new Error(`Service error: ${error.message}`)
 
   if (data?.eligible === false) throw new Error(data.rejection_reason ?? 'Image not eligible for analysis')
   if (data?.error) throw new Error(data.error)
