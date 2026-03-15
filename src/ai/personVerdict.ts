@@ -4,6 +4,7 @@ import type { PersonVerdict } from '@/types/app'
 export interface VerdictRequest {
   photo_base64: string
   mime_type?: string
+  source_type?: string
 }
 
 export async function scanPersonVerdict(req: VerdictRequest): Promise<PersonVerdict> {

@@ -85,10 +85,10 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
       ])
 
       // AI verdict uses compressed JPEG (~200-400KB) not the raw file
-      const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/jpeg' })
+      const sourceType: VerdictSourceType = tab === 'screenshot' ? 'instagram_screenshot' : 'photo'
+      const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/jpeg', source_type: sourceType })
 
       // Create draft scan record
-      const sourceType: VerdictSourceType = tab === 'screenshot' ? 'instagram_screenshot' : 'photo'
       const scan = await createPersonScanDraft({
         created_by: gent.id,
         source_type: sourceType,
@@ -99,22 +99,22 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         verdict_label: verdict.verdict_label,
         confidence: verdict.confidence,
         recommended_category: verdict.score >= CONTACT_SCORE_THRESHOLD ? 'contact' : 'person_of_interest',
-        display_name: null,
+        display_name: verdict.display_name ?? null,
         bio: null,
         why_interesting: verdict.why_interesting,
         best_opener: verdict.best_opener,
         green_flags: verdict.green_flags,
         watchouts: verdict.watchouts,
         review_payload: verdict as unknown as Record<string, unknown>,
-        instagram_handle: null,
+        instagram_handle: verdict.instagram_handle ?? null,
         instagram_source_url: null,
         generated_avatar_url: null,
       })
 
       // Pre-fill dossier and advance to review immediately
       setDossier({
-        display_name: '',
-        instagram: '',
+        display_name: verdict.display_name ?? '',
+        instagram: verdict.instagram_handle ?? '',
         bio: '',
         why_interesting: verdict.why_interesting ?? '',
         best_opener: verdict.best_opener ?? '',

@@ -9,14 +9,21 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { photo_base64, mime_type = 'image/jpeg' } = await req.json()
+    const { photo_base64, mime_type = 'image/jpeg', source_type = 'photo' } = await req.json()
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
 
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
     if (!photo_base64) throw new Error('photo_base64 required')
 
+    const isScreenshot = source_type === 'instagram_screenshot'
+
+    const screenshotExtra = isScreenshot ? `
+Also extract from the visible text in the screenshot:
+- "display_name": the profile display name shown (or null if not visible)
+- "instagram_handle": the @username shown, without the @ symbol (or null if not visible)` : ''
+
     const prompt = `You are a sharp social intelligence analyst for a private gentlemen's collective.
-Analyze this photo of a person. First perform eligibility checks:
+Analyze this ${isScreenshot ? 'Instagram profile screenshot' : 'photo'} of a person. First perform eligibility checks:
 - Is there exactly one clearly visible adult human face?
 - Is the content appropriate (no explicit/adult content, no minors, no uncertain age)?
 
@@ -25,7 +32,7 @@ If any eligibility check fails, return JSON with only: {"eligible": false, "reje
 If eligible, return JSON with exactly these fields:
 {
   "eligible": true,
-  "appearance": "detailed visual description: skin tone, hair colour and style, eye colour, facial structure, any facial hair, approximate age range, style and fashion sense, overall vibe",
+  "appearance": "precise physical description structured as: [gender] in [age range]. [Skin tone]. [Hair: colour, length, style]. [Eyes: colour, shape]. [Facial structure and any facial hair]. [Build if visible]. [Clothing style and colours].",
   "trait_words": ["trait1","trait2","trait3","trait4","trait5","trait6"],
   "score": <number 0.0-10.0 to one decimal place>,
   "verdict_label": <"Immediate Interest" | "Circle Material" | "On the Radar" | "Observe Further">,
@@ -35,7 +42,9 @@ If eligible, return JSON with exactly these fields:
   "why_interesting": "two to three sentences on what makes this person worth noting",
   "best_opener": "a single natural confident opening line for meeting this person",
   "green_flags": ["up to 3 positive signals observed"],
-  "watchouts": ["up to 2 caution notes — be diplomatic"]
+  "watchouts": ["up to 2 caution notes — be diplomatic"]${isScreenshot ? `,
+  "display_name": "extracted display name or null",
+  "instagram_handle": "extracted username without @ or null"` : ''}
 }
 
 Score rubric:
@@ -43,7 +52,7 @@ Score rubric:
 8.0-8.9  → "Circle Material"
 6.5-7.9  → "On the Radar"
 0.0-6.4  → "Observe Further"
-
+${screenshotExtra}
 Output PURE JSON only. No markdown, no explanation.`
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {

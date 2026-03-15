@@ -257,6 +257,8 @@ export interface PersonVerdict {
   best_opener: string
   green_flags: string[]
   watchouts: string[]
+  display_name?: string | null
+  instagram_handle?: string | null
 }
 
 export interface PersonScan {
