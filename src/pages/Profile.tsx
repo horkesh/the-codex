@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { HelpCircle, ChevronRight, MapPin } from 'lucide-react'
+import { HelpCircle, ChevronRight, MapPin, Bell, BellOff } from 'lucide-react'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar } from '@/components/ui/Avatar'
@@ -12,6 +13,7 @@ import { useUIStore } from '@/store/ui'
 import { supabase } from '@/lib/supabase'
 import { updateGent, updateGentStatus } from '@/data/gents'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
+import { cn } from '@/lib/utils'
 
 function SectionDivider({ label }: { label: string }) {
   return (
@@ -59,6 +61,8 @@ export default function Profile() {
   const [portraitSeconds, setPortraitSeconds] = useState(0)
   const [showStatusInput, setShowStatusInput] = useState(false)
   const [statusInput, setStatusInput] = useState('')
+  const { supported: pushSupported, subscribed: pushSubscribed, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications()
+  const [pushLoading, setPushLoading] = useState(false)
 
   const photoInputRef = useRef<HTMLInputElement>(null)
 
@@ -394,6 +398,39 @@ export default function Profile() {
                 </div>
               )}
             </div>
+
+            {/* Notifications */}
+            {pushSupported && (
+              <>
+                <SectionDivider label="Notifications" />
+                <button
+                  type="button"
+                  disabled={pushLoading}
+                  className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-slate-mid border border-white/8 text-ivory hover:border-white/15 transition-colors disabled:opacity-50"
+                  onClick={async () => {
+                    setPushLoading(true)
+                    if (pushSubscribed) await pushUnsubscribe()
+                    else await pushSubscribe()
+                    setPushLoading(false)
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    {pushSubscribed
+                      ? <Bell size={16} className="text-gold" />
+                      : <BellOff size={16} className="text-ivory-muted" />}
+                    <div className="text-left">
+                      <p className="text-sm font-body font-medium">Push Notifications</p>
+                      <p className="text-xs text-ivory-muted font-body">
+                        {pushSubscribed ? 'Enabled — tap to turn off' : 'Get notified of new entries and comments'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={cn('w-10 h-6 rounded-full transition-colors relative', pushSubscribed ? 'bg-gold' : 'bg-white/10')}>
+                    <div className={cn('absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform', pushSubscribed ? 'translate-x-5' : 'translate-x-1')} />
+                  </div>
+                </button>
+              </>
+            )}
 
             {/* Account */}
             <SectionDivider label="Account" />

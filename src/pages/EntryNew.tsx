@@ -19,6 +19,7 @@ import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { createEntry, addEntryParticipants, updateEntryCover } from '@/data/entries'
 import { fetchProspectById, updateProspect } from '@/data/prospects'
 import { generateLore } from '@/ai/lore'
+import { notifyOthers } from '@/hooks/usePushNotifications'
 import { generateCover } from '@/ai/cover'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -177,7 +178,16 @@ export default function EntryNew() {
         updateProspect(prospectId, { status: 'converted', converted_entry_id: entry.id }).catch(() => {})
       }
 
-      // 7. Success toast + navigate
+      // 7. Notify other gents (fire-and-forget)
+      notifyOthers({
+        title: `New ${ENTRY_TYPE_META[selectedType].label} logged`,
+        body: formData.title,
+        url: `/chronicle/${entry.id}`,
+        tag: `entry-${entry.id}`,
+        senderGentId: gent.id,
+      })
+
+      // 8. Success toast + navigate
       addToast('Entry logged.', 'success')
       navigate(`/chronicle/${entry.id}`)
     } catch (err) {

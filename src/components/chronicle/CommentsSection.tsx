@@ -4,12 +4,14 @@ import { Avatar } from '@/components/ui'
 import { useComments } from '@/hooks/useComments'
 import { useAuthStore } from '@/store/auth'
 import { formatDate } from '@/lib/utils'
+import { notifyOthers } from '@/hooks/usePushNotifications'
 
 interface CommentsSectionProps {
   entryId: string
+  entryTitle?: string
 }
 
-export function CommentsSection({ entryId }: CommentsSectionProps) {
+export function CommentsSection({ entryId, entryTitle }: CommentsSectionProps) {
   const gent = useAuthStore((s) => s.gent)
   const { comments, addComment, deleteComment } = useComments(entryId)
   const [body, setBody] = useState('')
@@ -23,6 +25,13 @@ export function CommentsSection({ entryId }: CommentsSectionProps) {
     try {
       await addComment(gent.id, trimmed)
       setBody('')
+      notifyOthers({
+        title: entryTitle ? `Comment on ${entryTitle}` : 'New Comment',
+        body: `${gent.display_name}: ${trimmed.slice(0, 80)}`,
+        url: `/chronicle/${entryId}`,
+        tag: `comment-${entryId}`,
+        senderGentId: gent.id,
+      })
     } catch {
       // silent — user can retry
     } finally {

@@ -393,7 +393,7 @@ export default function EntryDetail() {
             {/* Comments */}
             {entry.status === 'published' && (
               <motion.div variants={staggerItem}>
-                <CommentsSection entryId={entry.id} />
+                <CommentsSection entryId={entry.id} entryTitle={entry.title} />
               </motion.div>
             )}
 
