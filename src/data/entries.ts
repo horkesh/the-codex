@@ -212,7 +212,15 @@ export async function uploadEntryPhoto(
   file: File,
   sortOrder: number
 ): Promise<string> {
-  const path = `${entryId}/${Date.now()}-${file.name}`
+  // Sanitize filename: replace anything outside a-z/0-9/.-_ with underscore,
+  // then normalise the extension (handles HEIC, spaces, accented chars, etc.)
+  const ext      = (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+  const baseName = file.name
+    .replace(/\.[^.]+$/, '')                // strip extension
+    .replace(/[^a-zA-Z0-9._-]/g, '_')      // sanitise
+    .replace(/_{2,}/g, '_')                 // collapse runs
+    .slice(0, 60)                           // cap length
+  const path = `${entryId}/${Date.now()}-${baseName}.${ext}`
 
   const { error: uploadError } = await supabase.storage
     .from('entry-photos')

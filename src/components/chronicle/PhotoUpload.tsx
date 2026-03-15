@@ -294,7 +294,7 @@ export function usePendingPhotos() {
           const url = await uploadEntryPhoto(entryId, pendingFiles[i], i)
           urls.push(url)
         } catch (err) {
-          console.error(`Failed to upload photo ${i}:`, err)
+          console.error(`Failed to upload photo ${i}:`, err, (err as {message?: string})?.message)
         }
       }
       return urls
