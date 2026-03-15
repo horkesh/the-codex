@@ -1,27 +1,93 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router'
 import { Plus, Radar, MoreVertical, Link, ImagePlus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Input } from '@/components/ui'
 import { staggerContainer, staggerItem, fadeUp } from '@/lib/animations'
 import { fetchProspects, createProspect, updateProspect, deleteProspect, shareProspect } from '@/data/prospects'
+import { fetchVotesForProspects, upsertVote, removeVote } from '@/data/prospectVotes'
 import { analyzeInstagramUrl, analyzeInstagramScreenshot } from '@/ai/instagram'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { cn, formatDate } from '@/lib/utils'
-import type { Prospect } from '@/types/app'
+import type { Prospect, ProspectVote } from '@/types/app'
+
+// ─── Vote Strip ───────────────────────────────────────────────────────────────
+
+interface VoteStripProps {
+  votes: ProspectVote[]
+  currentGentId: string
+  onVote: (vote: 'in' | 'pass' | null) => void
+}
+
+function VoteStrip({ votes, currentGentId, onVote }: VoteStripProps) {
+  const voteByGentId: Record<string, 'in' | 'pass'> = {}
+  for (const v of votes) {
+    voteByGentId[v.gent_id] = v.vote as 'in' | 'pass'
+  }
+  const myVote = voteByGentId[currentGentId] ?? null
+
+  return (
+    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/6">
+      <span className="text-[10px] uppercase tracking-widest text-ivory-dim font-body">Voting</span>
+      <div className="flex items-center gap-1.5 ml-1">
+        {votes.map((v) => {
+          const isMe = v.gent_id === currentGentId
+          const ringColor = v.vote === 'in'
+            ? 'ring-2 ring-emerald-400/70'
+            : 'ring-2 ring-red-400/70'
+          return (
+            <div
+              key={v.gent_id}
+              className={cn('rounded-full', ringColor, isMe && 'cursor-pointer')}
+              onClick={isMe ? () => onVote(null) : undefined}
+              title={`${v.vote === 'in' ? 'In' : 'Pass'}${isMe ? ' — tap to remove' : ''}`}
+            >
+              <div className="w-6 h-6 rounded-full bg-slate-mid flex items-center justify-center text-[10px] text-ivory-dim font-body">
+                {v.vote === 'in' ? '✓' : '✕'}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {/* Current gent vote buttons if not yet voted */}
+      {!myVote && (
+        <div className="flex items-center gap-1 ml-auto">
+          <button
+            type="button"
+            onClick={() => onVote('in')}
+            className="text-[10px] px-2 py-0.5 rounded-full border border-emerald-400/40 text-emerald-400 font-body hover:bg-emerald-400/10 transition-colors"
+          >
+            I'm In
+          </button>
+          <button
+            type="button"
+            onClick={() => onVote('pass')}
+            className="text-[10px] px-2 py-0.5 rounded-full border border-red-400/40 text-red-400 font-body hover:bg-red-400/10 transition-colors"
+          >
+            Pass
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ─── Prospect Card ────────────────────────────────────────────────────────────
 
 interface ProspectCardProps {
   prospect: Prospect
+  votes: ProspectVote[]
   onMarkPassed: () => void
   onDelete: () => void
   onShare: () => void
+  onVote: (vote: 'in' | 'pass' | null) => void
+  onLogAsEntry: () => void
   currentGentId: string
 }
 
-function ProspectCard({ prospect, onMarkPassed, onDelete, onShare, currentGentId }: ProspectCardProps) {
+function ProspectCard({ prospect, votes, onMarkPassed, onDelete, onShare, onVote, onLogAsEntry, currentGentId }: ProspectCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -98,6 +164,15 @@ function ProspectCard({ prospect, onMarkPassed, onDelete, onShare, currentGentId
                   transition={{ duration: 0.12 }}
                   className="absolute right-0 top-full mt-1 z-20 bg-slate-mid border border-white/10 rounded-lg shadow-xl overflow-hidden min-w-[140px]"
                 >
+                  {prospect.status !== 'converted' && (
+                    <button
+                      type="button"
+                      onClick={() => { setMenuOpen(false); onLogAsEntry() }}
+                      className="w-full text-left px-3 py-2.5 text-xs text-ivory-muted hover:text-ivory hover:bg-slate-light transition-colors font-body"
+                    >
+                      Log as Entry
+                    </button>
+                  )}
                   {prospect.status === 'prospect' && (
                     <button
                       type="button"
@@ -163,6 +238,15 @@ function ProspectCard({ prospect, onMarkPassed, onDelete, onShare, currentGentId
             </span>
           </div>
         </div>
+
+        {/* Vote strip — only on shared prospects */}
+        {prospect.visibility === 'shared' && (
+          <VoteStrip
+            votes={votes}
+            currentGentId={currentGentId}
+            onVote={onVote}
+          />
+        )}
       </div>
     </div>
   )
@@ -537,10 +621,12 @@ function AddProspectModal({ open, onClose, onSaved }: AddProspectModalProps) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Prospects() {
+  const navigate = useNavigate()
   const { gent } = useAuthStore()
   const { addToast } = useUIStore()
 
   const [prospects, setProspects] = useState<Prospect[]>([])
+  const [votes, setVotes] = useState<ProspectVote[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Prospect | null>(null)
@@ -550,6 +636,8 @@ export default function Prospects() {
     try {
       const data = await fetchProspects(gent?.id)
       setProspects(data)
+      const voteData = await fetchVotesForProspects(data.map((p) => p.id))
+      setVotes(voteData)
     } catch {
       addToast('Failed to load prospects', 'error')
     } finally {
@@ -597,6 +685,28 @@ export default function Prospects() {
     }
   }
 
+  const handleVote = async (prospect: Prospect, vote: 'in' | 'pass' | null) => {
+    if (!gent) return
+    try {
+      if (vote === null) {
+        await removeVote(prospect.id, gent.id)
+        setVotes((prev) => prev.filter((v) => !(v.prospect_id === prospect.id && v.gent_id === gent.id)))
+      } else {
+        await upsertVote(prospect.id, gent.id, vote)
+        setVotes((prev) => {
+          const without = prev.filter((v) => !(v.prospect_id === prospect.id && v.gent_id === gent.id))
+          return [...without, { id: `${prospect.id}-${gent.id}`, prospect_id: prospect.id, gent_id: gent.id, vote, created_at: new Date().toISOString() }]
+        })
+      }
+    } catch {
+      addToast('Failed to save vote', 'error')
+    }
+  }
+
+  const handleLogAsEntry = (prospect: Prospect) => {
+    navigate(`/chronicle/new?from=prospect&id=${prospect.id}`)
+  }
+
   return (
     <div className="flex flex-col h-full">
       <TopBar
@@ -634,9 +744,12 @@ export default function Prospects() {
               <motion.div key={prospect.id} variants={staggerItem}>
                 <ProspectCard
                   prospect={prospect}
+                  votes={votes.filter((v) => v.prospect_id === prospect.id)}
                   onMarkPassed={() => handleMarkPassed(prospect)}
                   onDelete={() => setDeleteTarget(prospect)}
                   onShare={() => handleShare(prospect)}
+                  onVote={(vote) => handleVote(prospect, vote)}
+                  onLogAsEntry={() => handleLogAsEntry(prospect)}
                   currentGentId={gent?.id ?? ''}
                 />
               </motion.div>

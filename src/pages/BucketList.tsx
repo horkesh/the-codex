@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, MoreVertical, Plus } from 'lucide-react'
+import { Link, useNavigate } from 'react-router'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -186,6 +187,7 @@ interface MarkDoneModalProps {
 }
 
 function MarkDoneModal({ item, entries, onClose, onDone }: MarkDoneModalProps) {
+  const navigate = useNavigate()
   const [linkedEntry, setLinkedEntry] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -226,6 +228,18 @@ function MarkDoneModal({ item, entries, onClose, onDone }: MarkDoneModalProps) {
             ))}
           </select>
         </div>
+
+        <div className="text-center">
+          <span className="text-ivory-dim text-xs font-body">or</span>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          fullWidth
+          onClick={() => navigate('/chronicle/new')}
+        >
+          Create New Entry
+        </Button>
 
         <div className="flex gap-3 pt-1">
           <Button type="button" variant="ghost" fullWidth onClick={onClose} disabled={saving}>
@@ -294,9 +308,10 @@ interface BucketItemCardProps {
   onPass: (id: string) => Promise<void>
   onDelete: (id: string) => Promise<void>
   dimmed?: boolean
+  linkedEntry?: { title: string; date: string; id: string } | null
 }
 
-function BucketItemCard({ item, onMarkDone, onPass, onDelete, dimmed = false }: BucketItemCardProps) {
+function BucketItemCard({ item, onMarkDone, onPass, onDelete, dimmed = false, linkedEntry }: BucketItemCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   const locationStr = [item.city, item.country].filter(Boolean).join(', ')
@@ -387,6 +402,16 @@ function BucketItemCard({ item, onMarkDone, onPass, onDelete, dimmed = false }: 
             {statusLabel(item.status)}
           </span>
         </div>
+      )}
+
+      {/* Linked entry chip — shown on done items with a converted_entry_id */}
+      {item.status === 'done' && linkedEntry && (
+        <Link
+          to={`/chronicle/${linkedEntry.id}`}
+          className="mt-2 inline-flex items-center gap-1.5 text-[10px] text-gold/80 font-body border border-gold/20 bg-gold/5 rounded-full px-2.5 py-1 hover:border-gold/40 transition-colors"
+        >
+          <span>›</span> {linkedEntry.date.slice(0, 10)} · {linkedEntry.title}
+        </Link>
       )}
     </motion.div>
   )
@@ -561,6 +586,7 @@ export default function BucketList() {
                       onMarkDone={handleMarkDone}
                       onPass={handlePass}
                       onDelete={handleDelete}
+                      linkedEntry={item.converted_entry_id ? (entries.find((e) => e.id === item.converted_entry_id) ?? null) : null}
                     />
                   ))}
                 </motion.div>
@@ -578,6 +604,7 @@ export default function BucketList() {
                       onMarkDone={handleMarkDone}
                       onPass={handlePass}
                       onDelete={handleDelete}
+                      linkedEntry={item.converted_entry_id ? (entries.find((e) => e.id === item.converted_entry_id) ?? null) : null}
                     />
                   ))}
                 </div>
@@ -596,6 +623,7 @@ export default function BucketList() {
                       onPass={handlePass}
                       onDelete={handleDelete}
                       dimmed
+                      linkedEntry={item.converted_entry_id ? (entries.find((e) => e.id === item.converted_entry_id) ?? null) : null}
                     />
                   ))}
                 </div>

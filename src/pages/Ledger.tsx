@@ -10,6 +10,7 @@ import { MissionTimeline } from '@/components/ledger/MissionTimeline'
 import { WrappedSection } from '@/components/ledger/WrappedSection'
 import { VerdictBoard } from '@/components/ledger/VerdictBoard'
 import { SommelierSection } from '@/components/ledger/SommelierSection'
+import { StreaksSection } from '@/components/ledger/StreaksSection'
 import { RivalryIndex } from '@/components/ledger/RivalryIndex'
 import { GentComparison } from '@/components/ledger/GentComparison'
 import { fadeIn } from '@/lib/animations'
@@ -87,6 +88,7 @@ export default function Ledger() {
             <PS5Rivalry h2h={ps5H2H} />
             <RivalryIndex />
             <MissionTimeline missionsByYear={missionsByYear} />
+            <StreaksSection />
             <SommelierSection />
             <WrappedSection stats={stats} selectedYear={selectedYear} />
           </motion.div>

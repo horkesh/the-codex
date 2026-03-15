@@ -214,6 +214,45 @@ export type Database = {
           },
         ]
       }
+      entry_comments: {
+        Row: {
+          id: string
+          entry_id: string
+          gent_id: string
+          body: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          entry_id: string
+          gent_id: string
+          body: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          entry_id?: string
+          gent_id?: string
+          body?: string
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entry_comments_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entry_comments_gent_id_fkey"
+            columns: ["gent_id"]
+            isOneToOne: false
+            referencedRelation: "gents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entry_participants: {
         Row: {
           entry_id: string
@@ -897,6 +936,45 @@ export type Database = {
           {
             foreignKeyName: "prospects_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_votes: {
+        Row: {
+          id: string
+          prospect_id: string
+          gent_id: string
+          vote: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          prospect_id: string
+          gent_id: string
+          vote: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          prospect_id?: string
+          gent_id?: string
+          vote?: string
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_votes_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_votes_gent_id_fkey"
+            columns: ["gent_id"]
             isOneToOne: false
             referencedRelation: "gents"
             referencedColumns: ["id"]

@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { staggerContainer, staggerItem } from '@/lib/animations'
+import { supabase } from '@/lib/supabase'
 import type { GentStats } from '@/types/app'
 
 interface StatGridProps {
@@ -53,6 +55,32 @@ function BigStatCard({ value, label }: BigStatCardProps) {
 export function StatGrid({ stats }: StatGridProps) {
   if (stats.length === 0) return null
 
+  const [monthlyLeaders, setMonthlyLeaders] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const now = new Date()
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+
+    supabase
+      .from('entry_participants')
+      .select('gent_id, gents!inner(alias), entries!inner(date, status)')
+      .gte('entries.date', monthStart)
+      .lte('entries.date', monthEnd)
+      .in('entries.status', ['published', 'gathering_post'])
+      .then(({ data }) => {
+        const counts: Record<string, number> = {}
+        for (const row of (data ?? []) as Array<{ gent_id: string; gents: { alias: string }; entries: { date: string } }>) {
+          const alias = row.gents?.alias
+          if (alias) counts[alias] = (counts[alias] ?? 0) + 1
+        }
+        const max = Math.max(0, ...Object.values(counts))
+        if (max > 0) {
+          setMonthlyLeaders(new Set(Object.entries(counts).filter(([, v]) => v === max).map(([k]) => k)))
+        }
+      }, () => {})
+  }, [])
+
   const totalMissions = sum(stats, 'missions')
   const totalCountries = sum(stats, 'countries_visited')
   const totalPeople = sum(stats, 'people_met')
@@ -89,6 +117,9 @@ export function StatGrid({ stats }: StatGridProps) {
               className="text-xs text-gold font-body font-semibold uppercase tracking-wider text-center"
             >
               {GENT_LABELS[s.alias] ?? s.alias}
+              {monthlyLeaders.has(s.alias) && (
+                <span className="text-gold text-xs" title="Monthly leader" aria-label="Monthly leader"> 👑</span>
+              )}
             </span>
           ))}
         </div>

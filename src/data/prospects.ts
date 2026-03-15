@@ -52,3 +52,13 @@ export async function shareProspect(id: string): Promise<void> {
     .eq('id', id)
   if (error) throw error
 }
+
+export async function fetchProspectById(id: string): Promise<Prospect | null> {
+  const { data, error } = await supabase
+    .from('prospects')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) return null
+  return data as unknown as Prospect
+}

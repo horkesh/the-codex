@@ -12,6 +12,7 @@ import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
 import { MetadataCard } from '@/components/chronicle/MetadataCard'
 import { PS5Scoreboard } from '@/components/chronicle/PS5Scoreboard'
 import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
+import { CommentsSection } from '@/components/chronicle/CommentsSection'
 import { useEntry } from '@/hooks/useEntry'
 import { deleteEntry } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
@@ -373,6 +374,13 @@ export default function EntryDetail() {
             <motion.div variants={staggerItem}>
               <PeoplePresent entryId={entry.id} />
             </motion.div>
+
+            {/* Comments */}
+            {entry.status === 'published' && (
+              <motion.div variants={staggerItem}>
+                <CommentsSection entryId={entry.id} />
+              </motion.div>
+            )}
 
             {/* Actions */}
             <motion.div variants={staggerItem} className="space-y-3 pt-2">

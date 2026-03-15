@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react'
-import { useNavigate } from 'react-router'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LocateFixed, X as XIcon } from 'lucide-react'
 import { TopBar } from '@/components/layout'
@@ -17,6 +17,7 @@ import { ToastForm } from '@/components/chronicle/forms/ToastForm'
 import { InterludeForm } from '@/components/chronicle/forms/InterludeForm'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { createEntry, addEntryParticipants, updateEntryCover } from '@/data/entries'
+import { fetchProspectById, updateProspect } from '@/data/prospects'
 import { generateLore } from '@/ai/lore'
 import { generateCover } from '@/ai/cover'
 import { useAuthStore } from '@/store/auth'
@@ -48,6 +49,7 @@ function buildH2HSnapshot(matches: PS5Match[]): Record<string, Record<string, nu
 
 export default function EntryNew() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { gent } = useAuthStore()
   const { addToast } = useUIStore()
 
@@ -57,11 +59,43 @@ export default function EntryNew() {
   const [submitting, setSubmitting] = useState(false)
   const [locationFill, setLocationFill] = useState<LocationFill | undefined>()
   const [savedPlaces, setSavedPlaces] = useState<SavedLocation[]>([])
+  const [prospectId, setProspectId] = useState<string | null>(null)
+  const [prospectPrefill, setProspectPrefill] = useState<{
+    title: string
+    date: string
+    location: string
+    city: string
+    country: string
+  } | null>(null)
+  const prospectHandled = useRef(false)
   const handleGeoDetected = useCallback((loc: LocationFill) => setLocationFill(loc), [])
 
   useEffect(() => {
     fetchLocations().then(setSavedPlaces)
   }, [])
+
+  // Prospect pre-fill: read query params once and pre-populate the form
+  useEffect(() => {
+    if (prospectHandled.current) return
+    const fromProspect = searchParams.get('from') === 'prospect'
+    const pid = searchParams.get('id')
+    if (!fromProspect || !pid) return
+    prospectHandled.current = true
+    setProspectId(pid)
+    fetchProspectById(pid).then((prospect) => {
+      if (!prospect) return
+      const today = new Date().toISOString().split('T')[0]
+      setProspectPrefill({
+        title: prospect.event_name ?? prospect.venue_name ?? '',
+        date: prospect.event_date ?? today,
+        location: prospect.venue_name ?? '',
+        city: prospect.city ?? '',
+        country: prospect.country ?? '',
+      })
+      setSelectedType('night_out')
+      setStep('form')
+    }).catch(() => {})
+  }, [searchParams])
 
   const { pendingFiles, addFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos()
 
@@ -135,7 +169,12 @@ export default function EntryNew() {
         })
       }
 
-      // 6. Success toast + navigate
+      // 6. If coming from a prospect, mark it as converted
+      if (prospectId) {
+        updateProspect(prospectId, { status: 'converted', converted_entry_id: entry.id }).catch(() => {})
+      }
+
+      // 7. Success toast + navigate
       addToast('Entry logged.', 'success')
       navigate(`/chronicle/${entry.id}`)
     } catch (err) {
@@ -266,10 +305,30 @@ export default function EntryNew() {
 
         {/* The form */}
         {selectedType === 'mission' && (
-          <MissionForm onSubmit={submitMission} loading={submitting} detectedLocation={locationFill} />
+          <MissionForm
+            onSubmit={submitMission}
+            loading={submitting}
+            detectedLocation={locationFill}
+            initialData={prospectPrefill ? {
+              title: prospectPrefill.title,
+              date: prospectPrefill.date,
+              location: prospectPrefill.location,
+              city: prospectPrefill.city,
+              country: prospectPrefill.country,
+            } : undefined}
+          />
         )}
         {selectedType === 'night_out' && (
-          <NightOutForm onSubmit={submitNightOut} loading={submitting} detectedLocation={locationFill} />
+          <NightOutForm
+            onSubmit={submitNightOut}
+            loading={submitting}
+            detectedLocation={locationFill}
+            initialData={prospectPrefill ? {
+              title: prospectPrefill.title,
+              date: prospectPrefill.date,
+              location: prospectPrefill.location,
+            } : undefined}
+          />
         )}
         {selectedType === 'steak' && (
           <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={locationFill} />

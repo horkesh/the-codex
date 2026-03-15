@@ -185,6 +185,15 @@ export interface Prospect {
   created_at: string
 }
 
+// Prospect vote
+export interface ProspectVote {
+  id: string
+  prospect_id: string
+  gent_id: string
+  vote: 'in' | 'pass'
+  created_at: string
+}
+
 // Story (curated multi-entry narrative arc for Passport)
 export interface Story {
   id: string
@@ -208,6 +217,16 @@ export interface Reaction {
   gent_id: string
   reaction_type: ReactionType
   created_at: string
+}
+
+// Entry comment
+export interface EntryComment {
+  id: string
+  entry_id: string
+  gent_id: string
+  body: string
+  created_at: string
+  gent?: Gent
 }
 
 // Bucket list item
