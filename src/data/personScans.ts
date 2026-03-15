@@ -36,6 +36,19 @@ export async function confirmPersonScan(
   if (error) throw error
 }
 
+export async function fetchScanByPerson(personId: string): Promise<PersonScan | null> {
+  const { data, error } = await supabase
+    .from('person_scans')
+    .select('*')
+    .eq('person_id', personId)
+    .eq('status', 'confirmed')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return data as unknown as PersonScan | null
+}
+
 /**
  * Uploads a source photo for a scan and returns the public URL.
  * Failure is non-fatal — caller should handle null gracefully.
