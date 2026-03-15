@@ -354,6 +354,49 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
+# Per-function settings — disable JWT verification on all AI functions.
+# These functions call external AI APIs (Gemini, Claude, Imagen) and have no
+# user-specific logic, so JWT gating adds no security value for this private
+# 3-person app. Avoids "Invalid JWT" 401s from stale/refreshed sessions.
+[functions.scan-person-verdict]
+verify_jwt = false
+
+[functions.generate-person-portrait]
+verify_jwt = false
+
+[functions.generate-portrait]
+verify_jwt = false
+
+[functions.generate-lore]
+verify_jwt = false
+
+[functions.generate-cover]
+verify_jwt = false
+
+[functions.generate-scene]
+verify_jwt = false
+
+[functions.generate-stamp]
+verify_jwt = false
+
+[functions.generate-story-arc]
+verify_jwt = false
+
+[functions.generate-story-stamp]
+verify_jwt = false
+
+[functions.generate-template-bg]
+verify_jwt = false
+
+[functions.generate-throwback]
+verify_jwt = false
+
+[functions.generate-wrapped]
+verify_jwt = false
+
+[functions.analyze-instagram]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
