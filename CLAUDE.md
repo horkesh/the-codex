@@ -156,6 +156,25 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 ## Entry geo fallback
 - `EntryNew.handleSubmit` falls back to `locationFill` city/country/country_code when the form doesn't provide them. This ensures non-Mission entry types (Night Out, Steak, Toast, etc.) get geo data from photo EXIF or saved places, fixing "Unknown City" on the Dossier Map.
 
+## Dossier-style person profiles
+- `PersonDetail.tsx` styled as an intelligence dossier with "DOSSIER NO." header, monospace dates, rotated gold stamp for tier.
+- **Encounter Log**: vertical timeline of entries the person appeared in (max 10), from `usePersonDossier` hook.
+- **Last Seen**: most recent entry appearance shown below profile info.
+- **Known Associations**: horizontal scroll of co-appearing people (from shared entries).
+- **Visual Evidence**: 3-column grid of photos from tagged entries (max 9).
+- **Redacted empty fields**: empty notes show stacked grey bars instead of italic placeholder.
+- Section headers: "FIELD NOTES", "ENCOUNTER LOG", "KNOWN ASSOCIATIONS", "VISUAL EVIDENCE".
+- Data hook: `src/hooks/usePersonDossier.ts` — fetches appearances, entries, co-appearing people, photos in parallel.
+
+## Scan traits as labels
+- When a POI is added to Circle via scan, `trait_words` from the verdict auto-populate as person `labels`.
+- Set in `useVerdictIntake.ts` line ~196: `labels: verdictResult?.verdict?.trait_words ?? []`.
+
+## Birthday and horoscope
+- `birthday` date column on `people` table. Editable in PersonForm.
+- `getZodiacSign(birthday)` in `src/lib/horoscope.ts` derives zodiac sign client-side.
+- Displayed on PersonDetail with cake icon + sign name.
+
 ## Circle multi-gent relationships
 - `person_gents` table: many-to-many between people and gents (who "knows" this person). RLS: authenticated users can select/insert/delete.
 - `fetchPersonGents(personId)` / `updatePersonGents(personId, gentIds[])` in people.ts.
