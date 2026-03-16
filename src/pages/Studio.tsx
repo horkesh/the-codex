@@ -41,10 +41,10 @@ import { useAuthStore } from '@/store/auth'
 // ---------------------------------------------------------------------------
 
 type TemplateId =
-  | 'night_out_card'
-  | 'mission_carousel'
-  | 'steak_verdict'
-  | 'ps5_match_card'
+  | 'night_out_card' | 'night_out_card_v2' | 'night_out_card_v3' | 'night_out_card_v4'
+  | 'mission_carousel' | 'mission_carousel_v2' | 'mission_carousel_v3' | 'mission_carousel_v4'
+  | 'steak_verdict' | 'steak_verdict_v2' | 'steak_verdict_v3' | 'steak_verdict_v4'
+  | 'ps5_match_card' | 'ps5_match_card_v2' | 'ps5_match_card_v3' | 'ps5_match_card_v4'
   | 'gathering_invite'
   | 'countdown'
   | 'toast_card'
@@ -68,25 +68,40 @@ interface TemplateConfig {
 // ---------------------------------------------------------------------------
 
 const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
-  night_out:   [{ id: 'night_out_card',   label: 'Night Out Card',  dims: '1080×1350', bgAspect: '3:4' }],
-  mission:     [
-    { id: 'mission_carousel', label: 'Mission Card',   dims: '1080×1350', bgAspect: '3:4' },
-    { id: 'passport_page',    label: 'Passport Page',  dims: '1080×1350', bgAspect: '3:4' },
+  night_out: [
+    { id: 'night_out_card',    label: 'Classic',       dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'night_out_card_v2', label: 'Bold',          dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'night_out_card_v3', label: 'Quote',         dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'night_out_card_v4', label: 'Date Stamp',    dims: '1080×1350', bgAspect: '3:4' },
   ],
-  steak:       [{ id: 'steak_verdict',    label: 'Steak Verdict',   dims: '1080×1350', bgAspect: '3:4' }],
-  playstation: [{ id: 'ps5_match_card',   label: 'Battle Card',     dims: '1080×1350', bgAspect: '3:4' }],
-  gathering:   [
-    { id: 'gathering_invite', label: 'Invite Card',      dims: '1080×1350', bgAspect: '3:4' },
-    { id: 'countdown',        label: 'Countdown Card',   dims: '1080×1350', bgAspect: '3:4' },
-    { id: 'gathering_recap',  label: 'Gathering Recap',  dims: '1080×1350', bgAspect: '3:4' },
+  mission: [
+    { id: 'mission_carousel',    label: 'Classic',     dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'mission_carousel_v2', label: 'Bold City',   dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'mission_carousel_v3', label: 'Passport',    dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'mission_carousel_v4', label: 'Overlay',     dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'passport_page',       label: 'Visa Page',   dims: '1080×1350', bgAspect: '3:4' },
+  ],
+  steak: [
+    { id: 'steak_verdict',    label: 'Classic',        dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'steak_verdict_v2', label: 'Score Hero',     dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'steak_verdict_v3', label: 'Minimal',        dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'steak_verdict_v4', label: 'Cut Forward',    dims: '1080×1350', bgAspect: '3:4' },
+  ],
+  playstation: [
+    { id: 'ps5_match_card',    label: 'Scoreboard',    dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'ps5_match_card_v2', label: 'Winner',        dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'ps5_match_card_v3', label: 'Quote',         dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'ps5_match_card_v4', label: 'Stats Grid',    dims: '1080×1350', bgAspect: '3:4' },
+  ],
+  gathering: [
+    { id: 'gathering_invite', label: 'Invite Card',    dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'countdown',        label: 'Countdown',      dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'gathering_recap',  label: 'Recap',          dims: '1080×1350', bgAspect: '3:4' },
   ],
   toast:       [{ id: 'toast_card',       label: 'Toast Card',      dims: '1080×1350', bgAspect: '3:4' }],
   interlude:   [{ id: 'interlude_card',   label: 'Interlude Card',  dims: '1080×1350', bgAspect: '3:4' }],
-  // annual is a standalone type for year-in-review exports (no entry required)
   annual:      [{ id: 'wrapped_card',     label: 'Wrapped Card',    dims: '1080×1350', bgAspect: '3:4' }],
-  // comparison is a standalone type — no entry required (driven by ?comparison= param)
   comparison:  [{ id: 'rivalry_card',     label: 'The Rivalry',     dims: '1080×1350', bgAspect: '3:4' }],
-  // achievement is a standalone type — no entry required (driven by ?achievement= param)
   achievement: [{ id: 'achievement_card', label: 'Achievement Card', dims: '1080×1350', bgAspect: '3:4' }],
 }
 
@@ -151,13 +166,37 @@ function RivalryCardWrapper({
 function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData }: TemplateRendererProps) {
   switch (templateId) {
     case 'night_out_card':
-      return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+      return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
+    case 'night_out_card_v2':
+      return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={2} />
+    case 'night_out_card_v3':
+      return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
+    case 'night_out_card_v4':
+      return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
     case 'mission_carousel':
-      return <MissionCarousel ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} />
+      return <MissionCarousel ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={1} />
+    case 'mission_carousel_v2':
+      return <MissionCarousel ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={2} />
+    case 'mission_carousel_v3':
+      return <MissionCarousel ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={3} />
+    case 'mission_carousel_v4':
+      return <MissionCarousel ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={4} />
     case 'steak_verdict':
-      return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} />
+      return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={1} />
+    case 'steak_verdict_v2':
+      return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={2} />
+    case 'steak_verdict_v3':
+      return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={3} />
+    case 'steak_verdict_v4':
+      return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={4} />
     case 'ps5_match_card':
-      return <PS5MatchCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+      return <PS5MatchCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
+    case 'ps5_match_card_v2':
+      return <PS5MatchCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={2} />
+    case 'ps5_match_card_v3':
+      return <PS5MatchCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
+    case 'ps5_match_card_v4':
+      return <PS5MatchCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
     case 'gathering_invite':
       return <GatheringInviteCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} />
     case 'countdown':
