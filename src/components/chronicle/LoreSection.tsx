@@ -27,14 +27,19 @@ export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionPr
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Auto-save hints to entry metadata after 1s of inactivity
+  const unmounted = useRef(false)
   useEffect(() => {
-    return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
+    return () => {
+      unmounted.current = true
+      if (saveTimer.current) clearTimeout(saveTimer.current)
+    }
   }, [])
 
   function handleHintsChange(value: string) {
     setHints(value)
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
+      if (unmounted.current) return
       const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_hints: value || null }
       updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})
     }, 1000)
@@ -51,8 +56,10 @@ export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionPr
       const result = await generateLoreFull(entryWithHints, photoUrls)
       if (result) {
         const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
-        await updateEntryLore(entry.id, result.lore)
-        await updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})
+        await Promise.all([
+          updateEntryLore(entry.id, result.lore),
+          updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {}),
+        ])
         const now = new Date().toISOString()
         setLocalLore(result.lore)
         setLocalLoreDate(now)

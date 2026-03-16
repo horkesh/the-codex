@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Move, Check, X, ZoomIn, ZoomOut } from 'lucide-react'
-import { formatDate, flagEmoji } from '@/lib/utils'
+import { formatDate, flagEmoji, getCoverCrop } from '@/lib/utils'
 import { Badge } from '@/components/ui'
 import { Avatar } from '@/components/ui'
 import { ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
@@ -17,24 +17,9 @@ interface EntryHeroProps {
   onEntryUpdate?: (entry: EntryWithParticipants) => void
 }
 
-interface CoverCrop {
-  x: number // object-position x (0-100)
-  y: number // object-position y (0-100)
-  scale: number // 1 = normal, up to 2
-}
-
-function getCrop(entry: EntryWithParticipants): CoverCrop {
-  const meta = entry.metadata as Record<string, unknown> | undefined
-  return {
-    x: (meta?.cover_pos_x as number) ?? 50,
-    y: (meta?.cover_pos_y as number) ?? 50,
-    scale: (meta?.cover_scale as number) ?? 1,
-  }
-}
-
 export function EntryHero({ entry, filterId, onEntryUpdate }: EntryHeroProps) {
   const filter = getFilter(filterId)
-  const crop = getCrop(entry)
+  const crop = getCoverCrop(entry)
 
   const [editing, setEditing] = useState(false)
   const [pos, setPos] = useState({ x: crop.x, y: crop.y })

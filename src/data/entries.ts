@@ -314,10 +314,10 @@ export async function renumberVolumes(type: string): Promise<void> {
     }
   }
 
-  // Batch update changed titles
-  for (const u of updates) {
-    await supabase.from('entries').update({ title: u.title }).eq('id', u.id)
-  }
+  // Batch update changed titles in parallel
+  await Promise.all(
+    updates.map((u) => supabase.from('entries').update({ title: u.title }).eq('id', u.id))
+  )
 }
 
 /**

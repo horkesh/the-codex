@@ -26,3 +26,13 @@ export function flagEmoji(countryCode: string): string {
     .map(char => String.fromCodePoint(0x1F1E6 - 65 + char.charCodeAt(0)))
     .join('')
 }
+
+/** Extract cover crop position from entry metadata */
+export function getCoverCrop(entry: { metadata?: unknown }): { x: number; y: number; scale: number } {
+  const meta = entry.metadata as Record<string, unknown> | undefined
+  return {
+    x: (meta?.cover_pos_x as number) ?? 50,
+    y: (meta?.cover_pos_y as number) ?? 50,
+    scale: (meta?.cover_scale as number) ?? 1,
+  }
+}

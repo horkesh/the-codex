@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { MapPin, Pin, Lock } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
-import { formatDate } from '@/lib/utils'
+import { formatDate, getCoverCrop } from '@/lib/utils'
 import { staggerItem } from '@/lib/animations'
 import { ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
 import { getFilter } from '@/lib/photoFilters'
@@ -53,7 +53,7 @@ export function EntryCard({ entry, onClick, onTogglePin }: EntryCardProps) {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             style={{
               filter: filter.css,
-              objectPosition: `${(entry.metadata as Record<string, unknown>)?.cover_pos_x ?? 50}% ${(entry.metadata as Record<string, unknown>)?.cover_pos_y ?? 50}%`,
+              objectPosition: `${getCoverCrop(entry).x}% ${getCoverCrop(entry).y}%`,
             }}
             draggable={false}
           />

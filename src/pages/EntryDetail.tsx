@@ -243,8 +243,10 @@ export default function EntryDetail() {
       const result = await generateLoreFull(entryForLore, photoUrls)
       if (result) {
         const meta = { ...(entryForLore.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
-        await updateEntryLore(entry.id, result.lore)
-        await updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})
+        await Promise.all([
+          updateEntryLore(entry.id, result.lore),
+          updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {}),
+        ])
         const now = new Date().toISOString()
         setEntry({ ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta })
         if (result.suggested_title) {
