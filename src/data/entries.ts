@@ -349,3 +349,15 @@ export async function addPersonAppearances(entryId: string, personIds: string[],
 
   if (error) throw error
 }
+
+export async function fetchRecentEntryIds(days: number): Promise<string[]> {
+  const since = new Date()
+  since.setDate(since.getDate() - days)
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id')
+    .gte('created_at', since.toISOString())
+    .in('status', ['published', 'gathering_post'])
+  if (error) throw error
+  return (data ?? []).map(e => e.id)
+}

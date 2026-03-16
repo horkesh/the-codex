@@ -37,7 +37,7 @@ const TIER_CONFIG: Record<string, {
 }
 
 function PersonNodeInner({ data }: NodeProps) {
-  const { person, tier, dimmed } = data as unknown as PersonNodeData
+  const { person, tier, dimmed, recentlyActive } = data as unknown as PersonNodeData
   const zoom = useStore(s => s.transform[2])
   const config = TIER_CONFIG[tier] ?? TIER_CONFIG.acquaintance
 
@@ -49,12 +49,23 @@ function PersonNodeInner({ data }: NodeProps) {
       className="flex flex-col items-center gap-0.5 transition-opacity duration-300"
       style={{ opacity: dimmed ? 0.15 : 1 }}
     >
-      <div className={cn(config.borderClass, 'rounded-full')}>
-        <Avatar
-          src={person.portrait_url ?? person.photo_url}
-          name={person.name}
-          size={config.avatarSize}
-        />
+      <div className="relative">
+        {recentlyActive && !dimmed && (
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: 'rgba(201,168,76,0.3)',
+              animation: 'pulse-ring 2s ease-out infinite',
+            }}
+          />
+        )}
+        <div className={cn(config.borderClass, 'rounded-full relative')}>
+          <Avatar
+            src={person.portrait_url ?? person.photo_url}
+            name={person.name}
+            size={config.avatarSize}
+          />
+        </div>
       </div>
       {showLabel && (
         <span

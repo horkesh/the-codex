@@ -48,6 +48,7 @@ export interface PersonNodeData {
   person: Person
   tier: string
   dimmed: boolean
+  recentlyActive: boolean
   [key: string]: unknown
 }
 
@@ -59,6 +60,7 @@ export function computeGraphData(
   filters: MindMapFilters,
   focusedGentId: string | null,
   savedPositions?: Record<string, { x: number; y: number }>,
+  recentlyActiveIds?: Set<string>,
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
@@ -188,6 +190,7 @@ export function computeGraphData(
           person,
           tier: ring,
           dimmed,
+          recentlyActive: recentlyActiveIds?.has(person.id) ?? false,
         } satisfies PersonNodeData,
         draggable: true,
       })
