@@ -91,40 +91,71 @@ Example format: "Three men at restaurant table. Left: Almedin, high fade, clean-
   }
 }
 
-// Step 2: Generate a new noir painting from the scene description via Imagen
-// Uses full gent appearances so Imagen renders recognisable faces
+// Step 2: Transform the photo using Gemini 2.5 Flash Image
+// Receives both the original photo AND the scene description for context
 async function generateNoirScene(
+  coverBase64: string,
+  coverMimeType: string,
   sceneDescription: string,
-  aspectRatio: string,
   apiKey: string,
 ): Promise<string> {
-  const imagePrompt = `${sceneDescription}. ${NOIR_STYLE} No text, no words, no watermarks.`
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 20_000)
 
-  const imageResponse = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [{ prompt: imagePrompt }],
-        parameters: {
-          sampleCount: 1,
-          aspectRatio,
-          safetyFilterLevel: 'block_only_high',
-        },
-      }),
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: coverMimeType, data: coverBase64 } },
+              { text: `Completely redraw this photograph as a dark cinematic digital artwork. Do not apply a filter — create a NEW artwork based on this scene.
+
+Who is in the photo: ${sceneDescription}
+
+Art direction:
+- Dark cinematic noir digital art style
+- Minimalist geometric forms and angular shapes
+- Dramatic noir lighting: deep shadows, strong rim lights, high contrast
+- Moody desaturated colour palette with warm gold accent tones
+- Replace the bright background with a dark, atmospheric environment
+- Each person must remain recognisable — preserve their exact facial features, hair, and facial hair
+- Keep the same people, poses, and table contents
+- The result should look like a hand-painted illustration, NOT a filtered photograph
+
+Generate the artwork.` },
+            ],
+          }],
+          generationConfig: {
+            responseModalities: ['IMAGE'],
+          },
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Gemini restyle error: ${response.status} ${await response.text()}`)
     }
-  )
 
-  if (!imageResponse.ok) {
-    throw new Error(`Imagen error: ${imageResponse.status} ${await imageResponse.text()}`)
+    const result = await response.json()
+    const parts = result.candidates?.[0]?.content?.parts ?? []
+    const imagePart = parts.find((p: { inlineData?: { data: string } }) => p.inlineData?.data)
+
+    if (!imagePart?.inlineData?.data) {
+      throw new Error('Gemini returned no image in restyle response')
+    }
+
+    return imagePart.inlineData.data
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') throw new Error('Noir generation timed out after 20s')
+    throw e
+  } finally {
+    clearTimeout(timeout)
   }
-
-  const imageResult = await imageResponse.json()
-  const base64Image = imageResult.predictions?.[0]?.bytesBase64Encoded
-  if (!base64Image) throw new Error('No image returned from Imagen')
-
-  return base64Image
 }
 
 Deno.serve(async (req: Request) => {
@@ -176,7 +207,7 @@ Deno.serve(async (req: Request) => {
     if (coverBase64) {
       // Two-step restyle: analyze scene → generate noir rendition
       sceneDescription = await analyzeScene(coverBase64, coverMimeType, googleApiKey)
-      base64Image = await generateNoirScene(sceneDescription, aspectRatio, googleApiKey)
+      base64Image = await generateNoirScene(coverBase64, coverMimeType, sceneDescription, googleApiKey)
     } else {
       // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
