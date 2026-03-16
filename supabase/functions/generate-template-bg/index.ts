@@ -164,8 +164,12 @@ Deno.serve(async (req: Request) => {
 
     if (coverBase64) {
       // Two-step restyle: analyze scene → generate noir rendition
+      console.log('Restyle mode: cover image downloaded, starting scene analysis...')
       const sceneDescription = await analyzeScene(coverBase64, coverMimeType, googleApiKey)
+      console.log('Scene description:', sceneDescription)
+      console.log('Generating noir rendition...')
       base64Image = await generateNoirScene(sceneDescription, aspectRatio, googleApiKey)
+      console.log('Noir rendition generated successfully')
     } else {
       // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
@@ -211,8 +215,10 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('generate-template-bg error:', error)
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    const msg = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    console.error('generate-template-bg error:', msg, stack)
+    return new Response(JSON.stringify({ error: msg, stack }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
