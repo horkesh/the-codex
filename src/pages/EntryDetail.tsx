@@ -225,7 +225,7 @@ export default function EntryDetail() {
   const { entry, photos, loading, notFound, setEntry } = useEntry(id)
   const { filterId, setFilter } = useEntryFilter(id ?? '')
   const photoUrls = useMemo(() => photos.map((p) => p.url), [photos])
-  const isCreator = !!entry && isCreator
+  const isCreator = !!entry && gent?.id === entry.created_by
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
