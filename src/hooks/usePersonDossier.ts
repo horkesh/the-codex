@@ -99,19 +99,21 @@ export function usePersonDossier(personId: string | undefined): PersonDossier {
         }
 
         // Step 6: Photos from entries this person is tagged in (max 9)
+        const photoResults = await Promise.all(
+          entryIdsToCheck.map(eid =>
+            fetchEntryPhotos(eid)
+              .then(photos => photos.map(p => ({ url: p.url, entryId: eid })))
+              .catch(() => [] as DossierPhoto[])
+          )
+        )
+        if (cancelled) return
         const allPhotos: DossierPhoto[] = []
-        for (const eid of entryIdsToCheck) {
-          if (allPhotos.length >= 9) break
-          try {
-            const entryPhotos = await fetchEntryPhotos(eid)
-            if (cancelled) return
-            for (const p of entryPhotos) {
-              if (allPhotos.length >= 9) break
-              allPhotos.push({ url: p.url, entryId: eid })
-            }
-          } catch {
-            // skip failed photo fetches
+        for (const batch of photoResults) {
+          for (const p of batch) {
+            if (allPhotos.length >= 9) break
+            allPhotos.push(p)
           }
+          if (allPhotos.length >= 9) break
         }
         setPhotos(allPhotos)
       } catch {

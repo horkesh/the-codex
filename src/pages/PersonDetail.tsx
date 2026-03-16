@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Shield, Link2, Eye } from 'lucide-react'
+import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Avatar, Spinner, Modal } from '@/components/ui'
@@ -357,19 +357,22 @@ export default function PersonDetail() {
             )}
 
             {/* Birthday */}
-            {person.birthday && (
-              <div className="flex flex-wrap justify-center gap-3 mt-3">
-                <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
-                  <Cake size={12} className="text-gold-muted shrink-0" />
-                  <span className="font-mono text-[11px]">{formatDate(person.birthday)}</span>
-                </div>
-                {getZodiacSign(person.birthday) && (
+            {person.birthday && (() => {
+              const zodiac = getZodiacSign(person.birthday!)
+              return (
+                <div className="flex flex-wrap justify-center gap-3 mt-3">
                   <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
-                    {getZodiacSign(person.birthday)}
+                    <Cake size={12} className="text-gold-muted shrink-0" />
+                    <span className="font-mono text-[11px]">{formatDate(person.birthday!)}</span>
                   </div>
-                )}
-              </div>
-            )}
+                  {zodiac && (
+                    <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
+                      {zodiac}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Labels */}
             {person.labels.length > 0 && (
