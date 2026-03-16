@@ -4,7 +4,7 @@ import { fetchAllStats } from '@/data/stats'
 import { useThresholds } from '@/hooks/useThresholds'
 import type { GentStats, GentAlias } from '@/types/app'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ImageIcon, Share2, Sparkles, Camera } from 'lucide-react'
+import { ImageIcon, Share2, Sparkles, Camera, Award } from 'lucide-react'
 
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Button, Spinner, OnboardingTip } from '@/components/ui'
@@ -31,6 +31,10 @@ import { PassportPageExport } from '@/export/templates/PassportPageExport'
 import { GatheringRecap } from '@/export/templates/GatheringRecap'
 import { WrappedCard } from '@/export/templates/WrappedCard'
 import { RivalryCard } from '@/export/templates/RivalryCard'
+import { AchievementCard } from '@/export/templates/AchievementCard'
+import { fetchEarnedAchievements } from '@/data/achievements'
+import type { EarnedAchievement } from '@/data/achievements'
+import { useAuthStore } from '@/store/auth'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,6 +53,7 @@ type TemplateId =
   | 'gathering_recap'
   | 'wrapped_card'
   | 'rivalry_card'
+  | 'achievement_card'
 
 interface TemplateConfig {
   id: TemplateId
@@ -81,6 +86,8 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
   annual:      [{ id: 'wrapped_card',     label: 'Wrapped Card',    dims: '1080×1350', bgAspect: '3:4' }],
   // comparison is a standalone type — no entry required (driven by ?comparison= param)
   comparison:  [{ id: 'rivalry_card',     label: 'The Rivalry',     dims: '1080×1350', bgAspect: '3:4' }],
+  // achievement is a standalone type — no entry required (driven by ?achievement= param)
+  achievement: [{ id: 'achievement_card', label: 'Achievement Card', dims: '1080×1350', bgAspect: '3:4' }],
 }
 
 // Scale factor for the in-page preview
@@ -109,6 +116,7 @@ interface TemplateRendererProps {
   backgroundUrl?: string
   rewardKeys?: Set<string>
   comparisonParam?: string
+  achievementData?: { name: string; description: string; earnedBy: string; earnedAt: string } | null
 }
 
 function RivalryCardWrapper({
@@ -140,7 +148,7 @@ function RivalryCardWrapper({
   return <RivalryCard ref={innerRef} gentA={statA} gentB={statB} backgroundUrl={backgroundUrl} />
 }
 
-function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam }: TemplateRendererProps) {
+function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData }: TemplateRendererProps) {
   switch (templateId) {
     case 'night_out_card':
       return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
@@ -176,6 +184,9 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
       )
     case 'rivalry_card':
       return <RivalryCardWrapper innerRef={innerRef} backgroundUrl={backgroundUrl} comparisonParam={comparisonParam} />
+    case 'achievement_card':
+      if (!achievementData) return <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: '1080px', height: '1350px', backgroundColor: '#0a0a0f' }} />
+      return <AchievementCard ref={innerRef} name={achievementData.name} description={achievementData.description} earnedBy={achievementData.earnedBy} earnedAt={achievementData.earnedAt} />
     default:
       return null
   }
@@ -289,8 +300,10 @@ export default function Studio() {
   const [searchParams] = useSearchParams()
   const preselectedEntryId = searchParams.get('entry')
   const comparisonParam = searchParams.get('comparison')
+  const achievementParam = searchParams.get('achievement')
 
   const { rewardKeys } = useThresholds()
+  const { gent } = useAuthStore()
 
   const [entries, setEntries] = useState<Entry[]>([])
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
@@ -300,14 +313,48 @@ export default function Studio() {
   const [bgUrl, setBgUrl] = useState<string | null>(null)
   const [generatingBg, setGeneratingBg] = useState(false)
 
+  // Achievement mode state
+  const [achievements, setAchievements] = useState<EarnedAchievement[]>([])
+  const [selectedAchievement, setSelectedAchievement] = useState<EarnedAchievement | null>(null)
+
   const templateRef = useRef<HTMLDivElement>(null)
 
-  // Load entries on mount; honour ?entry= and ?comparison= params
+  // Achievement data for the template renderer
+  const achievementData = useMemo(() => {
+    if (!selectedAchievement || !gent) return null
+    return {
+      name: selectedAchievement.name,
+      description: selectedAchievement.description,
+      earnedBy: gent.display_name,
+      earnedAt: selectedAchievement.earned_at,
+    }
+  }, [selectedAchievement, gent])
+
+  // Load entries on mount; honour ?entry=, ?comparison=, and ?achievement= params
   useEffect(() => {
     // Comparison mode — no entries needed
     if (comparisonParam) {
       setSelectedTemplate('rivalry_card')
       setLoading(false)
+      return
+    }
+    // Achievement mode — load achievements instead of entries
+    if (achievementParam !== null) {
+      if (!gent) { setLoading(false); return }
+      fetchEarnedAchievements(gent.id)
+        .then((earned) => {
+          setAchievements(earned)
+          setSelectedTemplate('achievement_card')
+          // If a specific achievement name was provided in the param, pre-select it
+          if (achievementParam) {
+            const match = earned.find((a) => a.type === achievementParam || a.name === achievementParam)
+            if (match) setSelectedAchievement(match)
+          } else if (earned.length > 0) {
+            setSelectedAchievement(earned[0])
+          }
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
       return
     }
     let cancelled = false
@@ -331,7 +378,7 @@ export default function Studio() {
       })
       .catch(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [preselectedEntryId, comparisonParam])
+  }, [preselectedEntryId, comparisonParam, achievementParam, gent])
 
   // When entry changes, reset template selection and use cover image as default background
   function handleSelectEntry(entry: Entry) {
@@ -368,7 +415,9 @@ export default function Studio() {
     setExporting(true)
     const filename = comparisonParam
       ? `codex-rivalry-${comparisonParam}.png`
-      : `codex-${selectedEntry?.type ?? 'export'}-${selectedEntry?.date ?? Date.now()}.png`
+      : selectedAchievement
+        ? `codex-achievement-${selectedAchievement.type}.png`
+        : `codex-${selectedEntry?.type ?? 'export'}-${selectedEntry?.date ?? Date.now()}.png`
     try {
       await exportAndShare(templateRef.current, filename)
     } finally {
@@ -451,8 +500,66 @@ export default function Studio() {
           </motion.div>
         )}
 
+        {/* Achievement mode — achievement selector */}
+        {achievementParam !== null && (
+          <motion.section
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            className="px-4 pt-4 pb-5"
+          >
+            <p className="text-[11px] font-body tracking-widest uppercase text-gold-muted mb-3">
+              01 — Select Achievement
+            </p>
+
+            {achievements.length === 0 ? (
+              <p className="text-sm text-ivory-dim font-body py-6 text-center">
+                No achievements earned yet.
+              </p>
+            ) : (
+              <motion.div
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
+                className="flex gap-3 overflow-x-auto scrollbar-none pb-1"
+              >
+                {achievements.map((ach) => (
+                  <motion.button
+                    key={ach.type}
+                    variants={staggerItem}
+                    type="button"
+                    onClick={() => setSelectedAchievement(ach)}
+                    className={[
+                      'flex-shrink-0 w-44 p-3 rounded-xl text-left transition-all duration-200',
+                      'bg-slate-mid border',
+                      selectedAchievement?.type === ach.type
+                        ? 'border-gold/70 shadow-[0_0_0_1px_rgba(201,168,76,0.25)]'
+                        : 'border-white/8 hover:border-white/20',
+                    ].join(' ')}
+                    style={selectedAchievement?.type === ach.type ? { borderLeftWidth: '3px', borderLeftColor: '#C9A84C' } : {}}
+                    aria-pressed={selectedAchievement?.type === ach.type}
+                  >
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Award size={14} aria-hidden="true" className="text-gold shrink-0" />
+                      <span className="text-[10px] font-body tracking-widest uppercase text-ivory-dim">
+                        Achievement
+                      </span>
+                    </div>
+                    <p className="font-display text-sm text-ivory leading-snug line-clamp-2 mb-1.5">
+                      {ach.name}
+                    </p>
+                    <p className="text-[11px] font-mono text-ivory-dim line-clamp-1">
+                      {ach.description}
+                    </p>
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </motion.section>
+        )}
+
         {/* Only show the full selector if there was no preselected param */}
-        {!preselectedEntryId && !comparisonParam && (
+        {!preselectedEntryId && !comparisonParam && achievementParam === null && (
           <motion.section
             variants={fadeUp}
             initial="initial"

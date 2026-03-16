@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LocateFixed, X as XIcon } from 'lucide-react'
+import { LocateFixed, X as XIcon, Lock, Unlock } from 'lucide-react'
 import { TopBar } from '@/components/layout'
 import { PageWrapper } from '@/components/layout'
 import { EntryTypeSelector } from '@/components/chronicle/EntryTypeSelector'
@@ -16,7 +16,8 @@ import { PlaystationForm } from '@/components/chronicle/forms/PlaystationForm'
 import { ToastForm } from '@/components/chronicle/forms/ToastForm'
 import { InterludeForm } from '@/components/chronicle/forms/InterludeForm'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
-import { createEntry, addEntryParticipants, updateEntryCover } from '@/data/entries'
+import { createEntry, addEntryParticipants, addPersonAppearances, updateEntryCover } from '@/data/entries'
+import { ContactTagger } from '@/components/chronicle/ContactTagger'
 import { fetchProspectById, updateProspect } from '@/data/prospects'
 import { generateLore } from '@/ai/lore'
 import { generateTitle } from '@/ai/title'
@@ -69,6 +70,8 @@ export default function EntryNew() {
     city: string
     country: string
   } | null>(null)
+  const [visibility, setVisibility] = useState<'shared' | 'private'>('shared')
+  const [taggedPeople, setTaggedPeople] = useState<string[]>([])
   const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
   const titleGenFired = useRef(false)
   const firstPhotoRef = useRef<File | null>(null)
@@ -192,12 +195,18 @@ export default function EntryNew() {
           ...(locationFill?.time ? { time_of_day: locationFill.time } : {}),
         },
         created_by: gent.id,
+        visibility,
       })
 
       // 2. Add participants (always include creator)
       const allParticipantIds = Array.from(new Set([gent.id, ...participants]))
       if (allParticipantIds.length > 0) {
         await addEntryParticipants(entry.id, allParticipantIds)
+      }
+
+      // 2b. Tag people present (person_appearances)
+      if (taggedPeople.length > 0) {
+        addPersonAppearances(entry.id, taggedPeople, gent.id).catch(() => {})
       }
 
       // 3. Upload pending photos; promote first to cover image
@@ -432,6 +441,39 @@ export default function EntryNew() {
             selectedIds={participants}
             onChange={setParticipants}
           />
+        </div>
+
+        {/* Tag people from Circle */}
+        <ContactTagger
+          selectedIds={taggedPeople}
+          onChange={setTaggedPeople}
+        />
+
+        {/* Visibility toggle */}
+        <div className="border-t border-white/8 pt-4">
+          <button
+            type="button"
+            onClick={() => setVisibility((v) => (v === 'shared' ? 'private' : 'shared'))}
+            className="flex items-center gap-3 w-full py-2 group"
+          >
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+              visibility === 'private' ? 'bg-gold/15' : 'bg-white/5'
+            }`}>
+              {visibility === 'private' ? (
+                <Lock size={14} className="text-gold" />
+              ) : (
+                <Unlock size={14} className="text-ivory-dim" />
+              )}
+            </div>
+            <div className="text-left">
+              <p className={`text-sm font-body ${visibility === 'private' ? 'text-gold' : 'text-ivory'}`}>
+                {visibility === 'private' ? 'Private' : 'Shared'}
+              </p>
+              <p className="text-[11px] text-ivory-dim font-body">
+                {visibility === 'private' ? 'Only you can see this entry' : 'Visible to all Gents'}
+              </p>
+            </div>
+          </button>
         </div>
 
       </motion.div>

@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { fetchEntries, ENTRY_COLUMNS } from '@/data/entries'
+import { useAuthStore } from '@/store/auth'
 import type { EntryWithParticipants, EntryType, Gent } from '@/types/app'
 
 export interface ChronicleFilters {
@@ -9,22 +10,35 @@ export interface ChronicleFilters {
   year?: number
 }
 
+function matchesQuery(entry: EntryWithParticipants, q: string): boolean {
+  const lower = q.toLowerCase()
+  return (
+    (entry.title?.toLowerCase().includes(lower)) ||
+    (entry.description?.toLowerCase().includes(lower) ?? false) ||
+    (entry.location?.toLowerCase().includes(lower) ?? false) ||
+    (entry.city?.toLowerCase().includes(lower) ?? false) ||
+    (entry.lore?.toLowerCase().includes(lower) ?? false)
+  )
+}
+
 export function useChronicle() {
   const [entries, setEntries] = useState<EntryWithParticipants[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<ChronicleFilters>({})
+  const [query, setQuery] = useState('')
+  const currentGentId = useAuthStore((s) => s.gent?.id)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await fetchEntries(filters)
+      const data = await fetchEntries({ ...filters, currentGentId })
       setEntries(data)
     } catch {
       // fetchEntries threw — leave entries as-is, stop spinning
     } finally {
       setLoading(false)
     }
-  }, [filters])
+  }, [filters, currentGentId])
 
   useEffect(() => { load() }, [load])
 
@@ -45,11 +59,20 @@ export function useChronicle() {
     return () => { supabase.removeChannel(channel) }
   }, [load])
 
+  const filteredEntries = useMemo(() => {
+    if (!query.trim()) return entries
+    return entries.filter((e) => matchesQuery(e, query.trim()))
+  }, [entries, query])
+
   const removeEntry = useCallback((id: string) => {
     setEntries((prev) => prev.filter((e) => e.id !== id))
   }, [])
 
-  return { entries, loading, filters, setFilters, reload: load, removeEntry }
+  const updateEntryLocal = useCallback((id: string, patch: Partial<EntryWithParticipants>) => {
+    setEntries((prev) => prev.map((e) => e.id === id ? { ...e, ...patch } : e))
+  }, [])
+
+  return { entries: filteredEntries, allEntries: entries, loading, filters, setFilters, query, setQuery, reload: load, removeEntry, updateEntryLocal }
 }
 
 export function useUpcomingGatherings(): { upcoming: EntryWithParticipants[]; loading: boolean } {

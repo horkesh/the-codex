@@ -53,6 +53,25 @@ export async function shareProspect(id: string): Promise<void> {
   if (error) throw error
 }
 
+export async function fetchDueProspects(): Promise<Prospect[]> {
+  const today = new Date()
+  const todayStr = today.toISOString().split('T')[0]
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split('T')[0]
+
+  const { data, error } = await supabase
+    .from('prospects')
+    .select('*')
+    .eq('status', 'prospect')
+    .gte('event_date', sevenDaysAgo)
+    .lte('event_date', todayStr)
+    .order('event_date', { ascending: false })
+
+  if (error) throw error
+  return (data ?? []) as unknown as Prospect[]
+}
+
 export async function fetchProspectById(id: string): Promise<Prospect | null> {
   const { data, error } = await supabase
     .from('prospects')

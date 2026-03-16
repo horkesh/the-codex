@@ -151,11 +151,13 @@ export type Database = {
           lore: string | null
           lore_generated_at: string | null
           metadata: Json
+          pinned: boolean
           scene_url: string | null
           status: string
           title: string
           type: string
           updated_at: string | null
+          visibility: string
         }
         Insert: {
           city?: string | null
@@ -171,11 +173,13 @@ export type Database = {
           lore?: string | null
           lore_generated_at?: string | null
           metadata?: Json
+          pinned?: boolean
           scene_url?: string | null
           status?: string
           title: string
           type: string
           updated_at?: string | null
+          visibility?: string
         }
         Update: {
           city?: string | null
@@ -191,11 +195,13 @@ export type Database = {
           lore?: string | null
           lore_generated_at?: string | null
           metadata?: Json
+          pinned?: boolean
           scene_url?: string | null
           status?: string
           title?: string
           type?: string
           updated_at?: string | null
+          visibility?: string
         }
         Relationships: [
           {

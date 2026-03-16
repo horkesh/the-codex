@@ -262,3 +262,19 @@ export async function convertPOIToContact(id: string): Promise<void> {
     .eq('id', id)
   if (error) throw error
 }
+
+export async function fetchPeopleQuick(query?: string): Promise<Array<{ id: string; name: string; photo_url: string | null }>> {
+  let q = supabase
+    .from('people')
+    .select('id, name, photo_url')
+    .order('name', { ascending: true })
+    .limit(20)
+
+  if (query) {
+    q = q.ilike('name', `%${query}%`)
+  }
+
+  const { data, error } = await q
+  if (error) throw error
+  return (data ?? []) as Array<{ id: string; name: string; photo_url: string | null }>
+}

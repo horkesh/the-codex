@@ -44,6 +44,8 @@ export interface Entry {
   cover_image_url: string | null
   scene_url: string | null
   status: EntryStatus
+  pinned: boolean
+  visibility: 'shared' | 'private'
   metadata: Record<string, unknown>
   created_by: string
   created_at: string

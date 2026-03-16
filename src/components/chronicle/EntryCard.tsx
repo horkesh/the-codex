@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin } from 'lucide-react'
+import { MapPin, Pin, Lock } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { formatDate } from '@/lib/utils'
@@ -12,9 +13,11 @@ import type { EntryWithParticipants } from '@/types/app'
 interface EntryCardProps {
   entry: EntryWithParticipants
   onClick: () => void
+  onTogglePin?: (pinned: boolean) => Promise<void>
 }
 
-export function EntryCard({ entry, onClick }: EntryCardProps) {
+export function EntryCard({ entry, onClick, onTogglePin }: EntryCardProps) {
+  const [pinning, setPinning] = useState(false)
   const filter = getFilter(getStoredFilter(entry.id))
 
   const locationLabel = (() => {
@@ -36,7 +39,10 @@ export function EntryCard({ entry, onClick }: EntryCardProps) {
       whileTap={{ scale: 0.985 }}
       onClick={onClick}
       className="cursor-pointer group rounded-xl border border-white/6 overflow-hidden bg-slate-dark transition-all duration-200 hover:border-gold/20"
-      style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.35)' }}
+      style={{
+        boxShadow: '0 2px 16px rgba(0,0,0,0.35)',
+        ...(entry.pinned ? { borderLeftWidth: '3px', borderLeftColor: '#C9A84C' } : {}),
+      }}
     >
       {/* Cover image / gradient header */}
       <div className="relative h-[215px] w-full overflow-hidden">
@@ -70,11 +76,35 @@ export function EntryCard({ entry, onClick }: EntryCardProps) {
           <Badge type={entry.type} size="sm" />
         </div>
 
-        {/* Date — top right */}
-        <div className="absolute top-3 right-3">
+        {/* Date + Lock + Pin — top right */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          {entry.visibility === 'private' && (
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-black/30 backdrop-blur-sm">
+              <Lock size={10} className="text-ivory-dim" aria-label="Private entry" />
+            </span>
+          )}
           <span className="text-[10px] text-ivory/60 font-body tracking-wide bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full">
             {formatDate(entry.date)}
           </span>
+          {onTogglePin && (
+            <button
+              type="button"
+              aria-label={entry.pinned ? 'Unpin entry' : 'Pin entry'}
+              className={`flex items-center justify-center w-7 h-7 rounded-full backdrop-blur-sm transition-all duration-150 ${
+                entry.pinned
+                  ? 'bg-gold/30 text-gold'
+                  : 'bg-black/30 text-ivory/0 group-hover:text-ivory/50 hover:!text-ivory/80'
+              }`}
+              onClick={(e) => {
+                e.stopPropagation()
+                if (pinning) return
+                setPinning(true)
+                onTogglePin(!entry.pinned).finally(() => setPinning(false))
+              }}
+            >
+              <Pin size={14} strokeWidth={2} className={entry.pinned ? 'fill-gold' : ''} />
+            </button>
+          )}
         </div>
       </div>
 

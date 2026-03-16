@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import type { GentStats, GentAlias } from '@/types/app'
-import { GENT_LABELS } from '@/lib/gents'
+import type { GentStats, GentAlias, PS5Match } from '@/types/app'
+import { GENT_LABELS, GENT_ALIASES } from '@/lib/gents'
 
 // ─── Comparison helpers ───────────────────────────────────────────────────────
 
@@ -179,4 +179,110 @@ export async function fetchMissionsByYear(): Promise<Array<{ year: number; count
   return Object.entries(countByYear)
     .map(([year, count]) => ({ year: parseInt(year, 10), count }))
     .sort((a, b) => a.year - b.year)
+}
+
+// ─── PS5 Win Streaks ──────────────────────────────────────────────────────────
+
+export interface PS5Streak {
+  alias: GentAlias
+  currentStreak: number
+  longestStreak: number
+  lastResult: 'win' | 'loss' | 'draw' | null
+}
+
+export async function fetchPS5Streaks(): Promise<PS5Streak[]> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('metadata, date')
+    .eq('type', 'playstation')
+    .in('status', ['published', 'gathering_post'])
+    .order('date', { ascending: true })
+
+  if (error) throw error
+
+  // Track per-gent streaks
+  const current: Record<GentAlias, number> = { keys: 0, bass: 0, lorekeeper: 0 }
+  const longest: Record<GentAlias, number> = { keys: 0, bass: 0, lorekeeper: 0 }
+  const lastResult: Record<GentAlias, 'win' | 'loss' | 'draw' | null> = {
+    keys: null,
+    bass: null,
+    lorekeeper: null,
+  }
+
+  for (const row of data ?? []) {
+    const metadata = row.metadata as Record<string, unknown>
+    const matches = metadata?.matches as PS5Match[] | undefined
+    if (!matches) continue
+
+    for (const match of matches) {
+      const { p1, p2, winner } = match
+      const participants = [p1, p2] as GentAlias[]
+
+      for (const alias of participants) {
+        if (winner === null) {
+          // Draw — resets streak
+          current[alias] = 0
+          lastResult[alias] = 'draw'
+        } else if (winner === alias) {
+          current[alias] += 1
+          lastResult[alias] = 'win'
+          if (current[alias] > longest[alias]) {
+            longest[alias] = current[alias]
+          }
+        } else {
+          current[alias] = 0
+          lastResult[alias] = 'loss'
+        }
+      }
+    }
+  }
+
+  return GENT_ALIASES.map((alias) => ({
+    alias,
+    currentStreak: current[alias],
+    longestStreak: longest[alias],
+    lastResult: lastResult[alias],
+  }))
+}
+
+// ─── Steak Ratings ───────────────────────────────────────────────────────────
+
+export interface SteakRating {
+  entry_id: string
+  title: string
+  location: string | null
+  date: string
+  score: number
+  cut: string | null
+}
+
+export async function fetchSteakRatings(): Promise<SteakRating[]> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id, title, location, date, metadata')
+    .eq('type', 'steak')
+    .in('status', ['published', 'gathering_post'])
+    .order('date', { ascending: true })
+
+  if (error) throw error
+
+  const ratings: SteakRating[] = []
+
+  for (const row of data ?? []) {
+    const r = row as { id: string; title: string; location: string | null; date: string; metadata: Record<string, unknown> }
+    const meta = r.metadata ?? {}
+    const score = typeof meta.score === 'number' ? meta.score : typeof meta.score === 'string' ? parseFloat(meta.score) : null
+    if (score === null || isNaN(score)) continue
+
+    ratings.push({
+      entry_id: r.id,
+      title: r.title,
+      location: r.location,
+      date: r.date,
+      score,
+      cut: typeof meta.cut === 'string' ? meta.cut : null,
+    })
+  }
+
+  return ratings
 }

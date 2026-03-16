@@ -29,6 +29,7 @@ import BucketList from '@/pages/BucketList'
 import MindMap from '@/pages/MindMap'
 import Agenda from '@/pages/Agenda'
 import GentProfile from '@/pages/GentProfile'
+import PhotoTimeline from '@/pages/PhotoTimeline'
 
 // Public pages (no auth)
 import PublicInvite from '@/pages/public/PublicInvite'
@@ -56,6 +57,7 @@ function AnimatedRoutes() {
         <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/chronicle" element={<ProtectedRoute><Chronicle /></ProtectedRoute>} />
         <Route path="/chronicle/new" element={<ProtectedRoute><EntryNew /></ProtectedRoute>} />
+        <Route path="/chronicle/photos" element={<ProtectedRoute><PhotoTimeline /></ProtectedRoute>} />
         <Route path="/chronicle/:id" element={<ProtectedRoute><EntryDetail /></ProtectedRoute>} />
         <Route path="/chronicle/:id/edit" element={<ProtectedRoute><EntryEdit /></ProtectedRoute>} />
         <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />

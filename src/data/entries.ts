@@ -4,7 +4,7 @@ import { checkAndAwardAchievements } from '@/data/achievements'
 import { checkAndAwardThresholds } from '@/data/thresholds'
 import { imageToJpegBlob } from '@/lib/image'
 
-export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, status, metadata, created_by, created_at, updated_at'
+export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, status, pinned, visibility, metadata, created_by, created_at, updated_at'
 const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio'
 
 export async function fetchEntries(filters?: {
@@ -12,12 +12,14 @@ export async function fetchEntries(filters?: {
   gentId?: string
   year?: number
   ids?: string[]
+  currentGentId?: string
 }): Promise<EntryWithParticipants[]> {
   // Build the entries query
   let query = supabase
     .from('entries')
     .select(ENTRY_COLUMNS)
     .in('status', ['published', 'gathering_post'])
+    .order('pinned', { ascending: false })
     .order('date', { ascending: false })
 
   if (filters?.ids) {
@@ -52,7 +54,12 @@ export async function fetchEntries(filters?: {
   if (error) throw error
   if (!rawEntries || rawEntries.length === 0) return []
 
-  const entries = rawEntries as unknown as Entry[]
+  // Filter out private entries not owned by the current gent
+  const allEntries = rawEntries as unknown as Entry[]
+  const entries = filters?.currentGentId
+    ? allEntries.filter((e) => e.visibility !== 'private' || e.created_by === filters.currentGentId)
+    : allEntries
+  if (entries.length === 0) return []
   const entryIds = entries.map((e) => e.id)
 
   // Fetch all participants for those entries in one query
@@ -117,6 +124,7 @@ export async function createEntry(data: {
   description?: string
   metadata?: Record<string, unknown>
   created_by: string
+  visibility?: 'shared' | 'private'
 }): Promise<Entry> {
   const { data: rawEntry, error } = await supabase
     .from('entries')
@@ -132,6 +140,7 @@ export async function createEntry(data: {
       metadata: (data.metadata ?? {}) as unknown as Record<string, never>,
       created_by: data.created_by,
       status: 'published' as const,
+      visibility: data.visibility ?? 'shared',
     })
     .select(ENTRY_COLUMNS)
     .single()
@@ -260,11 +269,30 @@ export async function updateEntryLore(entryId: string, lore: string): Promise<vo
   if (error) throw error
 }
 
+export async function togglePin(entryId: string, pinned: boolean): Promise<void> {
+  const { error } = await supabase.from('entries').update({ pinned }).eq('id', entryId)
+  if (error) throw error
+}
+
 export async function updateEntryCover(entryId: string, coverUrl: string): Promise<void> {
   const { error } = await supabase
     .from('entries')
     .update({ cover_image_url: coverUrl })
     .eq('id', entryId)
+
+  if (error) throw error
+}
+
+export async function addPersonAppearances(entryId: string, personIds: string[], gentId: string): Promise<void> {
+  if (personIds.length === 0) return
+  const rows = personIds.map((personId) => ({
+    entry_id: entryId,
+    person_id: personId,
+    noted_by: gentId,
+  }))
+  const { error } = await supabase
+    .from('person_appearances')
+    .upsert(rows, { onConflict: 'person_id,entry_id' })
 
   if (error) throw error
 }

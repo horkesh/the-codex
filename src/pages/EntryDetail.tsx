@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
-import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, ImagePlay, Edit2 } from 'lucide-react'
+import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, ImagePlay, Edit2, Pin } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Avatar } from '@/components/ui'
@@ -17,7 +17,7 @@ import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
 import { CommentsSection } from '@/components/chronicle/CommentsSection'
 import { useEntry } from '@/hooks/useEntry'
 import { useEntryFilter } from '@/hooks/useEntryFilter'
-import { deleteEntry, updateEntryCover, updateEntryLore } from '@/data/entries'
+import { deleteEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryWithParticipants } from '@/types/app'
@@ -31,6 +31,8 @@ interface OptionsMenuProps {
   canGenerateScene: boolean
   generatingScene: boolean
   regeneratingLore: boolean
+  isPinned: boolean
+  onTogglePin: () => void
   onGenerateLore: () => void
   onRegenerateLore: () => void
   onGenerateScene: () => void
@@ -41,6 +43,7 @@ interface OptionsMenuProps {
 
 function OptionsMenu({
   isOpen, onClose, hasLore, canGenerateScene, generatingScene, regeneratingLore,
+  isPinned, onTogglePin,
   onGenerateLore, onRegenerateLore, onGenerateScene, onEdit, onExport, onDelete,
 }: OptionsMenuProps) {
   return (
@@ -82,6 +85,14 @@ function OptionsMenu({
             </span>
           </button>
         )}
+        <button
+          type="button"
+          className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
+          onClick={() => { onTogglePin(); onClose() }}
+        >
+          <Pin size={18} className={`shrink-0 ${isPinned ? 'text-gold fill-gold' : 'text-ivory-muted'}`} />
+          <span className="font-body text-sm">{isPinned ? 'Unpin Entry' : 'Pin Entry'}</span>
+        </button>
         <button
           type="button"
           className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
@@ -278,6 +289,19 @@ export default function EntryDetail() {
       addToast('Scene generation failed.', 'error')
     } finally {
       setGeneratingScene(false)
+    }
+  }
+
+  async function handleTogglePin() {
+    if (!entry) return
+    const newPinned = !entry.pinned
+    setEntry({ ...entry, pinned: newPinned })
+    try {
+      await togglePin(entry.id, newPinned)
+      addToast(newPinned ? 'Entry pinned.' : 'Entry unpinned.', 'success')
+    } catch {
+      setEntry({ ...entry, pinned: !newPinned })
+      addToast('Failed to update pin.', 'error')
     }
   }
 
@@ -487,6 +511,8 @@ export default function EntryDetail() {
         canGenerateScene={['mission', 'night_out', 'toast', 'gathering', 'interlude'].includes(entry.type)}
         generatingScene={generatingScene}
         regeneratingLore={regeneratingLore}
+        isPinned={!!entry.pinned}
+        onTogglePin={handleTogglePin}
         onGenerateLore={handleGenerateLoreFromMenu}
         onRegenerateLore={handleRegenerateLore}
         onGenerateScene={handleGenerateScene}
