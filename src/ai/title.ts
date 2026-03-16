@@ -9,16 +9,20 @@ interface TitleContext {
   date?: string
 }
 
-/** Shared invocation — sends either photo or lore to the generate-title edge function. */
-async function invokeGenerateTitle(
+/**
+ * Analyse the first photo and generate a suggested entry title.
+ * Compresses the image to 512px / 0.6 quality to keep the payload small.
+ */
+export async function generateTitle(
+  file: File,
   entryType: EntryType,
-  source: { photo?: string; lore?: string },
   context?: TitleContext,
 ): Promise<string | null> {
   try {
+    const photo = await imageToJpegBase64(file, { maxPx: 512, quality: 0.6 })
     const { data, error } = await supabase.functions.invoke('generate-title', {
       body: {
-        ...source,
+        photo,
         entryType,
         location: context?.location,
         city: context?.city,
@@ -35,25 +39,29 @@ async function invokeGenerateTitle(
 }
 
 /**
- * Analyse the first photo and generate a suggested entry title.
- * Compresses the image to 512px / 0.6 quality to keep the payload small.
+ * Generate multiple title suggestions from lore text.
+ * Returns an array of title options.
  */
-export async function generateTitle(
-  file: File,
-  entryType: EntryType,
-  context?: TitleContext,
-): Promise<string | null> {
-  const photo = await imageToJpegBase64(file, { maxPx: 512, quality: 0.6 })
-  return invokeGenerateTitle(entryType, { photo }, context)
-}
-
-/**
- * Generate a title from lore text (no photo needed).
- */
-export async function generateTitleFromLore(
+export async function generateTitleSuggestions(
   lore: string,
   entryType: EntryType,
   context?: TitleContext,
-): Promise<string | null> {
-  return invokeGenerateTitle(entryType, { lore }, context)
+): Promise<string[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-title', {
+      body: {
+        lore,
+        entryType,
+        location: context?.location,
+        city: context?.city,
+        country: context?.country,
+        date: context?.date,
+      },
+    })
+    if (error) throw error
+    return data?.titles ?? (data?.title ? [data.title] : [])
+  } catch (err) {
+    console.error('generate-title-suggestions failed:', err)
+    return []
+  }
 }

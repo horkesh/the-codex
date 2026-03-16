@@ -9,7 +9,7 @@ import { LoreSection } from '@/components/chronicle/LoreSection'
 import { EntryReactions } from '@/components/chronicle/EntryReactions'
 import { generateScene } from '@/ai/scene'
 import { generateLoreFull } from '@/ai/lore'
-import { generateTitleFromLore } from '@/ai/title'
+import { generateTitleSuggestions } from '@/ai/title'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
 import { PhotoStoryboard } from '@/components/chronicle/PhotoStoryboard'
 import { FilterPicker } from '@/components/chronicle/FilterPicker'
@@ -233,6 +233,8 @@ export default function EntryDetail() {
   const [generatingScene, setGeneratingScene] = useState(false)
   const [regeneratingLore, setRegeneratingLore] = useState(false)
   const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([])
+  const [titleModalOpen, setTitleModalOpen] = useState(false)
   const [generatingTitle, setGeneratingTitle] = useState(false)
 
   function handleExportToStudio() {
@@ -349,25 +351,42 @@ export default function EntryDetail() {
     }
   }
 
-  async function handleGenerateTitle() {
+  async function handleOpenTitleModal() {
     if (!entry?.lore || generatingTitle) return
+    setTitleModalOpen(true)
     setGeneratingTitle(true)
+    setTitleSuggestions([])
     try {
-      const title = await generateTitleFromLore(entry.lore, entry.type, {
+      const titles = await generateTitleSuggestions(entry.lore, entry.type, {
         location: entry.location ?? undefined,
         city: entry.city ?? undefined,
         country: entry.country ?? undefined,
         date: entry.date,
       })
-      if (title) {
-        setSuggestedTitle(title)
+      if (titles.length > 0) {
+        setTitleSuggestions(titles)
       } else {
-        addToast('Could not generate title. Try again.', 'error')
+        addToast('Could not generate titles. Try again.', 'error')
+        setTitleModalOpen(false)
       }
     } catch {
       addToast('Title generation failed.', 'error')
+      setTitleModalOpen(false)
     } finally {
       setGeneratingTitle(false)
+    }
+  }
+
+  async function handlePickTitle(title: string) {
+    if (!entry) return
+    try {
+      await updateEntry(entry.id, { title } as Partial<EntryWithParticipants>)
+      setEntry({ ...entry, title })
+      setTitleModalOpen(false)
+      setTitleSuggestions([])
+      addToast('Title updated.', 'success')
+    } catch {
+      addToast('Failed to update title.', 'error')
     }
   }
 
@@ -420,7 +439,7 @@ export default function EntryDetail() {
               <button
                 type="button"
                 className="flex items-center justify-center w-8 h-8 rounded-full text-ivory-muted hover:text-gold hover:bg-slate-light transition-colors"
-                onClick={handleGenerateTitle}
+                onClick={handleOpenTitleModal}
                 disabled={generatingTitle}
                 aria-label="Suggest title from lore"
               >
@@ -469,7 +488,7 @@ export default function EntryDetail() {
               />
             </motion.div>
 
-            {/* AI title suggestion banner */}
+            {/* AI title suggestion banner (from lore generation) */}
             {suggestedTitle && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                 <div className="flex items-center gap-3 bg-gold/8 border border-gold/20 rounded-lg px-4 py-3">
@@ -479,16 +498,7 @@ export default function EntryDetail() {
                   </div>
                   <button
                     type="button"
-                    onClick={async () => {
-                      try {
-                        await updateEntry(entry.id, { title: suggestedTitle } as Partial<EntryWithParticipants>)
-                        setEntry({ ...entry, title: suggestedTitle })
-                        setSuggestedTitle(null)
-                        addToast('Title updated.', 'success')
-                      } catch {
-                        addToast('Failed to update title.', 'error')
-                      }
-                    }}
+                    onClick={() => handlePickTitle(suggestedTitle)}
                     className="text-xs text-gold border border-gold/30 rounded-full px-3 py-1 hover:border-gold/60 transition-colors shrink-0 font-body"
                   >
                     Apply
@@ -649,6 +659,38 @@ export default function EntryDetail() {
         deleting={deleting}
         title={entry.title}
       />
+
+      {/* Title suggestions modal */}
+      <Modal isOpen={titleModalOpen} onClose={() => { setTitleModalOpen(false); setTitleSuggestions([]) }} title="Title Suggestions">
+        <div className="flex flex-col gap-1 pb-2">
+          {generatingTitle && titleSuggestions.length === 0 && (
+            <div className="flex flex-col items-center gap-3 py-6">
+              <Spinner size="sm" />
+              <p className="text-xs text-ivory-dim font-body">Generating titles from lore...</p>
+            </div>
+          )}
+          {titleSuggestions.map((t, i) => (
+            <button
+              key={i}
+              type="button"
+              className="w-full text-left px-4 py-3 rounded-xl border border-white/10 text-sm font-body text-ivory hover:border-gold/30 hover:bg-gold/5 transition-colors"
+              onClick={() => handlePickTitle(t)}
+            >
+              {t}
+            </button>
+          ))}
+          {!generatingTitle && titleSuggestions.length > 0 && (
+            <button
+              type="button"
+              className="mt-2 text-xs text-ivory-dim hover:text-gold font-body transition-colors text-center py-2"
+              onClick={handleOpenTitleModal}
+            >
+              <RefreshCw size={12} className="inline mr-1.5" />
+              Generate more
+            </button>
+          )}
+        </div>
+      </Modal>
     </>
   )
 }

@@ -32,10 +32,10 @@ Deno.serve(async (req: Request) => {
     let content: Array<Record<string, unknown>>
 
     if (lore) {
-      // Generate title from lore text — no photo needed
+      // Generate multiple title options from lore text
       prompt = `You are naming an entry for a private lifestyle chronicle of three gentlemen called "The Gents".
 
-Given the lore narrative below, generate a short, evocative title (3-8 words). The title should feel editorial and specific — distilling the essence of the lore into a punchy, memorable name.
+Given the lore narrative below, generate 5 short, evocative title options (3-8 words each). Each title should feel editorial and specific — distilling the essence of the lore into a punchy, memorable name. Offer variety: some literal, some atmospheric, some playful.
 
 ${typeInstruction}
 ${locationStr ? `\nKnown location: ${locationStr}` : ''}${date ? `\nDate: ${date}` : ''}
@@ -44,14 +44,43 @@ Lore:
 ${lore}
 
 Rules:
-- Return ONLY the title text, nothing else — no quotes, no explanation, no prefix
-- 3-8 words max
-- No emojis
-- Be specific to what the lore describes — pull a defining detail, mood, or moment
-- If location is mentioned in the lore, you may incorporate it naturally but don't force it
+- Return ONLY the 5 titles, one per line, numbered 1-5
+- 3-8 words each
+- No emojis, no quotes, no explanation
+- Be specific to what the lore describes
 - Do not use generic filler words like "A Night of...", "An Evening of...", "The Art of..."`
 
       content = [{ type: 'text', text: prompt }]
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 200,
+          messages: [{ role: 'user', content }],
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Claude API error: ${response.status}`)
+      }
+
+      const result = await response.json()
+      const raw = result.content?.[0]?.text?.trim() ?? ''
+      // Parse numbered lines: "1. Title here" or "1) Title here"
+      const titles = raw
+        .split('\n')
+        .map((line: string) => line.replace(/^\d+[\.\)\-]\s*/, '').trim().replace(/^["']|["']$/g, ''))
+        .filter((t: string) => t.length > 0 && t.length < 80)
+
+      return new Response(JSON.stringify({ titles, title: titles[0] || null }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     } else {
       // Generate title from photo
       prompt = `You are naming an entry for a private lifestyle chronicle of three gentlemen called "The Gents".
