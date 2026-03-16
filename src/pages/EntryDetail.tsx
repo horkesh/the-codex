@@ -18,7 +18,7 @@ import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
 import { CommentsSection } from '@/components/chronicle/CommentsSection'
 import { useEntry } from '@/hooks/useEntry'
 import { useEntryFilter } from '@/hooks/useEntryFilter'
-import { deleteEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
+import { fetchEntry, deleteEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryWithParticipants } from '@/types/app'
@@ -236,11 +236,14 @@ export default function EntryDetail() {
     if (!entry || regeneratingLore) return
     setRegeneratingLore(true)
     try {
-      const lore = await generateLore(entry, photoUrls)
+      // Re-fetch entry to get latest metadata (including Director's Notes)
+      const fresh = await fetchEntry(entry.id)
+      const entryForLore = fresh ?? entry
+      const lore = await generateLore(entryForLore, photoUrls)
       if (lore) {
         await updateEntryLore(entry.id, lore)
         const now = new Date().toISOString()
-        setEntry({ ...entry, lore, lore_generated_at: now })
+        setEntry({ ...entryForLore, lore, lore_generated_at: now })
         addToast('Lore regenerated.', 'success')
       } else {
         addToast('Could not regenerate lore. Try again.', 'error')
