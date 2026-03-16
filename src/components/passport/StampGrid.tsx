@@ -74,43 +74,48 @@ export function StampGrid({ stamps, onStampPress }: StampGridProps) {
       </div>
 
       {/* Stamp grid */}
-      <AnimatePresence mode="wait">
-        {filteredStamps.length === 0 ? (
-          <motion.div
-            key={`empty-${activeTab}`}
-            variants={fadeIn}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="flex flex-col items-center justify-center py-16 gap-3"
-          >
-            <EmptyStateImage
-              src={
-                activeTab === 'achievement'
-                  ? '/empty-states/passport-achievements.webp'
-                  : '/empty-states/passport.webp'
-              }
-            />
-            <p className="text-ivory-dim text-sm text-center">
-              {currentTab.emptyText}
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            key={`grid-${activeTab}`}
-            variants={staggerContainer}
-            initial="initial"
-            animate="animate"
-            className="grid grid-cols-3 gap-3"
-          >
-            {filteredStamps.map(stamp => (
-              <motion.div key={stamp.id} variants={staggerItem}>
-                <StampCard stamp={stamp} onPress={() => onStampPress(stamp)} />
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div
+        className="bg-gradient-to-br from-[#1a1610] via-[#0f0d0a] to-[#1a1610] border border-gold/8 rounded-xl p-4"
+        style={{ boxShadow: 'inset 0 0 40px rgba(201,168,76,0.03)' }}
+      >
+        <AnimatePresence mode="wait">
+          {filteredStamps.length === 0 ? (
+            <motion.div
+              key={`empty-${activeTab}`}
+              variants={fadeIn}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="flex flex-col items-center justify-center py-16 gap-3"
+            >
+              <EmptyStateImage
+                src={
+                  activeTab === 'achievement'
+                    ? '/empty-states/passport-achievements.webp'
+                    : '/empty-states/passport.webp'
+                }
+              />
+              <p className="text-ivory-dim text-sm text-center">
+                {currentTab.emptyText}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`grid-${activeTab}`}
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+              className="grid grid-cols-3 gap-3"
+            >
+              {filteredStamps.map(stamp => (
+                <motion.div key={stamp.id} variants={staggerItem}>
+                  <StampCard stamp={stamp} onPress={() => onStampPress(stamp)} />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

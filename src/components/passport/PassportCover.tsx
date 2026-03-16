@@ -77,9 +77,12 @@ export function PassportCover({ gent, onOpen, stampCount, countryCount }: Passpo
             'relative w-full',
             'bg-slate-dark',
             'border-2 border-gold/30 rounded-xl',
-            'shadow-[0_8px_40px_rgba(0,0,0,0.6),0_0_0_1px_rgba(201,168,76,0.08),inset_0_1px_0_rgba(201,168,76,0.1)]',
             'overflow-hidden',
           )}
+          style={{
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(201,168,76,0.02) 2px, rgba(201,168,76,0.02) 4px)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.08), inset 0 1px 0 rgba(201,168,76,0.1), inset 0 0 60px rgba(201,168,76,0.05)',
+          }}
         >
         {/* Spine accent line */}
         <div className="h-1 w-full bg-gradient-to-r from-transparent via-gold/50 to-transparent" />

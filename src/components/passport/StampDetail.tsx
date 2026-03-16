@@ -96,7 +96,10 @@ export function StampDetail({ stamp, onClose }: StampDetailProps) {
   return (
     <Modal isOpen={stamp !== null} onClose={onClose}>
       {stamp && (
-        <div className="flex flex-col items-center gap-4 py-2">
+        <div
+          className="flex flex-col items-center gap-4 py-4 bg-gradient-to-br from-[#1a1610] via-[#0f0d0a] to-[#1a1610] rounded-xl px-4"
+          style={{ boxShadow: 'inset 0 0 30px rgba(201,168,76,0.03)' }}
+        >
           {/* Large stamp image */}
           <StampCircle stamp={stamp} />
 
