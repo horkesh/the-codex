@@ -12,13 +12,13 @@ Intended to be run autonomously via Ralph.
 
 ### Tasks
 
-- [ ] **Animated reactions** — In `EntryReactions.tsx`, add a Framer Motion float-and-fade burst when a reaction button is tapped. Use `AnimatePresence` + `motion.div` with `initial={{ opacity:1, y:0 }}` → `animate={{ opacity:0, y:-32 }}`. Burst spawns absolutely positioned over the button, unmounts after animation.
+- [x] **Animated reactions** — Burst particles in `EntryReactions.tsx` (float-up + fade-out on tap)
 
-- [ ] **Trophy case on gent profiles** — In `GentProfile.tsx`, add a "Honours" section below the stats chips. Call `fetchEarnedAchievements(gent.id)` and `fetchEarnedThresholds(gent.id)` in the existing `useEffect`. Display as a wrapping grid of small badge chips: icon emoji + label, `bg-gold/8 border border-gold/20 rounded-full px-3 py-1 text-xs text-gold font-body`. Only render section if at least one badge earned.
+- [x] **Trophy case on gent profiles** — "Honours" section in `GentProfile.tsx` showing achievements + thresholds
 
-- [ ] **Signature stat** — In `GentProfile.tsx`, derive one "signature" line from stats. Logic: find the stat with highest value relative to its category average across gents; map to a label (e.g. `steaks >= 10` → "Connoisseur", `countries_visited >= 5` → "Globetrotter", `missions >= 8` → "Expeditionary", `nights_out >= 15` → "Nighthawk", fallback to highest raw count). Render as a small `text-ivory-dim text-xs font-body italic` line under `display_name` in the hero.
+- [x] **Signature stat** — `deriveSignatureStat` in `GentProfile.tsx` (threshold labels + relative-to-group fallback)
 
-- [ ] **`/simplify`** — run simplify pass on all Phase 1 changes
+- [x] **`/simplify`** — verified clean
 
 ---
 

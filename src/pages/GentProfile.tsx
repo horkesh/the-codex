@@ -6,6 +6,7 @@ import { fetchGentByAlias } from '@/data/gents'
 import { fetchAllStats } from '@/data/stats'
 import { fetchEntries } from '@/data/entries'
 import { fetchEarnedAchievements, ACHIEVEMENT_ICONS, type EarnedAchievement } from '@/data/achievements'
+import { fetchEarnedThresholds, THRESHOLD_DEFINITIONS } from '@/data/thresholds'
 import { formatDate } from '@/lib/utils'
 import type { Gent, GentStats, EntryWithParticipants } from '@/types/app'
 
@@ -62,6 +63,7 @@ export default function GentProfile() {
   const [stats, setStats] = useState<GentStats | null>(null)
   const [entries, setEntries] = useState<EntryWithParticipants[]>([])
   const [achievements, setAchievements] = useState<EarnedAchievement[]>([])
+  const [thresholdKeys, setThresholdKeys] = useState<string[]>([])
   const [signature, setSignature] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -88,12 +90,14 @@ export default function GentProfile() {
         setStats(gentStats)
         if (gentStats) setSignature(deriveSignatureStat(gentStats, allStats))
 
-        const [gentEntries, earned] = await Promise.all([
+        const [gentEntries, earned, earnedThresholds] = await Promise.all([
           fetchEntries({ gentId: fetchedGent.id }),
           fetchEarnedAchievements(fetchedGent.id),
+          fetchEarnedThresholds(fetchedGent.id),
         ])
         setEntries(gentEntries.slice(0, 5))
         setAchievements(earned)
+        setThresholdKeys(earnedThresholds)
       } catch {
         setNotFound(true)
       } finally {
@@ -212,7 +216,7 @@ export default function GentProfile() {
           )}
 
           {/* ── Honours ── */}
-          {achievements.length > 0 && (
+          {(achievements.length > 0 || thresholdKeys.length > 0) && (
             <div className="mb-6">
               <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold mb-2">
                 Honours
@@ -224,10 +228,24 @@ export default function GentProfile() {
                     title={a.description}
                     className="inline-flex items-center gap-1.5 bg-gold/8 border border-gold/20 rounded-full px-3 py-1 text-xs text-gold font-body"
                   >
-                    <span aria-hidden="true">{ACHIEVEMENT_ICONS[a.type] ?? '🏅'}</span>
+                    <span aria-hidden="true">{ACHIEVEMENT_ICONS[a.type] ?? '&#9733;'}</span>
                     {a.name}
                   </span>
                 ))}
+                {thresholdKeys.map((key) => {
+                  const def = THRESHOLD_DEFINITIONS.find((d) => d.reward_key === key)
+                  if (!def) return null
+                  return (
+                    <span
+                      key={key}
+                      title={def.description}
+                      className="inline-flex items-center gap-1.5 bg-gold/8 border border-gold/20 rounded-full px-3 py-1 text-xs text-gold font-body"
+                    >
+                      <span aria-hidden="true">&#9830;</span>
+                      {def.name}
+                    </span>
+                  )
+                })}
               </div>
             </div>
           )}
