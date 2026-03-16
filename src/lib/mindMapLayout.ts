@@ -57,7 +57,8 @@ export function computeGraphData(
   people: Person[],
   appearances: PersonAppearance[],
   filters: MindMapFilters,
-  focusedGentId: string | null
+  focusedGentId: string | null,
+  savedPositions?: Record<string, { x: number; y: number }>,
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
@@ -84,7 +85,7 @@ export function computeGraphData(
       type: 'gentNode',
       position: pos,
       data: { type: 'gent', gent: g, dimmed } satisfies GentNodeData,
-      draggable: false,
+      draggable: true,
     })
   })
 
@@ -175,17 +176,20 @@ export function computeGraphData(
 
       const dimmed = focusedGentId !== null && !connectedToFocused.has(person.id)
 
+      const savedPos = savedPositions?.[person.id]
+      const position = savedPos ?? { x, y }
+
       nodes.push({
         id: `person-${person.id}`,
         type: 'personNode',
-        position: { x, y },
+        position,
         data: {
           type: 'person',
           person,
           tier: ring,
           dimmed,
         } satisfies PersonNodeData,
-        draggable: false,
+        draggable: true,
       })
 
       // Gent → Person edges
