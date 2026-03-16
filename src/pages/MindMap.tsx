@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ReactFlow, ReactFlowProvider, Background, useReactFlow, type NodeMouseHandler } from '@xyflow/react'
+import { ReactFlow, ReactFlowProvider, Background, useReactFlow, applyNodeChanges, type NodeMouseHandler, type NodeChange } from '@xyflow/react'
 import { Spinner } from '@/components/ui'
 import { TopBar, SectionNav } from '@/components/layout'
 import { GentNode } from '@/components/mindmap/GentNode'
@@ -47,6 +47,14 @@ function MindMapCanvas() {
   } = useMindMap()
 
   const { setNodes, fitView } = useReactFlow()
+  const [liveNodes, setLiveNodes] = useState(nodes)
+  // Sync live nodes when computed nodes change (filter, focus, data reload)
+  useEffect(() => { setLiveNodes(nodes) }, [nodes])
+
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    setLiveNodes(nds => applyNodeChanges(changes, nds))
+  }, [])
+
   const [searchOpen, setSearchOpen] = useState(false)
   const addToast = useUIStore(s => s.addToast)
 
@@ -224,9 +232,10 @@ function MindMapCanvas() {
       )}
 
       <ReactFlow
-        nodes={nodes}
+        nodes={liveNodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
         onNodeClick={onNodeClick}
         onNodeDragStop={onDragStop}
         fitView
