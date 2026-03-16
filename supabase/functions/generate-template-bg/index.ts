@@ -145,6 +145,7 @@ Deno.serve(async (req: Request) => {
     // If cover image exists, download it for restyling
     let coverBase64: string | null = null
     let coverMimeType = 'image/jpeg'
+    let coverDownloadError: string | null = null
     if (cover_image_url) {
       try {
         const controller = new AbortController()
@@ -154,22 +155,22 @@ Deno.serve(async (req: Request) => {
           coverMimeType = imgRes.headers.get('content-type') ?? 'image/jpeg'
           const buf = await imgRes.arrayBuffer()
           coverBase64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
+        } else {
+          coverDownloadError = `HTTP ${imgRes.status} ${imgRes.statusText}`
         }
-      } catch {
-        // Fall through to generate from scratch if download fails
+      } catch (e) {
+        coverDownloadError = (e as Error).message
       }
     }
 
     let base64Image: string
+    let sceneDescription: string | null = null
+    const mode = coverBase64 ? 'restyle' : 'from_scratch'
 
     if (coverBase64) {
       // Two-step restyle: analyze scene → generate noir rendition
-      console.log('Restyle mode: cover image downloaded, starting scene analysis...')
-      const sceneDescription = await analyzeScene(coverBase64, coverMimeType, googleApiKey)
-      console.log('Scene description:', sceneDescription)
-      console.log('Generating noir rendition...')
+      sceneDescription = await analyzeScene(coverBase64, coverMimeType, googleApiKey)
       base64Image = await generateNoirScene(sceneDescription, aspectRatio, googleApiKey)
-      console.log('Noir rendition generated successfully')
     } else {
       // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
@@ -211,7 +212,16 @@ Deno.serve(async (req: Request) => {
 
     const { data: { publicUrl } } = db.storage.from('covers').getPublicUrl(fileName)
 
-    return new Response(JSON.stringify({ bg_url: publicUrl }), {
+    return new Response(JSON.stringify({
+      bg_url: publicUrl,
+      _debug: {
+        mode,
+        cover_image_url: cover_image_url ?? null,
+        cover_downloaded: !!coverBase64,
+        cover_download_error: coverDownloadError,
+        scene_description: sceneDescription?.slice(0, 500) ?? null,
+      },
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {

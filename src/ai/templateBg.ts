@@ -18,6 +18,9 @@ export async function generateTemplateBg(
       }
     })
     if (error) throw error
+    if (data?._debug) {
+      console.log('[template-bg debug]', data._debug)
+    }
     if (data?.error) {
       console.error('generate-template-bg server error:', data.error, data.stack)
       return null
