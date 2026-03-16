@@ -22,8 +22,8 @@ const TYPE_PROMPTS: Record<string, (location: string) => string> = {
   interlude:   (_)   => `A lone figure standing at a rain-streaked dark window overlooking city lights at night, silhouette against the glow, contemplative mood, deep shadows, cinematic. Style: film noir, melancholic, rich blacks.`,
 }
 
-// Noir style — matches the abstract geometric portrait aesthetic
-const NOIR_STYLE = 'Abstract artistic rendition. Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, high-end digital art, dramatic shadows and highlights, sophisticated composition.'
+// Noir style — photorealistic cinematic
+const NOIR_STYLE = 'Photorealistic cinematic noir. Dramatic studio lighting with strong rim lights, deep shadows, high contrast, moody desaturated colour palette with warm gold accent tones, dark atmospheric background, sharp facial detail, editorial photography quality.'
 
 // Step 1: Analyze the cover photo — describe the scene using known gent identities
 async function analyzeScene(
@@ -95,7 +95,7 @@ async function generateNoirScene(
   aspectRatio: string,
   apiKey: string,
 ): Promise<string> {
-  const imagePrompt = `High-end digital painting in dark cinematic noir style. ${sceneDescription}\n\nArt style: ${NOIR_STYLE} Render as a stylised digital painting, NOT a photograph. Deep noir lighting with dramatic shadows, strong rim lights, dark moody atmosphere. Heavily desaturated colour palette with selective warm gold accent tones. Dark background. Painterly texture. Each person's facial features, hair, and facial hair must be rendered with sharp detail exactly as described. The scene should look like a commissioned illustration for a luxury magazine. No text or words.`
+  const imagePrompt = `${sceneDescription}\n\nStyle: ${NOIR_STYLE} Each person's face, hair, and facial hair must be rendered with photographic sharpness exactly as described — these are real people and must be recognisable. Preserve ALL objects from the scene description (food, drinks, plates, furniture). Suitable as a full-bleed background behind text overlays. No text or words.`
 
   const imageResponse = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
