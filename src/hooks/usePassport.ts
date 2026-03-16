@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { fetchStamps } from '@/data/stamps'
+import { fetchStamps, backfillMissionStamps } from '@/data/stamps'
 import type { PassportStamp } from '@/types/app'
 
 export function usePassport() {
@@ -7,10 +7,19 @@ export function usePassport() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchStamps()
-      .then(data => setStamps(data))
-      .catch(err => console.error('usePassport: fetchStamps failed', err))
-      .finally(() => setLoading(false))
+    async function load() {
+      try {
+        // Backfill stamps for any missions that don't have one yet
+        await backfillMissionStamps()
+        const data = await fetchStamps()
+        setStamps(data)
+      } catch (err) {
+        console.error('usePassport: load failed', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
   }, [])
 
   const missionStamps = stamps.filter(s => s.type === 'mission')

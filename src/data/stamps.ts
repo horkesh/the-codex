@@ -84,6 +84,56 @@ export async function updateStampImage(stampId: string, imageUrl: string): Promi
   if (error) throw error
 }
 
+/**
+ * Backfill: create mission stamps for any mission entries that don't have one yet.
+ * Returns the newly created stamps.
+ */
+export async function backfillMissionStamps(): Promise<PassportStamp[]> {
+  // 1. Get all mission entry IDs that already have stamps
+  const { data: existingStamps } = await supabase
+    .from('passport_stamps')
+    .select('entry_id')
+    .eq('type', 'mission')
+  const stampedEntryIds = new Set((existingStamps ?? []).map(s => s.entry_id))
+
+  // 2. Get all published mission entries with city + country
+  const { data: missions, error } = await supabase
+    .from('entries')
+    .select('id, title, date, city, country, country_code')
+    .eq('type', 'mission')
+    .eq('status', 'published')
+    .not('city', 'is', null)
+    .not('country', 'is', null)
+
+  if (error || !missions) return []
+
+  // 3. Filter to entries without stamps
+  const missing = missions.filter(m => !stampedEntryIds.has(m.id))
+  if (missing.length === 0) return []
+
+  // 4. Insert all missing stamps
+  const rows = missing.map(m => ({
+    entry_id: m.id,
+    type: 'mission' as const,
+    name: `${m.city}, ${m.country}`,
+    city: m.city,
+    country: m.country,
+    country_code: m.country_code,
+    date_earned: m.date,
+  }))
+
+  const { data: newStamps, error: insertError } = await supabase
+    .from('passport_stamps')
+    .insert(rows)
+    .select()
+
+  if (insertError) {
+    console.error('backfillMissionStamps insert error:', insertError)
+    return []
+  }
+  return (newStamps ?? []) as PassportStamp[]
+}
+
 export async function fetchStampsByType(
   type: 'mission' | 'achievement' | 'diplomatic'
 ): Promise<PassportStamp[]> {

@@ -183,15 +183,18 @@ export default function EntryNew() {
     setSubmitting(true)
 
     try {
-      // 1. Create the entry
+      // 1. Create the entry — fall back to geo-detected city/country when form doesn't provide them
+      const city = formData.city || locationFill?.city || undefined
+      const country = formData.country || locationFill?.country || undefined
+      const country_code = formData.country_code || locationFill?.country_code || undefined
       const entry = await createEntry({
         type: selectedType,
         title: formData.title,
         date: formData.date,
-        location: formData.location ?? undefined,
-        city: formData.city ?? undefined,
-        country: formData.country ?? undefined,
-        country_code: formData.country_code ?? undefined,
+        location: formData.location ?? locationFill?.location ?? undefined,
+        city,
+        country,
+        country_code,
         description: formData.description ?? undefined,
         metadata: {
           ...(formData.metadata ?? {}),
@@ -258,13 +261,13 @@ export default function EntryNew() {
       }
 
       // 5b. Auto-create passport stamp for missions (fire-and-forget)
-      if (selectedType === 'mission' && formData.city && formData.country) {
+      if (selectedType === 'mission' && city && country) {
         createMissionStamp({
           id: entry.id,
           title: formData.title,
-          city: formData.city,
-          country: formData.country,
-          country_code: formData.country_code ?? '',
+          city,
+          country,
+          country_code: country_code ?? '',
           date: formData.date,
         }).then((stamp) => {
           // Generate stamp artwork async
