@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase'
 import type { Entry, EntryWithParticipants, Gent } from '@/types/app'
 import { checkAndAwardAchievements } from '@/data/achievements'
 import { checkAndAwardThresholds } from '@/data/thresholds'
-import { imageToJpegBlob } from '@/lib/image'
+import { imageToWebpBlob } from '@/lib/image'
 
 export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, status, pinned, visibility, metadata, created_by, created_at, updated_at'
 const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio'
@@ -222,18 +222,18 @@ export async function uploadEntryPhoto(
   file: File,
   sortOrder: number
 ): Promise<string> {
-  const blob = await imageToJpegBlob(file)
+  const blob = await imageToWebpBlob(file)
 
   const baseName = file.name
     .replace(/\.[^.]+$/, '')               // strip original extension
     .replace(/[^a-zA-Z0-9._-]/g, '_')     // sanitise
     .replace(/_{2,}/g, '_')                // collapse runs
     .slice(0, 60)                          // cap length
-  const path = `${entryId}/${Date.now()}-${baseName}.jpg`
+  const path = `${entryId}/${Date.now()}-${baseName}.webp`
 
   const { error: uploadError } = await supabase.storage
     .from('entry-photos')
-    .upload(path, blob, { upsert: false, contentType: 'image/jpeg' })
+    .upload(path, blob, { upsert: false, contentType: 'image/webp' })
 
   if (uploadError) throw uploadError
 

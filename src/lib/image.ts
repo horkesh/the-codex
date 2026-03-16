@@ -1,11 +1,11 @@
-/** Convert any image file to a JPEG Blob via canvas.
- *  Handles HEIC/HEIF (iOS), WebP, PNG, and files with empty/unknown MIME types.
+/** Convert any image file to a WebP Blob via canvas.
+ *  Handles HEIC/HEIF (iOS), WebP, PNG, JPEG and files with empty/unknown MIME types.
  *  @param maxPx   If set, down-scales so the longest edge ≤ maxPx (preserving aspect ratio)
- *  @param quality JPEG quality 0–1 (default 0.92)
+ *  @param quality WebP quality 0–1 (default 0.85)
  */
-export function imageToJpegBlob(
+export function imageToWebpBlob(
   file: File,
-  { maxPx, quality = 0.92 }: { maxPx?: number; quality?: number } = {},
+  { maxPx, quality = 0.85 }: { maxPx?: number; quality?: number } = {},
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -19,7 +19,7 @@ export function imageToJpegBlob(
       canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
       canvas.toBlob(
         (blob) => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')),
-        'image/jpeg',
+        'image/webp',
         quality,
       )
     }
@@ -27,6 +27,9 @@ export function imageToJpegBlob(
     img.src = objectUrl
   })
 }
+
+/** @deprecated Use imageToWebpBlob instead */
+export const imageToJpegBlob = imageToWebpBlob
 
 /** Like imageToJpegBlob but returns raw base64 (no data-URL prefix) for AI APIs. */
 export async function imageToJpegBase64(
