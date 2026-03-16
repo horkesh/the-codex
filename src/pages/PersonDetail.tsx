@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Shield, Link2 } from 'lucide-react'
+import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Shield, Link2, Eye } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Avatar, Spinner, Modal } from '@/components/ui'
 import { usePerson } from '@/hooks/usePerson'
+import { usePersonDossier } from '@/hooks/usePersonDossier'
 import { PrivateNoteSection } from '@/components/circle/PrivateNoteSection'
 import { PersonForm } from '@/components/circle/PersonForm'
 import type { PersonFormData } from '@/components/circle/PersonForm'
 import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents } from '@/data/people'
 import { fetchScanByPerson } from '@/data/personScans'
 import { fetchAllGents } from '@/data/gents'
+import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { useUIStore } from '@/store/ui'
 import { cn, formatDate } from '@/lib/utils'
 import { getZodiacSign } from '@/lib/horoscope'
-import type { Gent, PersonScan, PersonWithPrivateNote, PersonTier, VerdictLabel } from '@/types/app'
+import type { Gent, PersonScan, PersonWithPrivateNote, PersonTier, VerdictLabel, EntryType } from '@/types/app'
 
 type Tab = 'profile' | 'intel'
 
@@ -30,17 +33,24 @@ const TIER_OPTIONS: Array<{ value: PersonTier; label: string }> = [
   { value: 'acquaintance', label: 'Acquaintance' },
 ]
 
-function SectionDivider({ label, icon }: { label: string; icon?: React.ReactNode }) {
+function DossierSectionHeader({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 my-4">
-      <div className="flex-1 h-px bg-white/10" />
-      <div className="flex items-center gap-1.5 shrink-0">
-        {icon}
-        <span className="text-[10px] uppercase tracking-widest text-ivory-dim font-body">
-          {label}
-        </span>
-      </div>
-      <div className="flex-1 h-px bg-white/10" />
+    <div className="flex items-center gap-3 mt-8 mb-4">
+      <div className="flex-1 h-px bg-gold/10" />
+      <span className="text-[10px] uppercase tracking-[0.25em] text-gold-muted font-mono font-medium">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-gold/10" />
+    </div>
+  )
+}
+
+function RedactedPlaceholder() {
+  return (
+    <div className="space-y-2">
+      <div className="h-3 bg-white/5 rounded w-full" />
+      <div className="h-3 bg-white/5 rounded w-3/4" />
+      <div className="h-3 bg-white/5 rounded w-1/2" />
     </div>
   )
 }
@@ -50,6 +60,7 @@ export default function PersonDetail() {
   const navigate = useNavigate()
   const { addToast } = useUIStore()
   const { person, setPerson, loading, notFound } = usePerson(id)
+  const dossier = usePersonDossier(id)
   const [tab, setTab] = useState<Tab>('profile')
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -164,6 +175,7 @@ export default function PersonDetail() {
     : null
 
   const currentTier = TIER_OPTIONS.find(t => t.value === person.tier)
+  const dossierNumber = person.id.slice(0, 6).toUpperCase()
 
   return (
     <div className="flex flex-col h-full">
@@ -183,30 +195,63 @@ export default function PersonDetail() {
       />
 
       <PageWrapper>
-        {/* Hero */}
+        {/* ── DOSSIER HEADER ── */}
         <div className="flex flex-col items-center gap-2 pt-4 pb-2">
-          {person.portrait_url ? (
-            <div className="flex items-end gap-3">
-              <img
-                src={person.portrait_url}
-                alt={`${person.name} portrait`}
-                className="w-20 h-20 rounded-2xl object-cover border border-gold/30"
-              />
-              {person.photo_url && (
-                <div className="flex flex-col items-center gap-1 mb-0.5">
-                  <Avatar src={person.photo_url} name={person.name} size="sm" />
-                  <span className="text-[9px] text-ivory-dim font-body">Photo</span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <Avatar src={person.photo_url} name={person.name} size="xl" />
-          )}
+          {/* Dossier number */}
+          <span className="text-[10px] font-mono tracking-[0.3em] text-gold-muted uppercase">
+            Dossier No. {dossierNumber}
+          </span>
 
-          <h2 className="font-display text-2xl text-ivory text-center leading-tight">
+          {/* Avatar area */}
+          <div className="relative mt-1">
+            {person.portrait_url ? (
+              <div className="flex items-end gap-3">
+                <img
+                  src={person.portrait_url}
+                  alt={`${person.name} portrait`}
+                  className="w-20 h-20 rounded-2xl object-cover border border-gold/30"
+                />
+                {person.photo_url && (
+                  <div className="flex flex-col items-center gap-1 mb-0.5">
+                    <Avatar src={person.photo_url} name={person.name} size="sm" />
+                    <span className="text-[9px] text-ivory-dim font-body">Photo</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Avatar src={person.photo_url} name={person.name} size="xl" />
+            )}
+
+            {/* Tier stamp — positioned to the right of avatar */}
+            {person.category === 'contact' && currentTier && (
+              <button
+                type="button"
+                onClick={() => setShowTierModal(true)}
+                className="absolute -right-10 -top-1"
+              >
+                <div className="relative w-16 h-16 flex items-center justify-center">
+                  <div
+                    className="absolute inset-0 rounded-full border-2 border-gold/40"
+                    style={{ transform: 'rotate(-12deg)' }}
+                  />
+                  <div
+                    className="absolute inset-1 rounded-full border border-gold/20"
+                    style={{ transform: 'rotate(-12deg)' }}
+                  />
+                  <span className="text-[8px] uppercase tracking-[0.2em] text-gold font-body font-semibold text-center leading-tight px-1">
+                    {currentTier.label}
+                  </span>
+                </div>
+              </button>
+            )}
+          </div>
+
+          {/* Name */}
+          <h2 className="font-display text-3xl text-ivory text-center leading-tight mt-1">
             {person.name}
           </h2>
 
+          {/* Instagram */}
           {person.instagram && (
             <a
               href={`https://instagram.com/${person.instagram.replace(/^@/, '')}`}
@@ -219,22 +264,12 @@ export default function PersonDetail() {
             </a>
           )}
 
-          {/* Score pill + tier badge row */}
+          {/* Score pill + gent connections row */}
           <div className="flex items-center gap-2 mt-1 flex-wrap justify-center">
             {scan?.score != null && verdictStyle && (
-              <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-body font-semibold', verdictStyle.bg, verdictStyle.text)}>
+              <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-semibold', verdictStyle.bg, verdictStyle.text)}>
                 {scan.score.toFixed(1)} · {scan.verdict_label}
               </span>
-            )}
-            {person.category === 'contact' && (
-              <button
-                type="button"
-                onClick={() => setShowTierModal(true)}
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 bg-slate-light/50 border border-white/10 text-[11px] font-body text-ivory-dim hover:text-ivory hover:border-white/20 transition-colors"
-              >
-                <Shield size={10} />
-                {currentTier?.label ?? 'Acquaintance'}
-              </button>
             )}
             {gents.length > 0 && (
               <button
@@ -280,28 +315,53 @@ export default function PersonDetail() {
         {/* ── PROFILE TAB ── */}
         {tab === 'profile' && (
           <>
-            {(person.met_location || person.met_date) && (
-              <div className="flex flex-wrap justify-center gap-3 mt-3">
-                {person.met_location && (
-                  <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
-                    <MapPin size={12} className="text-gold-muted shrink-0" />
-                    {person.met_location}
-                  </div>
-                )}
-                {person.met_date && (
-                  <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
-                    <Calendar size={12} className="text-gold-muted shrink-0" />
-                    {formatDate(person.met_date)}
-                  </div>
+            {/* Met info + Last seen */}
+            {(person.met_location || person.met_date || dossier.lastSeen) && (
+              <div className="flex flex-col items-center gap-2 mt-3">
+                <div className="flex flex-wrap justify-center gap-3">
+                  {person.met_location && (
+                    <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
+                      <MapPin size={12} className="text-gold-muted shrink-0" />
+                      {person.met_location}
+                    </div>
+                  )}
+                  {person.met_date && (
+                    <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
+                      <Calendar size={12} className="text-gold-muted shrink-0" />
+                      <span className="font-mono text-[11px]">{formatDate(person.met_date)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Last Seen */}
+                {dossier.lastSeen && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/chronicle/${dossier.lastSeen!.entry.id}`)}
+                    className="flex items-center gap-1.5 text-xs text-ivory-dim font-body hover:text-ivory transition-colors"
+                  >
+                    <Eye size={12} className="text-gold-muted shrink-0" />
+                    <span className="text-gold-muted">Last seen:</span>
+                    {(() => {
+                      const meta = ENTRY_TYPE_META[dossier.lastSeen.entry.type as EntryType]
+                      const Icon = meta?.Icon
+                      return Icon ? <Icon size={11} className="text-gold-muted" /> : null
+                    })()}
+                    <span className="truncate max-w-[160px]">{dossier.lastSeen.entry.title}</span>
+                    <span className="font-mono text-[11px] text-ivory-dim/60 shrink-0">
+                      {formatDate(dossier.lastSeen.date)}
+                    </span>
+                  </button>
                 )}
               </div>
             )}
 
+            {/* Birthday */}
             {person.birthday && (
               <div className="flex flex-wrap justify-center gap-3 mt-3">
                 <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
                   <Cake size={12} className="text-gold-muted shrink-0" />
-                  {formatDate(person.birthday)}
+                  <span className="font-mono text-[11px]">{formatDate(person.birthday)}</span>
                 </div>
                 {getZodiacSign(person.birthday) && (
                   <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
@@ -311,6 +371,7 @@ export default function PersonDetail() {
               </div>
             )}
 
+            {/* Labels */}
             {person.labels.length > 0 && (
               <div className="flex flex-wrap justify-center gap-1.5 mt-3">
                 {person.labels.map((label) => (
@@ -327,15 +388,14 @@ export default function PersonDetail() {
               </div>
             )}
 
-            <SectionDivider label="Shared Notes" />
+            {/* ── FIELD NOTES ── */}
+            <DossierSectionHeader label="Field Notes" />
             {person.notes ? (
               <p className="text-sm text-ivory-muted font-body leading-relaxed whitespace-pre-wrap">
                 {person.notes}
               </p>
             ) : (
-              <p className="text-sm text-ivory-dim font-body italic text-center">
-                No shared notes yet
-              </p>
+              <RedactedPlaceholder />
             )}
 
             <div className="mt-2">
@@ -345,6 +405,101 @@ export default function PersonDetail() {
               />
             </div>
 
+            {/* ── ENCOUNTER LOG ── */}
+            {dossier.appearances.length > 0 && (
+              <>
+                <DossierSectionHeader label="Encounter Log" />
+                <div className="relative pl-6">
+                  {/* Vertical line */}
+                  <div className="absolute left-[7px] top-1 bottom-1 w-px bg-gold/20" />
+
+                  <div className="space-y-4">
+                    {dossier.appearances.map((app, i) => {
+                      const meta = ENTRY_TYPE_META[app.entry.type as EntryType]
+                      const Icon = meta?.Icon
+                      return (
+                        <motion.button
+                          key={app.entry.id}
+                          type="button"
+                          onClick={() => navigate(`/chronicle/${app.entry.id}`)}
+                          className="relative flex items-start gap-3 text-left w-full group"
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                        >
+                          {/* Timeline dot */}
+                          <div className="absolute -left-6 top-1 w-[15px] h-[15px] rounded-full border-2 border-gold/40 bg-obsidian flex items-center justify-center shrink-0">
+                            <div className="w-1.5 h-1.5 rounded-full bg-gold/60" />
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              {Icon && <Icon size={12} className="text-gold-muted shrink-0" />}
+                              <span className="text-sm text-ivory font-body truncate group-hover:text-gold transition-colors">
+                                {app.entry.title}
+                              </span>
+                            </div>
+                            <span className="text-[11px] font-mono text-ivory-dim/60 mt-0.5 block">
+                              {formatDate(app.date)}
+                              {app.entry.city && ` — ${app.entry.city}`}
+                            </span>
+                          </div>
+                        </motion.button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ── KNOWN ASSOCIATIONS ── */}
+            {dossier.coAppearing.length > 0 && (
+              <>
+                <DossierSectionHeader label="Known Associations" />
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                  {dossier.coAppearing.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => navigate(`/circle/${p.id}`)}
+                      className="flex flex-col items-center gap-1.5 shrink-0 group"
+                    >
+                      <Avatar src={p.photo_url} name={p.name} size="md" />
+                      <span className="text-[11px] text-ivory-dim font-body truncate max-w-[64px] group-hover:text-ivory transition-colors">
+                        {p.name.split(' ')[0]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* ── VISUAL EVIDENCE ── */}
+            {dossier.photos.length > 0 && (
+              <>
+                <DossierSectionHeader label="Visual Evidence" />
+                <div className="grid grid-cols-3 gap-1.5">
+                  {dossier.photos.map((photo, i) => (
+                    <button
+                      key={`${photo.entryId}-${i}`}
+                      type="button"
+                      onClick={() => navigate(`/chronicle/${photo.entryId}`)}
+                      className="aspect-square rounded-lg overflow-hidden border border-white/5 hover:border-gold/30 transition-colors"
+                    >
+                      <img
+                        src={photo.url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Delete button */}
             <div className="mt-8 flex justify-center">
               <Button
                 variant="danger"
@@ -451,7 +606,7 @@ export default function PersonDetail() {
 
             {/* Confidence */}
             {scan.confidence != null && (
-              <p className="text-[10px] text-ivory-dim font-body text-right">
+              <p className="text-[10px] text-ivory-dim font-mono text-right">
                 Confidence: {Math.round(scan.confidence * 100)}%
               </p>
             )}
