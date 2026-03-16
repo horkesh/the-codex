@@ -22,8 +22,8 @@ const TYPE_PROMPTS: Record<string, (location: string) => string> = {
   interlude:   (_)   => `A lone figure standing at a rain-streaked dark window overlooking city lights at night, silhouette against the glow, contemplative mood, deep shadows, cinematic. Style: film noir, melancholic, rich blacks.`,
 }
 
-// Noir style — photorealistic cinematic
-const NOIR_STYLE = 'Photorealistic cinematic noir. Dramatic studio lighting with strong rim lights, deep shadows, high contrast, moody desaturated colour palette with warm gold accent tones, dark atmospheric background, sharp facial detail, editorial photography quality.'
+// Noir style directive appended to the generation prompt
+const NOIR_STYLE = 'Style: cinematic noir digital art, dramatic rim lighting, deep shadows, high contrast, moody desaturated palette with warm gold accents, dark background, sharp facial detail, photorealistic faces on stylised bodies, editorial quality.'
 
 // Step 1: Analyze the cover photo — describe the scene using known gent identities
 async function analyzeScene(
@@ -49,23 +49,23 @@ async function analyzeScene(
           contents: [{
             parts: [
               { inline_data: { mime_type: mimeType, data: coverBase64 } },
-              { text: `You are analyzing a photograph for an art generation pipeline. Your job is to produce a detailed scene description that will be used to recreate this exact scene as an artistic rendition.
+              { text: `You are writing a concise image generation prompt based on this photograph.
 
 ${GENT_VISUAL_ID}
 
 Known appearances:
 ${gentDescriptions}
 
-Describe this photograph in precise detail for an image generation model. Include:
-1. **People**: For each person visible, identify them by name if they match a known Gent (use their full appearance description). For unknown people, describe their appearance in similar detail. Describe each person's exact position, pose, body angle, and what they are doing.
-2. **Setting**: The environment, furniture, surfaces, lighting conditions, background elements.
-3. **Objects**: Food, drinks, devices, décor — anything on the table or in hands.
-4. **Composition**: Camera angle, framing, depth of field, spatial arrangement.
+Write a SHORT image generation prompt (max 200 words) that recreates this scene. Format as a single comma-separated description like a Midjourney or DALL-E prompt. Include:
+- Each person: name, key physical features (face, hair, facial hair, build), clothing, pose, position
+- Setting: type of venue, furniture, atmosphere
+- Objects: ALL food, drinks, plates, and items visible on the table — be specific (e.g. "grilled steak on wooden board with fries" not just "food")
+- Composition: camera angle, framing
 
-Output a single dense paragraph that could be used directly as an image generation prompt. Do not include any preamble or explanation — just the scene description.` },
+Be concise and descriptive. No narrative sentences — use comma-separated phrases. No preamble, no explanation. Just the prompt.` },
             ],
           }],
-          generationConfig: { maxOutputTokens: 1024 },
+          generationConfig: { maxOutputTokens: 512 },
         }),
       }
     )
@@ -95,7 +95,7 @@ async function generateNoirScene(
   aspectRatio: string,
   apiKey: string,
 ): Promise<string> {
-  const imagePrompt = `${sceneDescription}\n\nStyle: ${NOIR_STYLE} Each person's face, hair, and facial hair must be rendered with photographic sharpness exactly as described — these are real people and must be recognisable. Preserve ALL objects from the scene description (food, drinks, plates, furniture). Suitable as a full-bleed background behind text overlays. No text or words.`
+  const imagePrompt = `${sceneDescription}. ${NOIR_STYLE} No text, no words, no watermarks.`
 
   const imageResponse = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
@@ -222,7 +222,8 @@ Deno.serve(async (req: Request) => {
         cover_image_url: cover_image_url ?? null,
         cover_downloaded: !!coverBase64,
         cover_download_error: coverDownloadError,
-        scene_description: sceneDescription?.slice(0, 500) ?? null,
+        scene_description: sceneDescription ?? null,
+        imagen_prompt: sceneDescription ? `${sceneDescription}. ${NOIR_STYLE} No text, no words, no watermarks.` : null,
       },
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
