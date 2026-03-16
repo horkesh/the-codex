@@ -7,6 +7,7 @@ import { PassportCover } from '@/components/passport/PassportCover'
 import { StampGrid } from '@/components/passport/StampGrid'
 import { StampDetail } from '@/components/passport/StampDetail'
 import { StoryCard } from '@/components/passport/StoryCard'
+import { AchievementList } from '@/components/passport/AchievementList'
 import { Spinner, OnboardingTip } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
 import { fadeUp } from '@/lib/animations'
@@ -217,7 +218,9 @@ export default function Passport() {
 
               {/* Achievements tab */}
               {activeTab === 'achievements' && (
-                <div className="px-4 pb-6" />
+                <div className="px-4 pb-6">
+                  <AchievementList />
+                </div>
               )}
             </motion.div>
           </PageWrapper>
