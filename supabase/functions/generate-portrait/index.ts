@@ -61,9 +61,9 @@ Output PURE JSON only, no markdown, no explanation.`,
 
     await db.from('gents').update({ appearance_description: appearance }).eq('id', gent_id)
 
-    // Step 2: Generate avatar — Tonight's buildAvatarPrompt
+    // Step 2: Generate avatar
     const traitList = traits.join(', ')
-    const imagePrompt = `Stylised portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: High-end digital painting, cinematic dramatic lighting, rich natural colours preserving the subject's actual skin tone and hair colour, sharp facial detail, sophisticated artistic composition, dark elegant background. No text or labels.`
+    const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, high-end digital art, dramatic shadows and highlights, sophisticated composition — while faithfully preserving the subject's exact skin tone, hair colour, facial structure, and distinguishing features. The person must be clearly recognisable. No text or words.`
 
     const imageResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,

@@ -41,11 +41,12 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 
 ## Portrait generation (`supabase/functions/generate-portrait/`)
 Two-step pipeline:
-1. **Analysis** — `claude-sonnet-4-6` with vision: extracts structured `appearance` and `traits`
+1. **Analysis** — `gemini-2.5-flash` with vision: extracts structured `appearance` and `traits`
 2. **Generation** — `imagen-4.0-generate-001` via `:predict` endpoint:
    - Request: `{ instances: [{ prompt }], parameters: { sampleCount: 1, aspectRatio: "1:1", safetyFilterLevel: "block_only_high" } }`
    - Response: `predictions[0].bytesBase64Encoded`
-   - Prompt: `"Close-up portrait photograph of a person. ${appearance} Expression conveys: ${traitList}. Photorealistic, sharp facial detail, natural skin tones exactly as described, cinematic studio lighting with subtle rim light, deep dark background, high-end editorial photography style. Face fills most of the frame. No text, no watermarks."`
+   - Prompt style: abstract geometric noir — minimalist geometric forms, cinematic noir lighting, moody desaturated palette, while faithfully preserving the subject's exact skin tone, hair, and facial features.
+   - Same style used for Circle contacts (`generate-person-portrait`).
 - Portrait uploaded to `portraits` bucket in Supabase Storage
 
 ## POI Scanner (`scan-person-verdict` edge function)
