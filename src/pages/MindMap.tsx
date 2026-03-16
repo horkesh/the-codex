@@ -5,6 +5,7 @@ import { TopBar, SectionNav } from '@/components/layout'
 import { GentNode } from '@/components/mindmap/GentNode'
 import { PersonNode } from '@/components/mindmap/PersonNode'
 import { NodeDetailSheet } from '@/components/mindmap/NodeDetailSheet'
+import { RingGuides } from '@/components/mindmap/RingGuides'
 import { useMindMap } from '@/hooks/useMindMap'
 import { useUIStore } from '@/store/ui'
 import type { Person, PersonTier, GentAlias } from '@/types/app'
@@ -246,6 +247,7 @@ function MindMapCanvas() {
         style={{ width: '100%', height: '100%' }}
       >
         <Background color="rgba(201,168,76,0.04)" gap={40} />
+        <RingGuides />
       </ReactFlow>
 
       <NodeDetailSheet
