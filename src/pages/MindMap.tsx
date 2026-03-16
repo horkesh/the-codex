@@ -28,6 +28,12 @@ const GENT_CHIPS: Array<{ value: 'all' | GentAlias; label: string }> = [
 
 const GENT_POSITIONS = [{ x: 0, y: -80 }, { x: -69, y: 40 }, { x: 69, y: 40 }]
 
+const TIER_ZONES: Array<{ maxRadius: number; tier: PersonTier }> = [
+  { maxRadius: 300, tier: 'inner_circle' },
+  { maxRadius: 450, tier: 'outer_circle' },
+  { maxRadius: 580, tier: 'acquaintance' },
+]
+
 // TopBar h-14 = 56px, SectionNav h-10 = 40px → 96px total
 const CANVAS_HEIGHT = 'calc(100dvh - 96px)'
 
@@ -43,6 +49,9 @@ function MindMapCanvas() {
 
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [pendingTierChange, setPendingTierChange] = useState<{
+    personId: string; tier: PersonTier; name: string
+  } | null>(null)
 
   const nodeTypes = useMemo(() => ({
     gentNode: GentNode,
@@ -71,6 +80,18 @@ function MindMapCanvas() {
       }
     } else {
       handleNodeDragStop(_event, node)
+
+      // Check for tier change (contacts only, not POI)
+      const person = data.person as Person
+      if (person.category === 'contact') {
+        const dist = Math.sqrt(node.position.x ** 2 + node.position.y ** 2)
+        const detectedTier = TIER_ZONES.find(z => dist <= z.maxRadius)?.tier ?? 'acquaintance'
+        const currentTier = person.tier ?? 'acquaintance'
+
+        if (detectedTier !== currentTier) {
+          setPendingTierChange({ personId: person.id, tier: detectedTier, name: person.name })
+        }
+      }
     }
   }, [gents, handleNodeDragStop, setNodes])
 
@@ -133,6 +154,35 @@ function MindMapCanvas() {
           ))}
         </div>
       </div>
+
+      {pendingTierChange && (
+        <div className="absolute bottom-20 left-3 right-3 z-10 flex items-center gap-3 bg-gold/10 border border-gold/30 rounded-xl px-4 py-3 backdrop-blur-sm">
+          <p className="flex-1 text-xs text-ivory font-body">
+            Move <span className="text-gold font-medium">{pendingTierChange.name}</span> to{' '}
+            <span className="text-gold font-medium">
+              {pendingTierChange.tier.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+            </span>?
+          </p>
+          <button
+            type="button"
+            onClick={async () => {
+              await updatePersonTier(pendingTierChange.personId, pendingTierChange.tier)
+              setPendingTierChange(null)
+              addToast('Tier updated.', 'success')
+            }}
+            className="text-xs text-gold border border-gold/30 rounded-full px-3 py-1 hover:border-gold/60 transition-colors font-body"
+          >
+            Accept
+          </button>
+          <button
+            type="button"
+            onClick={() => setPendingTierChange(null)}
+            className="text-xs text-ivory-dim hover:text-ivory transition-colors font-body"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       <ReactFlow
         nodes={nodes}
