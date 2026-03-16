@@ -66,6 +66,15 @@ export function computeGraphData(
   const nodes: Node[] = []
   const edges: Edge[] = []
 
+  // Pre-compute search matches (needed before gent node dimming)
+  const searchMatchIds = new Set<string>()
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase()
+    for (const p of people) {
+      if (p.name.toLowerCase().includes(q)) searchMatchIds.add(p.id)
+    }
+  }
+
   // 1. Place gents in equilateral triangle at center
   const gentPositions: Array<{ x: number; y: number }> = [
     { x: 0, y: -80 },
@@ -133,15 +142,6 @@ export function computeGraphData(
       filtered = filtered.filter(p => p.category === 'person_of_interest')
     } else {
       filtered = filtered.filter(p => p.category === 'contact' && p.tier === filters.tier)
-    }
-  }
-
-  // Build search match set
-  const searchMatchIds = new Set<string>()
-  if (searchQuery) {
-    const q = searchQuery.toLowerCase()
-    for (const p of filtered) {
-      if (p.name.toLowerCase().includes(q)) searchMatchIds.add(p.id)
     }
   }
 

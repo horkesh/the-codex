@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ReactFlow, ReactFlowProvider, Background, useReactFlow, type NodeMouseHandler, type NodeDragHandler } from '@xyflow/react'
+import { ReactFlow, ReactFlowProvider, Background, useReactFlow, type NodeMouseHandler } from '@xyflow/react'
 import { Spinner } from '@/components/ui'
 import { TopBar, SectionNav } from '@/components/layout'
 import { GentNode } from '@/components/mindmap/GentNode'
@@ -71,7 +71,7 @@ function MindMapCanvas() {
     }
   }, [toggleGentFocus])
 
-  const onDragStop: NodeDragHandler = useCallback((_event, node) => {
+  const onDragStop = useCallback((_event: React.MouseEvent, node: { id: string; data: Record<string, unknown>; position: { x: number; y: number } }) => {
     const data = node.data as Record<string, unknown>
     if (data.type === 'gent') {
       // Snap back to original triangle position
