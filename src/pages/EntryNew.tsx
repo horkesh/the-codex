@@ -20,7 +20,6 @@ import { createEntry, addEntryParticipants, addPersonAppearances, updateEntryCov
 import { ContactTagger } from '@/components/chronicle/ContactTagger'
 import { fetchProspectById, updateProspect } from '@/data/prospects'
 import { generateLoreFull } from '@/ai/lore'
-import { generateTitle } from '@/ai/title'
 import { notifyOthers } from '@/hooks/usePushNotifications'
 import { generateCover } from '@/ai/cover'
 import { generateStamp } from '@/ai/stamp'
@@ -74,9 +73,6 @@ export default function EntryNew() {
   } | null>(null)
   const [visibility, setVisibility] = useState<'shared' | 'private'>('shared')
   const [taggedPeople, setTaggedPeople] = useState<string[]>([])
-  const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
-  const titleGenFired = useRef(false)
-  const firstPhotoRef = useRef<File | null>(null)
   const prospectHandled = useRef(false)
   const handleGeoDetected = useCallback((loc: LocationFill) => setLocationFill(loc), [])
 
@@ -108,56 +104,7 @@ export default function EntryNew() {
   }, [searchParams])
 
   const maxPhotos = selectedType === 'mission' ? 20 : selectedType === 'night_out' ? 15 : 10
-  const { pendingFiles, addFiles: rawAddFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos(maxPhotos)
-
-  const handleRetitle = useCallback(() => {
-    if (pendingFiles.length === 0 || !selectedType) return
-    titleGenFired.current = false
-    generateTitle(pendingFiles[0], selectedType, {
-      location: locationFill?.location,
-      city: locationFill?.city,
-      country: locationFill?.country,
-      date: locationFill?.date,
-    }).then((title) => {
-      if (title) setSuggestedTitle(title)
-    })
-  }, [pendingFiles, selectedType, locationFill])
-
-  // Wrap addFiles to store the first photo for deferred title generation
-  const addFiles = useCallback((files: File[]) => {
-    rawAddFiles(files)
-    if (!titleGenFired.current && files.length > 0 && selectedType) {
-      firstPhotoRef.current = files[0]
-      // Fallback: if geo detection doesn't fire within 3s, generate without location
-      setTimeout(() => {
-        if (!titleGenFired.current && firstPhotoRef.current && selectedType) {
-          titleGenFired.current = true
-          generateTitle(firstPhotoRef.current, selectedType, {
-            location: locationFill?.location,
-            city: locationFill?.city,
-            country: locationFill?.country,
-            date: locationFill?.date,
-          }).then((title) => {
-            if (title) setSuggestedTitle(title)
-          })
-        }
-      }, 3000)
-    }
-  }, [rawAddFiles, selectedType, locationFill])
-
-  // Fire title gen immediately when location arrives (if photo is pending)
-  useEffect(() => {
-    if (!locationFill || !firstPhotoRef.current || titleGenFired.current || !selectedType) return
-    titleGenFired.current = true
-    generateTitle(firstPhotoRef.current, selectedType, {
-      location: locationFill.location,
-      city: locationFill.city,
-      country: locationFill.country,
-      date: locationFill.date,
-    }).then((title) => {
-      if (title) setSuggestedTitle(title)
-    })
-  }, [locationFill, selectedType])
+  const { pendingFiles, addFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos(maxPhotos)
 
   function handleTypeSelect(type: EntryType) {
     if (type === 'gathering') {
@@ -438,8 +385,6 @@ export default function EntryNew() {
             onSubmit={submitMission}
             loading={submitting}
             detectedLocation={locationFill}
-            suggestedTitle={suggestedTitle}
-            onRetitle={suggestedTitle ? handleRetitle : undefined}
             initialData={prospectPrefill ? {
               title: prospectPrefill.title,
               date: prospectPrefill.date,
@@ -454,8 +399,6 @@ export default function EntryNew() {
             onSubmit={submitNightOut}
             loading={submitting}
             detectedLocation={locationFill}
-            suggestedTitle={suggestedTitle}
-            onRetitle={suggestedTitle ? handleRetitle : undefined}
             initialData={prospectPrefill ? {
               title: prospectPrefill.title,
               date: prospectPrefill.date,
@@ -464,16 +407,16 @@ export default function EntryNew() {
           />
         )}
         {selectedType === 'steak' && (
-          <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
+          <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={locationFill} />
         )}
         {selectedType === 'playstation' && (
-          <PlaystationForm onSubmit={submitPlaystation} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
+          <PlaystationForm onSubmit={submitPlaystation} loading={submitting} detectedLocation={locationFill} />
         )}
         {selectedType === 'toast' && (
-          <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
+          <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={locationFill} />
         )}
         {selectedType === 'interlude' && (
-          <InterludeForm onSubmit={submitInterlude} loading={submitting} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
+          <InterludeForm onSubmit={submitInterlude} loading={submitting} />
         )}
 
         {/* Participants */}

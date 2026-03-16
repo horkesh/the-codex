@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Layout Options — The Gents Chronicles</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --obsidian: #0a0a0f;
+    --slate-dark: #141019;
+    --slate-mid: #1e1a28;
+    --slate-light: #2c2638;
+    --gold: #c9a84c;
+    --gold-muted: rgba(201,168,76,0.5);
+    --ivory: #f5f0e8;
+    --ivory-muted: #c8c0b0;
+    --ivory-dim: #8c8680;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  body {
+    background: var(--obsidian);
+    color: var(--ivory);
+    font-family: var(--font-body);
+    padding: 24px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--ivory-dim);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    margin-bottom: 48px;
+  }
+
+  .option {
+    margin-bottom: 64px;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .option-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .option-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .option-recommended {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--obsidian);
+    background: var(--gold);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+
+  .option-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--ivory);
+    margin-bottom: 8px;
+  }
+
+  .option-desc {
+    font-size: 13px;
+    color: var(--ivory-dim);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  /* Placeholder photos */
+  .ph {
+    background: var(--slate-mid);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .ph::after {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(201,168,76,0.08) 0%, transparent 60%);
+  }
+  .ph img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0.7;
+  }
+
+  /* ─── OPTION A: Film Strip ─── */
+  .filmstrip-container {
+    overflow-x: auto;
+    padding: 16px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filmstrip-container::-webkit-scrollbar { height: 4px; }
+  .filmstrip-container::-webkit-scrollbar-track { background: var(--slate-dark); }
+  .filmstrip-container::-webkit-scrollbar-thumb { background: var(--gold-muted); border-radius: 2px; }
+
+  .filmstrip {
+    display: flex;
+    gap: 12px;
+    padding: 0 4px;
+  }
+  .filmstrip .frame {
+    flex-shrink: 0;
+    width: 180px;
+    border: 2px solid var(--slate-light);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.2s, border-color 0.2s;
+    cursor: pointer;
+  }
+  .filmstrip .frame:hover {
+    transform: scale(1.04) rotate(-1deg);
+    border-color: var(--gold-muted);
+  }
+  .filmstrip .frame .ph { border-radius: 0; aspect-ratio: 3/4; }
+  .filmstrip .sprockets {
+    height: 8px;
+    background: var(--slate-dark);
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+  }
+  .filmstrip .sprockets span {
+    width: 10px;
+    height: 4px;
+    background: var(--slate-light);
+    border-radius: 1px;
+  }
+  .filmstrip .frame-num {
+    position: absolute;
+    bottom: 14px;
+    right: 8px;
+    font-size: 10px;
+    color: var(--gold-muted);
+    font-family: var(--font-body);
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── OPTION B: Storyboard ─── */
+  .storyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .storyboard .hero-shot {
+    aspect-ratio: 16/9;
+    border-radius: 10px;
+  }
+  .storyboard .duo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .storyboard .duo .ph {
+    aspect-ratio: 1;
+  }
+  .storyboard .wide-shot {
+    aspect-ratio: 2.2/1;
+    border-radius: 10px;
+  }
+  .storyboard .trio {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 6px;
+  }
+  .storyboard .trio .ph:first-child {
+    aspect-ratio: 3/4;
+    grid-row: span 2;
+  }
+  .storyboard .trio .side {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .storyboard .trio .side .ph {
+    aspect-ratio: 4/3;
+  }
+  .storyboard .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  .storyboard .divider .line {
+    flex: 1;
+    height: 1px;
+    background: var(--gold-muted);
+    opacity: 0.3;
+  }
+  .storyboard .divider .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    border: 1px solid var(--gold-muted);
+  }
+  .storyboard .ph {
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .storyboard .ph:hover {
+    opacity: 0.85;
+  }
+
+  /* ─── OPTION C: Parallax Stack ─── */
+  .parallax-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .parallax-stack .stack-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .parallax-stack .stack-item .ph {
+    aspect-ratio: 16/10;
+    border-radius: 10px;
+  }
+  .parallax-stack .stack-item .ph img {
+    transition: transform 0.3s;
+  }
+  .parallax-stack .stack-item:hover .ph img {
+    transform: scale(1.03);
+  }
+  .parallax-stack .seq {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 0;
+  }
+  .parallax-stack .seq .num {
+    font-size: 10px;
+    color: var(--gold-muted);
+    letter-spacing: 0.2em;
+    font-family: var(--font-body);
+  }
+  .parallax-stack .seq .dash {
+    width: 24px;
+    height: 1px;
+    background: var(--gold-muted);
+    opacity: 0.3;
+  }
+
+  /* Placeholder image colors */
+  .ph-1 { background: linear-gradient(135deg, #1a1520 0%, #2a1f35 100%); }
+  .ph-2 { background: linear-gradient(135deg, #1f1a15 0%, #352a1f 100%); }
+  .ph-3 { background: linear-gradient(135deg, #151a1f 0%, #1f2a35 100%); }
+  .ph-4 { background: linear-gradient(135deg, #1a1515 0%, #352020 100%); }
+  .ph-5 { background: linear-gradient(135deg, #151a18 0%, #1f352a 100%); }
+  .ph-6 { background: linear-gradient(135deg, #1a181f 0%, #2a2535 100%); }
+  .ph-7 { background: linear-gradient(135deg, #1f1a1a 0%, #352a2a 100%); }
+
+  .section-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-muted), transparent);
+    opacity: 0.3;
+    margin: 48px auto;
+    max-width: 200px;
+  }
+
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--ivory-dim);
+    line-height: 1.5;
+  }
+  .pros-cons .label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<h1>Photo Layout Options</h1>
+<p class="subtitle">MISSIONS & NIGHTS OUT &mdash; ENTRY DETAIL PAGE</p>
+
+<!-- ═══════════════════ OPTION A ═══════════════════ -->
+<div class="option">
+  <div class="option-header">
+    <span class="option-label">Option A</span>
+  </div>
+  <h2 class="option-title">Cinematic Film Strip</h2>
+  <p class="option-desc">
+    Horizontal scroll strip with film-frame borders. Each photo is a "frame" with sprocket details.
+    Slight tilt on hover. Feels like flipping through developed film.
+  </p>
+
+  <div class="filmstrip-container">
+    <div class="filmstrip">
+      <div class="frame">
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="ph ph-1" style="aspect-ratio:3/4"></div>
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <span class="frame-num">01</span>
+      </div>
+      <div class="frame">
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="ph ph-2" style="aspect-ratio:3/4"></div>
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <span class="frame-num">02</span>
+      </div>
+      <div class="frame">
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="ph ph-3" style="aspect-ratio:3/4"></div>
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <span class="frame-num">03</span>
+      </div>
+      <div class="frame">
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="ph ph-4" style="aspect-ratio:3/4"></div>
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <span class="frame-num">04</span>
+      </div>
+      <div class="frame">
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="ph ph-5" style="aspect-ratio:3/4"></div>
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <span class="frame-num">05</span>
+      </div>
+      <div class="frame">
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="ph ph-6" style="aspect-ratio:3/4"></div>
+        <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+        <span class="frame-num">06</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pros-cons">
+    <div><div class="label">Strengths</div>Unique aesthetic, very on-brand noir, compact vertical space</div>
+    <div><div class="label">Weaknesses</div>Horizontal scroll weaker on mobile, photos are small, can't see all at once</div>
+  </div>
+</div>
+
+<div class="section-rule"></div>
+
+<!-- ═══════════════════ OPTION B ═══════════════════ -->
+<div class="option">
+  <div class="option-header">
+    <span class="option-label">Option B</span>
+    <span class="option-recommended">Recommended</span>
+  </div>
+  <h2 class="option-title">Storyboard Layout</h2>
+  <p class="option-desc">
+    Mixed-size editorial layout. Hero shot full-width, then alternating duo/trio/wide compositions.
+    Gold dividers between chapters. Every photo feels intentionally placed.
+  </p>
+
+  <div class="storyboard">
+    <!-- Hero -->
+    <div class="ph ph-1 hero-shot"></div>
+
+    <!-- Duo -->
+    <div class="duo">
+      <div class="ph ph-2"></div>
+      <div class="ph ph-3"></div>
+    </div>
+
+    <!-- Divider -->
+    <div class="divider">
+      <div class="line"></div>
+      <div class="dot"></div>
+      <div class="line"></div>
+    </div>
+
+    <!-- Trio: tall left + 2 stacked right -->
+    <div class="trio">
+      <div class="ph ph-4"></div>
+      <div class="side">
+        <div class="ph ph-5"></div>
+        <div class="ph ph-6"></div>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="divider">
+      <div class="line"></div>
+      <div class="dot"></div>
+      <div class="line"></div>
+    </div>
+
+    <!-- Wide cinematic -->
+    <div class="ph ph-7 wide-shot"></div>
+  </div>
+
+  <div class="pros-cons">
+    <div><div class="label">Strengths</div>Photos feel curated, great rhythm, works at any count (3-20), mobile-friendly vertical scroll</div>
+    <div><div class="label">Weaknesses</div>Slightly more complex layout logic, photos are cropped to fit aspect ratios</div>
+  </div>
+</div>
+
+<div class="section-rule"></div>
+
+<!-- ═══════════════════ OPTION C ═══════════════════ -->
+<div class="option">
+  <div class="option-header">
+    <span class="option-label">Option C</span>
+  </div>
+  <h2 class="option-title">Parallax Scroll Stack</h2>
+  <p class="option-desc">
+    Full-width photos stacked vertically with sequence markers between them.
+    Each photo gets breathing room. Immersive but space-hungry.
+  </p>
+
+  <div class="parallax-stack">
+    <div class="stack-item"><div class="ph ph-1" style="aspect-ratio:16/10"></div></div>
+    <div class="seq"><div class="dash"></div><span class="num">01</span><div class="dash"></div></div>
+
+    <div class="stack-item"><div class="ph ph-2" style="aspect-ratio:16/10"></div></div>
+    <div class="seq"><div class="dash"></div><span class="num">02</span><div class="dash"></div></div>
+
+    <div class="stack-item"><div class="ph ph-3" style="aspect-ratio:16/10"></div></div>
+    <div class="seq"><div class="dash"></div><span class="num">03</span><div class="dash"></div></div>
+
+    <div class="stack-item"><div class="ph ph-4" style="aspect-ratio:16/10"></div></div>
+    <div class="seq"><div class="dash"></div><span class="num">04</span><div class="dash"></div></div>
+
+    <div class="stack-item"><div class="ph ph-5" style="aspect-ratio:16/10"></div></div>
+  </div>
+
+  <div class="pros-cons">
+    <div><div class="label">Strengths</div>Most immersive, photos shown large, simple implementation</div>
+    <div><div class="label">Weaknesses</div>Very long page with 15+ photos, repetitive feel, no visual variety</div>
+  </div>
+</div>
+
+<div style="height: 48px"></div>
+
+</body>
+</html>

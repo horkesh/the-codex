@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
-import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, ImagePlay, Edit2, Pin, X as XIcon } from 'lucide-react'
+import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, ImagePlay, Edit2, Pin, X as XIcon, Type } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Avatar } from '@/components/ui'
@@ -9,6 +9,7 @@ import { LoreSection } from '@/components/chronicle/LoreSection'
 import { EntryReactions } from '@/components/chronicle/EntryReactions'
 import { generateScene } from '@/ai/scene'
 import { generateLoreFull } from '@/ai/lore'
+import { generateTitleFromLore } from '@/ai/title'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
 import { PhotoStoryboard } from '@/components/chronicle/PhotoStoryboard'
 import { FilterPicker } from '@/components/chronicle/FilterPicker'
@@ -231,6 +232,7 @@ export default function EntryDetail() {
   const [generatingScene, setGeneratingScene] = useState(false)
   const [regeneratingLore, setRegeneratingLore] = useState(false)
   const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
+  const [generatingTitle, setGeneratingTitle] = useState(false)
 
   function handleExportToStudio() {
     navigate(`/studio?entry=${id}`)
@@ -346,6 +348,28 @@ export default function EntryDetail() {
     }
   }
 
+  async function handleGenerateTitle() {
+    if (!entry?.lore || generatingTitle) return
+    setGeneratingTitle(true)
+    try {
+      const title = await generateTitleFromLore(entry.lore, entry.type, {
+        location: entry.location ?? undefined,
+        city: entry.city ?? undefined,
+        country: entry.country ?? undefined,
+        date: entry.date,
+      })
+      if (title) {
+        setSuggestedTitle(title)
+      } else {
+        addToast('Could not generate title. Try again.', 'error')
+      }
+    } catch {
+      addToast('Title generation failed.', 'error')
+    } finally {
+      setGeneratingTitle(false)
+    }
+  }
+
   // ── Loading ──
   if (loading) {
     return (
@@ -390,14 +414,27 @@ export default function EntryDetail() {
         title={entry.title}
         back
         right={
-          <button
-            type="button"
-            className="flex items-center justify-center w-8 h-8 rounded-full text-ivory-muted hover:text-ivory hover:bg-slate-light transition-colors"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Entry options"
-          >
-            <MoreVertical size={18} />
-          </button>
+          <div className="flex items-center gap-1">
+            {gent?.id === entry.created_by && entry.lore && (
+              <button
+                type="button"
+                className="flex items-center justify-center w-8 h-8 rounded-full text-ivory-muted hover:text-gold hover:bg-slate-light transition-colors"
+                onClick={handleGenerateTitle}
+                disabled={generatingTitle}
+                aria-label="Suggest title from lore"
+              >
+                <Type size={16} className={generatingTitle ? 'animate-pulse text-gold' : ''} />
+              </button>
+            )}
+            <button
+              type="button"
+              className="flex items-center justify-center w-8 h-8 rounded-full text-ivory-muted hover:text-ivory hover:bg-slate-light transition-colors"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Entry options"
+            >
+              <MoreVertical size={18} />
+            </button>
+          </div>
         }
       />
 

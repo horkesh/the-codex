@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -20,8 +19,6 @@ interface SteakFormProps {
   onSubmit: (data: SteakFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
-  suggestedTitle?: string | null
-  onRetitle?: () => void
   initialData?: Partial<SteakFormData>
 }
 
@@ -43,7 +40,7 @@ interface FieldErrors {
   score?: string
 }
 
-export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle, onRetitle, initialData }: SteakFormProps) {
+export function SteakForm({ onSubmit, loading, detectedLocation, initialData }: SteakFormProps) {
   const [form, setForm] = useState<SteakFormData>(() => ({ ...empty, ...initialData }))
   const [vol, setVol] = useState<number | null>(null)
   const titleEdited = useRef(!!initialData?.title)
@@ -54,16 +51,12 @@ export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle,
     getChronologicalVol('steak', form.date).then(setVol).catch(() => setVol(1))
   }, [form.date])
 
-  // Auto-fill title from AI suggestion + vol, or fall back to location + vol
+  // Auto-fill title from location + vol
   useEffect(() => {
     if (titleEdited.current || vol === null) return
-    if (suggestedTitle) {
-      setForm((prev) => ({ ...prev, title: `${suggestedTitle} · Vol. ${vol}` }))
-      return
-    }
     const locationPart = form.location ? ` at ${form.location}` : ''
     setForm((prev) => ({ ...prev, title: `The Table${locationPart} · Vol. ${vol}` }))
-  }, [vol, form.location, suggestedTitle]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [vol, form.location]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!detectedLocation) return
@@ -106,26 +99,14 @@ export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle,
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="relative">
-        <Input
-          label="The Table"
-          placeholder="Name the occasion"
-          value={form.title}
-          onChange={(e) => set('title', e.target.value)}
-          error={errors.title}
-          required
-        />
-        {onRetitle && (
-          <button
-            type="button"
-            onClick={onRetitle}
-            className="absolute right-3 top-[34px] text-ivory-dim hover:text-gold transition-colors"
-            aria-label="Regenerate title"
-          >
-            <RefreshCw size={14} />
-          </button>
-        )}
-      </div>
+      <Input
+        label="The Table"
+        placeholder="Name the occasion"
+        value={form.title}
+        onChange={(e) => set('title', e.target.value)}
+        error={errors.title}
+        required
+      />
 
       <Input
         label="Date"

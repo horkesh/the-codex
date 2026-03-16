@@ -20,14 +20,41 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { photo, entryType, location, city, country, date } = await req.json()
+    const { photo, lore, entryType, location, city, country, date } = await req.json()
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
 
     const locationStr = [location, city, country].filter(Boolean).join(', ') || ''
-    const typeInstruction = typeInstructions[entryType] || 'Identify the key subject, setting, or activity in this photo.'
+    const typeInstruction = typeInstructions[entryType] || 'Identify the key subject, setting, or activity.'
 
-    const prompt = `You are naming an entry for a private lifestyle chronicle of three gentlemen called "The Gents".
+    // Two modes: lore-based (text only) or photo-based (vision)
+    let prompt: string
+    let content: Array<Record<string, unknown>>
+
+    if (lore) {
+      // Generate title from lore text — no photo needed
+      prompt = `You are naming an entry for a private lifestyle chronicle of three gentlemen called "The Gents".
+
+Given the lore narrative below, generate a short, evocative title (3-8 words). The title should feel editorial and specific — distilling the essence of the lore into a punchy, memorable name.
+
+${typeInstruction}
+${locationStr ? `\nKnown location: ${locationStr}` : ''}${date ? `\nDate: ${date}` : ''}
+
+Lore:
+${lore}
+
+Rules:
+- Return ONLY the title text, nothing else — no quotes, no explanation, no prefix
+- 3-8 words max
+- No emojis
+- Be specific to what the lore describes — pull a defining detail, mood, or moment
+- If location is mentioned in the lore, you may incorporate it naturally but don't force it
+- Do not use generic filler words like "A Night of...", "An Evening of...", "The Art of..."`
+
+      content = [{ type: 'text', text: prompt }]
+    } else {
+      // Generate title from photo
+      prompt = `You are naming an entry for a private lifestyle chronicle of three gentlemen called "The Gents".
 
 Given the photo, generate a short, evocative title (3-8 words). The title should feel editorial and specific — not generic. It must reflect what is actually happening or visible in the photo.
 
@@ -43,13 +70,11 @@ Rules:
 - If location is provided, you may incorporate it naturally but don't force it
 - Do not use generic filler words like "A Night of...", "An Evening of...", "The Art of..."`
 
-    const content = [
-      {
-        type: 'image' as const,
-        source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data: photo },
-      },
-      { type: 'text' as const, text: prompt },
-    ]
+      content = [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photo } },
+        { type: 'text', text: prompt },
+      ]
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
