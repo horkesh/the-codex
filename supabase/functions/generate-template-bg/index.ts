@@ -92,10 +92,12 @@ Output one paragraph. No preamble.` },
 // No photo input — forces generation from scratch instead of applying a filter
 async function generateNoirScene(
   sceneDescription: string,
+  lightingHint: string,
   apiKey: string,
 ): Promise<string> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 20_000)
+  const lightingLine = lightingHint ? `\nOriginal lighting context: ${lightingHint}. Adapt the noir lighting to reflect this time of day.` : ''
 
   try {
     const response = await fetch(
@@ -107,7 +109,7 @@ async function generateNoirScene(
         body: JSON.stringify({
           contents: [{
             parts: [
-              { text: `Generate a dark cinematic digital artwork of this scene:\n\n${sceneDescription}\n\n${NOIR_STYLE}\n\nEach person's facial features, hair, and facial hair must be sharp and distinctive as described. The artwork should have a dark moody atmosphere with dramatic lighting. Generate the image.` },
+              { text: `Generate a dark cinematic digital artwork of this scene:\n\n${sceneDescription}\n\n${NOIR_STYLE}${lightingLine}\n\nEach person's facial features, hair, and facial hair must be sharp and distinctive as described. The artwork should have a dark moody atmosphere with dramatic lighting. Generate the image.` },
             ],
           }],
           generationConfig: {
@@ -144,7 +146,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { entry_type, title, location, city, country, aspect, cover_image_url } = await req.json()
+    const { entry_type, title, location, city, country, date, time_of_day, aspect, cover_image_url } = await req.json()
     const googleApiKey = Deno.env.get('GOOGLE_AI_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -155,6 +157,17 @@ Deno.serve(async (req: Request) => {
     const db = createClient(supabaseUrl, supabaseServiceKey)
 
     const locationStr = location || city || (country ? `${country}` : '')
+
+    // Derive lighting context from time of day
+    let lightingHint = ''
+    if (time_of_day) {
+      const hour = parseInt(time_of_day.split(':')[0], 10)
+      if (hour >= 5 && hour < 10) lightingHint = 'early morning light, soft golden dawn'
+      else if (hour >= 10 && hour < 14) lightingHint = 'midday light'
+      else if (hour >= 14 && hour < 17) lightingHint = 'warm afternoon light'
+      else if (hour >= 17 && hour < 20) lightingHint = 'golden hour sunset light'
+      else lightingHint = 'nighttime, artificial lighting'
+    }
     const aspectRatio = ASPECT_RATIOS[aspect] ?? '1:1'
 
     // If cover image exists, download it for restyling
@@ -187,7 +200,7 @@ Deno.serve(async (req: Request) => {
     if (coverBase64) {
       // Two-step restyle: analyze scene → generate noir rendition
       sceneDescription = await analyzeScene(coverBase64, coverMimeType, googleApiKey)
-      base64Image = await generateNoirScene(sceneDescription, googleApiKey)
+      base64Image = await generateNoirScene(sceneDescription, lightingHint, googleApiKey)
     } else {
       // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']

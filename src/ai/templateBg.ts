@@ -13,6 +13,8 @@ export async function generateTemplateBg(
         location: entry.location,
         city: entry.city,
         country: entry.country,
+        date: entry.date,
+        time_of_day: (entry.metadata as Record<string, unknown>)?.time_of_day ?? undefined,
         aspect,
         cover_image_url: entry.cover_image_url ?? undefined,
       }
