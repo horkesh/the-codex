@@ -12,14 +12,15 @@ const ASPECT_RATIOS: Record<string, string> = {
 }
 
 // Prompts for generating from scratch (no cover image available)
+// All prompts use the noir geometric style — abstract minimalist forms, not photorealistic
 const TYPE_PROMPTS: Record<string, (location: string) => string> = {
-  mission:     (loc) => `Dark cinematic photograph of three stylish well-dressed men exploring ${loc || 'a city'} at night, seen from behind or at a slight distance, city lights and architecture around them, atmospheric shadows, dramatic urban lighting. Style: fine art travel photography, film noir, rich blacks.`,
-  night_out:   (_)   => `Moody upscale bar interior, three stylish men seated or standing at a dark polished bar, deep amber candlelight, brass fixtures, shallow depth of field, bokeh highlights. Shot from behind or at distance, faces not prominent. Style: editorial nightlife photography.`,
-  steak:       (_)   => `Elegant fine dining table, two or three well-dressed men sharing a meal, candlelight, dark marble, wine glasses mid-toast. Hands and forearms visible, rich warm tones, dramatic shadows. Style: high-end food photography, cinematic.`,
-  playstation: (_)   => `Three friends in a dark living room, facing away from camera, lit by screens and deep blue-purple LED glow, controllers in hand, relaxed and focused. Cinematic, moody. Style: atmospheric lifestyle photography.`,
-  toast:       (_)   => `Three men raising crystal whisky glasses in a dimly lit room, amber liquid catching the light, dramatic rim lighting, hands and glasses prominent, bokeh background, smoky atmosphere. Style: luxury spirits photography, deep blacks, amber gold tones.`,
-  gathering:   (loc) => `Elegant private event space${loc ? ` in ${loc}` : ''}, three well-dressed men conversing warmly, warm candlelight, deep shadows, intimate atmosphere. Shot at middle distance, faces partially lit. Style: luxury events photography, dark moody.`,
-  interlude:   (_)   => `A lone figure standing at a rain-streaked dark window overlooking city lights at night, silhouette against the glow, contemplative mood, deep shadows, cinematic. Style: film noir, melancholic, rich blacks.`,
+  mission:     (loc) => `Abstract geometric artwork of three stylish silhouetted figures exploring ${loc || 'a city'} at night. Minimalist angular architecture, dramatic noir lighting with gold accents, sharp geometric city forms in background. Dark moody palette.`,
+  night_out:   (_)   => `Abstract geometric artwork of three figures at an upscale bar. Angular minimalist bar interior, amber geometric light shapes, sharp silhouettes, dramatic rim lighting. Dark moody palette with warm gold accents.`,
+  steak:       (_)   => `Abstract geometric artwork of a fine dining scene. Minimalist angular table setting with geometric steak and wine glass forms, three silhouetted figures, warm candlelight rendered as sharp geometric shapes. Dark palette with gold and amber accents.`,
+  playstation: (_)   => `Abstract geometric artwork of three figures gaming. Minimalist angular living room, screen glow rendered as geometric blue-purple light shapes, sharp silhouettes with controllers. Dark palette with neon accents.`,
+  toast:       (_)   => `Abstract geometric artwork of three figures raising crystal glasses in a toast. Minimalist angular room, amber liquid as geometric light forms, dramatic rim lighting, sharp silhouettes. Dark palette with gold accents.`,
+  gathering:   (loc) => `Abstract geometric artwork of an elegant gathering${loc ? ` in ${loc}` : ''}. Minimalist angular event space, three silhouetted host figures, warm geometric candlelight forms. Dark moody palette with gold accents.`,
+  interlude:   (_)   => `Abstract geometric artwork of a solitary figure at a window overlooking city lights. Minimalist angular shapes, rain rendered as sharp geometric lines, contemplative silhouette. Dark noir palette with subtle warm accents.`,
 }
 
 // Noir style directive appended to the generation prompt
@@ -204,7 +205,7 @@ Deno.serve(async (req: Request) => {
     } else {
       // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
-      const imagePrompt = `${promptFn(locationStr)} Dark, cinematic, high contrast, suitable as full-bleed text background. Aspect ratio optimised for Instagram.`
+      const imagePrompt = `${promptFn(locationStr)} ${NOIR_STYLE} No text, no words, no watermarks. Suitable as full-bleed text background.`
 
       const imageResponse = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
