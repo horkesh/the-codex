@@ -89,12 +89,17 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Weekday/weekend awareness**: day-of-week + time-of-day derive a situational hint (e.g. "weekday lunch window — likely a lunch break rendezvous") that is passed as `Context:` in the prompt.
 - **Type-specific narrative directives**: each entry type (steak, playstation, toast, night_out, mission, gathering, interlude) has a tailored `entryTypeDirectives` block that tells Claude what to focus on (food details for Table, competitive energy for Pitch, drink references for Toast, etc.).
 - **Director's Notes** (`lore_hints`): persistent free-text field stored in `entry.metadata.lore_hints`. Collapsible textarea in `LoreSection`. Auto-saves to DB after 1s of inactivity. Included in the Claude prompt as "Director's Notes (incorporate these details naturally)". Works for both initial generation and regeneration. Regeneration re-fetches entry from DB to get latest hints.
+- **Lore on creation**: `EntryNew` calls `generateLoreFull()` (not `generateLore()`) after entry creation. Saves lore, `lore_oneliner` (to metadata), and `suggested_title` (updates entry title) in a single `updateEntry` call + `updateEntryLore`.
+- **Creator-only controls**: `LoreSection` accepts a `readOnly` prop. When true, Director's Notes and Generate Lore button are hidden. Non-creators can read lore but not generate/regenerate it.
 
 ## Title generation (`supabase/functions/generate-title/`)
-- Uses `claude-haiku-4-5-20251001` with vision on the first uploaded photo.
-- Client (`src/ai/title.ts`) compresses photo to 512px / 0.6 quality base64 before sending.
+- Uses `claude-haiku-4-5-20251001`. Two modes:
+  - **Photo mode**: vision on the first uploaded photo during entry creation. Client compresses to 512px / 0.6 quality base64.
+  - **Lore mode**: text-only, extracts a title from existing lore. Triggered via the **Type** button in EntryDetail TopBar (creator-only, visible when lore exists).
+- Client: `generateTitle(file, type, context)` for photo mode, `generateTitleFromLore(lore, type, context)` for lore mode. Both share `invokeGenerateTitle()` in `src/ai/title.ts`.
 - Type-specific instructions guide what to identify (cut of meat for Table, game on screen for Pitch, drinks for Toast, etc.).
 - Suggested title auto-fills the form's title field unless the user has manually edited it.
+- Title suggestion banner in EntryDetail uses independent animation (not `staggerItem`) so it appears correctly after async generation.
 - For Table and Pitch, the AI title is combined with a **chronological volume number** (e.g. "Wagyu Tataki at Craft · Vol. 12").
 - Vol numbers are date-ordered (oldest = Vol. 1). `getChronologicalVol(type, date)` counts entries with `date <= newDate`.
 - After creating an entry, `renumberVolumes(type)` fire-and-forget updates all `· Vol. N` titles to reflect correct order.
@@ -104,6 +109,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - Mission entries auto-create a passport stamp on publish via `createMissionStamp()` in EntryNew.
 - Stamp artwork generated async via `generateStamp()` → `generate-stamp` edge function (Imagen 4) → `updateStampImage()`.
 - All fire-and-forget — doesn't block entry creation.
+- **Backfill**: `backfillMissionStamps()` in `src/data/stamps.ts` creates stamps for any published mission entries missing them. Called from `usePassport` once per session (guarded by `sessionStorage`).
 
 ## QR code for guestbook
 - GatheringDetail shows a "Share" section with copy-to-clipboard buttons for invite + guestbook URLs.
@@ -124,15 +130,18 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Template variants**: Night Out, Mission, Steak, PS5 each have 4 layout variants (prop `variant={1|2|3|4}`). Variant 1 = classic, others = bold/quote/minimal/etc. Registered in `TEMPLATES_BY_TYPE` as separate `TemplateId` entries (e.g. `night_out_card_v2`).
 - **Lore oneliner in templates**: `getOneliner(entry)` in `src/export/templates/shared/utils.ts` extracts `metadata.lore_oneliner` or falls back to first sentence of lore. All template variants display the oneliner instead of full lore.
 
+## Creator-only entry controls
+- `EntryDetail` computes `isCreator = gent?.id === entry.created_by` once, used throughout.
+- **Creator sees**: Generate/Regenerate Lore, Generate Scene, Edit Entry, Delete Entry (options menu + bottom actions), lore-based title button (TopBar).
+- **All gents see**: Pin/Unpin, Export to Studio, view lore (read-only), view photos, reactions, comments.
+
 ## Chronicle search & pinning
 - **Search**: `SearchBar` component in Chronicle with debounced (300ms) client-side filtering across title, description, location, city, and lore. Hook: `useChronicle` exposes `query`/`setQuery`; filtering is memoized via `useMemo`.
 - **Pin**: `pinned: boolean` on entries (DB column, default false). `togglePin(entryId, pinned)` in entries.ts. Pinned entries sort first (`pinned DESC, date DESC`). Pin toggle on EntryCard + EntryDetail overflow menu. Gold left-border accent on pinned cards.
-- **DB migration required**: `ALTER TABLE entries ADD COLUMN pinned boolean NOT NULL DEFAULT false;`
 
 ## Private entries
 - `visibility: 'shared' | 'private'` on entries (DB column, default 'shared'). Private entries filtered client-side in `fetchEntries` via `currentGentId` param — only the creator sees their private entries.
 - Toggle in EntryNew: Lock/Unlock icon before submit button. Lock icon shown on private EntryCards.
-- **DB migration required**: `ALTER TABLE entries ADD COLUMN visibility text NOT NULL DEFAULT 'shared' CHECK (visibility IN ('shared', 'private'));`
 
 ## Mission date range
 - MissionForm has Start Date and End Date (optional) inputs.
@@ -144,19 +153,14 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - Auto-fills date and location from photo EXIF via `detectedLocation` prop.
 - Location passed through `submitPlaystation` to `createEntry`.
 
+## Entry geo fallback
+- `EntryNew.handleSubmit` falls back to `locationFill` city/country/country_code when the form doesn't provide them. This ensures non-Mission entry types (Night Out, Steak, Toast, etc.) get geo data from photo EXIF or saved places, fixing "Unknown City" on the Dossier Map.
+
 ## Circle multi-gent relationships
-- `person_gents` table: many-to-many between people and gents (who "knows" this person).
+- `person_gents` table: many-to-many between people and gents (who "knows" this person). RLS: authenticated users can select/insert/delete.
 - `fetchPersonGents(personId)` / `updatePersonGents(personId, gentIds[])` in people.ts.
 - PersonDetail: "Known by" button shows multi-select modal — toggle gents on/off.
 - `added_by` remains for audit (who originally added); `person_gents` drives the "Known by" UI.
-- **DB migration required**:
-  ```sql
-  CREATE TABLE person_gents (
-    person_id uuid REFERENCES people(id) ON DELETE CASCADE,
-    gent_id uuid REFERENCES gents(id) ON DELETE CASCADE,
-    PRIMARY KEY (person_id, gent_id)
-  );
-  ```
 
 ## Photo Timeline (`/chronicle/photos`)
 - `fetchAllPhotos()` in `src/data/photos.ts` — joins `entry_photos` with `entries`, filters to published entries, sorted by date DESC.
