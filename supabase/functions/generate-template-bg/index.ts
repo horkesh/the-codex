@@ -88,57 +88,40 @@ Output a single dense paragraph that could be used directly as an image generati
   }
 }
 
-// Step 2: Transform the original photo into noir style using Gemini Flash Image
-// Takes both the original image AND the scene description for best results
+// Step 2: Generate a new noir painting from the scene description via Imagen
+// Uses full gent appearances so Imagen renders recognisable faces
 async function generateNoirScene(
-  coverBase64: string,
-  coverMimeType: string,
   sceneDescription: string,
+  aspectRatio: string,
   apiKey: string,
 ): Promise<string> {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 20_000)
+  const imagePrompt = `High-end digital painting in dark cinematic noir style. ${sceneDescription}\n\nArt style: ${NOIR_STYLE} Render as a stylised digital painting, NOT a photograph. Deep noir lighting with dramatic shadows, strong rim lights, dark moody atmosphere. Heavily desaturated colour palette with selective warm gold accent tones. Dark background. Painterly texture. Each person's facial features, hair, and facial hair must be rendered with sharp detail exactly as described. The scene should look like a commissioned illustration for a luxury magazine. No text or words.`
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { inline_data: { mime_type: coverMimeType, data: coverBase64 } },
-              { text: `Recreate this photograph as a high-end digital painting in a dark cinematic noir style. Do NOT simply apply a filter — completely REDRAW the scene as digital art.\n\nHere is who is in the photo:\n${sceneDescription}\n\nArt direction:\n- Render as a stylised digital painting, NOT a photograph\n- Use minimalist geometric forms and sharp angular shapes\n- Deep cinematic noir lighting: dramatic shadows, strong rim lights, dark moody atmosphere\n- Heavily desaturated colour palette with selective warm accent tones\n- Dark, almost black background replacing the original environment\n- Painterly brush strokes and artistic texture visible throughout\n- Each person must be recognisable: preserve their exact facial features, hair, facial hair, and clothing\n- Same composition and poses as the original\n- Food and objects on the table should be stylised but present\n\nThe final image should look like a commissioned illustration for a luxury magazine, not a filtered photo. Generate the painting.` },
-            ],
-          }],
-          generationConfig: {
-            responseModalities: ['IMAGE'],
-          },
-        }),
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(`Gemini restyle error: ${response.status} ${await response.text()}`)
+  const imageResponse = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{ prompt: imagePrompt }],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio,
+          safetyFilterLevel: 'block_only_high',
+        },
+      }),
     }
+  )
 
-    const result = await response.json()
-    const parts = result.candidates?.[0]?.content?.parts ?? []
-    const imagePart = parts.find((p: { inlineData?: { data: string } }) => p.inlineData?.data)
-
-    if (!imagePart?.inlineData?.data) {
-      throw new Error('Gemini returned no image in restyle response')
-    }
-
-    return imagePart.inlineData.data
-  } catch (e) {
-    if ((e as Error).name === 'AbortError') throw new Error('Noir generation timed out after 20s')
-    throw e
-  } finally {
-    clearTimeout(timeout)
+  if (!imageResponse.ok) {
+    throw new Error(`Imagen error: ${imageResponse.status} ${await imageResponse.text()}`)
   }
+
+  const imageResult = await imageResponse.json()
+  const base64Image = imageResult.predictions?.[0]?.bytesBase64Encoded
+  if (!base64Image) throw new Error('No image returned from Imagen')
+
+  return base64Image
 }
 
 Deno.serve(async (req: Request) => {
@@ -190,7 +173,7 @@ Deno.serve(async (req: Request) => {
     if (coverBase64) {
       // Two-step restyle: analyze scene → generate noir rendition
       sceneDescription = await analyzeScene(coverBase64, coverMimeType, googleApiKey)
-      base64Image = await generateNoirScene(coverBase64, coverMimeType, sceneDescription, googleApiKey)
+      base64Image = await generateNoirScene(sceneDescription, aspectRatio, googleApiKey)
     } else {
       // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
