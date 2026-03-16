@@ -23,7 +23,7 @@ const TYPE_PROMPTS: Record<string, (location: string) => string> = {
 }
 
 // Noir style directive appended to the generation prompt
-const NOIR_STYLE = 'Style: cinematic noir digital art, dramatic rim lighting, deep shadows, high contrast, moody desaturated palette with warm gold accents, dark background, sharp facial detail, photorealistic faces on stylised bodies, editorial quality.'
+const NOIR_STYLE = 'Style: dark cinematic digital art, minimalist geometric forms, noir lighting with dramatic shadows and rim lights, moody desaturated palette with warm gold accents, dark background, sharp recognisable facial features, high-end illustration quality.'
 
 // Step 1: Analyze the cover photo — describe the scene using known gent identities
 async function analyzeScene(
@@ -49,23 +49,26 @@ async function analyzeScene(
           contents: [{
             parts: [
               { inline_data: { mime_type: mimeType, data: coverBase64 } },
-              { text: `You are writing a concise image generation prompt based on this photograph.
+              { text: `Describe this photograph in detail so another AI can recreate it as artwork. You MUST describe ALL people, not just one.
 
-${GENT_VISUAL_ID}
-
-Known appearances:
+These are the known people — identify them by matching hair and facial hair:
 ${gentDescriptions}
 
-Write a SHORT image generation prompt (max 200 words) that recreates this scene. Format as a single comma-separated description like a Midjourney or DALL-E prompt. Include:
-- Each person: name, key physical features (face, hair, facial hair, build), clothing, pose, position
-- Setting: type of venue, furniture, atmosphere
-- Objects: ALL food, drinks, plates, and items visible on the table — be specific (e.g. "grilled steak on wooden board with fries" not just "food")
-- Composition: camera angle, framing
+Write an image generation prompt that describes:
 
-Be concise and descriptive. No narrative sentences — use comma-separated phrases. No preamble, no explanation. Just the prompt.` },
+PEOPLE (describe EVERY person in the photo):
+For each person: their name, physical appearance (face, hair, facial hair, skin tone, build), what they are wearing, their pose, where they are sitting/standing.
+
+SETTING: The venue type, furniture, lighting, background.
+
+TABLE/OBJECTS: Every item on the table — be very specific about food (e.g. "grilled steak on wooden cutting board with golden fries" not "food").
+
+COMPOSITION: Camera angle, who is where in frame (left/center/right).
+
+Output one paragraph, no bullet points, no preamble. Describe the full scene.` },
             ],
           }],
-          generationConfig: { maxOutputTokens: 512 },
+          generationConfig: { maxOutputTokens: 1024 },
         }),
       }
     )
