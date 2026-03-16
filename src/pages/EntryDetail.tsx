@@ -310,6 +310,7 @@ export default function EntryDetail() {
     try {
       const url = await generateScene(entry, entry.participants ?? [])
       if (url) {
+        await updateEntry(entry.id, { scene_url: url } as Partial<EntryWithParticipants>)
         setEntry(prev => prev ? { ...prev, scene_url: url } : prev)
         addToast('Scene generated.', 'success')
       }

@@ -255,7 +255,7 @@ function SidePanel({ cityGroup, onClose, onEntryClick }: SidePanelProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-obsidian/60 z-40"
+            className="fixed inset-0 bg-obsidian/60 z-[1000]"
             onClick={onClose}
           />
 
@@ -266,7 +266,7 @@ function SidePanel({ cityGroup, onClose, onEntryClick }: SidePanelProps) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-            className="fixed inset-y-0 right-0 w-full max-w-sm bg-slate-dark border-l border-white/8 z-50 flex flex-col"
+            className="fixed inset-y-0 right-0 w-full max-w-sm bg-slate-dark border-l border-white/8 z-[1001] flex flex-col"
           >
             {/* Panel header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">

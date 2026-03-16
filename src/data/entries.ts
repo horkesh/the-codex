@@ -4,7 +4,7 @@ import { checkAndAwardAchievements } from '@/data/achievements'
 import { checkAndAwardThresholds } from '@/data/thresholds'
 import { imageToWebpBlob } from '@/lib/image'
 
-export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, status, pinned, visibility, metadata, created_by, created_at, updated_at'
+export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, scene_url, status, pinned, visibility, metadata, created_by, created_at, updated_at'
 const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio'
 
 export async function fetchEntries(filters?: {
