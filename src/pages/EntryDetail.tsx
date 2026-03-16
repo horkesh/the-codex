@@ -375,7 +375,7 @@ export default function EntryDetail() {
       />
 
       {/* Hero — full-bleed, no horizontal padding */}
-      <EntryHero entry={entry} filterId={filterId} />
+      <EntryHero entry={entry} filterId={filterId} onEntryUpdate={setEntry} />
 
       {/* Scrollable content */}
       <PageWrapper padded scrollable className="space-y-6 pt-4">

@@ -51,7 +51,10 @@ export function EntryCard({ entry, onClick, onTogglePin }: EntryCardProps) {
             src={entry.cover_image_url}
             alt={entry.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-            style={{ filter: filter.css }}
+            style={{
+              filter: filter.css,
+              objectPosition: `${(entry.metadata as Record<string, unknown>)?.cover_pos_x ?? 50}% ${(entry.metadata as Record<string, unknown>)?.cover_pos_y ?? 50}%`,
+            }}
             draggable={false}
           />
         ) : (
