@@ -10,6 +10,7 @@ import { EntryReactions } from '@/components/chronicle/EntryReactions'
 import { generateScene } from '@/ai/scene'
 import { generateLore } from '@/ai/lore'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
+import { PhotoStoryboard } from '@/components/chronicle/PhotoStoryboard'
 import { FilterPicker } from '@/components/chronicle/FilterPicker'
 import { MetadataCard } from '@/components/chronicle/MetadataCard'
 import { PS5Scoreboard } from '@/components/chronicle/PS5Scoreboard'
@@ -423,7 +424,7 @@ export default function EntryDetail() {
               </motion.div>
             )}
 
-            {/* Photo grid */}
+            {/* Photos */}
             {photos.length > 0 && (
               <motion.div variants={staggerItem}>
                 <div className="space-y-3">
@@ -431,12 +432,21 @@ export default function EntryDetail() {
                     Photos
                   </p>
                   <FilterPicker filterId={filterId} onChange={setFilter} previewUrl={entry.cover_image_url ?? undefined} />
-                  <PhotoGrid
-                    photos={photos}
-                    onSetAsCover={handleSetAsCover}
-                    currentCoverUrl={entry.cover_image_url ?? undefined}
-                    filterId={filterId}
-                  />
+                  {entry.type === 'mission' || entry.type === 'night_out' ? (
+                    <PhotoStoryboard
+                      photos={photos}
+                      onSetAsCover={handleSetAsCover}
+                      currentCoverUrl={entry.cover_image_url ?? undefined}
+                      filterId={filterId}
+                    />
+                  ) : (
+                    <PhotoGrid
+                      photos={photos}
+                      onSetAsCover={handleSetAsCover}
+                      currentCoverUrl={entry.cover_image_url ?? undefined}
+                      filterId={filterId}
+                    />
+                  )}
                 </div>
               </motion.div>
             )}
