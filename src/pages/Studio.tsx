@@ -425,9 +425,11 @@ export default function Studio() {
     }
   }
 
-  const availableTemplates = selectedEntry
-    ? (TEMPLATES_BY_TYPE[selectedEntry.type] ?? [])
-    : []
+  const availableTemplates = selectedAchievement
+    ? (TEMPLATES_BY_TYPE['achievement'] ?? [])
+    : selectedEntry
+      ? (TEMPLATES_BY_TYPE[selectedEntry.type] ?? [])
+      : []
 
   const activeTemplateConfig = selectedTemplate
     ? availableTemplates.find((t) => t.id === selectedTemplate) ?? null
@@ -615,7 +617,7 @@ export default function Studio() {
         )}
 
         {/* Divider */}
-        {(selectedEntry || comparisonParam) && (
+        {(selectedEntry || comparisonParam || selectedAchievement) && (
           <div className="mx-4 border-t border-white/8 mb-0" />
         )}
 
@@ -673,9 +675,9 @@ export default function Studio() {
         {/* ------------------------------------------------------------------ */}
 
         <AnimatePresence mode="wait">
-          {(selectedEntry || comparisonParam) && selectedTemplate && (activeTemplateConfig || comparisonParam) && (
+          {(selectedEntry || comparisonParam || selectedAchievement) && selectedTemplate && (activeTemplateConfig || comparisonParam || selectedAchievement) && (
             <motion.section
-              key={(selectedEntry?.id ?? 'comparison') + '-' + selectedTemplate}
+              key={(selectedEntry?.id ?? selectedAchievement?.type ?? 'comparison') + '-' + selectedTemplate}
               variants={fadeUp}
               initial="initial"
               animate="animate"
@@ -713,6 +715,7 @@ export default function Studio() {
                       backgroundUrl={bgUrl ?? undefined}
                       rewardKeys={rewardKeys}
                       comparisonParam={comparisonParam ?? undefined}
+                      achievementData={achievementData}
                     />
                   </PhotoFilterContext.Provider>
                 </div>

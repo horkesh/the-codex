@@ -18,7 +18,7 @@ export function ContactTagger({ selectedIds, onChange }: ContactTaggerProps) {
   const [results, setResults] = useState<QuickPerson[]>([])
   const [selected, setSelected] = useState<QuickPerson[]>([])
   const [open, setOpen] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Search people as user types

@@ -78,19 +78,6 @@ export default function EntryNew() {
   const prospectHandled = useRef(false)
   const handleGeoDetected = useCallback((loc: LocationFill) => setLocationFill(loc), [])
 
-  const handleRetitle = useCallback(() => {
-    if (pendingFiles.length === 0 || !selectedType) return
-    titleGenFired.current = false
-    generateTitle(pendingFiles[0], selectedType, {
-      location: locationFill?.location,
-      city: locationFill?.city,
-      country: locationFill?.country,
-      date: locationFill?.date,
-    }).then((title) => {
-      if (title) setSuggestedTitle(title)
-    })
-  }, [pendingFiles, selectedType, locationFill])
-
   useEffect(() => {
     fetchLocations().then(setSavedPlaces)
   }, [])
@@ -119,6 +106,19 @@ export default function EntryNew() {
   }, [searchParams])
 
   const { pendingFiles, addFiles: rawAddFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos()
+
+  const handleRetitle = useCallback(() => {
+    if (pendingFiles.length === 0 || !selectedType) return
+    titleGenFired.current = false
+    generateTitle(pendingFiles[0], selectedType, {
+      location: locationFill?.location,
+      city: locationFill?.city,
+      country: locationFill?.country,
+      date: locationFill?.date,
+    }).then((title) => {
+      if (title) setSuggestedTitle(title)
+    })
+  }, [pendingFiles, selectedType, locationFill])
 
   // Wrap addFiles to store the first photo for deferred title generation
   const addFiles = useCallback((files: File[]) => {
