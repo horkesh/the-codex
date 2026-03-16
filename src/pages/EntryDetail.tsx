@@ -471,7 +471,7 @@ export default function EntryDetail() {
 
             {/* AI title suggestion banner */}
             {suggestedTitle && (
-              <motion.div variants={staggerItem}>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                 <div className="flex items-center gap-3 bg-gold/8 border border-gold/20 rounded-lg px-4 py-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gold font-body font-semibold">AI Title Suggestion</p>
