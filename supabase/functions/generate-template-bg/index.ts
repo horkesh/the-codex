@@ -49,20 +49,17 @@ async function analyzeScene(
           contents: [{
             parts: [
               { inline_data: { mime_type: mimeType, data: coverBase64 } },
-              { text: `Write a SHORT image generation prompt (max 80 words) for this photo.
+              { text: `Describe this photograph for an image generation model. Identify each person using the known appearances below.
 
-Known people — identify by hair/facial hair:
+Known people — match by hair and facial hair:
 ${gentDescriptions}
 
-Rules:
-- Max 80 words total
-- Name each person with 3-4 key features only (e.g. "Haris, shaved head, handlebar mustache, purple shirt")
-- Mention main food/drinks in 5 words or less
-- Setting in 5 words or less
-- No full sentences — comma-separated phrases only
-- No preamble
+Describe in this order:
+1. Each person: name, their key physical features (face, hair, facial hair, build), clothing, pose, position (left/center/right). Describe ALL people visible.
+2. Table contents: name every food item and drink specifically (e.g. "grilled steak on wooden cutting board with golden fries").
+3. Setting: venue type, atmosphere. Keep brief.
 
-Example format: "Three men at restaurant table. Left: Almedin, high fade, clean-shaven, plaid shirt. Center: Vedad, brown quiff, full beard, tan sweater. Right: Haris, shaved head, handlebar mustache, purple shirt. Steak and fries on wooden boards. Modern glass-walled restaurant."` },
+Output one paragraph. No preamble.` },
             ],
           }],
           generationConfig: {
@@ -91,11 +88,9 @@ Example format: "Three men at restaurant table. Left: Almedin, high fade, clean-
   }
 }
 
-// Step 2: Transform the photo using Gemini 2.5 Flash Image
-// Receives both the original photo AND the scene description for context
+// Step 2: Generate noir artwork from scene description using Gemini Flash Image
+// No photo input — forces generation from scratch instead of applying a filter
 async function generateNoirScene(
-  coverBase64: string,
-  coverMimeType: string,
   sceneDescription: string,
   apiKey: string,
 ): Promise<string> {
@@ -112,22 +107,7 @@ async function generateNoirScene(
         body: JSON.stringify({
           contents: [{
             parts: [
-              { inline_data: { mime_type: coverMimeType, data: coverBase64 } },
-              { text: `Completely redraw this photograph as a dark cinematic digital artwork. Do not apply a filter — create a NEW artwork based on this scene.
-
-Who is in the photo: ${sceneDescription}
-
-Art direction:
-- Dark cinematic noir digital art style
-- Minimalist geometric forms and angular shapes
-- Dramatic noir lighting: deep shadows, strong rim lights, high contrast
-- Moody desaturated colour palette with warm gold accent tones
-- Replace the bright background with a dark, atmospheric environment
-- Each person must remain recognisable — preserve their exact facial features, hair, and facial hair
-- Keep the same people, poses, and table contents
-- The result should look like a hand-painted illustration, NOT a filtered photograph
-
-Generate the artwork.` },
+              { text: `Generate a dark cinematic digital artwork of this scene:\n\n${sceneDescription}\n\n${NOIR_STYLE}\n\nEach person's facial features, hair, and facial hair must be sharp and distinctive as described. The artwork should have a dark moody atmosphere with dramatic lighting. Generate the image.` },
             ],
           }],
           generationConfig: {
@@ -138,7 +118,7 @@ Generate the artwork.` },
     )
 
     if (!response.ok) {
-      throw new Error(`Gemini restyle error: ${response.status} ${await response.text()}`)
+      throw new Error(`Gemini generate error: ${response.status} ${await response.text()}`)
     }
 
     const result = await response.json()
@@ -146,7 +126,7 @@ Generate the artwork.` },
     const imagePart = parts.find((p: { inlineData?: { data: string } }) => p.inlineData?.data)
 
     if (!imagePart?.inlineData?.data) {
-      throw new Error('Gemini returned no image in restyle response')
+      throw new Error('Gemini returned no image in generate response')
     }
 
     return imagePart.inlineData.data
@@ -207,7 +187,7 @@ Deno.serve(async (req: Request) => {
     if (coverBase64) {
       // Two-step restyle: analyze scene → generate noir rendition
       sceneDescription = await analyzeScene(coverBase64, coverMimeType, googleApiKey)
-      base64Image = await generateNoirScene(coverBase64, coverMimeType, sceneDescription, googleApiKey)
+      base64Image = await generateNoirScene(sceneDescription, googleApiKey)
     } else {
       // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
