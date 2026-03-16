@@ -11,6 +11,7 @@ import { CircleFilters } from '@/components/circle/CircleFilters'
 import { PersonForm } from '@/components/circle/PersonForm'
 import type { PersonFormData } from '@/components/circle/PersonForm'
 import { POIModal } from '@/components/circle/POIModal'
+import { ScanActionSheet } from '@/components/circle/ScanActionSheet'
 import { createPerson, fetchAllLabels, fetchPeopleByCategory } from '@/data/people'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -27,6 +28,8 @@ export default function Circle() {
   // Tab state
   const [activeTab, setActiveTab] = useState<'contacts' | 'poi'>('contacts')
   const [showPOIModal, setShowPOIModal] = useState(false)
+  const [showActionSheet, setShowActionSheet] = useState(false)
+  const [poiMode, setPOIMode] = useState<'research' | 'scan'>('research')
   const [poiPeople, setPOIPeople] = useState<Person[]>([])
   const [poiLoading, setPOILoading] = useState(false)
 
@@ -67,11 +70,17 @@ export default function Circle() {
   }
 
   const handleFABPress = () => {
-    if (activeTab === 'poi') {
-      setShowPOIModal(true)
-    } else {
+    if (activeTab === 'contacts') {
       setShowAddForm(true)
+    } else {
+      setShowActionSheet(true)
     }
+  }
+
+  const handleActionSelect = (mode: 'research' | 'scan') => {
+    setPOIMode(mode)
+    setShowActionSheet(false)
+    setShowPOIModal(true)
   }
 
   return (
@@ -210,7 +219,7 @@ export default function Circle() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowPOIModal(true)}
+                onClick={() => setShowActionSheet(true)}
               >
                 Scout Someone
               </Button>
@@ -307,9 +316,17 @@ export default function Circle() {
         onSave={handleSave}
       />
 
+      {/* Scout action sheet */}
+      <ScanActionSheet
+        open={showActionSheet}
+        onClose={() => setShowActionSheet(false)}
+        onSelect={handleActionSelect}
+      />
+
       {/* Scout POI modal */}
       <POIModal
         open={showPOIModal}
+        mode={poiMode}
         onClose={() => setShowPOIModal(false)}
         onSaved={() => {
           setShowPOIModal(false)

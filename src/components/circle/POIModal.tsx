@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ImagePlus, Camera, Search, ScanFace } from 'lucide-react'
+import { ImagePlus, Camera } from 'lucide-react'
 import { Modal, Button, Input } from '@/components/ui'
 import { VerdictCard } from '@/components/circle/VerdictCard'
 import { useVerdictIntake } from '@/hooks/useVerdictIntake'
@@ -9,17 +9,18 @@ import { fadeUp } from '@/lib/animations'
 
 interface ProspectIntakeModalProps {
   open: boolean
+  mode: 'research' | 'scan'
   onClose: () => void
   onSaved: (personId: string) => void
 }
 
-export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
+export function POIModal({ open, mode, onClose, onSaved }: ProspectIntakeModalProps) {
   const screenshotInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [handleInput, setHandleInput] = useState('')
 
   const {
-    step, setStep, mode, setMode,
+    step, setStep, setMode,
     analyzeError, verdictResult, portraitLoading,
     dossier, setDossier, duplicateWarning,
     handleAnalyzeFile, handleAnalyzeHandle, handleSave, reset,
@@ -27,6 +28,10 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
     onSaved(personId)
     onClose()
   })
+
+  useEffect(() => {
+    if (open) setMode(mode)
+  }, [open, mode, setMode])
 
   const handleClose = () => {
     reset()
@@ -52,32 +57,6 @@ export function POIModal({ open, onClose, onSaved }: ProspectIntakeModalProps) {
             exit="exit"
             className="flex flex-col gap-4"
           >
-            {/* Mode toggle */}
-            <div className="flex rounded-lg overflow-hidden border border-white/10">
-              <button
-                type="button"
-                onClick={() => setMode('research')}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-body transition-colors',
-                  mode === 'research' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
-                )}
-              >
-                <Search size={13} />
-                Research
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('scan')}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-body transition-colors',
-                  mode === 'scan' ? 'bg-gold/15 text-gold' : 'text-ivory-dim hover:text-ivory',
-                )}
-              >
-                <ScanFace size={13} />
-                Scan
-              </button>
-            </div>
-
             {/* Research mode — screenshot + handle */}
             {mode === 'research' && (
               <>
