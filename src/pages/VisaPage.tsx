@@ -4,9 +4,11 @@ import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar, Spinner, Button } from '@/components/ui'
 import { fetchStamp } from '@/data/stamps'
-import { fetchEntry, fetchEntryPhotos } from '@/data/entries'
+import { fetchEntry, fetchEntryPhotos, updateEntry } from '@/data/entries'
 import { formatDate, flagEmoji } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
+import { generateMissionDebrief } from '@/ai/debrief'
+import { Sparkles, RefreshCw } from 'lucide-react'
 import type { PassportStamp, EntryWithParticipants } from '@/types/app'
 
 interface EntryPhoto {
@@ -26,6 +28,7 @@ export default function VisaPage() {
   const [photos, setPhotos] = useState<EntryPhoto[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [generatingDebrief, setGeneratingDebrief] = useState(false)
 
   useEffect(() => {
     if (!stampId) { setNotFound(true); setLoading(false); return }
@@ -57,6 +60,30 @@ export default function VisaPage() {
   const handleViewEntry = useCallback(() => {
     if (entry) navigate(`/chronicle/${entry.id}`)
   }, [entry, navigate])
+
+  async function handleGenerateDebrief() {
+    if (!entry || generatingDebrief) return
+    setGeneratingDebrief(true)
+    try {
+      const urls = photos.map(p => p.url)
+      const result = await generateMissionDebrief(entry, urls)
+      if (result) {
+        const meta = {
+          ...(entry.metadata as Record<string, unknown> ?? {}),
+          mission_debrief: result.debrief,
+          landmarks: result.landmarks,
+          debrief_highlights: result.highlights,
+          risk_assessment: result.risk_assessment,
+        }
+        await updateEntry(entry.id, { metadata: meta } as any)
+        setEntry({ ...entry, metadata: meta })
+      }
+    } catch {
+      // silent — supplementary content
+    } finally {
+      setGeneratingDebrief(false)
+    }
+  }
 
   // Loading
   if (loading) {
@@ -96,8 +123,11 @@ export default function VisaPage() {
     ? `${flagEmoji(entry.country_code)}  ${entry.city ? `${entry.city}, ` : ''}${entry.country ?? ''}`
     : entry.city ?? entry.location ?? ''
 
-  const landmarks = Array.isArray(entry.metadata?.landmarks) ? entry.metadata.landmarks as string[] : []
-  const missionDebrief = entry.metadata?.mission_debrief as string | undefined
+  const meta = entry.metadata as Record<string, unknown> | undefined
+  const missionDebrief = meta?.mission_debrief as string | undefined
+  const landmarks = Array.isArray(meta?.landmarks) ? meta.landmarks as string[] : []
+  const debriefHighlights = Array.isArray(meta?.debrief_highlights) ? meta.debrief_highlights as string[] : []
+  const riskAssessment = meta?.risk_assessment as string | undefined
 
   return (
     <>
@@ -167,16 +197,102 @@ export default function VisaPage() {
               </p>
             )}
 
-            {/* Mission Debrief placeholder */}
-            {missionDebrief && (
-              <p className="text-sm text-ivory/60 font-body leading-relaxed mb-5">
-                {missionDebrief}
-              </p>
-            )}
+            {/* Mission Debrief */}
+            {(() => {
+              if (missionDebrief) {
+                return (
+                  <>
+                    {/* Divider */}
+                    <div className="h-px bg-gold/15 my-5" />
+
+                    {/* Classified header */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="h-px flex-1 bg-red-500/20" />
+                      <span className="text-[10px] font-mono tracking-[0.3em] text-red-400/70 uppercase">Classified</span>
+                      <div className="h-px flex-1 bg-red-500/20" />
+                    </div>
+
+                    {/* Debrief text */}
+                    <p className="text-sm text-ivory/60 font-body leading-relaxed whitespace-pre-wrap">{missionDebrief}</p>
+
+                    {/* Landmarks */}
+                    {landmarks.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-4">
+                        {landmarks.map((l, i) => (
+                          <span key={i} className="rounded-full border border-gold/20 bg-gold/5 px-2.5 py-0.5 text-[10px] text-gold font-body">
+                            {l}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Highlights */}
+                    {debriefHighlights.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-[10px] font-mono tracking-[0.2em] text-gold/50 uppercase mb-2">Key Moments</p>
+                        <ol className="space-y-1.5 list-decimal list-inside">
+                          {debriefHighlights.map((h, i) => (
+                            <li key={i} className="text-xs text-ivory/50 font-body leading-relaxed">{h}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+
+                    {/* Risk Assessment */}
+                    {riskAssessment && (
+                      <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                        <p className="text-[10px] font-mono tracking-[0.2em] text-amber-400/70 uppercase mb-1">Risk Assessment</p>
+                        <p className="text-xs text-ivory/60 font-body italic">{riskAssessment}</p>
+                      </div>
+                    )}
+
+                    {/* Regenerate button */}
+                    <button
+                      type="button"
+                      onClick={handleGenerateDebrief}
+                      disabled={generatingDebrief}
+                      className="mt-3 flex items-center gap-1.5 text-[10px] text-ivory/40 hover:text-gold font-body transition-colors disabled:opacity-40 mx-auto"
+                    >
+                      <RefreshCw size={10} className={generatingDebrief ? 'animate-spin' : ''} />
+                      Regenerate Debrief
+                    </button>
+                  </>
+                )
+              }
+
+              // No debrief yet — show generate button
+              if (photos.length > 0) {
+                return (
+                  <>
+                    <div className="h-px bg-gold/15 my-5" />
+                    <button
+                      type="button"
+                      onClick={handleGenerateDebrief}
+                      disabled={generatingDebrief}
+                      className="w-full py-3 rounded-xl border border-gold/20 bg-gold/5 flex items-center justify-center gap-2 text-xs text-gold font-body hover:bg-gold/10 transition-colors disabled:opacity-40"
+                    >
+                      {generatingDebrief ? (
+                        <>
+                          <RefreshCw size={14} className="animate-spin" />
+                          Generating debrief...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={14} />
+                          Generate Mission Debrief
+                        </>
+                      )}
+                    </button>
+                  </>
+                )
+              }
+
+              return null
+            })()}
 
             {/* Photo strip */}
             {photos.length > 0 && (
-              <div className="overflow-x-auto no-scrollbar flex gap-2 mb-5">
+              <div className="overflow-x-auto no-scrollbar flex gap-2 my-5">
                 {photos.slice(0, 6).map(photo => (
                   <img
                     key={photo.id}
@@ -185,20 +301,6 @@ export default function VisaPage() {
                     className="h-24 w-auto rounded-lg border border-white/5 object-cover shrink-0"
                     draggable={false}
                   />
-                ))}
-              </div>
-            )}
-
-            {/* Landmarks */}
-            {landmarks.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-5">
-                {landmarks.map((landmark, i) => (
-                  <span
-                    key={i}
-                    className="rounded-full border border-gold/20 bg-gold/5 px-2.5 py-0.5 text-[10px] text-gold font-body"
-                  >
-                    {landmark}
-                  </span>
                 ))}
               </div>
             )}
