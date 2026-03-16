@@ -20,26 +20,15 @@ const TYPE_PROMPTS: Record<string, (location: string) => string> = {
   interlude:   (_)   => `A lone figure standing at a rain-streaked dark window overlooking city lights at night, silhouette against the glow, contemplative mood, deep shadows, cinematic. Style: film noir, melancholic, rich blacks.`,
 }
 
-// Style directives when restyling an existing cover image via Gemini
-const RESTYLE_PROMPTS: Record<string, string> = {
-  mission:     'Cinematic travel photography. Deep shadows, dramatic urban lighting, film noir colour grade, rich blacks and warm highlights.',
-  night_out:   'Moody editorial nightlife photography. Deep amber tones, candlelight warmth, shallow depth of field bokeh, dark polished atmosphere.',
-  steak:       'High-end food and dining photography. Warm candlelight, rich amber tones, dramatic shadows, cinematic depth, dark marble elegance.',
-  playstation: 'Atmospheric gaming photography. Cool blue-purple LED glow, deep shadows, screen-lit ambiance, cinematic mood.',
-  toast:       'Luxury spirits photography. Deep blacks, amber gold tones, dramatic rim lighting, smoky atmosphere, crystal clarity.',
-  gathering:   'Luxury events photography. Warm candlelight, intimate atmosphere, deep shadows, elegant soft focus.',
-  interlude:   'Film noir photography. Melancholic mood, deep shadows, rain-streaked atmosphere, rich blacks, contemplative tone.',
-}
+// Unified noir style — matches the abstract geometric portrait aesthetic
+const NOIR_STYLE = 'Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, dramatic shadows and highlights, sophisticated composition.'
 
 // Restyle an existing photo using Gemini 2.5 Flash (true image-to-image transform)
 async function restyleWithGemini(
   coverBase64: string,
   mimeType: string,
-  entryType: string,
   apiKey: string,
 ): Promise<string> {
-  const styleDirective = RESTYLE_PROMPTS[entryType] ?? RESTYLE_PROMPTS['mission']
-
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 20_000)
 
@@ -54,12 +43,11 @@ async function restyleWithGemini(
           contents: [{
             parts: [
               { inline_data: { mime_type: mimeType, data: coverBase64 } },
-              { text: `Restyle this photograph with a dark cinematic noir aesthetic. ${styleDirective} Apply deep noir colour grading with dramatic shadows and high contrast. Keep the EXACT same scene, subjects, composition, and framing — only transform the mood, lighting, and colour palette. The result should look like the same photo shot by a high-end editorial photographer with noir lighting. Output only the restyled image.` },
+              { text: `Edit this image. Transform it into an abstract artistic rendition in the following style: ${NOIR_STYLE} Faithfully preserve every person, object, and element in the scene — their positions, poses, and spatial arrangement must remain identical. Apply the style transformation to the entire image: people, setting, background, everything. The output must be clearly recognisable as the same scene, just rendered in this dark geometric noir art style. Generate the restyled image.` },
             ],
           }],
           generationConfig: {
-            responseModalities: ['IMAGE', 'TEXT'],
-            maxOutputTokens: 8192,
+            responseModalities: ['IMAGE'],
           },
         }),
       }
@@ -126,8 +114,8 @@ Deno.serve(async (req: Request) => {
     let base64Image: string
 
     if (coverBase64) {
-      // Restyle mode: use Gemini to transform the original photo
-      base64Image = await restyleWithGemini(coverBase64, coverMimeType, entry_type, googleApiKey)
+      // Restyle mode: use Gemini to transform the original photo into noir style
+      base64Image = await restyleWithGemini(coverBase64, coverMimeType, googleApiKey)
     } else {
       // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
