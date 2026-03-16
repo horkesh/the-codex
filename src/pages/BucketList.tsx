@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, MoreVertical, Plus } from 'lucide-react'
+import { ChevronDown, MoreVertical, Plus, Link as LinkIcon, Loader2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button } from '@/components/ui/Button'
@@ -17,6 +17,8 @@ import {
 import { fetchEntries } from '@/data/entries'
 import { useAuthStore } from '@/store/auth'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/animations'
+import { analyzeInstagramUrl } from '@/ai/instagram'
+import { useUIStore } from '@/store/ui'
 import type { BucketListItem, EntryType, EntryWithParticipants } from '@/types/app'
 
 // ─── Category options ─────────────────────────────────────────────────────────
@@ -63,16 +65,41 @@ interface AddWishModalProps {
 
 function AddWishModal({ isOpen, onClose, onSaved }: AddWishModalProps) {
   const gent = useAuthStore((s) => s.gent)
+  const { addToast } = useUIStore()
   const [form, setForm] = useState<WishFormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [igUrl, setIgUrl] = useState('')
+  const [igLoading, setIgLoading] = useState(false)
 
   useEffect(() => {
     if (!isOpen) {
       setForm(EMPTY_FORM)
       setError(null)
+      setIgUrl('')
     }
   }, [isOpen])
+
+  async function handleImportInstagram() {
+    if (!igUrl.trim()) return
+    setIgLoading(true)
+    try {
+      const result = await analyzeInstagramUrl(igUrl.trim(), 'event')
+      setForm((prev) => ({
+        ...prev,
+        title: result.event_name || result.venue_name || prev.title,
+        city: result.city || prev.city,
+        country: result.country || prev.country,
+        notes: [result.vibe, result.estimated_price, result.dress_code].filter(Boolean).join(' · ') || prev.notes,
+        category: 'night_out',
+      }))
+      addToast('Instagram data imported.', 'success')
+    } catch {
+      addToast('Could not extract data from URL.', 'error')
+    } finally {
+      setIgLoading(false)
+    }
+  }
 
   const set = (field: keyof WishFormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
@@ -110,6 +137,29 @@ function AddWishModal({ isOpen, onClose, onSaved }: AddWishModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add a Wish">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Instagram import */}
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Input
+              label="Import from Instagram"
+              placeholder="Paste event URL..."
+              value={igUrl}
+              onChange={(e) => setIgUrl(e.target.value)}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleImportInstagram}
+            disabled={igLoading || !igUrl.trim()}
+            className="self-end flex items-center gap-1.5 bg-gold/10 border border-gold/20 rounded-lg px-3 h-10 text-gold text-xs font-body hover:bg-gold/20 transition-colors disabled:opacity-40"
+          >
+            {igLoading ? <Loader2 size={14} className="animate-spin" /> : <LinkIcon size={14} />}
+            Import
+          </button>
+        </div>
+
+        <div className="h-px bg-white/8" />
+
         <Input
           label="Title"
           placeholder="What do you want to do?"

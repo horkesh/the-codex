@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight } from 'lucide-react'
+import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal } from '@/components/ui'
@@ -255,6 +255,47 @@ export default function GatheringDetail() {
                 </div>
               </motion.div>
             )}
+
+            {/* Share links + QR code */}
+            <motion.div variants={staggerItem} className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Share2 size={15} className="text-gold shrink-0" />
+                <h2 className="font-display text-base text-ivory">Share</h2>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = `${window.location.origin}/g/${entry.id}`
+                    navigator.clipboard.writeText(url).then(() => addToast('Invite link copied.', 'success')).catch(() => {})
+                  }}
+                  className="flex-1 bg-slate-mid border border-white/8 rounded-lg px-4 py-3 text-center hover:border-white/15 transition-colors"
+                >
+                  <p className="text-xs text-gold font-body font-semibold">Invite Link</p>
+                  <p className="text-[10px] text-ivory-dim font-body mt-0.5">Copy to clipboard</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = `${window.location.origin}/g/${entry.id}/guestbook`
+                    navigator.clipboard.writeText(url).then(() => addToast('Guestbook link copied.', 'success')).catch(() => {})
+                  }}
+                  className="flex-1 bg-slate-mid border border-white/8 rounded-lg px-4 py-3 text-center hover:border-white/15 transition-colors"
+                >
+                  <p className="text-xs text-gold font-body font-semibold">Guestbook Link</p>
+                  <p className="text-[10px] text-ivory-dim font-body mt-0.5">Copy to clipboard</p>
+                </button>
+              </div>
+              {/* QR code for guestbook */}
+              <div className="flex flex-col items-center gap-2 bg-white rounded-lg p-4">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/g/${entry.id}/guestbook`)}&bgcolor=FFFFFF&color=0a0a0f`}
+                  alt="Guestbook QR Code"
+                  className="w-48 h-48"
+                />
+                <p className="text-xs text-slate-600 font-body">Scan to open guestbook</p>
+              </div>
+            </motion.div>
 
             {/* RSVP section */}
             <motion.div variants={staggerItem} className="flex flex-col gap-3">
