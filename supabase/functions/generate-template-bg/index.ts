@@ -153,8 +153,10 @@ Deno.serve(async (req: Request) => {
         const imgRes = await fetch(cover_image_url, { signal: controller.signal })
         if (imgRes.ok) {
           coverMimeType = imgRes.headers.get('content-type') ?? 'image/jpeg'
-          const buf = await imgRes.arrayBuffer()
-          coverBase64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
+          const buf = new Uint8Array(await imgRes.arrayBuffer())
+          let binary = ''
+          for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i])
+          coverBase64 = btoa(binary)
         } else {
           coverDownloadError = `HTTP ${imgRes.status} ${imgRes.statusText}`
         }
