@@ -26,6 +26,8 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 | Photo/camera scan (POI) | `gemini-2.5-flash` | Claude refuses appearance scoring; Gemini does not |
 | Portrait image generation | `imagen-4.0-generate-001` | Imagen 4 via `:predict` endpoint |
 | Cover/scene/stamp image generation | `imagen-4.0-generate-001` | Same |
+| Studio restyle — scene analysis | `gemini-2.5-flash` | Vision: describes scene using saved gent identities |
+| Studio restyle — noir generation | `imagen-4.0-generate-001` | Renders scene description in geometric noir style |
 
 **Critical model notes:**
 - `gemini-2.0-flash` is deprecated for new API keys (404 "no longer available to new users"). Use `gemini-2.5-flash`.
@@ -55,6 +57,11 @@ Two modes, routed by `source_type`:
 - `photo` → Gemini 2.5 Flash: same fields minus display_name/handle
 
 Client: `src/hooks/useVerdictIntake.ts` — compresses all images to 1024px JPEG (0.82 quality) before upload. `handleAnalyzeFile(file, sourceType)` takes explicit source type. `handleAnalyzeHandle(handle)` fetches avatar from `unavatar.io/instagram/{handle}?fallback=false` (public profiles only).
+
+**UI entry point**: FAB on Circle's POI tab opens `ScanActionSheet` (bottom sheet) with two options:
+- **Research** — Instagram screenshot or handle lookup → opens `POIModal` in `research` mode
+- **Scan** — Camera or photo from gallery → opens `POIModal` in `scan` mode
+`POIModal` receives a `mode` prop and no longer has an internal toggle.
 
 ## ReactFlow canvas height
 Shell uses `min-h-dvh` (not `h-dvh`), so `flex-1` children have no definite height → canvas is 0px (black screen). Always use `style={{ height: 'calc(100dvh - Xpx)' }}` where X = TopBar + SectionNav heights. Current: `calc(100dvh - 96px)` (TopBar 56px + SectionNav 40px).
@@ -86,7 +93,11 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 
 ## Studio export (`src/pages/Studio.tsx`)
 - **Cover image as default background**: when an entry is selected, `cover_image_url` is immediately used as the template background.
-- **Background source picker**: two buttons — "Cover Photo" (real image) and "Generate AI" (AI-generated). User can switch freely between them. Active source is highlighted with gold border.
+- **Background source picker**: two buttons — "Cover Photo" (real image) and "AI Restyle" (AI-generated). User can switch freely between them. Active source is highlighted with gold border.
+- **AI Restyle** (`generate-template-bg` edge function) — two-step pipeline when a cover photo exists:
+  1. **Analyze** — `gemini-2.5-flash` vision reads the photo and produces a detailed scene description, identifying each Gent by name using saved appearances from `_shared/gent-identities.ts`.
+  2. **Generate** — `imagen-4.0-generate-001` renders that description in the abstract geometric noir style (same aesthetic as portraits), preserving facial features exactly.
+  - When no cover photo exists, Imagen generates a from-scratch background using type-specific prompts.
 - Templates render via `BackgroundLayer` which applies both the background image and photo filter CSS from context.
 
 ## Chronicle search & pinning
