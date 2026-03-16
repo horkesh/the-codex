@@ -107,9 +107,30 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 
 ## Passport stamps
 - Mission entries auto-create a passport stamp on publish via `createMissionStamp()` in EntryNew.
-- Stamp artwork generated async via `generateStamp()` → `generate-stamp` edge function (Imagen 4) → `updateStampImage()`.
+- **SVG stamps by Claude Haiku**: `generate-stamp` edge function uses Claude to produce SVG with guilloche borders, arced city/country text, year, country code, and city-specific landmark silhouettes. Stored as `.svg` in Supabase Storage.
+- "Regen Stamps" button on Passport stamps view regenerates all existing stamps with current SVG engine.
 - All fire-and-forget — doesn't block entry creation.
 - **Backfill**: `backfillMissionStamps()` in `src/data/stamps.ts` creates stamps for any published mission entries missing them. Called from `usePassport` once per session (guarded by `sessionStorage`).
+
+## Passport visa pages
+- Tapping a mission stamp navigates to `/passport/visa/{stampId}` — full-screen visa page (`src/pages/VisaPage.tsx`).
+- Shows: stamp image (rotated), mission title, date, location with flag, participant avatars, lore, photo strip, landmarks pills.
+- **AI Mission Debrief**: "Generate Mission Debrief" button sends all photos to `generate-mission-debrief` edge function (`claude-sonnet-4-6` with vision). Returns classified narrative, landmarks, highlights, and tongue-in-cheek risk assessment. Stored in `entry.metadata` fields: `mission_debrief`, `landmarks`, `debrief_highlights`, `risk_assessment`.
+- Non-mission stamps still use the StampDetail modal.
+
+## Passport achievements
+- Achievements tab in Passport renders earned + locked achievements from `fetchEarnedAchievements(gentId)`.
+- Compares against `ACHIEVEMENT_DEFINITIONS` to show locked items greyed out with "???" descriptions.
+- Component: `src/components/passport/AchievementList.tsx`.
+
+## Passport cover travel intel
+- `composeTravelIntel()` in `src/ai/travelIntel.ts` — pure client-side function composing diplomatic-style travel summary from mission stats.
+- Displayed on PassportCover below stats box: operation count, territories, primary theatre, known coordinates.
+
+## Passport texture
+- Stamp grid: dark gradient background with gold border and inset glow.
+- Passport cover: repeating diagonal stripe pattern for leather texture effect.
+- StampDetail modal: aged paper gradient background.
 
 ## QR code for guestbook
 - GatheringDetail shows a "Share" section with copy-to-clipboard buttons for invite + guestbook URLs.
