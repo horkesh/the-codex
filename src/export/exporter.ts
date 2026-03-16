@@ -10,8 +10,13 @@ const EXPORT_OPTIONS = {
 // Convert a DOM element ref to a PNG blob
 export async function exportToPng(element: HTMLElement): Promise<Blob> {
   const dataUrl = await toPng(element, EXPORT_OPTIONS)
-  const res = await fetch(dataUrl)
-  return res.blob()
+  // Convert data URL directly to blob (avoids fragile fetch-on-dataURL)
+  const [header, b64] = dataUrl.split(',')
+  const mime = header.match(/:(.*?);/)?.[1] || 'image/png'
+  const binary = atob(b64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return new Blob([bytes], { type: mime })
 }
 
 // Share via Web Share API (falls back to download if not supported)

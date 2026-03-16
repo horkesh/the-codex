@@ -196,6 +196,16 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - `getZodiacSign(birthday)` in `src/lib/horoscope.ts` derives zodiac sign client-side.
 - Displayed on PersonDetail with cake icon + sign name.
 
+## Mind map interactivity (`/circle/map`)
+- **Draggable nodes**: person nodes persist positions to `localStorage` (`codex_mindmap_positions`). Gent nodes drag with snap-back to triangle.
+- **Tier change on drop**: dragging a contact into a different ring zone shows a confirmation banner. POI nodes excluded.
+- **Connection strength**: edge thickness scales with appearance count (1.5px → 2.5px → 3.5px for gent edges).
+- **Activity pulse**: gold breathing glow on person nodes that appeared in entries within the last 7 days. CSS `@keyframes pulse-ring`.
+- **Search**: search icon → expandable input, dims non-matching nodes, auto-fits view to 1-3 matches.
+- **Ring guides**: concentric dashed circles with labels (Inner Circle, Outer Circle, Acquaintance, POI) rendered via `RingGuides.tsx`.
+- **Reset Layout**: chip in filter area clears all saved positions from localStorage.
+- Data: `useMindMap` hook in `src/hooks/useMindMap.ts`, layout in `src/lib/mindMapLayout.ts`.
+
 ## Circle multi-gent relationships
 - `person_gents` table: many-to-many between people and gents (who "knows" this person). RLS: authenticated users can select/insert/delete.
 - `fetchPersonGents(personId)` / `updatePersonGents(personId, gentIds[])` in people.ts.

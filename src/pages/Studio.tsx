@@ -8,6 +8,7 @@ import { ImageIcon, Share2, Sparkles, Camera, Award } from 'lucide-react'
 
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Button, Spinner, OnboardingTip } from '@/components/ui'
+import { useUIStore } from '@/store/ui'
 import { fetchEntries } from '@/data/entries'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { PhotoFilterContext, getFilter } from '@/lib/photoFilters'
@@ -348,6 +349,7 @@ export default function Studio() {
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId | null>(null)
   const [exporting, setExporting] = useState(false)
+  const addToast = useUIStore(s => s.addToast)
   const [loading, setLoading] = useState(true)
   const [bgUrl, setBgUrl] = useState<string | null>(null)
   const [generatingBg, setGeneratingBg] = useState(false)
@@ -459,6 +461,9 @@ export default function Studio() {
         : `codex-${selectedEntry?.type ?? 'export'}-${selectedEntry?.date ?? Date.now()}.png`
     try {
       await exportAndShare(templateRef.current, filename)
+    } catch (err) {
+      console.error('Export failed:', err)
+      addToast('Export failed. Try again.', 'error')
     } finally {
       setExporting(false)
     }
