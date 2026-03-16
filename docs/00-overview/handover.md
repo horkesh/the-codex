@@ -10,25 +10,31 @@ _Updated at the end of every session. Read this first when resuming._
 
 **What was just done** (Session 016):
 
-- **Gold logo on Studio templates** — `public/logo-gold.webp` (167KB, converted from PNG); `BrandMark` component now renders the 3-gents circular emblem instead of text; sizes sm/md/lg (48/64/80px)
-- **Chronological Vol numbering** — Table and Pitch titles use date-ordered Vol numbers (oldest = Vol. 1); `getChronologicalVol(type, date)` computes position; `renumberVolumes(type)` fire-and-forget after entry creation updates all titles
-- **Photo storyboard** — `PhotoStoryboard.tsx` for mission and night_out entries; editorial mixed-size layout (hero → duo → trio → wide cycle) with gold dividers; other types keep `PhotoGrid`
-- **Director's Notes for lore** — collapsible "Director's Notes" textarea in `LoreSection`; auto-saves to `entry.metadata.lore_hints`; included in Claude prompt for generate + regenerate; regeneration re-fetches entry for latest hints
-- **Pitch location field** — `PlaystationForm` now has Location input; auto-fills from EXIF; passed through to `createEntry`
-- **Cover image pan/zoom** — "Adjust" button on EntryHero; drag-to-pan + zoom slider (1x–2x); CSS-only via `object-position` + `scale`; stored in entry metadata; EntryCard also respects crop
-- **Gent profile thresholds** — Honours section now shows both achievements and thresholds (Veteran, Connoisseur, Explorer, Host)
-- **implementation_plan_v2 Phase 1** marked complete (animated reactions, trophy case, signature stat were already built)
+- **Gold logo on Studio templates** — `BrandMark` renders `public/logo-gold.webp` (167KB)
+- **Chronological Vol numbering** — oldest entry = Vol. 1; auto-renumber on insert
+- **Photo storyboard** — editorial mixed-size layout for mission + night_out
+- **Director's Notes** — persistent lore hints, auto-saved, included in Claude prompt
+- **Pitch location** — new field + EXIF auto-fill + MetadataCard display
+- **Cover pan/zoom** — drag + zoom slider, CSS-only, stored in metadata
+- **Gent profile thresholds** — Honours shows achievements + thresholds
+- **DossierMap fix** — geocoding uses `country_code` instead of arbitrary country names (fixes Sarajevo)
+- **Passport stamps on mission** — auto-creates stamp + generates artwork on publish
+- **Lore one-liner** — `generate-lore` returns `oneliner` + `suggested_title`; oneliner stored in metadata
+- **AI title suggestion** — gold banner after lore generation with Apply/Dismiss
+- **QR code for guestbook** — QR image + share links on GatheringDetail
+- **Wishlist Instagram import** — paste event URL → auto-fill title/city/country/notes
+- **4 Studio template variants** — Night Out, Mission, Steak, PS5 each get 4 layout options using oneliner
+- **Simplify pass** — shared `getCoverCrop`, parallel DB writes, unmount safety
 
 **What was done before** (Session 015):
 
 - Entry Comments, Prospect Voting, Convert Prospect → Entry, Wishlist linking, Streaks, Monthly Crown, Quick-Log FAB
 
 **What's left / next ideas**:
-- Wishlist: Instagram URL input to auto-populate from event pages
-- Passport Stamps: `image_url` field exists but generation not hooked up
+- Push notifications (PWA) — infra exists (`push_subscriptions`, `send-push`), needs VAPID keys in env
 - Toast entry type: to be removed (moving to separate app)
 - Ledger Sommelier: only populated by Toast entries — revisit once Toast removed
-- Push notifications (PWA) — only remaining wishlist item
+- Budapest 2023 Instagram profiles seed — no data file in repo yet
 
 ---
 

@@ -111,7 +111,7 @@
 - [x] `src/lib/gents.ts` — shared `GENT_LABELS` + `GENT_ALIASES` constants
 - [x] `COMPARISON_STAT_ROWS` + `computeLeaderSummary` added to `src/data/stats.ts`
 
-### E12: Session 016 Polish ✅
+### E12: Session 016 ✅
 - [x] Gold logo (`public/logo-gold.webp`) on all Studio export templates via `BrandMark`
 - [x] Chronological Vol numbering for Table + Pitch (date-ordered, auto-renumber on insert)
 - [x] `PhotoStoryboard` — editorial mixed-size layout for mission + night_out photos
@@ -119,7 +119,14 @@
 - [x] Pitch location field — Location input in `PlaystationForm`, passed to `createEntry`
 - [x] Cover image pan/zoom — drag-to-pan + zoom slider on `EntryHero`, CSS-only, stored in metadata
 - [x] Gent profile thresholds — Honours section shows achievements + thresholds
-- [x] `implementation_plan_v2.md` Phase 1 marked complete
+- [x] DossierMap geocoding fix — uses `country_code` (ISO) for Nominatim instead of arbitrary names
+- [x] Passport stamps auto-created on mission publish + artwork generation via Imagen
+- [x] Lore one-liner (`lore_oneliner`) — stored in metadata, used in all Studio templates
+- [x] AI title suggestion banner after lore generation (Apply/Dismiss)
+- [x] QR code for guestbook on GatheringDetail + share link buttons
+- [x] Wishlist Instagram import — paste event URL → auto-fill form fields
+- [x] 4 Studio template variants per entry type (Night Out, Mission, Steak, PS5)
+- [x] Simplify pass: shared `getCoverCrop`, parallel DB writes, unmount safety
 
 ### E13: The Toast Auto-Sync
 - [ ] Toast app webhook / integration point _(future)_

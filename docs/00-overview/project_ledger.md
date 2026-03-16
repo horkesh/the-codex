@@ -54,7 +54,48 @@ A running log of every build session. Most recent at top.
 - Honours section displays both achievement badges and threshold badges (Veteran, Connoisseur, Explorer, Host)
 - `implementation_plan_v2.md` Phase 1 marked complete (animated reactions, trophy case, signature stat were already built in prior sessions)
 
-**Status**: Deployed. Zero TS errors. Commits: `8fed8f3` → `e5ac679`.
+### DossierMap geocoding fix
+- Nominatim search now uses `country_code` (ISO, e.g. "BA") instead of arbitrary country name (e.g. "Bosnia")
+- Fixes Sarajevo and other cities in countries with commonly-abbreviated names
+- Cache version bumped to `v2` to force re-geocoding of previously failed lookups
+
+### Passport stamps on mission publish
+- `createMissionStamp()` + `generateStamp()` + `updateStampImage()` wired into `handleSubmit` in EntryNew
+- Mission entries now auto-create a passport stamp and generate artwork via Imagen (fire-and-forget)
+- This was why missions weren't appearing in Passport — stamps were never being created
+
+### Lore one-liner + AI title suggestion
+- `generate-lore` edge function now returns structured `<lore>`, `<oneliner>`, `<title>` tags
+- Client parses via `generateLoreFull()` returning `LoreResult { lore, oneliner, suggested_title }`
+- `lore_oneliner` stored in `entry.metadata.lore_oneliner`
+- EntryDetail shows gold "AI Title Suggestion" banner after lore gen with Apply/Dismiss buttons
+- `getOneliner(entry)` utility in `src/export/templates/shared/utils.ts` — extracts oneliner or falls back to first sentence
+
+### QR code for guestbook
+- GatheringDetail: Share section with copy-to-clipboard buttons for invite + guestbook URLs
+- QR code image via `api.qrserver.com` (no library needed) for guestbook URL
+- Displayed between event details and RSVP section
+
+### Wishlist Instagram import
+- "Import from Instagram" URL field at top of Add Wish modal in BucketList
+- Calls `analyzeInstagramUrl(url, 'event')` edge function
+- Auto-fills title, city, country, notes (vibe/price/dress code)
+
+### 4 Studio template variants per entry type
+- Night Out: Classic, Bold (left-aligned), Quote (centred oneliner), Date Stamp
+- Mission: Classic, Bold City, Passport (stamp circle), Overlay (watermark) + Visa Page
+- Steak: Classic, Score Hero, Minimal (circle score), Cut Forward
+- PS5: Scoreboard, Winner (bold), Quote (minimal), Stats Grid
+- All variants use `lore_oneliner` instead of full lore text
+- Variant prop (1-4) on each template component; registered in `TEMPLATES_BY_TYPE`
+
+### Simplify pass
+- Extracted `getCoverCrop()` to `src/lib/utils.ts` (shared by EntryCard + EntryHero)
+- `renumberVolumes`: parallel `Promise.all` instead of sequential loop
+- LoreSection + EntryDetail: parallelized `updateEntryLore` + `updateEntry`
+- LoreSection: prevent debounced hint save after unmount via `unmounted` ref
+
+**Status**: Deployed. Zero TS errors. Commits: `8fed8f3` → `fb84cb9`.
 
 ---
 

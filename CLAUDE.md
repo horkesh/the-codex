@@ -100,6 +100,19 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - After creating an entry, `renumberVolumes(type)` fire-and-forget updates all `· Vol. N` titles to reflect correct order.
 - Adding a past-dated entry renumbers all existing entries of that type.
 
+## Passport stamps
+- Mission entries auto-create a passport stamp on publish via `createMissionStamp()` in EntryNew.
+- Stamp artwork generated async via `generateStamp()` → `generate-stamp` edge function (Imagen 4) → `updateStampImage()`.
+- All fire-and-forget — doesn't block entry creation.
+
+## QR code for guestbook
+- GatheringDetail shows a "Share" section with copy-to-clipboard buttons for invite + guestbook URLs.
+- QR code rendered as an `<img>` from `api.qrserver.com` (no library dependency). Points to `/g/{entryId}/guestbook`.
+
+## Wishlist Instagram import
+- "Import from Instagram" URL field in BucketList's AddWishModal.
+- Calls `analyzeInstagramUrl(url, 'event')` → auto-fills title, city, country, notes (vibe/price/dress code).
+
 ## Studio export (`src/pages/Studio.tsx`)
 - **Cover image as default background**: when an entry is selected, `cover_image_url` is immediately used as the template background.
 - **Background source picker**: two buttons — "Cover Photo" (real image) and "AI Restyle" (AI-generated). User can switch freely between them. Active source is highlighted with gold border.
@@ -108,6 +121,8 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
   2. **Generate** — `gemini-2.5-flash-image` (text only, NO photo input) generates dark cinematic noir artwork from the description. The photo must NOT be passed to the generation step — Gemini Flash Image applies a filter instead of redrawing when given the original image.
   - When no cover photo exists, Imagen generates a from-scratch background using type-specific prompts.
 - Templates render via `BackgroundLayer` which applies both the background image and photo filter CSS from context.
+- **Template variants**: Night Out, Mission, Steak, PS5 each have 4 layout variants (prop `variant={1|2|3|4}`). Variant 1 = classic, others = bold/quote/minimal/etc. Registered in `TEMPLATES_BY_TYPE` as separate `TemplateId` entries (e.g. `night_out_card_v2`).
+- **Lore oneliner in templates**: `getOneliner(entry)` in `src/export/templates/shared/utils.ts` extracts `metadata.lore_oneliner` or falls back to first sentence of lore. All template variants display the oneliner instead of full lore.
 
 ## Chronicle search & pinning
 - **Search**: `SearchBar` component in Chronicle with debounced (300ms) client-side filtering across title, description, location, city, and lore. Hook: `useChronicle` exposes `query`/`setQuery`; filtering is memoized via `useMemo`.
