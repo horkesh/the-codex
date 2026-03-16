@@ -11,10 +11,11 @@ import type { EntryWithParticipants } from '@/types/app'
 interface LoreSectionProps {
   entry: EntryWithParticipants
   photoUrls?: string[]
+  readOnly?: boolean
   onLoreGenerated?: (lore: string, oneliner?: string | null, suggestedTitle?: string | null) => void
 }
 
-export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionProps) {
+export function LoreSection({ entry, photoUrls, readOnly, onLoreGenerated }: LoreSectionProps) {
   const [generating, setGenerating] = useState(false)
   const [localLore, setLocalLore] = useState<string | null>(entry.lore)
   const [localLoreDate, setLocalLoreDate] = useState<string | null>(entry.lore_generated_at)
@@ -85,44 +86,48 @@ export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionPr
         <div className="h-px flex-1 bg-gold/20" />
       </div>
 
-      {/* Director's Notes toggle */}
-      <button
-        type="button"
-        onClick={() => setHintsOpen(!hintsOpen)}
-        className="flex items-center gap-2 text-xs text-ivory-dim hover:text-ivory-muted transition-colors font-body"
-      >
-        <ChevronDown
-          size={14}
-          className={`transition-transform duration-200 ${hintsOpen ? 'rotate-0' : '-rotate-90'}`}
-        />
-        Director's Notes
-        {hints.trim() && !hintsOpen && (
-          <span className="text-gold/60 ml-1">*</span>
-        )}
-      </button>
-
-      <AnimatePresence>
-        {hintsOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+      {/* Director's Notes toggle — creator only */}
+      {!readOnly && (
+        <>
+          <button
+            type="button"
+            onClick={() => setHintsOpen(!hintsOpen)}
+            className="flex items-center gap-2 text-xs text-ivory-dim hover:text-ivory-muted transition-colors font-body"
           >
-            <textarea
-              value={hints}
-              onChange={(e) => handleHintsChange(e.target.value)}
-              placeholder="Add context for the AI... e.g. 'We ran into Omar's colleague at the bar' or 'Haris dominated every match'"
-              rows={2}
-              className="w-full bg-slate-mid border border-white/8 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim/50 focus:outline-none focus:border-gold/30 resize-none"
+            <ChevronDown
+              size={14}
+              className={`transition-transform duration-200 ${hintsOpen ? 'rotate-0' : '-rotate-90'}`}
             />
-            <p className="text-[10px] text-ivory-dim/50 font-body mt-1">
-              These hints guide lore generation. Auto-saved.
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            Director's Notes
+            {hints.trim() && !hintsOpen && (
+              <span className="text-gold/60 ml-1">*</span>
+            )}
+          </button>
+
+          <AnimatePresence>
+            {hintsOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <textarea
+                  value={hints}
+                  onChange={(e) => handleHintsChange(e.target.value)}
+                  placeholder="Add context for the AI... e.g. 'We ran into Omar's colleague at the bar' or 'Haris dominated every match'"
+                  rows={2}
+                  className="w-full bg-slate-mid border border-white/8 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim/50 focus:outline-none focus:border-gold/30 resize-none"
+                />
+                <p className="text-[10px] text-ivory-dim/50 font-body mt-1">
+                  These hints guide lore generation. Auto-saved.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
 
       <AnimatePresence mode="wait">
         {/* Generating shimmer skeleton */}
@@ -175,15 +180,17 @@ export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionPr
             <p className="text-sm text-ivory-dim text-center font-body">
               No lore has been written for this entry yet.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={generating}
-            >
-              <Sparkles size={14} />
-              Generate Lore
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerate}
+                disabled={generating}
+              >
+                <Sparkles size={14} />
+                Generate Lore
+              </Button>
+            )}
             {error && (
               <p className="text-xs text-[--color-error] text-center">{error}</p>
             )}

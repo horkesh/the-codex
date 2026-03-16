@@ -19,6 +19,7 @@ import { CommentsSection } from '@/components/chronicle/CommentsSection'
 import { useEntry } from '@/hooks/useEntry'
 import { useEntryFilter } from '@/hooks/useEntryFilter'
 import { fetchEntry, deleteEntry, updateEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
+import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryWithParticipants } from '@/types/app'
@@ -28,6 +29,7 @@ import type { EntryWithParticipants } from '@/types/app'
 interface OptionsMenuProps {
   isOpen: boolean
   onClose: () => void
+  isCreator: boolean
   hasLore: boolean
   canGenerateScene: boolean
   generatingScene: boolean
@@ -43,14 +45,14 @@ interface OptionsMenuProps {
 }
 
 function OptionsMenu({
-  isOpen, onClose, hasLore, canGenerateScene, generatingScene, regeneratingLore,
+  isOpen, onClose, isCreator, hasLore, canGenerateScene, generatingScene, regeneratingLore,
   isPinned, onTogglePin,
   onGenerateLore, onRegenerateLore, onGenerateScene, onEdit, onExport, onDelete,
 }: OptionsMenuProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Entry Options">
       <div className="flex flex-col gap-1 pb-2">
-        {!hasLore && (
+        {isCreator && !hasLore && (
           <button
             type="button"
             className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
@@ -60,7 +62,7 @@ function OptionsMenu({
             <span className="font-body text-sm">Generate Lore</span>
           </button>
         )}
-        {hasLore && (
+        {isCreator && hasLore && (
           <button
             type="button"
             disabled={regeneratingLore}
@@ -73,7 +75,7 @@ function OptionsMenu({
             </span>
           </button>
         )}
-        {canGenerateScene && (
+        {isCreator && canGenerateScene && (
           <button
             type="button"
             disabled={generatingScene}
@@ -94,14 +96,16 @@ function OptionsMenu({
           <Pin size={18} className={`shrink-0 ${isPinned ? 'text-gold fill-gold' : 'text-ivory-muted'}`} />
           <span className="font-body text-sm">{isPinned ? 'Unpin Entry' : 'Pin Entry'}</span>
         </button>
-        <button
-          type="button"
-          className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
-          onClick={() => { onEdit(); onClose() }}
-        >
-          <Edit2 size={18} className="text-ivory-muted shrink-0" />
-          <span className="font-body text-sm">Edit Entry</span>
-        </button>
+        {isCreator && (
+          <button
+            type="button"
+            className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
+            onClick={() => { onEdit(); onClose() }}
+          >
+            <Edit2 size={18} className="text-ivory-muted shrink-0" />
+            <span className="font-body text-sm">Edit Entry</span>
+          </button>
+        )}
         <button
           type="button"
           className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
@@ -110,15 +114,19 @@ function OptionsMenu({
           <Share2 size={18} className="text-ivory-muted shrink-0" />
           <span className="font-body text-sm">Export to Studio</span>
         </button>
-        <div className="h-px bg-white/10 my-1" />
-        <button
-          type="button"
-          className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-[--color-error] hover:bg-[--color-error]/10 transition-colors"
-          onClick={() => { onDelete(); onClose() }}
-        >
-          <Trash2 size={18} className="shrink-0" />
-          <span className="font-body text-sm">Delete Entry</span>
-        </button>
+        {isCreator && (
+          <>
+            <div className="h-px bg-white/10 my-1" />
+            <button
+              type="button"
+              className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-[--color-error] hover:bg-[--color-error]/10 transition-colors"
+              onClick={() => { onDelete(); onClose() }}
+            >
+              <Trash2 size={18} className="shrink-0" />
+              <span className="font-body text-sm">Delete Entry</span>
+            </button>
+          </>
+        )}
       </div>
     </Modal>
   )
@@ -210,6 +218,7 @@ function ParticipantsSection({ entry }: { entry: EntryWithParticipants }) {
 export default function EntryDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { gent } = useAuthStore()
   const { addToast } = useUIStore()
 
   const { entry, photos, loading, notFound, setEntry } = useEntry(id)
@@ -417,6 +426,7 @@ export default function EntryDetail() {
               <LoreSection
                 entry={entry}
                 photoUrls={photoUrls}
+                readOnly={gent?.id !== entry.created_by}
                 onLoreGenerated={handleLoreGenerated}
               />
             </motion.div>
@@ -530,15 +540,17 @@ export default function EntryDetail() {
 
             {/* Actions */}
             <motion.div variants={staggerItem} className="space-y-3 pt-2">
-              <Button
-                variant="outline"
-                size="md"
-                fullWidth
-                onClick={() => navigate(`/chronicle/${entry.id}/edit`)}
-              >
-                <Edit2 size={16} />
-                Edit Entry
-              </Button>
+              {gent?.id === entry.created_by && (
+                <Button
+                  variant="outline"
+                  size="md"
+                  fullWidth
+                  onClick={() => navigate(`/chronicle/${entry.id}/edit`)}
+                >
+                  <Edit2 size={16} />
+                  Edit Entry
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="md"
@@ -548,16 +560,18 @@ export default function EntryDetail() {
                 <Share2 size={16} />
                 Export to Studio
               </Button>
-              <Button
-                variant="ghost"
-                size="md"
-                fullWidth
-                className="text-[--color-error] hover:bg-[--color-error]/10"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2 size={16} />
-                Delete Entry
-              </Button>
+              {gent?.id === entry.created_by && (
+                <Button
+                  variant="ghost"
+                  size="md"
+                  fullWidth
+                  className="text-[--color-error] hover:bg-[--color-error]/10"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 size={16} />
+                  Delete Entry
+                </Button>
+              )}
             </motion.div>
 
             {/* Bottom breathing room */}
@@ -570,6 +584,7 @@ export default function EntryDetail() {
       <OptionsMenu
         isOpen={menuOpen}
         onClose={() => setMenuOpen(false)}
+        isCreator={gent?.id === entry.created_by}
         hasLore={!!entry.lore}
         canGenerateScene={['mission', 'night_out', 'toast', 'gathering', 'interlude'].includes(entry.type)}
         generatingScene={generatingScene}

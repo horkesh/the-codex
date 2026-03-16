@@ -16,10 +16,10 @@ import { PlaystationForm } from '@/components/chronicle/forms/PlaystationForm'
 import { ToastForm } from '@/components/chronicle/forms/ToastForm'
 import { InterludeForm } from '@/components/chronicle/forms/InterludeForm'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
-import { createEntry, addEntryParticipants, addPersonAppearances, updateEntryCover } from '@/data/entries'
+import { createEntry, addEntryParticipants, addPersonAppearances, updateEntryCover, updateEntryLore, updateEntry } from '@/data/entries'
 import { ContactTagger } from '@/components/chronicle/ContactTagger'
 import { fetchProspectById, updateProspect } from '@/data/prospects'
-import { generateLore } from '@/ai/lore'
+import { generateLoreFull } from '@/ai/lore'
 import { generateTitle } from '@/ai/title'
 import { notifyOthers } from '@/hooks/usePushNotifications'
 import { generateCover } from '@/ai/cover'
@@ -226,14 +226,29 @@ export default function EntryNew() {
         }
       }
 
-      // 4. Fire generateLore async — don't await
+      // 4. Fire generateLoreFull async — saves lore, oneliner, and suggested title
       const entryWithParticipants = {
         ...entry,
         participants: [],
       }
-      generateLore(entryWithParticipants).catch(() => {
-        // silently ignore — lore gen failures are non-critical
-      })
+      generateLoreFull(entryWithParticipants, uploadedUrls).then(async (result) => {
+        if (!result) return
+        try {
+          const meta = {
+            ...(entry.metadata as Record<string, unknown> ?? {}),
+            lore_oneliner: result.oneliner,
+          }
+          await Promise.all([
+            updateEntryLore(entry.id, result.lore),
+            updateEntry(entry.id, { metadata: meta } as Partial<typeof entry>),
+            ...(result.suggested_title
+              ? [updateEntry(entry.id, { title: result.suggested_title } as Partial<typeof entry>)]
+              : []),
+          ])
+        } catch {
+          // non-critical — lore will be visible on next visit
+        }
+      }).catch(() => {})
 
       // 5. AI cover only when no photo was uploaded (interlude never gets AI cover)
       if (uploadedUrls.length === 0 && selectedType !== 'interlude') {
