@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye } from 'lucide-react'
+import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Avatar, Spinner, Modal } from '@/components/ui'
@@ -11,6 +11,7 @@ import { PersonForm } from '@/components/circle/PersonForm'
 import type { PersonFormData } from '@/components/circle/PersonForm'
 import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents } from '@/data/people'
 import { fetchScanByPerson } from '@/data/personScans'
+import { generatePersonPortrait } from '@/ai/personPortrait'
 import { fetchAllGents } from '@/data/gents'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { useUIStore } from '@/store/ui'
@@ -70,6 +71,7 @@ export default function PersonDetail() {
   const [gents, setGents] = useState<Gent[]>([])
   const [showTierModal, setShowTierModal] = useState(false)
   const [tierSaving, setTierSaving] = useState(false)
+  const [regeneratingPortrait, setRegeneratingPortrait] = useState(false)
   const [showGentModal, setShowGentModal] = useState(false)
   const [gentSaving, setGentSaving] = useState(false)
   const [knownByGentIds, setKnownByGentIds] = useState<string[]>([])
@@ -148,6 +150,31 @@ export default function PersonDetail() {
     }
   }
 
+  const handleRegeneratePortrait = async () => {
+    if (!person || !scan || regeneratingPortrait) return
+    if (!scan.appearance_description) {
+      addToast('No appearance data available for portrait generation.', 'error')
+      return
+    }
+    setRegeneratingPortrait(true)
+    try {
+      const result = await generatePersonPortrait({
+        appearance: scan.appearance_description,
+        traits: scan.trait_words ?? [],
+        scan_id: scan.id,
+      })
+      if (result.portrait_url) {
+        await updatePerson(person.id, { portrait_url: result.portrait_url })
+        setPerson({ ...person, portrait_url: result.portrait_url, private_note: person.private_note } as PersonWithPrivateNote)
+        addToast('Portrait regenerated.', 'success')
+      }
+    } catch {
+      addToast('Portrait generation failed.', 'error')
+    } finally {
+      setRegeneratingPortrait(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col h-full">
@@ -207,11 +234,28 @@ export default function PersonDetail() {
           <div className="relative mt-1">
             {person.portrait_url ? (
               <div className="flex items-end gap-3">
-                <img
-                  src={person.portrait_url}
-                  alt={`${person.name} portrait`}
-                  className="w-20 h-20 rounded-2xl object-cover border border-gold/30"
-                />
+                <div className="relative group">
+                  <img
+                    src={person.portrait_url}
+                    alt={`${person.name} portrait`}
+                    className={cn('w-20 h-20 rounded-2xl object-cover border border-gold/30', regeneratingPortrait && 'opacity-40')}
+                  />
+                  {regeneratingPortrait && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Spinner size="sm" />
+                    </div>
+                  )}
+                  {scan?.appearance_description && !regeneratingPortrait && (
+                    <button
+                      type="button"
+                      onClick={handleRegeneratePortrait}
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Regenerate portrait"
+                    >
+                      <RefreshCw size={16} className="text-gold" />
+                    </button>
+                  )}
+                </div>
                 {person.photo_url && (
                   <div className="flex flex-col items-center gap-1 mb-0.5">
                     <Avatar src={person.photo_url} name={person.name} size="sm" />
@@ -220,7 +264,24 @@ export default function PersonDetail() {
                 )}
               </div>
             ) : (
-              <Avatar src={person.photo_url} name={person.name} size="xl" />
+              <div className="relative group">
+                <Avatar src={person.photo_url} name={person.name} size="xl" />
+                {scan?.appearance_description && !regeneratingPortrait && (
+                  <button
+                    type="button"
+                    onClick={handleRegeneratePortrait}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Generate portrait"
+                  >
+                    <RefreshCw size={16} className="text-gold" />
+                  </button>
+                )}
+                {regeneratingPortrait && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Spinner size="sm" />
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Tier stamp — positioned to the right of avatar */}
