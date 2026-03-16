@@ -78,8 +78,13 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - `GENT_VISUAL_ID` — compact visual identification guide for AI vision prompts
 - All edge functions that generate/analyse images of The Gents should import from this shared file.
 
+## Photo upload limits
+- Mission: 20 photos, Night Out: 15, all others: 10
+- `PhotoUpload` accepts `maxPhotos` prop; `usePendingPhotos(maxPhotos)` enforces the cap
+- Limits set in `EntryNew.tsx` based on `selectedType`
+
 ## Lore generation (`supabase/functions/generate-lore/`)
-- Uses `claude-sonnet-4-6` with vision (up to 4 photos).
+- Uses `claude-sonnet-4-6` with vision. Photo limits per type: mission up to 20, night_out up to 15, others up to 4.
 - **Time-of-day is authoritative**: EXIF time from `entry.metadata.time_of_day` is explicitly marked as ground truth in the prompt. Claude must not infer a different time from photo lighting.
 - **Weekday/weekend awareness**: day-of-week + time-of-day derive a situational hint (e.g. "weekday lunch window — likely a lunch break rendezvous") that is passed as `Context:` in the prompt.
 - **Type-specific narrative directives**: each entry type (steak, playstation, toast, night_out, mission, gathering, interlude) has a tailored `entryTypeDirectives` block that tells Claude what to focus on (food details for Table, competitive energy for Pitch, drink references for Toast, etc.).
@@ -109,6 +114,29 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - `visibility: 'shared' | 'private'` on entries (DB column, default 'shared'). Private entries filtered client-side in `fetchEntries` via `currentGentId` param — only the creator sees their private entries.
 - Toggle in EntryNew: Lock/Unlock icon before submit button. Lock icon shown on private EntryCards.
 - **DB migration required**: `ALTER TABLE entries ADD COLUMN visibility text NOT NULL DEFAULT 'shared' CHECK (visibility IN ('shared', 'private'));`
+
+## Mission date range
+- MissionForm has Start Date and End Date (optional) inputs.
+- `date_end` stored in `entry.metadata.date_end` (not a DB column — avoids migration).
+- Display format: "Budapest, Hungary · Mar 5 – 12, 2026" when range, single date otherwise.
+
+## Pitch EXIF date
+- `PlaystationForm` now receives `detectedLocation` prop and auto-fills date from photo EXIF.
+- Same pattern as SteakForm: `useEffect` sets date from `detectedLocation.date` if user hasn't manually entered one.
+
+## Circle multi-gent relationships
+- `person_gents` table: many-to-many between people and gents (who "knows" this person).
+- `fetchPersonGents(personId)` / `updatePersonGents(personId, gentIds[])` in people.ts.
+- PersonDetail: "Known by" button shows multi-select modal — toggle gents on/off.
+- `added_by` remains for audit (who originally added); `person_gents` drives the "Known by" UI.
+- **DB migration required**:
+  ```sql
+  CREATE TABLE person_gents (
+    person_id uuid REFERENCES people(id) ON DELETE CASCADE,
+    gent_id uuid REFERENCES gents(id) ON DELETE CASCADE,
+    PRIMARY KEY (person_id, gent_id)
+  );
+  ```
 
 ## Photo Timeline (`/chronicle/photos`)
 - `fetchAllPhotos()` in `src/data/photos.ts` — joins `entry_photos` with `entries`, filters to published entries, sorted by date DESC.
