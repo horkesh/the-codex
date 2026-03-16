@@ -82,6 +82,46 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Background source picker**: two buttons — "Cover Photo" (real image) and "Generate AI" (AI-generated). User can switch freely between them. Active source is highlighted with gold border.
 - Templates render via `BackgroundLayer` which applies both the background image and photo filter CSS from context.
 
+## Chronicle search & pinning
+- **Search**: `SearchBar` component in Chronicle with debounced (300ms) client-side filtering across title, description, location, city, and lore. Hook: `useChronicle` exposes `query`/`setQuery`; filtering is memoized via `useMemo`.
+- **Pin**: `pinned: boolean` on entries (DB column, default false). `togglePin(entryId, pinned)` in entries.ts. Pinned entries sort first (`pinned DESC, date DESC`). Pin toggle on EntryCard + EntryDetail overflow menu. Gold left-border accent on pinned cards.
+- **DB migration required**: `ALTER TABLE entries ADD COLUMN pinned boolean NOT NULL DEFAULT false;`
+
+## Private entries
+- `visibility: 'shared' | 'private'` on entries (DB column, default 'shared'). Private entries filtered client-side in `fetchEntries` via `currentGentId` param — only the creator sees their private entries.
+- Toggle in EntryNew: Lock/Unlock icon before submit button. Lock icon shown on private EntryCards.
+- **DB migration required**: `ALTER TABLE entries ADD COLUMN visibility text NOT NULL DEFAULT 'shared' CHECK (visibility IN ('shared', 'private'));`
+
+## Photo Timeline (`/chronicle/photos`)
+- `fetchAllPhotos()` in `src/data/photos.ts` — joins `entry_photos` with `entries`, filters to published entries, sorted by date DESC.
+- `PhotoTimeline.tsx` page: 3-column masonry grid grouped by month, entry type icon overlay, tap to navigate to entry.
+
+## Steak Ratings Chart (`src/components/ledger/SteakRatingsChart.tsx`)
+- Pure CSS horizontal bar chart in Ledger. Gold bars filled to score/10, animated entrance via Framer Motion.
+- Summary row: average score, total steaks rated, best score.
+- `fetchSteakRatings()` in stats.ts extracts `metadata.score` and `metadata.cut` from steak entries.
+
+## PS5 Win Streaks (`src/components/ledger/PS5StreaksSection.tsx`)
+- Current streak + longest streak per gent, derived from iterating all PS5 match results.
+- Crown icon for the streak leader. Displayed in Ledger after PS5 Rivalry section.
+
+## Contact tagging from entry creation
+- `ContactTagger` component: search + tag people from Circle as present at an event.
+- `fetchPeopleQuick(query?)` in people.ts. `addPersonAppearances(entryId, personIds, gentId)` in entries.ts.
+- Rendered in EntryNew below ParticipantSelector. Tags stored in `person_appearances` table.
+
+## Achievement sharing cards (Studio)
+- `AchievementCard` export template (1080×1350): achievement name, description, earned-by gent, date.
+- Standalone template type in Studio (like Wrapped/Rivalry), with achievement selector.
+
+## Prospect auto-nudge
+- `fetchDueProspects()` in prospects.ts — prospects with event_date between 7 days ago and today, status still 'prospect'.
+- Gold banner on Chronicle page: "[event_name] — ready to log it?" with Log Entry / Dismiss buttons.
+
+## Weekly digest cron
+- `.github/workflows/weekly-digest.yml` — GitHub Actions cron every Monday 7:00 UTC.
+- Triggers existing `send-weekly-digest` edge function via curl. Also supports manual `workflow_dispatch`.
+
 ## Deployment workflow
 ```bash
 git add <files> && git commit -m "..." && git push
