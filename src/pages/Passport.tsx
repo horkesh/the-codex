@@ -52,7 +52,6 @@ export default function Passport() {
   }, [activeTab])
 
   async function handleRegenerateAll() {
-    const missionStamps = stamps.filter(s => s.type === 'mission')
     if (missionStamps.length === 0 || regenerating) return
     setRegenerating(true)
     addToast(`Regenerating ${missionStamps.length} stamps...`, 'info')
