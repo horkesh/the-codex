@@ -49,26 +49,23 @@ async function analyzeScene(
           contents: [{
             parts: [
               { inline_data: { mime_type: mimeType, data: coverBase64 } },
-              { text: `Describe this photograph in detail so another AI can recreate it as artwork. You MUST describe ALL people, not just one.
+              { text: `Write an image generation prompt describing this photo. START with the people, then the setting.
 
-These are the known people — identify them by matching hair and facial hair:
+Known people — match by hair and facial hair:
 ${gentDescriptions}
 
-Write an image generation prompt that describes:
+Format: one paragraph. Describe in this order:
+1. FIRST: Each person (name, face, hair, facial hair, build, skin tone, clothing, pose, position left/center/right) — you MUST describe ALL people visible
+2. THEN: What is on the table — name every food item and drink specifically
+3. LAST: Setting and camera angle — keep brief
 
-PEOPLE (describe EVERY person in the photo):
-For each person: their name, physical appearance (face, hair, facial hair, skin tone, build), what they are wearing, their pose, where they are sitting/standing.
-
-SETTING: The venue type, furniture, lighting, background.
-
-TABLE/OBJECTS: Every item on the table — be very specific about food (e.g. "grilled steak on wooden cutting board with golden fries" not "food").
-
-COMPOSITION: Camera angle, who is where in frame (left/center/right).
-
-Output one paragraph, no bullet points, no preamble. Describe the full scene.` },
+No preamble. Just the description.` },
             ],
           }],
-          generationConfig: { maxOutputTokens: 1024 },
+          generationConfig: {
+            maxOutputTokens: 2048,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
         }),
       }
     )
