@@ -117,6 +117,7 @@ function PlaystationMeta({ entry }: { entry: EntryWithParticipants }) {
     <Card variant="glass" className="p-4">
       <SectionLabel>Scoreboard</SectionLabel>
       <div className="space-y-2">
+        {entry.location && <Row label="Location" value={entry.location} />}
         <Row label="Matches played" value={totalMatches} />
         {leader && leader !== 'tied' && (
           <Row
