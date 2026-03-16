@@ -96,7 +96,7 @@ export function EntryCard({ entry, onClick, onTogglePin }: EntryCardProps) {
               className={`flex items-center justify-center w-7 h-7 rounded-full backdrop-blur-sm transition-all duration-150 ${
                 entry.pinned
                   ? 'bg-gold/30 text-gold'
-                  : 'bg-black/30 text-ivory/0 group-hover:text-ivory/50 hover:!text-ivory/80'
+                  : 'bg-transparent text-ivory/0 group-hover:bg-black/30 group-hover:text-ivory/50 hover:!text-ivory/80'
               }`}
               onClick={(e) => {
                 e.stopPropagation()
