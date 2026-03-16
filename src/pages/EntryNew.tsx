@@ -241,12 +241,11 @@ export default function EntryNew() {
             ...(entry.metadata as Record<string, unknown> ?? {}),
             lore_oneliner: result.oneliner,
           }
+          const updates: Partial<typeof entry> = { metadata: meta } as Partial<typeof entry>
+          if (result.suggested_title) updates.title = result.suggested_title
           await Promise.all([
             updateEntryLore(entry.id, result.lore),
-            updateEntry(entry.id, { metadata: meta } as Partial<typeof entry>),
-            ...(result.suggested_title
-              ? [updateEntry(entry.id, { title: result.suggested_title } as Partial<typeof entry>)]
-              : []),
+            updateEntry(entry.id, updates),
           ])
         } catch {
           // non-critical — lore will be visible on next visit

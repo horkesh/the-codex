@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { fetchStamps, backfillMissionStamps } from '@/data/stamps'
 import type { PassportStamp } from '@/types/app'
+
+const BACKFILL_KEY = 'codex_stamps_backfilled'
 
 export function usePassport() {
   const [stamps, setStamps] = useState<PassportStamp[]>([])
@@ -9,8 +11,11 @@ export function usePassport() {
   useEffect(() => {
     async function load() {
       try {
-        // Backfill stamps for any missions that don't have one yet
-        await backfillMissionStamps()
+        // Backfill only once per session
+        if (!sessionStorage.getItem(BACKFILL_KEY)) {
+          await backfillMissionStamps()
+          sessionStorage.setItem(BACKFILL_KEY, '1')
+        }
         const data = await fetchStamps()
         setStamps(data)
       } catch (err) {
@@ -22,12 +27,12 @@ export function usePassport() {
     load()
   }, [])
 
-  const missionStamps = stamps.filter(s => s.type === 'mission')
-  const achievementStamps = stamps.filter(s => s.type === 'achievement')
-  const diplomaticStamps = stamps.filter(s => s.type === 'diplomatic')
+  const missionStamps = useMemo(() => stamps.filter(s => s.type === 'mission'), [stamps])
+  const achievementStamps = useMemo(() => stamps.filter(s => s.type === 'achievement'), [stamps])
+  const diplomaticStamps = useMemo(() => stamps.filter(s => s.type === 'diplomatic'), [stamps])
 
-  const countries = [...new Set(missionStamps.map(s => s.country).filter(Boolean))] as string[]
-  const cities = [...new Set(missionStamps.map(s => s.city).filter(Boolean))] as string[]
+  const countries = useMemo(() => [...new Set(missionStamps.map(s => s.country).filter(Boolean))] as string[], [missionStamps])
+  const cities = useMemo(() => [...new Set(missionStamps.map(s => s.city).filter(Boolean))] as string[], [missionStamps])
 
   return {
     stamps,

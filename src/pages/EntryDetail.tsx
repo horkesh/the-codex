@@ -225,6 +225,7 @@ export default function EntryDetail() {
   const { entry, photos, loading, notFound, setEntry } = useEntry(id)
   const { filterId, setFilter } = useEntryFilter(id ?? '')
   const photoUrls = useMemo(() => photos.map((p) => p.url), [photos])
+  const isCreator = !!entry && isCreator
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -415,7 +416,7 @@ export default function EntryDetail() {
         back
         right={
           <div className="flex items-center gap-1">
-            {gent?.id === entry.created_by && entry.lore && (
+            {isCreator && entry.lore && (
               <button
                 type="button"
                 className="flex items-center justify-center w-8 h-8 rounded-full text-ivory-muted hover:text-gold hover:bg-slate-light transition-colors"
@@ -463,7 +464,7 @@ export default function EntryDetail() {
               <LoreSection
                 entry={entry}
                 photoUrls={photoUrls}
-                readOnly={gent?.id !== entry.created_by}
+                readOnly={!isCreator}
                 onLoreGenerated={handleLoreGenerated}
               />
             </motion.div>
@@ -479,10 +480,14 @@ export default function EntryDetail() {
                   <button
                     type="button"
                     onClick={async () => {
-                      await updateEntry(entry.id, { title: suggestedTitle } as Partial<EntryWithParticipants>)
-                      setEntry({ ...entry, title: suggestedTitle })
-                      setSuggestedTitle(null)
-                      addToast('Title updated.', 'success')
+                      try {
+                        await updateEntry(entry.id, { title: suggestedTitle } as Partial<EntryWithParticipants>)
+                        setEntry({ ...entry, title: suggestedTitle })
+                        setSuggestedTitle(null)
+                        addToast('Title updated.', 'success')
+                      } catch {
+                        addToast('Failed to update title.', 'error')
+                      }
                     }}
                     className="text-xs text-gold border border-gold/30 rounded-full px-3 py-1 hover:border-gold/60 transition-colors shrink-0 font-body"
                   >
@@ -577,7 +582,7 @@ export default function EntryDetail() {
 
             {/* Actions */}
             <motion.div variants={staggerItem} className="space-y-3 pt-2">
-              {gent?.id === entry.created_by && (
+              {isCreator && (
                 <Button
                   variant="outline"
                   size="md"
@@ -597,7 +602,7 @@ export default function EntryDetail() {
                 <Share2 size={16} />
                 Export to Studio
               </Button>
-              {gent?.id === entry.created_by && (
+              {isCreator && (
                 <Button
                   variant="ghost"
                   size="md"
@@ -621,7 +626,7 @@ export default function EntryDetail() {
       <OptionsMenu
         isOpen={menuOpen}
         onClose={() => setMenuOpen(false)}
-        isCreator={gent?.id === entry.created_by}
+        isCreator={isCreator}
         hasLore={!!entry.lore}
         canGenerateScene={['mission', 'night_out', 'toast', 'gathering', 'interlude'].includes(entry.type)}
         generatingScene={generatingScene}
