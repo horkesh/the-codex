@@ -1,3 +1,5 @@
+import { GENT_APPEARANCES, GENT_VISUAL_ID } from '../_shared/gent-identities.ts'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -20,21 +22,25 @@ const TYPE_PROMPTS: Record<string, (location: string) => string> = {
   interlude:   (_)   => `A lone figure standing at a rain-streaked dark window overlooking city lights at night, silhouette against the glow, contemplative mood, deep shadows, cinematic. Style: film noir, melancholic, rich blacks.`,
 }
 
-// Unified noir style — matches the abstract geometric portrait aesthetic
-const NOIR_STYLE = 'Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, dramatic shadows and highlights, sophisticated composition.'
+// Noir style — matches the abstract geometric portrait aesthetic
+const NOIR_STYLE = 'Abstract artistic rendition. Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, high-end digital art, dramatic shadows and highlights, sophisticated composition.'
 
-// Restyle an existing photo using Gemini 2.5 Flash (true image-to-image transform)
-async function restyleWithGemini(
+// Step 1: Analyze the cover photo — describe the scene using known gent identities
+async function analyzeScene(
   coverBase64: string,
   mimeType: string,
   apiKey: string,
 ): Promise<string> {
+  const gentDescriptions = Object.entries(GENT_APPEARANCES)
+    .map(([name, desc]) => `- ${name.charAt(0).toUpperCase() + name.slice(1)}: ${desc}`)
+    .join('\n')
+
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 20_000)
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         signal: controller.signal,
@@ -43,35 +49,78 @@ async function restyleWithGemini(
           contents: [{
             parts: [
               { inline_data: { mime_type: mimeType, data: coverBase64 } },
-              { text: `Edit this image. Transform it into an abstract artistic rendition in the following style: ${NOIR_STYLE} Faithfully preserve every person, object, and element in the scene — their positions, poses, and spatial arrangement must remain identical. Apply the style transformation to the entire image: people, setting, background, everything. The output must be clearly recognisable as the same scene, just rendered in this dark geometric noir art style. Generate the restyled image.` },
+              { text: `You are analyzing a photograph for an art generation pipeline. Your job is to produce a detailed scene description that will be used to recreate this exact scene as an artistic rendition.
+
+${GENT_VISUAL_ID}
+
+Known appearances:
+${gentDescriptions}
+
+Describe this photograph in precise detail for an image generation model. Include:
+1. **People**: For each person visible, identify them by name if they match a known Gent (use their full appearance description). For unknown people, describe their appearance in similar detail. Describe each person's exact position, pose, body angle, and what they are doing.
+2. **Setting**: The environment, furniture, surfaces, lighting conditions, background elements.
+3. **Objects**: Food, drinks, devices, décor — anything on the table or in hands.
+4. **Composition**: Camera angle, framing, depth of field, spatial arrangement.
+
+Output a single dense paragraph that could be used directly as an image generation prompt. Do not include any preamble or explanation — just the scene description.` },
             ],
           }],
-          generationConfig: {
-            responseModalities: ['IMAGE'],
-          },
+          generationConfig: { maxOutputTokens: 1024 },
         }),
       }
     )
 
     if (!response.ok) {
-      throw new Error(`Gemini restyle error: ${response.status} ${await response.text()}`)
+      throw new Error(`Scene analysis error: ${response.status} ${await response.text()}`)
     }
 
     const result = await response.json()
-    const parts = result.candidates?.[0]?.content?.parts ?? []
-    const imagePart = parts.find((p: { inlineData?: { data: string } }) => p.inlineData?.data)
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
+    if (!text) throw new Error('Scene analysis returned empty description')
 
-    if (!imagePart?.inlineData?.data) {
-      throw new Error('Gemini returned no image in restyle response')
-    }
-
-    return imagePart.inlineData.data
+    console.log('Scene analysis:', text.slice(0, 200))
+    return text
   } catch (e) {
-    if ((e as Error).name === 'AbortError') throw new Error('Gemini restyle timed out after 20s')
+    if ((e as Error).name === 'AbortError') throw new Error('Scene analysis timed out after 20s')
     throw e
   } finally {
     clearTimeout(timeout)
   }
+}
+
+// Step 2: Generate the noir rendition via Imagen using the scene description
+async function generateNoirScene(
+  sceneDescription: string,
+  aspectRatio: string,
+  apiKey: string,
+): Promise<string> {
+  const imagePrompt = `${sceneDescription}\n\nStyle: ${NOIR_STYLE} Faithfully preserve every person's facial features, hair, facial hair, and distinguishing characteristics exactly as described. Dark elegant background, no text or words.`
+
+  const imageResponse = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{ prompt: imagePrompt }],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio,
+          safetyFilterLevel: 'block_only_high',
+        },
+      }),
+    }
+  )
+
+  if (!imageResponse.ok) {
+    throw new Error(`Imagen error: ${imageResponse.status} ${await imageResponse.text()}`)
+  }
+
+  const imageResult = await imageResponse.json()
+  const base64Image = imageResult.predictions?.[0]?.bytesBase64Encoded
+  if (!base64Image) throw new Error('No image returned from Imagen')
+
+  return base64Image
 }
 
 Deno.serve(async (req: Request) => {
@@ -114,8 +163,9 @@ Deno.serve(async (req: Request) => {
     let base64Image: string
 
     if (coverBase64) {
-      // Restyle mode: use Gemini to transform the original photo into noir style
-      base64Image = await restyleWithGemini(coverBase64, coverMimeType, googleApiKey)
+      // Two-step restyle: analyze scene → generate noir rendition
+      const sceneDescription = await analyzeScene(coverBase64, coverMimeType, googleApiKey)
+      base64Image = await generateNoirScene(sceneDescription, aspectRatio, googleApiKey)
     } else {
       // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
