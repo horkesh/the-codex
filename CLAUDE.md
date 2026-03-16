@@ -27,7 +27,7 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 | Portrait image generation | `imagen-4.0-generate-001` | Imagen 4 via `:predict` endpoint |
 | Cover/scene/stamp image generation | `imagen-4.0-generate-001` | Same |
 | Studio restyle — scene analysis | `gemini-2.5-flash` | Vision: describes scene using saved gent identities |
-| Studio restyle — noir generation | `imagen-4.0-generate-001` | Renders scene description in geometric noir style |
+| Studio restyle — noir generation | `gemini-2.5-flash-image` | Text-only generation from scene description (no photo input — prevents filter-only output) |
 
 **Critical model notes:**
 - `gemini-2.0-flash` is deprecated for new API keys (404 "no longer available to new users"). Use `gemini-2.5-flash`.
@@ -94,9 +94,9 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 ## Studio export (`src/pages/Studio.tsx`)
 - **Cover image as default background**: when an entry is selected, `cover_image_url` is immediately used as the template background.
 - **Background source picker**: two buttons — "Cover Photo" (real image) and "AI Restyle" (AI-generated). User can switch freely between them. Active source is highlighted with gold border.
-- **AI Restyle** (`generate-template-bg` edge function) — two-step pipeline when a cover photo exists:
-  1. **Analyze** — `gemini-2.5-flash` vision reads the photo and produces a detailed scene description, identifying each Gent by name using saved appearances from `_shared/gent-identities.ts`.
-  2. **Generate** — `imagen-4.0-generate-001` renders that description in the abstract geometric noir style (same aesthetic as portraits), preserving facial features exactly.
+- **AI Restyle** (`generate-template-bg` edge function) — two-step text-only pipeline when a cover photo exists:
+  1. **Analyze** — `gemini-2.5-flash` with vision reads the photo and produces a scene description, identifying each Gent by name using saved appearances from `_shared/gent-identities.ts`.
+  2. **Generate** — `gemini-2.5-flash-image` (text only, NO photo input) generates dark cinematic noir artwork from the description. The photo must NOT be passed to the generation step — Gemini Flash Image applies a filter instead of redrawing when given the original image.
   - When no cover photo exists, Imagen generates a from-scratch background using type-specific prompts.
 - Templates render via `BackgroundLayer` which applies both the background image and photo filter CSS from context.
 
