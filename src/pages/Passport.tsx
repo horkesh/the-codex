@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, RefreshCw } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
@@ -22,7 +22,7 @@ type View = 'cover' | 'stamps'
 
 export default function Passport() {
   const { gent } = useAuthStore()
-  const { stamps, countries, loading } = usePassport()
+  const { stamps, missionStamps, countries, loading } = usePassport()
   const navigate = useNavigate()
 
   const [view, setView] = useState<View>('cover')
@@ -33,6 +33,9 @@ export default function Passport() {
   const [storiesLoading, setStoriesLoading] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const addToast = useUIStore(s => s.addToast)
+
+  // Raw (non-deduplicated) city list for frequency analysis in travel intel
+  const rawCities = useMemo(() => missionStamps.map(s => s.city).filter(Boolean) as string[], [missionStamps])
 
   const handleStampPress = useCallback((stamp: PassportStamp) => {
     if (stamp.type === 'mission') {
@@ -124,6 +127,8 @@ export default function Passport() {
               onOpen={() => setView('stamps')}
               stampCount={stamps.length}
               countryCount={countries.length}
+              cities={rawCities}
+              missionCount={missionStamps.length}
             />
           </PageWrapper>
         ) : (

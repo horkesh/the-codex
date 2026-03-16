@@ -1,8 +1,10 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { fadeUp } from '@/lib/animations'
 import { cn } from '@/lib/utils'
+import { composeTravelIntel } from '@/ai/travelIntel'
 
 interface PassportCoverProps {
   gent: {
@@ -13,6 +15,8 @@ interface PassportCoverProps {
   onOpen: () => void
   stampCount: number
   countryCount: number
+  cities?: string[]
+  missionCount?: number
 }
 
 function CompassRose() {
@@ -56,7 +60,24 @@ function CompassRose() {
   )
 }
 
-export function PassportCover({ gent, onOpen, stampCount, countryCount }: PassportCoverProps) {
+export function PassportCover({ gent, onOpen, stampCount, countryCount, cities, missionCount }: PassportCoverProps) {
+  const intelText = useMemo(() => {
+    if (!cities?.length) return null
+    const freq: Record<string, number> = {}
+    for (const c of cities) freq[c] = (freq[c] ?? 0) + 1
+    const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1])
+    const topCity = sorted[0]?.[0] ?? ''
+    const topCityCount = sorted[0]?.[1] ?? 0
+    const uniqueCities = [...new Set(cities)]
+    return composeTravelIntel({
+      missions: missionCount ?? 0,
+      countries: countryCount,
+      cities: uniqueCities,
+      topCity,
+      topCityCount,
+    })
+  }, [cities, missionCount, countryCount])
+
   return (
     <motion.div
       variants={fadeUp}
@@ -162,6 +183,14 @@ export function PassportCover({ gent, onOpen, stampCount, countryCount }: Passpo
               </span>
             </div>
           </div>
+
+          {/* Travel intelligence */}
+          {intelText && (
+            <div className="mx-6 mt-4 px-4 py-3 rounded-lg border border-gold/10" style={{ background: 'rgba(201,168,76,0.03)' }}>
+              <p className="text-[10px] font-mono tracking-[0.2em] text-gold-muted uppercase mb-1.5">Travel Intelligence</p>
+              <p className="text-xs text-ivory-dim font-body leading-relaxed">{intelText}</p>
+            </div>
+          )}
 
           {/* Open button */}
           <motion.div
