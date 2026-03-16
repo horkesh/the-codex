@@ -13,12 +13,7 @@ const entryTypeLabels: Record<string, string> = {
   interlude: 'Interlude (moment worth noting)',
 }
 
-// Visual identification guide for The Gents (used when photos are present)
-const GENT_IDENTITIES = `The Gents — visual identification:
-- Haris (alias "Lorekeeper"): bald, bearded
-- Vedad (alias "Bass"): has hair, fully bearded
-- Almedin (alias "Keys"): has hair, no beard (clean-shaven)
-Use their first names naturally in the narrative when you can identify them in photos.`
+import { GENT_VISUAL_ID as GENT_IDENTITIES } from '../_shared/gent-identities.ts'
 
 // Type-specific narrative voice and focus
 const entryTypeDirectives: Record<string, string> = {

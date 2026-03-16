@@ -65,6 +65,12 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 ## Photo filters (`src/lib/photoFilters.ts`)
 16 CSS-based filters: Raw, Chronicle, The Pitch, Noir, Velvet, Havana, Dusk, Fade, Tokyo, Amber, Ember, Frost, Haze, Slate, Midnight, Sepia. Each filter has a CSS `filter` string and a `radial-gradient` vignette overlay. Default: `chronicle`. Stored per-entry in localStorage (`photo-filter:{entryId}`). Filters propagate to Studio export templates via `PhotoFilterContext`.
 
+## Gent identity descriptions (`supabase/functions/_shared/gent-identities.ts`)
+- `GENT_APPEARANCES` — detailed physical descriptions per gent (hair, facial hair, build, complexion)
+- `GENT_ALIASES` — display aliases (Lorekeeper, Beard & Bass, Keys & Cocktails)
+- `GENT_VISUAL_ID` — compact visual identification guide for AI vision prompts
+- All edge functions that generate/analyse images of The Gents should import from this shared file.
+
 ## Lore generation (`supabase/functions/generate-lore/`)
 - Uses `claude-sonnet-4-6` with vision (up to 4 photos).
 - **Time-of-day is authoritative**: EXIF time from `entry.metadata.time_of_day` is explicitly marked as ground truth in the prompt. Claude must not infer a different time from photo lighting.
