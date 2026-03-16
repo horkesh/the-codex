@@ -88,6 +88,7 @@ export interface Person {
   poi_intel: string | null
   poi_source_gent: string | null
   poi_visibility: POIVisibility
+  birthday: string | null
 }
 
 export interface PersonWithPrivateNote extends Person {

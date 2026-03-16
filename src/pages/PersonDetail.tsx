@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Instagram, MapPin, Calendar, Trash2, Edit2, Shield, Link2 } from 'lucide-react'
+import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Shield, Link2 } from 'lucide-react'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Avatar, Spinner, Modal } from '@/components/ui'
 import { usePerson } from '@/hooks/usePerson'
@@ -12,6 +12,7 @@ import { fetchScanByPerson } from '@/data/personScans'
 import { fetchAllGents } from '@/data/gents'
 import { useUIStore } from '@/store/ui'
 import { cn, formatDate } from '@/lib/utils'
+import { getZodiacSign } from '@/lib/horoscope'
 import type { Gent, PersonScan, PersonWithPrivateNote, PersonTier, VerdictLabel } from '@/types/app'
 
 type Tab = 'profile' | 'intel'
@@ -80,6 +81,7 @@ export default function PersonDetail() {
         : person.photo_url,
       met_location: data.met_location || null,
       met_date: data.met_date || null,
+      birthday: data.birthday || null,
       notes: data.notes || null,
       labels: data.labels,
     })
@@ -290,6 +292,20 @@ export default function PersonDetail() {
                   <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
                     <Calendar size={12} className="text-gold-muted shrink-0" />
                     {formatDate(person.met_date)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {person.birthday && (
+              <div className="flex flex-wrap justify-center gap-3 mt-3">
+                <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
+                  <Cake size={12} className="text-gold-muted shrink-0" />
+                  {formatDate(person.birthday)}
+                </div>
+                {getZodiacSign(person.birthday) && (
+                  <div className="flex items-center gap-1.5 text-xs text-ivory-dim font-body">
+                    {getZodiacSign(person.birthday)}
                   </div>
                 )}
               </div>

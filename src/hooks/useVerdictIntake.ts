@@ -193,7 +193,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         poi_visibility: dossier.visibility,
         tier: 'acquaintance',
         added_by: gent.id,
-        labels: [],
+        labels: verdictResult?.verdict?.trait_words ?? [],
       })
 
       if (verdictResult?.scanId) {

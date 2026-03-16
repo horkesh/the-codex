@@ -11,6 +11,7 @@ export interface PersonFormData {
   instagram: string
   met_location: string
   met_date: string
+  birthday: string
   notes: string
   labels: string[]
 }
@@ -28,6 +29,7 @@ function getInitialData(person?: Person): PersonFormData {
     instagram: person?.instagram ?? '',
     met_location: person?.met_location ?? '',
     met_date: person?.met_date ?? '',
+    birthday: person?.birthday ?? '',
     notes: person?.notes ?? '',
     labels: person?.labels ?? [],
   }
@@ -129,6 +131,15 @@ export function PersonForm({ person, onSave, onClose, isOpen }: PersonFormProps)
           type="date"
           value={form.met_date}
           onChange={(e) => set('met_date', (e.target as HTMLInputElement).value)}
+          className="[color-scheme:dark]"
+        />
+
+        {/* Birthday */}
+        <Input
+          label="Birthday"
+          type="date"
+          value={form.birthday}
+          onChange={(e) => set('birthday', (e.target as HTMLInputElement).value)}
           className="[color-scheme:dark]"
         />
 
