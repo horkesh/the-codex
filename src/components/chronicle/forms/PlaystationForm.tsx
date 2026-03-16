@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { staggerItem } from '@/lib/animations'
 import { fetchEntries } from '@/data/entries'
 import type { GentAlias, PS5Match } from '@/types/app'
+import type { LocationFill } from '@/lib/geo'
 
 export interface PlaystationFormData {
   title: string
@@ -17,6 +18,7 @@ export interface PlaystationFormData {
 interface PlaystationFormProps {
   onSubmit: (data: PlaystationFormData) => Promise<void>
   loading: boolean
+  detectedLocation?: LocationFill
   suggestedTitle?: string | null
   onRetitle?: () => void
   initialData?: Partial<PlaystationFormData>
@@ -92,7 +94,7 @@ function computeHeadToHead(matches: PS5Match[]): HeadToHead[] {
   return result
 }
 
-export function PlaystationForm({ onSubmit, loading, suggestedTitle, onRetitle, initialData }: PlaystationFormProps) {
+export function PlaystationForm({ onSubmit, loading, detectedLocation, suggestedTitle, onRetitle, initialData }: PlaystationFormProps) {
   const [title, setTitle] = useState(initialData?.title ?? '')
   const [date, setDate] = useState(initialData?.date ?? '')
   const [matches, setMatches] = useState<PS5Match[]>(initialData?.matches?.length ? initialData.matches : [emptyMatch(1)])
@@ -113,6 +115,12 @@ export function PlaystationForm({ onSubmit, loading, suggestedTitle, onRetitle, 
     if (vol === null) return
     setTitle(`The Pitch · Vol. ${vol}`)
   }, [vol, suggestedTitle])
+
+  // Auto-fill date from photo EXIF
+  useEffect(() => {
+    if (!detectedLocation?.date || date) return
+    setDate(detectedLocation.date)
+  }, [detectedLocation, date])
 
   function addMatch() {
     setMatches((prev) => [...prev, emptyMatch(prev.length + 1)])

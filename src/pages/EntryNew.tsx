@@ -105,7 +105,8 @@ export default function EntryNew() {
     }).catch(() => {})
   }, [searchParams])
 
-  const { pendingFiles, addFiles: rawAddFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos()
+  const maxPhotos = selectedType === 'mission' ? 20 : selectedType === 'night_out' ? 15 : 10
+  const { pendingFiles, addFiles: rawAddFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos(maxPhotos)
 
   const handleRetitle = useCallback(() => {
     if (pendingFiles.length === 0 || !selectedType) return
@@ -273,6 +274,7 @@ export default function EntryNew() {
       country_code: data.country_code,
       location: data.location,
       description: data.description,
+      metadata: data.date_end ? { date_end: data.date_end } : undefined,
     })
   }
 
@@ -363,6 +365,7 @@ export default function EntryNew() {
         {/* Photos — primary action, placed prominently at the top */}
         <PhotoUpload
           entryId={null}
+          maxPhotos={maxPhotos}
           onGeoDetected={handleGeoDetected}
           onFilesAdded={addFiles}
           onFileRemoved={removeFile}
@@ -426,7 +429,7 @@ export default function EntryNew() {
           <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
         )}
         {selectedType === 'playstation' && (
-          <PlaystationForm onSubmit={submitPlaystation} loading={submitting} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
+          <PlaystationForm onSubmit={submitPlaystation} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
         )}
         {selectedType === 'toast' && (
           <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />

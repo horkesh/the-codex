@@ -10,6 +10,7 @@ import { fetchLocations } from '@/data/locations'
 
 interface PhotoUploadProps {
   entryId: string | null
+  maxPhotos?: number
   onUpload?: (url: string) => void
   onGeoDetected?: (loc: LocationFill) => void
   onFilesAdded?: (files: File[]) => void
@@ -27,9 +28,9 @@ interface PendingPhoto {
   error: string | null
 }
 
-const MAX_PHOTOS = 10
+const DEFAULT_MAX_PHOTOS = 10
 
-export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, onFileRemoved, className }: PhotoUploadProps) {
+export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload, onGeoDetected, onFilesAdded, onFileRemoved, className }: PhotoUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PendingPhoto[]>([])
   const geoFiredRef = useRef(false)
@@ -43,7 +44,7 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, on
       const files = Array.from(e.target.files ?? [])
       if (!files.length) return
 
-      const remaining = MAX_PHOTOS - photos.length
+      const remaining = maxPhotos - photos.length
       const toAdd = files.slice(0, remaining)
 
       const newPhotos: PendingPhoto[] = toAdd.map((file) => ({
@@ -174,7 +175,7 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, on
     }
   }, [])
 
-  const canAddMore = photos.length < MAX_PHOTOS
+  const canAddMore = photos.length < maxPhotos
   const hasPhotos = photos.length > 0
 
   return (
@@ -182,7 +183,7 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, on
       <div className="flex items-center justify-between">
         <p className="text-ivory-muted text-xs uppercase tracking-widest font-body">Photos</p>
         <p className="text-ivory-dim text-xs font-body">
-          {photos.length}/{MAX_PHOTOS}
+          {photos.length}/{maxPhotos}
         </p>
       </div>
 
@@ -292,15 +293,15 @@ export function PhotoUpload({ entryId, onUpload, onGeoDetected, onFilesAdded, on
 }
 
 // Hook for managing pre-creation files and uploading them after entry is created
-export function usePendingPhotos() {
+export function usePendingPhotos(maxPhotos = DEFAULT_MAX_PHOTOS) {
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
 
   const addFiles = useCallback((files: File[]) => {
     setPendingFiles((prev) => {
       const combined = [...prev, ...files]
-      return combined.slice(0, MAX_PHOTOS)
+      return combined.slice(0, maxPhotos)
     })
-  }, [])
+  }, [maxPhotos])
 
   const removeFile = useCallback((file: File) => {
     setPendingFiles((prev) => prev.filter((f) => f !== file))

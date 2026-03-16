@@ -21,7 +21,7 @@ const entryTypeDirectives: Record<string, string> = {
   playstation: `This is a Pitch entry — a PlayStation gaming session. The prose should capture the competitive energy, the banter, the glory and defeat. Reference the game if the title is mentioned, or the intensity of the session. Lean into the camaraderie of grown men who still play like their honour depends on it. If photos show the screen or setup, note the battlefield.`,
   toast: `This is a Toast entry — a cocktail or drinks session. The prose should have a liquid warmth: reference the glasses, the spirit of choice, the clink and pour. Whether it's a refined bar or drinks at home, capture the ease of conversation that only flows freely over good drinks. If photos show cocktails or bottles, let them anchor the narrative.`,
   night_out: `This is a Night Out entry. The prose should capture the energy of the city at night — the venues, the movement between places, the escalation from civilised to less so. Capture the sense of a night that earned its place in the chronicle. If photos show the scene, draw from the setting and body language.`,
-  mission: `This is a Mission entry — a trip or travel adventure. The prose should capture the thrill of displacement: new terrain, new tastes, the bond that tightens when the usual routines fall away. Reference the destination and what made this mission distinct. If photos show landmarks or scenery, weave them into the narrative.`,
+  mission: `This is a Mission entry — a trip or travel adventure. The prose should capture the thrill of displacement: new terrain, new tastes, the bond that tightens when the usual routines fall away. Reference the destination and what made this mission distinct. You may have many photos from across the full journey — weave a narrative that spans the entire trip, referencing different moments, locations, meals, and discoveries captured in the photos. Treat the photos as chapters of the story.`,
   gathering: `This is a Gathering entry — a hosted event or get-together. The prose should capture the warmth of hosting or being hosted: the extended circle, the conversations across the room, the effort someone put into making it happen. Note the scale and intimacy of the occasion.`,
   interlude: `This is an Interlude entry — a smaller moment worth recording. The prose should treat this as a quiet aside in the chronicle: a chance encounter, a brief coffee, an errand that turned into something memorable. Keep the tone lighter, more observational. Not every entry needs grandeur — some are valuable precisely because they are unhurried and small.`,
 }
@@ -37,7 +37,9 @@ Deno.serve(async (req: Request) => {
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
 
     const participantNames = entry.participants?.map((p: { display_name: string }) => p.display_name).join(', ') || 'The Gents'
-    const photos: string[] = Array.isArray(photoUrls) ? photoUrls.slice(0, 4) : []
+    // Mission/night_out send all photos; other types cap at 4
+    const maxPhotos = entry.type === 'mission' ? 20 : entry.type === 'night_out' ? 15 : 4
+    const photos: string[] = Array.isArray(photoUrls) ? photoUrls.slice(0, maxPhotos) : []
 
     // Derive day-of-week from date; read stored time-of-day from metadata
     const dateObj = new Date(entry.date + 'T12:00:00Z')

@@ -278,3 +278,29 @@ export async function fetchPeopleQuick(query?: string): Promise<Array<{ id: stri
   if (error) throw error
   return (data ?? []) as Array<{ id: string; name: string; photo_url: string | null }>
 }
+
+// ── Person–Gent relationships ───────────────────────────────────────────────
+
+export async function fetchPersonGents(personId: string): Promise<string[]> {
+  const { data, error } = await (supabase
+    .from('person_gents' as never)
+    .select('gent_id')
+    .eq('person_id', personId) as never as Promise<{ data: Array<{ gent_id: string }> | null; error: unknown }>)
+  if (error) throw error
+  return (data ?? []).map((r) => r.gent_id)
+}
+
+export async function updatePersonGents(personId: string, gentIds: string[]): Promise<void> {
+  // Delete all existing, then re-insert
+  const { error: delError } = await (supabase
+    .from('person_gents' as never)
+    .delete()
+    .eq('person_id', personId) as never as Promise<{ error: unknown }>)
+  if (delError) throw delError
+
+  if (gentIds.length === 0) return
+  const rows = gentIds.map((gent_id) => ({ person_id: personId, gent_id }))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: insError } = await (supabase.from('person_gents' as never) as any).insert(rows)
+  if (insError) throw insError
+}

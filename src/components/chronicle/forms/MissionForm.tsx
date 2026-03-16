@@ -8,6 +8,7 @@ import type { LocationFill } from '@/lib/geo'
 export interface MissionFormData {
   title: string
   date: string
+  date_end: string
   city: string
   country: string
   country_code: string
@@ -27,6 +28,7 @@ interface MissionFormProps {
 const empty: MissionFormData = {
   title: '',
   date: '',
+  date_end: '',
   city: '',
   country: '',
   country_code: '',
@@ -113,15 +115,25 @@ export function MissionForm({ onSubmit, loading, detectedLocation, suggestedTitl
         )}
       </div>
 
-      <Input
-        label="Date"
-        type="date"
-        value={form.date}
-        onChange={(e) => set('date', e.target.value)}
-        error={errors.date}
-        required
-        className={cn(!form.date && 'text-ivory-dim')}
-      />
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          label="Start Date"
+          type="date"
+          value={form.date}
+          onChange={(e) => set('date', e.target.value)}
+          error={errors.date}
+          required
+          className={cn(!form.date && 'text-ivory-dim')}
+        />
+        <Input
+          label="End Date"
+          type="date"
+          value={form.date_end}
+          onChange={(e) => set('date_end', e.target.value)}
+          className={cn(!form.date_end && 'text-ivory-dim')}
+          hint="Optional"
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Input

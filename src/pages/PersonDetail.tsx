@@ -7,7 +7,7 @@ import { usePerson } from '@/hooks/usePerson'
 import { PrivateNoteSection } from '@/components/circle/PrivateNoteSection'
 import { PersonForm } from '@/components/circle/PersonForm'
 import type { PersonFormData } from '@/components/circle/PersonForm'
-import { deletePerson, updatePerson } from '@/data/people'
+import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents } from '@/data/people'
 import { fetchScanByPerson } from '@/data/personScans'
 import { fetchAllGents } from '@/data/gents'
 import { useUIStore } from '@/store/ui'
@@ -59,11 +59,13 @@ export default function PersonDetail() {
   const [tierSaving, setTierSaving] = useState(false)
   const [showGentModal, setShowGentModal] = useState(false)
   const [gentSaving, setGentSaving] = useState(false)
+  const [knownByGentIds, setKnownByGentIds] = useState<string[]>([])
 
   useEffect(() => {
     if (!id) return
     fetchScanByPerson(id).then(setScan).catch(() => {})
     fetchAllGents().then(setGents).catch(() => {})
+    fetchPersonGents(id).then(setKnownByGentIds).catch(() => {})
   }, [id])
 
   const handleSaveEdit = async (data: PersonFormData) => {
@@ -99,16 +101,19 @@ export default function PersonDetail() {
     }
   }
 
-  const handleGentChange = async (gentId: string) => {
+  const handleGentToggle = async (gentId: string) => {
     if (!person) return
+    const next = knownByGentIds.includes(gentId)
+      ? knownByGentIds.filter((id) => id !== gentId)
+      : [...knownByGentIds, gentId]
+    setKnownByGentIds(next)
     setGentSaving(true)
     try {
-      const updated = await updatePerson(person.id, { added_by: gentId })
-      setPerson({ ...updated, private_note: person.private_note } as PersonWithPrivateNote)
-      addToast('Connection updated', 'success')
-      setShowGentModal(false)
+      await updatePersonGents(person.id, next)
     } catch {
-      addToast('Failed to update connection', 'error')
+      // revert on failure
+      setKnownByGentIds(knownByGentIds)
+      addToast('Failed to update connections', 'error')
     } finally {
       setGentSaving(false)
     }
@@ -236,7 +241,9 @@ export default function PersonDetail() {
                 className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 bg-slate-light/50 border border-white/10 text-[11px] font-body text-ivory-dim hover:text-ivory hover:border-white/20 transition-colors"
               >
                 <Link2 size={10} />
-                {gents.find(g => g.id === person.added_by)?.display_name ?? 'Connect'}
+                {knownByGentIds.length > 0
+                  ? gents.filter(g => knownByGentIds.includes(g.id)).map(g => g.display_name).join(', ')
+                  : 'Connect'}
               </button>
             )}
           </div>
@@ -444,26 +451,29 @@ export default function PersonDetail() {
         person={person}
       />
 
-      {/* Gent connection modal */}
-      <Modal isOpen={showGentModal} onClose={() => setShowGentModal(false)} title="Connected to">
+      {/* Gent connection modal — multi-select */}
+      <Modal isOpen={showGentModal} onClose={() => setShowGentModal(false)} title="Known by">
         <div className="space-y-2 pb-2">
-          {gents.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              disabled={gentSaving}
-              onClick={() => handleGentChange(g.id)}
-              className={cn(
-                'w-full text-left px-4 py-3 rounded-xl border text-sm font-body transition-colors flex items-center gap-3',
-                person.added_by === g.id
-                  ? 'border-gold/40 bg-gold/10 text-gold'
-                  : 'border-white/10 text-ivory hover:border-white/20 hover:bg-slate-light/30'
-              )}
-            >
-              <Avatar src={g.avatar_url} name={g.display_name} size="sm" />
-              {g.display_name}
-            </button>
-          ))}
+          {gents.map((g) => {
+            const selected = knownByGentIds.includes(g.id)
+            return (
+              <button
+                key={g.id}
+                type="button"
+                disabled={gentSaving}
+                onClick={() => handleGentToggle(g.id)}
+                className={cn(
+                  'w-full text-left px-4 py-3 rounded-xl border text-sm font-body transition-colors flex items-center gap-3',
+                  selected
+                    ? 'border-gold/40 bg-gold/10 text-gold'
+                    : 'border-white/10 text-ivory hover:border-white/20 hover:bg-slate-light/30'
+                )}
+              >
+                <Avatar src={g.avatar_url} name={g.display_name} size="sm" />
+                {g.display_name}
+              </button>
+            )
+          })}
         </div>
       </Modal>
 
