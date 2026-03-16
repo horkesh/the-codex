@@ -20,7 +20,7 @@ const TYPE_PROMPTS: Record<string, (location: string) => string> = {
   interlude:   (_)   => `A lone figure standing at a rain-streaked dark window overlooking city lights at night, silhouette against the glow, contemplative mood, deep shadows, cinematic. Style: film noir, melancholic, rich blacks.`,
 }
 
-// Style directives when restyling an existing cover image
+// Style directives when restyling an existing cover image via Gemini
 const RESTYLE_PROMPTS: Record<string, string> = {
   mission:     'Cinematic travel photography. Deep shadows, dramatic urban lighting, film noir colour grade, rich blacks and warm highlights.',
   night_out:   'Moody editorial nightlife photography. Deep amber tones, candlelight warmth, shallow depth of field bokeh, dark polished atmosphere.',
@@ -29,6 +29,61 @@ const RESTYLE_PROMPTS: Record<string, string> = {
   toast:       'Luxury spirits photography. Deep blacks, amber gold tones, dramatic rim lighting, smoky atmosphere, crystal clarity.',
   gathering:   'Luxury events photography. Warm candlelight, intimate atmosphere, deep shadows, elegant soft focus.',
   interlude:   'Film noir photography. Melancholic mood, deep shadows, rain-streaked atmosphere, rich blacks, contemplative tone.',
+}
+
+// Restyle an existing photo using Gemini 2.5 Flash (true image-to-image transform)
+async function restyleWithGemini(
+  coverBase64: string,
+  mimeType: string,
+  entryType: string,
+  apiKey: string,
+): Promise<string> {
+  const styleDirective = RESTYLE_PROMPTS[entryType] ?? RESTYLE_PROMPTS['mission']
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 20_000)
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mimeType, data: coverBase64 } },
+              { text: `Restyle this photograph with a dark cinematic noir aesthetic. ${styleDirective} Apply deep noir colour grading with dramatic shadows and high contrast. Keep the EXACT same scene, subjects, composition, and framing — only transform the mood, lighting, and colour palette. The result should look like the same photo shot by a high-end editorial photographer with noir lighting. Output only the restyled image.` },
+            ],
+          }],
+          generationConfig: {
+            responseModalities: ['IMAGE', 'TEXT'],
+            maxOutputTokens: 8192,
+          },
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Gemini restyle error: ${response.status} ${await response.text()}`)
+    }
+
+    const result = await response.json()
+    const parts = result.candidates?.[0]?.content?.parts ?? []
+    const imagePart = parts.find((p: { inlineData?: { data: string } }) => p.inlineData?.data)
+
+    if (!imagePart?.inlineData?.data) {
+      throw new Error('Gemini returned no image in restyle response')
+    }
+
+    return imagePart.inlineData.data
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') throw new Error('Gemini restyle timed out after 20s')
+    throw e
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -50,14 +105,16 @@ Deno.serve(async (req: Request) => {
     const locationStr = location || city || (country ? `${country}` : '')
     const aspectRatio = ASPECT_RATIOS[aspect] ?? '1:1'
 
-    // If cover image exists, download it and restyle; otherwise generate from scratch
+    // If cover image exists, download it for restyling
     let coverBase64: string | null = null
+    let coverMimeType = 'image/jpeg'
     if (cover_image_url) {
       try {
         const controller = new AbortController()
         setTimeout(() => controller.abort(), 10_000)
         const imgRes = await fetch(cover_image_url, { signal: controller.signal })
         if (imgRes.ok) {
+          coverMimeType = imgRes.headers.get('content-type') ?? 'image/jpeg'
           const buf = await imgRes.arrayBuffer()
           coverBase64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
         }
@@ -66,51 +123,40 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    let imagePrompt: string
-    // deno-lint-ignore no-explicit-any
-    let instances: any[]
+    let base64Image: string
 
     if (coverBase64) {
-      // Restyle mode: use cover image as reference
-      const styleDirective = RESTYLE_PROMPTS[entry_type] ?? RESTYLE_PROMPTS['mission']
-      imagePrompt = `Reimagine this exact scene with a cinematic editorial mood. ${styleDirective} Dark atmosphere, high contrast, deep shadows, suitable as a full-bleed background behind text overlays. Preserve the core subject and composition.`
-      instances = [{
-        prompt: imagePrompt,
-        referenceImages: [{
-          referenceImage: { bytesBase64Encoded: coverBase64 },
-          referenceType: 'SUBJECT_IMAGE',
-        }],
-      }]
+      // Restyle mode: use Gemini to transform the original photo
+      base64Image = await restyleWithGemini(coverBase64, coverMimeType, entry_type, googleApiKey)
     } else {
-      // From-scratch mode
+      // From-scratch mode: use Imagen to generate a new background
       const promptFn = TYPE_PROMPTS[entry_type] ?? TYPE_PROMPTS['mission']
-      imagePrompt = `${promptFn(locationStr)} Dark, cinematic, high contrast, suitable as full-bleed text background. Aspect ratio optimised for Instagram.`
-      instances = [{ prompt: imagePrompt }]
-    }
+      const imagePrompt = `${promptFn(locationStr)} Dark, cinematic, high contrast, suitable as full-bleed text background. Aspect ratio optimised for Instagram.`
 
-    const imageResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instances,
-          parameters: {
-            sampleCount: 1,
-            aspectRatio,
-            safetyFilterLevel: 'block_only_high',
-          },
-        }),
+      const imageResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instances: [{ prompt: imagePrompt }],
+            parameters: {
+              sampleCount: 1,
+              aspectRatio,
+              safetyFilterLevel: 'block_only_high',
+            },
+          }),
+        }
+      )
+
+      if (!imageResponse.ok) {
+        throw new Error(`Imagen error: ${imageResponse.status} ${await imageResponse.text()}`)
       }
-    )
 
-    if (!imageResponse.ok) {
-      throw new Error(`Imagen error: ${imageResponse.status} ${await imageResponse.text()}`)
+      const imageResult = await imageResponse.json()
+      base64Image = imageResult.predictions?.[0]?.bytesBase64Encoded
+      if (!base64Image) throw new Error('No image returned from Imagen')
     }
-
-    const imageResult = await imageResponse.json()
-    const base64Image = imageResult.predictions?.[0]?.bytesBase64Encoded
-    if (!base64Image) throw new Error('No image returned from Imagen')
 
     const imageBytes = Uint8Array.from(atob(base64Image), (c) => c.charCodeAt(0))
     const fileName = `template-bgs/${entry_type}-${Date.now()}.webp`
