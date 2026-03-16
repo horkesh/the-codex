@@ -51,7 +51,7 @@ Two-step pipeline:
 ## POI Scanner (`scan-person-verdict` edge function)
 Two modes, routed by `source_type`:
 - `instagram_screenshot` → Claude Haiku: extracts appearance, traits, score, display_name, instagram_handle
-- `photo` → Gemini 2.0 Flash: same fields minus display_name/handle
+- `photo` → Gemini 2.5 Flash: same fields minus display_name/handle
 
 Client: `src/hooks/useVerdictIntake.ts` — compresses all images to 1024px JPEG (0.82 quality) before upload. `handleAnalyzeFile(file, sourceType)` takes explicit source type. `handleAnalyzeHandle(handle)` fetches avatar from `unavatar.io/instagram/{handle}?fallback=false` (public profiles only).
 
