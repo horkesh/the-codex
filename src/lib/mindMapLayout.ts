@@ -25,8 +25,9 @@ const GENT_EDGE_COLOR: Record<GentAlias, string> = {
   lorekeeper: 'rgba(201,168,76,0.5)',
 }
 
-function gentPersonEdgeStyle(alias: GentAlias, dimmed: boolean) {
-  return { stroke: GENT_EDGE_COLOR[alias], strokeWidth: 1.5, opacity: dimmed ? 0.15 : 1 }
+function gentPersonEdgeStyle(alias: GentAlias, dimmed: boolean, count: number) {
+  const strokeWidth = count >= 4 ? 3.5 : count >= 2 ? 2.5 : 1.5
+  return { stroke: GENT_EDGE_COLOR[alias], strokeWidth, opacity: dimmed ? 0.15 : 1 }
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -113,6 +114,13 @@ export function computeGraphData(
     personNoters.get(a.person_id)!.add(a.noted_by)
   }
 
+  // 3b. Build gent→person appearance count map
+  const gentPersonCount = new Map<string, number>()
+  for (const a of appearances) {
+    const key = `${a.noted_by}-${a.person_id}`
+    gentPersonCount.set(key, (gentPersonCount.get(key) ?? 0) + 1)
+  }
+
   // 4. Filter people
   let filtered = [...people]
 
@@ -185,11 +193,12 @@ export function computeGraphData(
       if (gentIds.has(person.added_by)) {
         const alias = gentIdToAlias.get(person.added_by) ?? 'lorekeeper'
         const edgeDimmed = focusedGentId !== null && focusedGentId !== person.added_by
+        const addedCount = (gentPersonCount.get(`${person.added_by}-${person.id}`) ?? 0) + 1
         edges.push({
           id: `edge-added-${person.added_by}-${person.id}`,
           source: `gent-${person.added_by}`,
           target: `person-${person.id}`,
-          style: gentPersonEdgeStyle(alias, edgeDimmed),
+          style: gentPersonEdgeStyle(alias, edgeDimmed, addedCount),
         })
       }
 
@@ -201,45 +210,49 @@ export function computeGraphData(
           if (!gentIds.has(noterId)) continue
           const alias = gentIdToAlias.get(noterId) ?? 'lorekeeper'
           const edgeDimmed = focusedGentId !== null && focusedGentId !== noterId
+          const notedCount = gentPersonCount.get(`${noterId}-${person.id}`) ?? 1
           edges.push({
             id: `edge-noted-${noterId}-${person.id}`,
             source: `gent-${noterId}`,
             target: `person-${person.id}`,
-            style: gentPersonEdgeStyle(alias, edgeDimmed),
+            style: gentPersonEdgeStyle(alias, edgeDimmed, notedCount),
           })
         }
       }
     })
   }
 
-  // 7. Person ↔ Person edges (shared entries) — only visible at high zoom
+  // 7. Person ↔ Person edges (shared entries) — thickness scales with shared count
+  const filteredIds = new Set(filtered.map(p => p.id))
   const entryPeople = new Map<string, string[]>()
   for (const a of appearances) {
-    if (!filtered.some(p => p.id === a.person_id)) continue
+    if (!filteredIds.has(a.person_id)) continue
     if (!entryPeople.has(a.entry_id)) entryPeople.set(a.entry_id, [])
     entryPeople.get(a.entry_id)!.push(a.person_id)
   }
 
-  const personPairsSeen = new Set<string>()
+  const personPairCount = new Map<string, number>()
   for (const [, pIds] of entryPeople) {
     for (let i = 0; i < pIds.length; i++) {
       for (let j = i + 1; j < pIds.length; j++) {
         const key = [pIds[i], pIds[j]].sort().join('-')
-        if (personPairsSeen.has(key)) continue
-        personPairsSeen.add(key)
-
-        edges.push({
-          id: `pp-${key}`,
-          source: `person-${pIds[i]}`,
-          target: `person-${pIds[j]}`,
-          style: {
-            stroke: 'rgba(255,255,255,0.12)',
-            strokeWidth: 0.5,
-          },
-          className: 'person-person-edge',
-        })
+        personPairCount.set(key, (personPairCount.get(key) ?? 0) + 1)
       }
     }
+  }
+
+  for (const [key, count] of personPairCount) {
+    const strokeWidth = count >= 4 ? 1.5 : count >= 2 ? 1 : 0.5
+    edges.push({
+      id: `pp-${key}`,
+      source: `person-${key.split('-')[0]}`,
+      target: `person-${key.split('-')[1]}`,
+      style: {
+        stroke: 'rgba(255,255,255,0.12)',
+        strokeWidth,
+      },
+      className: 'person-person-edge',
+    })
   }
 
   return { nodes, edges }
