@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
-import { MoreVertical, Sparkles, Share2, Trash2, ImagePlay, Edit2 } from 'lucide-react'
+import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, ImagePlay, Edit2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Avatar } from '@/components/ui'
@@ -8,6 +8,7 @@ import { EntryHero } from '@/components/chronicle/EntryHero'
 import { LoreSection } from '@/components/chronicle/LoreSection'
 import { EntryReactions } from '@/components/chronicle/EntryReactions'
 import { generateScene } from '@/ai/scene'
+import { generateLore } from '@/ai/lore'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
 import { FilterPicker } from '@/components/chronicle/FilterPicker'
 import { MetadataCard } from '@/components/chronicle/MetadataCard'
@@ -16,7 +17,7 @@ import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
 import { CommentsSection } from '@/components/chronicle/CommentsSection'
 import { useEntry } from '@/hooks/useEntry'
 import { useEntryFilter } from '@/hooks/useEntryFilter'
-import { deleteEntry, updateEntryCover } from '@/data/entries'
+import { deleteEntry, updateEntryCover, updateEntryLore } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryWithParticipants } from '@/types/app'
@@ -29,7 +30,9 @@ interface OptionsMenuProps {
   hasLore: boolean
   canGenerateScene: boolean
   generatingScene: boolean
+  regeneratingLore: boolean
   onGenerateLore: () => void
+  onRegenerateLore: () => void
   onGenerateScene: () => void
   onEdit: () => void
   onExport: () => void
@@ -37,8 +40,8 @@ interface OptionsMenuProps {
 }
 
 function OptionsMenu({
-  isOpen, onClose, hasLore, canGenerateScene, generatingScene,
-  onGenerateLore, onGenerateScene, onEdit, onExport, onDelete,
+  isOpen, onClose, hasLore, canGenerateScene, generatingScene, regeneratingLore,
+  onGenerateLore, onRegenerateLore, onGenerateScene, onEdit, onExport, onDelete,
 }: OptionsMenuProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Entry Options">
@@ -51,6 +54,19 @@ function OptionsMenu({
           >
             <Sparkles size={18} className="text-gold shrink-0" />
             <span className="font-body text-sm">Generate Lore</span>
+          </button>
+        )}
+        {hasLore && (
+          <button
+            type="button"
+            disabled={regeneratingLore}
+            className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors disabled:opacity-40"
+            onClick={() => { onRegenerateLore(); onClose() }}
+          >
+            <RefreshCw size={18} className="text-gold shrink-0" />
+            <span className="font-body text-sm">
+              {regeneratingLore ? 'Regenerating lore...' : 'Regenerate Lore'}
+            </span>
           </button>
         )}
         {canGenerateScene && (
@@ -192,6 +208,7 @@ export default function EntryDetail() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [generatingScene, setGeneratingScene] = useState(false)
+  const [regeneratingLore, setRegeneratingLore] = useState(false)
 
   function handleExportToStudio() {
     navigate(`/studio?entry=${id}`)
@@ -201,6 +218,26 @@ export default function EntryDetail() {
     // Scroll smoothly to lore section; LoreSection manages its own generate flow
     const el = document.getElementById('lore-section')
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  async function handleRegenerateLore() {
+    if (!entry || regeneratingLore) return
+    setRegeneratingLore(true)
+    try {
+      const lore = await generateLore(entry, photoUrls)
+      if (lore) {
+        await updateEntryLore(entry.id, lore)
+        const now = new Date().toISOString()
+        setEntry({ ...entry, lore, lore_generated_at: now })
+        addToast('Lore regenerated.', 'success')
+      } else {
+        addToast('Could not regenerate lore. Try again.', 'error')
+      }
+    } catch {
+      addToast('Lore regeneration failed.', 'error')
+    } finally {
+      setRegeneratingLore(false)
+    }
   }
 
   async function handleDeleteConfirm() {
@@ -369,7 +406,7 @@ export default function EntryDetail() {
                   <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold">
                     Photos
                   </p>
-                  <FilterPicker filterId={filterId} onChange={setFilter} />
+                  <FilterPicker filterId={filterId} onChange={setFilter} previewUrl={entry.cover_image_url ?? undefined} />
                   <PhotoGrid
                     photos={photos}
                     onSetAsCover={handleSetAsCover}
@@ -449,7 +486,9 @@ export default function EntryDetail() {
         hasLore={!!entry.lore}
         canGenerateScene={['mission', 'night_out', 'toast', 'gathering', 'interlude'].includes(entry.type)}
         generatingScene={generatingScene}
+        regeneratingLore={regeneratingLore}
         onGenerateLore={handleGenerateLoreFromMenu}
+        onRegenerateLore={handleRegenerateLore}
         onGenerateScene={handleGenerateScene}
         onEdit={() => navigate(`/chronicle/${entry.id}/edit`)}
         onExport={handleExportToStudio}

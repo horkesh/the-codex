@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -16,6 +17,7 @@ interface NightOutFormProps {
   loading: boolean
   detectedLocation?: LocationFill
   suggestedTitle?: string | null
+  onRetitle?: () => void
   initialData?: Partial<NightOutFormData>
 }
 
@@ -31,7 +33,7 @@ interface FieldErrors {
   date?: string
 }
 
-export function NightOutForm({ onSubmit, loading, detectedLocation, suggestedTitle, initialData }: NightOutFormProps) {
+export function NightOutForm({ onSubmit, loading, detectedLocation, suggestedTitle, onRetitle, initialData }: NightOutFormProps) {
   const [form, setForm] = useState<NightOutFormData>(() => ({ ...empty, ...initialData }))
   const titleEdited = useRef(!!initialData?.title)
 
@@ -76,14 +78,26 @@ export function NightOutForm({ onSubmit, loading, detectedLocation, suggestedTit
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Input
-        label="What was the night?"
-        placeholder="Enter a title"
-        value={form.title}
-        onChange={(e) => set('title', e.target.value)}
-        error={errors.title}
-        required
-      />
+      <div className="relative">
+        <Input
+          label="What was the night?"
+          placeholder="Enter a title"
+          value={form.title}
+          onChange={(e) => set('title', e.target.value)}
+          error={errors.title}
+          required
+        />
+        {onRetitle && (
+          <button
+            type="button"
+            onClick={onRetitle}
+            className="absolute right-3 top-[34px] text-ivory-dim hover:text-gold transition-colors"
+            aria-label="Regenerate title"
+          >
+            <RefreshCw size={14} />
+          </button>
+        )}
+      </div>
 
       <Input
         label="Date"

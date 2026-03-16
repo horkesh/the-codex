@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -20,6 +21,7 @@ interface SteakFormProps {
   loading: boolean
   detectedLocation?: LocationFill
   suggestedTitle?: string | null
+  onRetitle?: () => void
   initialData?: Partial<SteakFormData>
 }
 
@@ -41,7 +43,7 @@ interface FieldErrors {
   score?: string
 }
 
-export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle, initialData }: SteakFormProps) {
+export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle, onRetitle, initialData }: SteakFormProps) {
   const [form, setForm] = useState<SteakFormData>(() => ({ ...empty, ...initialData }))
   const [vol, setVol] = useState<number | null>(null)
   const titleEdited = useRef(!!initialData?.title)
@@ -104,14 +106,26 @@ export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle,
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Input
-        label="The Table"
-        placeholder="Name the occasion"
-        value={form.title}
-        onChange={(e) => set('title', e.target.value)}
-        error={errors.title}
-        required
-      />
+      <div className="relative">
+        <Input
+          label="The Table"
+          placeholder="Name the occasion"
+          value={form.title}
+          onChange={(e) => set('title', e.target.value)}
+          error={errors.title}
+          required
+        />
+        {onRetitle && (
+          <button
+            type="button"
+            onClick={onRetitle}
+            className="absolute right-3 top-[34px] text-ivory-dim hover:text-gold transition-colors"
+            aria-label="Regenerate title"
+          >
+            <RefreshCw size={14} />
+          </button>
+        )}
+      </div>
 
       <Input
         label="Date"

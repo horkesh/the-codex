@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -13,6 +14,7 @@ interface InterludeFormProps {
   onSubmit: (data: InterludeFormData) => Promise<void>
   loading: boolean
   suggestedTitle?: string | null
+  onRetitle?: () => void
   initialData?: Partial<InterludeFormData>
 }
 
@@ -27,7 +29,7 @@ interface FieldErrors {
   date?: string
 }
 
-export function InterludeForm({ onSubmit, loading, suggestedTitle, initialData }: InterludeFormProps) {
+export function InterludeForm({ onSubmit, loading, suggestedTitle, onRetitle, initialData }: InterludeFormProps) {
   const [form, setForm] = useState<InterludeFormData>(() => ({ ...empty, ...initialData }))
   const [errors, setErrors] = useState<FieldErrors>({})
   const titleEdited = useRef(!!initialData?.title)
@@ -62,14 +64,26 @@ export function InterludeForm({ onSubmit, loading, suggestedTitle, initialData }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Input
-        label="What's the moment?"
-        placeholder="Name this interlude"
-        value={form.title}
-        onChange={(e) => set('title', e.target.value)}
-        error={errors.title}
-        required
-      />
+      <div className="relative">
+        <Input
+          label="What's the moment?"
+          placeholder="Name this interlude"
+          value={form.title}
+          onChange={(e) => set('title', e.target.value)}
+          error={errors.title}
+          required
+        />
+        {onRetitle && (
+          <button
+            type="button"
+            onClick={onRetitle}
+            className="absolute right-3 top-[34px] text-ivory-dim hover:text-gold transition-colors"
+            aria-label="Regenerate title"
+          >
+            <RefreshCw size={14} />
+          </button>
+        )}
+      </div>
 
       <Input
         label="Date"

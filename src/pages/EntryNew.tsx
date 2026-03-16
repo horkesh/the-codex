@@ -71,10 +71,22 @@ export default function EntryNew() {
   } | null>(null)
   const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
   const titleGenFired = useRef(false)
-  const locationFillRef = useRef(locationFill)
-  locationFillRef.current = locationFill
+  const firstPhotoRef = useRef<File | null>(null)
   const prospectHandled = useRef(false)
   const handleGeoDetected = useCallback((loc: LocationFill) => setLocationFill(loc), [])
+
+  const handleRetitle = useCallback(() => {
+    if (pendingFiles.length === 0 || !selectedType) return
+    titleGenFired.current = false
+    generateTitle(pendingFiles[0], selectedType, {
+      location: locationFill?.location,
+      city: locationFill?.city,
+      country: locationFill?.country,
+      date: locationFill?.date,
+    }).then((title) => {
+      if (title) setSuggestedTitle(title)
+    })
+  }, [pendingFiles, selectedType, locationFill])
 
   useEffect(() => {
     fetchLocations().then(setSavedPlaces)
@@ -105,25 +117,41 @@ export default function EntryNew() {
 
   const { pendingFiles, addFiles: rawAddFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos()
 
-  // Wrap addFiles to trigger AI title generation on the first photo
+  // Wrap addFiles to store the first photo for deferred title generation
   const addFiles = useCallback((files: File[]) => {
     rawAddFiles(files)
     if (!titleGenFired.current && files.length > 0 && selectedType) {
-      titleGenFired.current = true
-      // Read locationFill from ref to get the latest value (geo detection is async)
-      const loc = locationFillRef.current
-      console.debug('[title-gen] firing for', selectedType, 'with', files.length, 'file(s)')
-      generateTitle(files[0], selectedType, {
-        location: loc?.location,
-        city: loc?.city,
-        country: loc?.country,
-        date: loc?.date,
-      }).then((title) => {
-        console.debug('[title-gen] result:', title)
-        if (title) setSuggestedTitle(title)
-      })
+      firstPhotoRef.current = files[0]
+      // Fallback: if geo detection doesn't fire within 3s, generate without location
+      setTimeout(() => {
+        if (!titleGenFired.current && firstPhotoRef.current && selectedType) {
+          titleGenFired.current = true
+          generateTitle(firstPhotoRef.current, selectedType, {
+            location: locationFill?.location,
+            city: locationFill?.city,
+            country: locationFill?.country,
+            date: locationFill?.date,
+          }).then((title) => {
+            if (title) setSuggestedTitle(title)
+          })
+        }
+      }, 3000)
     }
-  }, [rawAddFiles, selectedType])
+  }, [rawAddFiles, selectedType, locationFill])
+
+  // Fire title gen immediately when location arrives (if photo is pending)
+  useEffect(() => {
+    if (!locationFill || !firstPhotoRef.current || titleGenFired.current || !selectedType) return
+    titleGenFired.current = true
+    generateTitle(firstPhotoRef.current, selectedType, {
+      location: locationFill.location,
+      city: locationFill.city,
+      country: locationFill.country,
+      date: locationFill.date,
+    }).then((title) => {
+      if (title) setSuggestedTitle(title)
+    })
+  }, [locationFill, selectedType])
 
   function handleTypeSelect(type: EntryType) {
     if (type === 'gathering') {
@@ -361,6 +389,7 @@ export default function EntryNew() {
             loading={submitting}
             detectedLocation={locationFill}
             suggestedTitle={suggestedTitle}
+            onRetitle={suggestedTitle ? handleRetitle : undefined}
             initialData={prospectPrefill ? {
               title: prospectPrefill.title,
               date: prospectPrefill.date,
@@ -376,6 +405,7 @@ export default function EntryNew() {
             loading={submitting}
             detectedLocation={locationFill}
             suggestedTitle={suggestedTitle}
+            onRetitle={suggestedTitle ? handleRetitle : undefined}
             initialData={prospectPrefill ? {
               title: prospectPrefill.title,
               date: prospectPrefill.date,
@@ -384,16 +414,16 @@ export default function EntryNew() {
           />
         )}
         {selectedType === 'steak' && (
-          <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} />
+          <SteakForm onSubmit={submitSteak} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
         )}
         {selectedType === 'playstation' && (
-          <PlaystationForm onSubmit={submitPlaystation} loading={submitting} suggestedTitle={suggestedTitle} />
+          <PlaystationForm onSubmit={submitPlaystation} loading={submitting} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
         )}
         {selectedType === 'toast' && (
-          <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} />
+          <ToastForm onSubmit={submitToast} loading={submitting} detectedLocation={locationFill} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
         )}
         {selectedType === 'interlude' && (
-          <InterludeForm onSubmit={submitInterlude} loading={submitting} suggestedTitle={suggestedTitle} />
+          <InterludeForm onSubmit={submitInterlude} loading={submitting} suggestedTitle={suggestedTitle} onRetitle={suggestedTitle ? handleRetitle : undefined} />
         )}
 
         {/* Participants */}

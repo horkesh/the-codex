@@ -73,12 +73,12 @@ Deno.serve(async (req: Request) => {
     if (coverBase64) {
       // Restyle mode: use cover image as reference
       const styleDirective = RESTYLE_PROMPTS[entry_type] ?? RESTYLE_PROMPTS['mission']
-      imagePrompt = `Restyle this photograph. ${styleDirective} Dark, cinematic, high contrast, suitable as full-bleed text background. Keep the subject and composition but transform the mood and colour grade.`
+      imagePrompt = `Reimagine this exact scene with a cinematic editorial mood. ${styleDirective} Dark atmosphere, high contrast, deep shadows, suitable as a full-bleed background behind text overlays. Preserve the core subject and composition.`
       instances = [{
         prompt: imagePrompt,
         referenceImages: [{
           referenceImage: { bytesBase64Encoded: coverBase64 },
-          referenceType: 'STYLE_IMAGE',
+          referenceType: 'SUBJECT_IMAGE',
         }],
       }]
     } else {
