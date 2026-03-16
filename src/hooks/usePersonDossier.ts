@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { fetchAppearancesByPerson, fetchAppearancesByEntry } from '@/data/personAppearances'
-import { fetchEntries, fetchEntryPhotos } from '@/data/entries'
-import { fetchPeople } from '@/data/people'
+import { fetchAppearancesByPerson, fetchAppearancesByEntries } from '@/data/personAppearances'
+import { fetchEntries, fetchEntriesPhotos } from '@/data/entries'
+import { fetchPeopleByIds } from '@/data/people'
 import type { EntryWithParticipants, Person } from '@/types/app'
 
-interface DossierAppearance {
+export interface DossierAppearance {
   entry: EntryWithParticipants
   date: string
 }
@@ -14,17 +14,15 @@ interface DossierPhoto {
   entryId: string
 }
 
-interface PersonDossier {
+export interface PersonDossierData {
   appearances: DossierAppearance[]
-  lastSeen: { entry: EntryWithParticipants; date: string } | null
   coAppearing: Person[]
   photos: DossierPhoto[]
   loading: boolean
 }
 
-export function usePersonDossier(personId: string | undefined): PersonDossier {
+export function usePersonDossier(personId: string | undefined): PersonDossierData {
   const [appearances, setAppearances] = useState<DossierAppearance[]>([])
-  const [lastSeen, setLastSeen] = useState<PersonDossier['lastSeen']>(null)
   const [coAppearing, setCoAppearing] = useState<Person[]>([])
   const [photos, setPhotos] = useState<DossierPhoto[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,7 +37,7 @@ export function usePersonDossier(personId: string | undefined): PersonDossier {
 
     async function load() {
       try {
-        // Step 1: Get all appearances for this person
+        // 1. Get all appearances for this person
         const rawAppearances = await fetchAppearancesByPerson(personId!)
         if (cancelled) return
         if (rawAppearances.length === 0) {
@@ -47,15 +45,14 @@ export function usePersonDossier(personId: string | undefined): PersonDossier {
           return
         }
 
-        // Step 2: Fetch the entries for these appearances
+        // 2. Fetch entries for these appearances (single batch query)
         const entryIds = [...new Set(rawAppearances.map(a => a.entry_id))]
         const entries = await fetchEntries({ ids: entryIds })
         if (cancelled) return
 
-        // Build a map for quick lookup
         const entryMap = new Map(entries.map(e => [e.id, e]))
 
-        // Step 3: Build appearances list sorted by date DESC, max 10
+        // 3. Build sorted appearances (max 10)
         const sorted = rawAppearances
           .map(a => {
             const entry = entryMap.get(a.entry_id)
@@ -64,58 +61,38 @@ export function usePersonDossier(personId: string | undefined): PersonDossier {
           })
           .filter((a): a is DossierAppearance => a !== null)
           .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, 10)
 
-        const top10 = sorted.slice(0, 10)
-        setAppearances(top10)
+        setAppearances(sorted)
 
-        // Step 4: Last seen = most recent
-        if (sorted.length > 0) {
-          setLastSeen(sorted[0])
-        }
-
-        // Step 5: Co-appearing people — find other person_ids in same entries
-        const coPersonIds = new Set<string>()
-        const entryIdsToCheck = sorted.slice(0, 10).map(a => a.entry.id)
-
-        const coAppearancePromises = entryIdsToCheck.map(eid => fetchAppearancesByEntry(eid))
-        const coAppearanceResults = await Promise.all(coAppearancePromises)
+        // 4. Fetch co-appearances + photos in parallel (2 batch queries instead of 20)
+        const checkIds = sorted.map(a => a.entry.id)
+        const [coAppearanceResults, photoResults] = await Promise.all([
+          fetchAppearancesByEntries(checkIds),
+          fetchEntriesPhotos(checkIds),
+        ])
         if (cancelled) return
 
-        for (const entryAppearances of coAppearanceResults) {
-          for (const ap of entryAppearances) {
-            if (ap.person_id !== personId) {
-              coPersonIds.add(ap.person_id)
-            }
-          }
+        // 5. Derive co-appearing person IDs
+        const coPersonIds = new Set<string>()
+        for (const ap of coAppearanceResults) {
+          if (ap.person_id !== personId) coPersonIds.add(ap.person_id)
         }
 
-        // Fetch co-appearing people (limit 10)
+        // 6. Fetch co-appearing people by IDs (single batch query)
         if (coPersonIds.size > 0) {
-          const allPeople = await fetchPeople()
-          if (cancelled) return
           const coIds = [...coPersonIds].slice(0, 10)
-          const coPeople = allPeople.filter(p => coIds.includes(p.id))
+          const coPeople = await fetchPeopleByIds(coIds)
+          if (cancelled) return
           setCoAppearing(coPeople)
         }
 
-        // Step 6: Photos from entries this person is tagged in (max 9)
-        const photoResults = await Promise.all(
-          entryIdsToCheck.map(eid =>
-            fetchEntryPhotos(eid)
-              .then(photos => photos.map(p => ({ url: p.url, entryId: eid })))
-              .catch(() => [] as DossierPhoto[])
-          )
+        // 7. Build photos list (max 9)
+        setPhotos(
+          photoResults
+            .slice(0, 9)
+            .map(p => ({ url: p.url, entryId: p.entry_id }))
         )
-        if (cancelled) return
-        const allPhotos: DossierPhoto[] = []
-        for (const batch of photoResults) {
-          for (const p of batch) {
-            if (allPhotos.length >= 9) break
-            allPhotos.push(p)
-          }
-          if (allPhotos.length >= 9) break
-        }
-        setPhotos(allPhotos)
       } catch {
         // silently fail — dossier data is supplementary
       } finally {
@@ -127,5 +104,5 @@ export function usePersonDossier(personId: string | undefined): PersonDossier {
     return () => { cancelled = true }
   }, [personId])
 
-  return { appearances, lastSeen, coAppearing, photos, loading }
+  return { appearances, coAppearing, photos, loading }
 }

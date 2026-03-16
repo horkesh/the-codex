@@ -16,7 +16,7 @@ import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { useUIStore } from '@/store/ui'
 import { cn, formatDate } from '@/lib/utils'
 import { getZodiacSign } from '@/lib/horoscope'
-import type { Gent, PersonScan, PersonWithPrivateNote, PersonTier, VerdictLabel, EntryType } from '@/types/app'
+import type { Gent, PersonScan, PersonWithPrivateNote, PersonTier, VerdictLabel } from '@/types/app'
 
 type Tab = 'profile' | 'intel'
 
@@ -60,7 +60,8 @@ export default function PersonDetail() {
   const navigate = useNavigate()
   const { addToast } = useUIStore()
   const { person, setPerson, loading, notFound } = usePerson(id)
-  const dossier = usePersonDossier(id)
+  const dossierData = usePersonDossier(id)
+  const lastSeen = dossierData.appearances[0] ?? null
   const [tab, setTab] = useState<Tab>('profile')
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -316,7 +317,7 @@ export default function PersonDetail() {
         {tab === 'profile' && (
           <>
             {/* Met info + Last seen */}
-            {(person.met_location || person.met_date || dossier.lastSeen) && (
+            {(person.met_location || person.met_date || lastSeen) && (
               <div className="flex flex-col items-center gap-2 mt-3">
                 <div className="flex flex-wrap justify-center gap-3">
                   {person.met_location && (
@@ -334,22 +335,22 @@ export default function PersonDetail() {
                 </div>
 
                 {/* Last Seen */}
-                {dossier.lastSeen && (
+                {lastSeen && (
                   <button
                     type="button"
-                    onClick={() => navigate(`/chronicle/${dossier.lastSeen!.entry.id}`)}
+                    onClick={() => navigate(`/chronicle/${lastSeen!.entry.id}`)}
                     className="flex items-center gap-1.5 text-xs text-ivory-dim font-body hover:text-ivory transition-colors"
                   >
                     <Eye size={12} className="text-gold-muted shrink-0" />
                     <span className="text-gold-muted">Last seen:</span>
                     {(() => {
-                      const meta = ENTRY_TYPE_META[dossier.lastSeen.entry.type as EntryType]
+                      const meta = ENTRY_TYPE_META[lastSeen.entry.type]
                       const Icon = meta?.Icon
                       return Icon ? <Icon size={11} className="text-gold-muted" /> : null
                     })()}
-                    <span className="truncate max-w-[160px]">{dossier.lastSeen.entry.title}</span>
+                    <span className="truncate max-w-[160px]">{lastSeen.entry.title}</span>
                     <span className="font-mono text-[11px] text-ivory-dim/60 shrink-0">
-                      {formatDate(dossier.lastSeen.date)}
+                      {formatDate(lastSeen.date)}
                     </span>
                   </button>
                 )}
@@ -409,7 +410,7 @@ export default function PersonDetail() {
             </div>
 
             {/* ── ENCOUNTER LOG ── */}
-            {dossier.appearances.length > 0 && (
+            {dossierData.appearances.length > 0 && (
               <>
                 <DossierSectionHeader label="Encounter Log" />
                 <div className="relative pl-6">
@@ -417,8 +418,8 @@ export default function PersonDetail() {
                   <div className="absolute left-[7px] top-1 bottom-1 w-px bg-gold/20" />
 
                   <div className="space-y-4">
-                    {dossier.appearances.map((app, i) => {
-                      const meta = ENTRY_TYPE_META[app.entry.type as EntryType]
+                    {dossierData.appearances.map((app, i) => {
+                      const meta = ENTRY_TYPE_META[app.entry.type]
                       const Icon = meta?.Icon
                       return (
                         <motion.button
@@ -457,11 +458,11 @@ export default function PersonDetail() {
             )}
 
             {/* ── KNOWN ASSOCIATIONS ── */}
-            {dossier.coAppearing.length > 0 && (
+            {dossierData.coAppearing.length > 0 && (
               <>
                 <DossierSectionHeader label="Known Associations" />
                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                  {dossier.coAppearing.map((p) => (
+                  {dossierData.coAppearing.map((p) => (
                     <button
                       key={p.id}
                       type="button"
@@ -479,11 +480,11 @@ export default function PersonDetail() {
             )}
 
             {/* ── VISUAL EVIDENCE ── */}
-            {dossier.photos.length > 0 && (
+            {dossierData.photos.length > 0 && (
               <>
                 <DossierSectionHeader label="Visual Evidence" />
                 <div className="grid grid-cols-3 gap-1.5">
-                  {dossier.photos.map((photo, i) => (
+                  {dossierData.photos.map((photo, i) => (
                     <button
                       key={`${photo.entryId}-${i}`}
                       type="button"

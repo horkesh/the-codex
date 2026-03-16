@@ -25,6 +25,17 @@ export async function fetchAppearancesByPerson(personId: string): Promise<Person
   return (data ?? []) as unknown as PersonAppearance[]
 }
 
+export async function fetchAppearancesByEntries(entryIds: string[]): Promise<PersonAppearance[]> {
+  if (entryIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('person_appearances')
+    .select(PA_COLUMNS)
+    .in('entry_id', entryIds)
+
+  if (error) throw error
+  return (data ?? []) as unknown as PersonAppearance[]
+}
+
 export async function fetchAllAppearances(): Promise<PersonAppearance[]> {
   const { data, error } = await supabase
     .from('person_appearances')

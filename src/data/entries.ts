@@ -220,6 +220,24 @@ export async function fetchEntryPhotos(entryId: string): Promise<Array<{
   }>
 }
 
+export async function fetchEntriesPhotos(entryIds: string[]): Promise<Array<{
+  id: string
+  url: string
+  entry_id: string
+  caption: string | null
+  sort_order: number
+}>> {
+  if (entryIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('entry_photos')
+    .select('id, url, entry_id, caption, sort_order')
+    .in('entry_id', entryIds)
+    .order('sort_order', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as Array<{ id: string; url: string; entry_id: string; caption: string | null; sort_order: number }>
+}
+
 export async function uploadEntryPhoto(
   entryId: string,
   file: File,

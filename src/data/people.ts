@@ -27,6 +27,16 @@ export async function fetchPeople(filters?: {
   return (data ?? []) as unknown as Person[]
 }
 
+export async function fetchPeopleByIds(ids: string[]): Promise<Person[]> {
+  if (ids.length === 0) return []
+  const { data, error } = await supabase
+    .from('people')
+    .select(PERSON_COLUMNS)
+    .in('id', ids)
+  if (error) throw error
+  return (data ?? []) as unknown as Person[]
+}
+
 export async function fetchPerson(id: string): Promise<Person | null> {
   const { data, error } = await supabase
     .from('people')
