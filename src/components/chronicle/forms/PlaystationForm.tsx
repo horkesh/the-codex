@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
@@ -19,6 +20,8 @@ interface PlaystationFormProps {
   onSubmit: (data: PlaystationFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  suggestedTitle?: string | null
+  onRetitle?: () => void
   initialData?: Partial<PlaystationFormData>
 }
 
@@ -92,7 +95,7 @@ function computeHeadToHead(matches: PS5Match[]): HeadToHead[] {
   return result
 }
 
-export function PlaystationForm({ onSubmit, loading, detectedLocation, initialData }: PlaystationFormProps) {
+export function PlaystationForm({ onSubmit, loading, detectedLocation, suggestedTitle, onRetitle, initialData }: PlaystationFormProps) {
   const [title, setTitle] = useState(initialData?.title ?? '')
   const [date, setDate] = useState(initialData?.date ?? '')
   const [location, setLocation] = useState(initialData?.location ?? '')
@@ -109,8 +112,12 @@ export function PlaystationForm({ onSubmit, loading, detectedLocation, initialDa
 
   useEffect(() => {
     if (titleEdited.current || vol === null) return
+    if (suggestedTitle) {
+      setTitle(`${suggestedTitle} · Vol. ${vol}`)
+      return
+    }
     setTitle(`The Pitch · Vol. ${vol}`)
-  }, [vol])
+  }, [vol, suggestedTitle])
 
   // Auto-fill date + location from photo EXIF
   useEffect(() => {
@@ -179,18 +186,30 @@ export function PlaystationForm({ onSubmit, loading, detectedLocation, initialDa
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      <Input
-        label="What were you playing?"
-        placeholder="e.g. FC 24, EA FC 25..."
-        value={title}
-        onChange={(e) => {
-          titleEdited.current = true
-          setTitle(e.target.value)
-          if (errors.title) setErrors((p) => ({ ...p, title: undefined }))
-        }}
-        error={errors.title}
-        required
-      />
+      <div className="relative">
+        <Input
+          label="What were you playing?"
+          placeholder="e.g. FC 24, EA FC 25..."
+          value={title}
+          onChange={(e) => {
+            titleEdited.current = true
+            setTitle(e.target.value)
+            if (errors.title) setErrors((p) => ({ ...p, title: undefined }))
+          }}
+          error={errors.title}
+          required
+        />
+        {onRetitle && (
+          <button
+            type="button"
+            onClick={onRetitle}
+            className="absolute right-3 top-[34px] text-ivory-dim hover:text-gold transition-colors"
+            aria-label="Regenerate title"
+          >
+            <RefreshCw size={14} />
+          </button>
+        )}
+      </div>
 
       <Input
         label="Date"

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -15,6 +16,8 @@ interface NightOutFormProps {
   onSubmit: (data: NightOutFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  suggestedTitle?: string | null
+  onRetitle?: () => void
   initialData?: Partial<NightOutFormData>
 }
 
@@ -30,8 +33,9 @@ interface FieldErrors {
   date?: string
 }
 
-export function NightOutForm({ onSubmit, loading, detectedLocation, initialData }: NightOutFormProps) {
+export function NightOutForm({ onSubmit, loading, detectedLocation, suggestedTitle, onRetitle, initialData }: NightOutFormProps) {
   const [form, setForm] = useState<NightOutFormData>(() => ({ ...empty, ...initialData }))
+  const titleEdited = useRef(!!initialData?.title)
 
   useEffect(() => {
     if (!detectedLocation) return
@@ -43,9 +47,15 @@ export function NightOutForm({ onSubmit, loading, detectedLocation, initialData 
     }))
   }, [detectedLocation])
 
+  useEffect(() => {
+    if (suggestedTitle && !titleEdited.current) {
+      setForm((prev) => ({ ...prev, title: suggestedTitle }))
+    }
+  }, [suggestedTitle])
   const [errors, setErrors] = useState<FieldErrors>({})
 
   function set(field: keyof NightOutFormData, value: string) {
+    if (field === 'title') titleEdited.current = true
     setForm((prev) => ({ ...prev, [field]: value }))
     if (errors[field as keyof FieldErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
@@ -68,14 +78,26 @@ export function NightOutForm({ onSubmit, loading, detectedLocation, initialData 
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Input
-        label="What was the night?"
-        placeholder="Enter a title"
-        value={form.title}
-        onChange={(e) => set('title', e.target.value)}
-        error={errors.title}
-        required
-      />
+      <div className="relative">
+        <Input
+          label="What was the night?"
+          placeholder="Enter a title"
+          value={form.title}
+          onChange={(e) => set('title', e.target.value)}
+          error={errors.title}
+          required
+        />
+        {onRetitle && (
+          <button
+            type="button"
+            onClick={onRetitle}
+            className="absolute right-3 top-[34px] text-ivory-dim hover:text-gold transition-colors"
+            aria-label="Regenerate title"
+          >
+            <RefreshCw size={14} />
+          </button>
+        )}
+      </div>
 
       <Input
         label="Date"

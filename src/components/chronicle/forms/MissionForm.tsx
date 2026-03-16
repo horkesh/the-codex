@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -19,6 +20,8 @@ interface MissionFormProps {
   onSubmit: (data: MissionFormData) => Promise<void>
   loading: boolean
   detectedLocation?: LocationFill
+  suggestedTitle?: string | null
+  onRetitle?: () => void
   initialData?: Partial<MissionFormData>
 }
 
@@ -40,9 +43,16 @@ interface FieldErrors {
   country?: string
 }
 
-export function MissionForm({ onSubmit, loading, detectedLocation, initialData }: MissionFormProps) {
+export function MissionForm({ onSubmit, loading, detectedLocation, suggestedTitle, onRetitle, initialData }: MissionFormProps) {
   const [form, setForm] = useState<MissionFormData>(() => ({ ...empty, ...initialData }))
   const [errors, setErrors] = useState<FieldErrors>({})
+  const titleEdited = useRef(!!initialData?.title)
+
+  useEffect(() => {
+    if (suggestedTitle && !titleEdited.current) {
+      setForm((prev) => ({ ...prev, title: suggestedTitle }))
+    }
+  }, [suggestedTitle])
 
   useEffect(() => {
     if (!detectedLocation) return
@@ -59,6 +69,7 @@ export function MissionForm({ onSubmit, loading, detectedLocation, initialData }
   }, [detectedLocation])
 
   function set(field: keyof MissionFormData, value: string) {
+    if (field === 'title') titleEdited.current = true
     setForm((prev) => ({ ...prev, [field]: value }))
     if (errors[field as keyof FieldErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
@@ -83,14 +94,26 @@ export function MissionForm({ onSubmit, loading, detectedLocation, initialData }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Input
-        label="Where did you go?"
-        placeholder="Enter a title"
-        value={form.title}
-        onChange={(e) => set('title', e.target.value)}
-        error={errors.title}
-        required
-      />
+      <div className="relative">
+        <Input
+          label="Where did you go?"
+          placeholder="Enter a title"
+          value={form.title}
+          onChange={(e) => set('title', e.target.value)}
+          error={errors.title}
+          required
+        />
+        {onRetitle && (
+          <button
+            type="button"
+            onClick={onRetitle}
+            className="absolute right-3 top-[34px] text-ivory-dim hover:text-gold transition-colors"
+            aria-label="Regenerate title"
+          >
+            <RefreshCw size={14} />
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Input
