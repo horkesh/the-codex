@@ -15,6 +15,7 @@ export async function fetchAllPhotos(): Promise<TimelinePhoto[]> {
   const { data, error } = await supabase
     .from('entry_photos')
     .select('id, url, sort_order, entry_id, entries!inner(id, title, type, date, status)')
+    .in('entries.status', ['published', 'gathering_post'])
     .order('sort_order', { ascending: true })
 
   if (error) throw error
@@ -30,9 +31,6 @@ export async function fetchAllPhotos(): Promise<TimelinePhoto[]> {
       entry_id: string
       entries: { id: string; title: string; type: string; date: string; status: string }
     }
-
-    // Only include photos from published / gathering_post entries
-    if (r.entries.status !== 'published' && r.entries.status !== 'gathering_post') continue
 
     photos.push({
       id: r.id,

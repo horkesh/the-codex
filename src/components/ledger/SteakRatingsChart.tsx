@@ -133,7 +133,7 @@ export function SteakRatingsChart() {
             {/* Average line indicator */}
             <div
               className="absolute top-0 bottom-0 border-l border-dashed border-gold/50 z-10 pointer-events-none"
-              style={{ left: `calc(${avgPct}% * (1 - 44px / 100%) )` }}
+              style={{ left: `${avgPct}%` }}
             >
               <span className="absolute -top-0.5 left-1 text-[9px] text-gold/60 font-mono whitespace-nowrap">
                 avg
@@ -141,15 +141,11 @@ export function SteakRatingsChart() {
             </div>
 
             {/* Rows */}
-            <motion.div
-              variants={staggerContainer}
-              initial="initial"
-              animate="animate"
-            >
+            <div>
               {ratings.map((rating) => (
                 <BarRow key={rating.entry_id} rating={rating} />
               ))}
-            </motion.div>
+            </div>
           </div>
         </motion.div>
       )}

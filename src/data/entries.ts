@@ -50,16 +50,16 @@ export async function fetchEntries(filters?: {
     query = query.in('id', entryIds)
   }
 
+  // Filter private entries server-side: only show shared entries + own private entries
+  if (filters?.currentGentId) {
+    query = query.or(`visibility.eq.shared,created_by.eq.${filters.currentGentId}`)
+  }
+
   const { data: rawEntries, error } = await query
   if (error) throw error
   if (!rawEntries || rawEntries.length === 0) return []
 
-  // Filter out private entries not owned by the current gent
-  const allEntries = rawEntries as unknown as Entry[]
-  const entries = filters?.currentGentId
-    ? allEntries.filter((e) => e.visibility !== 'private' || e.created_by === filters.currentGentId)
-    : allEntries
-  if (entries.length === 0) return []
+  const entries = rawEntries as unknown as Entry[]
   const entryIds = entries.map((e) => e.id)
 
   // Fetch all participants for those entries in one query

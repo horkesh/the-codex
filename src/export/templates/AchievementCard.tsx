@@ -6,7 +6,6 @@ interface AchievementCardProps {
   description: string
   earnedBy: string
   earnedAt: string
-  icon?: string
 }
 
 /**

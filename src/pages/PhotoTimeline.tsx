@@ -14,8 +14,7 @@ function groupByMonth(photos: TimelinePhoto[]): Array<{ label: string; photos: T
 
   for (const photo of photos) {
     const d = new Date(photo.entry_date + 'T00:00:00')
-    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`
-    const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 
     if (!groups.has(key)) {
       groups.set(key, [])
