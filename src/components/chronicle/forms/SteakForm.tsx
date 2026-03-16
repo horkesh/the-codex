@@ -3,7 +3,7 @@ import { RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { fetchEntries } from '@/data/entries'
+import { getChronologicalVol } from '@/data/entries'
 import type { LocationFill } from '@/lib/geo'
 
 export interface SteakFormData {
@@ -48,19 +48,19 @@ export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle,
   const [vol, setVol] = useState<number | null>(null)
   const titleEdited = useRef(!!initialData?.title)
 
-  // Fetch vol number once on mount
+  // Compute chronological vol whenever date changes
   useEffect(() => {
-    fetchEntries({ type: 'steak' }).then((entries) => setVol(entries.length + 1)).catch(() => setVol(1))
-  }, [])
+    if (!form.date) { setVol(null); return }
+    getChronologicalVol('steak', form.date).then(setVol).catch(() => setVol(1))
+  }, [form.date])
 
-  // Auto-fill title from AI suggestion (takes priority), or fall back to vol + location
+  // Auto-fill title from AI suggestion + vol, or fall back to location + vol
   useEffect(() => {
-    if (titleEdited.current) return
-    if (suggestedTitle && vol !== null) {
+    if (titleEdited.current || vol === null) return
+    if (suggestedTitle) {
       setForm((prev) => ({ ...prev, title: `${suggestedTitle} · Vol. ${vol}` }))
       return
     }
-    if (vol === null) return
     const locationPart = form.location ? ` at ${form.location}` : ''
     setForm((prev) => ({ ...prev, title: `The Table${locationPart} · Vol. ${vol}` }))
   }, [vol, form.location, suggestedTitle]) // eslint-disable-line react-hooks/exhaustive-deps

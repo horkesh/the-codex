@@ -5,7 +5,7 @@ import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { staggerItem } from '@/lib/animations'
-import { fetchEntries } from '@/data/entries'
+import { getChronologicalVol } from '@/data/entries'
 import type { GentAlias, PS5Match } from '@/types/app'
 import type { LocationFill } from '@/lib/geo'
 
@@ -102,17 +102,18 @@ export function PlaystationForm({ onSubmit, loading, detectedLocation, suggested
   const [vol, setVol] = useState<number | null>(null)
   const titleEdited = useRef(!!initialData?.title)
 
+  // Compute chronological vol whenever date changes
   useEffect(() => {
-    fetchEntries({ type: 'playstation' }).then((entries) => setVol(entries.length + 1)).catch(() => setVol(1))
-  }, [])
+    if (!date) { setVol(null); return }
+    getChronologicalVol('playstation', date).then(setVol).catch(() => setVol(1))
+  }, [date])
 
   useEffect(() => {
-    if (titleEdited.current) return
-    if (suggestedTitle && vol !== null) {
+    if (titleEdited.current || vol === null) return
+    if (suggestedTitle) {
       setTitle(`${suggestedTitle} · Vol. ${vol}`)
       return
     }
-    if (vol === null) return
     setTitle(`The Pitch · Vol. ${vol}`)
   }, [vol, suggestedTitle])
 

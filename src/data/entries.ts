@@ -147,11 +147,14 @@ export async function createEntry(data: {
 
   if (error) throw error
   const entry = rawEntry as unknown as Entry
-  // Fire-and-forget: check milestones after publish
+  // Fire-and-forget: check milestones + renumber volumes after publish
   Promise.all([
     checkAndAwardAchievements(data.created_by),
     checkAndAwardThresholds(data.created_by),
   ]).catch(() => {})
+  if (data.type === 'steak' || data.type === 'playstation') {
+    renumberVolumes(data.type).catch(() => {})
+  }
   return entry
 }
 
@@ -281,6 +284,56 @@ export async function updateEntryCover(entryId: string, coverUrl: string): Promi
     .eq('id', entryId)
 
   if (error) throw error
+}
+
+/**
+ * Renumber `· Vol. N` in titles for all entries of a given type,
+ * based on chronological date order (oldest = Vol. 1).
+ */
+export async function renumberVolumes(type: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id, title, date')
+    .eq('type', type)
+    .in('status', ['published', 'gathering_post'])
+    .order('date', { ascending: true })
+    .order('created_at', { ascending: true })
+
+  if (error || !data) return
+
+  const VOL_RE = /\s*·\s*Vol\.\s*\d+/
+  const updates: Array<{ id: string; title: string }> = []
+
+  let vol = 0
+  for (const row of data as Array<{ id: string; title: string; date: string }>) {
+    vol++
+    if (!VOL_RE.test(row.title)) continue
+    const newTitle = row.title.replace(VOL_RE, ` · Vol. ${vol}`)
+    if (newTitle !== row.title) {
+      updates.push({ id: row.id, title: newTitle })
+    }
+  }
+
+  // Batch update changed titles
+  for (const u of updates) {
+    await supabase.from('entries').update({ title: u.title }).eq('id', u.id)
+  }
+}
+
+/**
+ * Count entries of a type with date <= the given date (chronological vol position).
+ */
+export async function getChronologicalVol(type: string, date: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('entries')
+    .select('id', { count: 'exact', head: true })
+    .eq('type', type)
+    .in('status', ['published', 'gathering_post'])
+    .lte('date', date)
+
+  if (error) return 1
+  // +1 because the new entry isn't inserted yet
+  return (count ?? 0) + 1
 }
 
 export async function addPersonAppearances(entryId: string, personIds: string[], gentId: string): Promise<void> {
