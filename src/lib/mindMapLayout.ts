@@ -61,7 +61,8 @@ export function computeGraphData(
   focusedGentId: string | null,
   savedPositions?: Record<string, { x: number; y: number }>,
   recentlyActiveIds?: Set<string>,
-): { nodes: Node[]; edges: Edge[] } {
+  searchQuery?: string,
+): { nodes: Node[]; edges: Edge[]; searchMatchNodeIds: string[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
 
@@ -80,7 +81,7 @@ export function computeGraphData(
     gentIdToAlias.set(g.id, g.alias)
     gentIds.add(g.id)
     const pos = gentPositions[i] ?? { x: 0, y: 0 }
-    const dimmed = focusedGentId !== null && focusedGentId !== g.id
+    const dimmed = (focusedGentId !== null && focusedGentId !== g.id) || (!!searchQuery && searchMatchIds.size > 0)
 
     nodes.push({
       id: `gent-${g.id}`,
@@ -94,12 +95,12 @@ export function computeGraphData(
   // 2. Gent ↔ Gent edges (always)
   for (let i = 0; i < gents.length; i++) {
     for (let j = i + 1; j < gents.length; j++) {
-      const dimmed = focusedGentId !== null
+      const dimmed = focusedGentId !== null || (!!searchQuery && searchMatchIds.size > 0)
       edges.push({
         id: `gent-edge-${gents[i].id}-${gents[j].id}`,
         source: `gent-${gents[i].id}`,
         target: `gent-${gents[j].id}`,
-        style: { stroke: '#C9A84C', strokeWidth: 3, opacity: dimmed ? 0.15 : 1 },
+        style: { stroke: '#C9A84C', strokeWidth: 3, opacity: dimmed ? 0.05 : 1 },
         animated: false,
       })
     }
@@ -132,6 +133,15 @@ export function computeGraphData(
       filtered = filtered.filter(p => p.category === 'person_of_interest')
     } else {
       filtered = filtered.filter(p => p.category === 'contact' && p.tier === filters.tier)
+    }
+  }
+
+  // Build search match set
+  const searchMatchIds = new Set<string>()
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase()
+    for (const p of filtered) {
+      if (p.name.toLowerCase().includes(q)) searchMatchIds.add(p.id)
     }
   }
 
@@ -176,7 +186,8 @@ export function computeGraphData(
       const x = radius * Math.cos(angle)
       const y = radius * Math.sin(angle)
 
-      const dimmed = focusedGentId !== null && !connectedToFocused.has(person.id)
+      const searchDimmed = searchQuery ? !searchMatchIds.has(person.id) : false
+      const dimmed = (focusedGentId !== null && !connectedToFocused.has(person.id)) || searchDimmed
 
       const savedPos = savedPositions?.[person.id]
       const position = savedPos ?? { x, y }
@@ -199,7 +210,7 @@ export function computeGraphData(
       // Edge from added_by gent
       if (gentIds.has(person.added_by)) {
         const alias = gentIdToAlias.get(person.added_by) ?? 'lorekeeper'
-        const edgeDimmed = focusedGentId !== null && focusedGentId !== person.added_by
+        const edgeDimmed = (focusedGentId !== null && focusedGentId !== person.added_by) || searchDimmed
         const addedCount = (gentPersonCount.get(`${person.added_by}-${person.id}`) ?? 0) + 1
         edges.push({
           id: `edge-added-${person.added_by}-${person.id}`,
@@ -216,7 +227,7 @@ export function computeGraphData(
           if (noterId === person.added_by) continue
           if (!gentIds.has(noterId)) continue
           const alias = gentIdToAlias.get(noterId) ?? 'lorekeeper'
-          const edgeDimmed = focusedGentId !== null && focusedGentId !== noterId
+          const edgeDimmed = (focusedGentId !== null && focusedGentId !== noterId) || searchDimmed
           const notedCount = gentPersonCount.get(`${noterId}-${person.id}`) ?? 1
           edges.push({
             id: `edge-noted-${noterId}-${person.id}`,
@@ -250,17 +261,24 @@ export function computeGraphData(
 
   for (const [key, count] of personPairCount) {
     const strokeWidth = count >= 4 ? 1.5 : count >= 2 ? 1 : 0.5
+    const [idA, idB] = key.split('-')
+    const ppSearchDimmed = searchQuery ? (!searchMatchIds.has(idA) || !searchMatchIds.has(idB)) : false
     edges.push({
       id: `pp-${key}`,
-      source: `person-${key.split('-')[0]}`,
-      target: `person-${key.split('-')[1]}`,
+      source: `person-${idA}`,
+      target: `person-${idB}`,
       style: {
         stroke: 'rgba(255,255,255,0.12)',
         strokeWidth,
+        opacity: ppSearchDimmed ? 0.05 : 1,
       },
       className: 'person-person-edge',
     })
   }
 
-  return { nodes, edges }
+  return {
+    nodes,
+    edges,
+    searchMatchNodeIds: [...searchMatchIds].map(id => `person-${id}`),
+  }
 }

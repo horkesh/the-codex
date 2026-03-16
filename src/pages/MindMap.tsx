@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ReactFlow, ReactFlowProvider, Background, useReactFlow, type NodeMouseHandler, type NodeDragHandler } from '@xyflow/react'
 import { Spinner } from '@/components/ui'
 import { TopBar, SectionNav } from '@/components/layout'
@@ -9,6 +9,7 @@ import { useMindMap } from '@/hooks/useMindMap'
 import { useUIStore } from '@/store/ui'
 import type { Person, PersonTier, GentAlias } from '@/types/app'
 import type { GentNodeData, PersonNodeData } from '@/lib/mindMapLayout'
+import { Search, X as XIcon } from 'lucide-react'
 import '@xyflow/react/dist/style.css'
 
 const TIER_CHIPS: Array<{ value: 'all' | PersonTier | 'person_of_interest'; label: string }> = [
@@ -41,10 +42,12 @@ function MindMapCanvas() {
   const {
     loading, nodes, edges, filters, gents, savedPositions,
     toggleGentFocus, setTierFilter, setGentFilter, updatePersonTier,
-    handleNodeDragStop, resetLayout,
+    handleNodeDragStop, resetLayout, searchQuery, setSearchQuery,
+    searchMatchNodeIds,
   } = useMindMap()
 
-  const { setNodes } = useReactFlow()
+  const { setNodes, fitView } = useReactFlow()
+  const [searchOpen, setSearchOpen] = useState(false)
   const addToast = useUIStore(s => s.addToast)
 
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
@@ -100,6 +103,12 @@ function MindMapCanvas() {
     setSelectedPerson(prev => prev && prev.id === personId ? { ...prev, tier } : prev)
   }, [updatePersonTier])
 
+  useEffect(() => {
+    if (searchMatchNodeIds.length > 0 && searchMatchNodeIds.length <= 3) {
+      fitView({ nodes: searchMatchNodeIds.map(id => ({ id })), padding: 0.5, duration: 300 })
+    }
+  }, [searchMatchNodeIds, fitView])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center bg-obsidian" style={{ height: CANVAS_HEIGHT }}>
@@ -112,6 +121,36 @@ function MindMapCanvas() {
     <div className="relative bg-obsidian" style={{ height: CANVAS_HEIGHT }}>
       {/* Filter chips — float over canvas */}
       <div className="absolute top-3 left-3 right-3 z-10 flex flex-col gap-2">
+        {searchOpen ? (
+          <div className="flex items-center gap-2 bg-slate-dark/80 backdrop-blur-sm border border-white/10 rounded-full px-3 py-1.5">
+            <Search size={14} className="text-ivory-dim shrink-0" />
+            <input
+              autoFocus
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search people..."
+              className="flex-1 bg-transparent text-sm text-ivory font-body placeholder:text-ivory-dim/50 outline-none min-w-0"
+            />
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(''); setSearchOpen(false) }}
+              className="text-ivory-dim hover:text-ivory transition-colors shrink-0"
+            >
+              <XIcon size={14} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-dark/70 border border-white/10 backdrop-blur-sm text-ivory-dim hover:text-ivory transition-colors"
+            >
+              <Search size={12} />
+            </button>
+          </div>
+        )}
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
           {TIER_CHIPS.map(c => (
             <button

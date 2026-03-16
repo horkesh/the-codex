@@ -35,6 +35,7 @@ export function useMindMap() {
 
   const [filters, setFilters] = useState<MindMapFilters>({ tier: 'all', gent: 'all' })
   const [focusedGentId, setFocusedGentId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [savedPositions, setSavedPositions] = useState<Record<string, { x: number; y: number }>>(loadPositions)
 
   useEffect(() => {
@@ -56,8 +57,8 @@ export function useMindMap() {
   }, [appearances, recentEntryIds])
 
   const graphData = useMemo(
-    () => computeGraphData(gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds),
-    [gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds]
+    () => computeGraphData(gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds, searchQuery),
+    [gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds, searchQuery]
   )
 
   const toggleGentFocus = useCallback((gentId: string) => {
@@ -97,6 +98,7 @@ export function useMindMap() {
     focusedGentId,
     nodes: graphData.nodes,
     edges: graphData.edges,
+    searchMatchNodeIds: graphData.searchMatchNodeIds,
     gents,
     savedPositions,
     toggleGentFocus,
@@ -105,5 +107,7 @@ export function useMindMap() {
     updatePersonTier,
     handleNodeDragStop,
     resetLayout,
+    searchQuery,
+    setSearchQuery,
   }
 }
