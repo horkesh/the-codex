@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, RefreshCw } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
@@ -32,6 +32,14 @@ export default function Passport() {
   const [storiesLoading, setStoriesLoading] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const addToast = useUIStore(s => s.addToast)
+
+  const handleStampPress = useCallback((stamp: PassportStamp) => {
+    if (stamp.type === 'mission') {
+      navigate(`/passport/visa/${stamp.id}`)
+    } else {
+      setSelectedStamp(stamp)
+    }
+  }, [navigate])
 
   useEffect(() => {
     if (activeTab !== 'stories') return
@@ -165,7 +173,7 @@ export default function Passport() {
                     )}
                   </div>
 
-                  <StampGrid stamps={stamps} onStampPress={setSelectedStamp} />
+                  <StampGrid stamps={stamps} onStampPress={handleStampPress} />
                 </div>
               )}
 
