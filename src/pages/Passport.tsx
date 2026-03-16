@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, RefreshCw } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { usePassport } from '@/hooks/usePassport'
 import { PassportCover } from '@/components/passport/PassportCover'
@@ -11,6 +11,9 @@ import { Spinner, OnboardingTip } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
 import { fadeUp } from '@/lib/animations'
 import { fetchStories } from '@/data/stories'
+import { generateStamp } from '@/ai/stamp'
+import { updateStampImage } from '@/data/stamps'
+import { useUIStore } from '@/store/ui'
 import type { PassportStamp, Story } from '@/types/app'
 import { useNavigate } from 'react-router'
 
@@ -27,12 +30,31 @@ export default function Passport() {
 
   const [stories, setStories] = useState<Story[]>([])
   const [storiesLoading, setStoriesLoading] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
+  const addToast = useUIStore(s => s.addToast)
 
   useEffect(() => {
     if (activeTab !== 'stories') return
     setStoriesLoading(true)
     fetchStories().then(s => { setStories(s); setStoriesLoading(false) }).catch(() => setStoriesLoading(false))
   }, [activeTab])
+
+  async function handleRegenerateAll() {
+    const missionStamps = stamps.filter(s => s.type === 'mission')
+    if (missionStamps.length === 0 || regenerating) return
+    setRegenerating(true)
+    addToast(`Regenerating ${missionStamps.length} stamps...`, 'info')
+    let done = 0
+    for (const s of missionStamps) {
+      try {
+        const url = await generateStamp(s)
+        if (url) await updateStampImage(s.id, url)
+        done++
+      } catch { /* continue */ }
+    }
+    addToast(`${done}/${missionStamps.length} stamps regenerated. Reload to see them.`, 'success')
+    setRegenerating(false)
+  }
 
   // Loading state
   if (loading) {
@@ -130,6 +152,17 @@ export default function Passport() {
                         {countries.length === 1 ? 'country' : 'countries'}
                       </p>
                     </div>
+                    {stamps.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleRegenerateAll}
+                        disabled={regenerating}
+                        className="flex items-center gap-1.5 text-[10px] text-ivory-dim hover:text-gold font-body transition-colors disabled:opacity-40"
+                      >
+                        <RefreshCw size={12} className={regenerating ? 'animate-spin' : ''} />
+                        {regenerating ? 'Regenerating...' : 'Regen Stamps'}
+                      </button>
+                    )}
                   </div>
 
                   <StampGrid stamps={stamps} onStampPress={setSelectedStamp} />
