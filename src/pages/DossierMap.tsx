@@ -11,7 +11,7 @@ import { flagEmoji, formatDate } from '@/lib/utils'
 import { fadeIn, fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryWithParticipants, EntryType } from '@/types/app'
 
-const COORDS_CACHE_KEY = 'codex_city_coords_v1'
+const COORDS_CACHE_KEY = 'codex_city_coords_v2'
 
 function loadCoordsCache(): Record<string, [number, number]> {
   try { return JSON.parse(localStorage.getItem(COORDS_CACHE_KEY) ?? '{}') }
@@ -47,8 +47,9 @@ function CityMap({ cityGroups, onCitySelect }: CityMapProps) {
       const cg  = toFetch[i++]
       const key = `${cg.city},${cg.country}`
       try {
+        const countryParam = cg.country_code || cg.country
         const res     = await fetch(
-          `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(cg.city)}&country=${encodeURIComponent(cg.country)}&format=json&limit=1`,
+          `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(cg.city)}&country=${encodeURIComponent(countryParam)}&format=json&limit=1`,
           { headers: { 'Accept-Language': 'en' } },
         )
         const results = await res.json() as Array<{ lat: string; lon: string }>
