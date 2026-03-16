@@ -23,6 +23,8 @@ import { generateLore } from '@/ai/lore'
 import { generateTitle } from '@/ai/title'
 import { notifyOthers } from '@/hooks/usePushNotifications'
 import { generateCover } from '@/ai/cover'
+import { generateStamp } from '@/ai/stamp'
+import { createMissionStamp, updateStampImage } from '@/data/stamps'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { fadeUp } from '@/lib/animations'
@@ -238,6 +240,23 @@ export default function EntryNew() {
         generateCover(entry).catch(() => {
           // silently ignore
         })
+      }
+
+      // 5b. Auto-create passport stamp for missions (fire-and-forget)
+      if (selectedType === 'mission' && formData.city && formData.country) {
+        createMissionStamp({
+          id: entry.id,
+          title: formData.title,
+          city: formData.city,
+          country: formData.country,
+          country_code: formData.country_code ?? '',
+          date: formData.date,
+        }).then((stamp) => {
+          // Generate stamp artwork async
+          generateStamp(stamp).then((url) => {
+            if (url) updateStampImage(stamp.id, url).catch(() => {})
+          }).catch(() => {})
+        }).catch(() => {})
       }
 
       // 6. If coming from a prospect, mark it as converted

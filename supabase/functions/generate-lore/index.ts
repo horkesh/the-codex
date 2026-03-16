@@ -84,7 +84,12 @@ Present: ${participantNames}
 Description: ${entry.description || 'No additional details provided.'}${loreHints ? `\nDirector's Notes (incorporate these details naturally): ${loreHints}` : ''}
 ${typeDirective ? `\n${typeDirective}` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
 IMPORTANT: The Day and Time fields above are from the camera's EXIF data and are authoritative. Always use them to set the time of day in the narrative — do NOT infer a different time of day from photo lighting or ambiance. If the Context field is present, weave that situational awareness into the prose naturally.
-Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text. Just the narrative.`
+Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text.
+
+Return your response in exactly this format (three lines, no labels on the first line):
+<lore>The 2-3 sentence narrative.</lore>
+<oneliner>One punchy sentence distilled from the lore — the kind of line you'd put on a poster or Instagram export card.</oneliner>
+<title>A short, evocative title for this entry (3-7 words, no dates, no quotes).</title>`
 
     // Build message content — images first, then the text prompt
     type ContentBlock =
@@ -114,9 +119,18 @@ Write the lore in first person plural ("We", "The Gents"). No hashtags, no emoji
     }
 
     const result = await response.json()
-    const lore = result.content?.[0]?.text?.trim() ?? ''
+    const raw = result.content?.[0]?.text?.trim() ?? ''
 
-    return new Response(JSON.stringify({ lore }), {
+    // Parse structured response
+    const loreMatch = raw.match(/<lore>([\s\S]*?)<\/lore>/)
+    const onelinerMatch = raw.match(/<oneliner>([\s\S]*?)<\/oneliner>/)
+    const titleMatch = raw.match(/<title>([\s\S]*?)<\/title>/)
+
+    const lore = loreMatch?.[1]?.trim() || raw.replace(/<[^>]+>/g, '').trim()
+    const oneliner = onelinerMatch?.[1]?.trim() || null
+    const suggested_title = titleMatch?.[1]?.trim() || null
+
+    return new Response(JSON.stringify({ lore, oneliner, suggested_title }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {

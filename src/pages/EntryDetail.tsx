@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
-import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, ImagePlay, Edit2, Pin } from 'lucide-react'
+import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, ImagePlay, Edit2, Pin, X as XIcon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Avatar } from '@/components/ui'
@@ -8,7 +8,7 @@ import { EntryHero } from '@/components/chronicle/EntryHero'
 import { LoreSection } from '@/components/chronicle/LoreSection'
 import { EntryReactions } from '@/components/chronicle/EntryReactions'
 import { generateScene } from '@/ai/scene'
-import { generateLore } from '@/ai/lore'
+import { generateLoreFull } from '@/ai/lore'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
 import { PhotoStoryboard } from '@/components/chronicle/PhotoStoryboard'
 import { FilterPicker } from '@/components/chronicle/FilterPicker'
@@ -18,7 +18,7 @@ import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
 import { CommentsSection } from '@/components/chronicle/CommentsSection'
 import { useEntry } from '@/hooks/useEntry'
 import { useEntryFilter } from '@/hooks/useEntryFilter'
-import { fetchEntry, deleteEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
+import { fetchEntry, deleteEntry, updateEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryWithParticipants } from '@/types/app'
@@ -221,6 +221,7 @@ export default function EntryDetail() {
   const [deleting, setDeleting] = useState(false)
   const [generatingScene, setGeneratingScene] = useState(false)
   const [regeneratingLore, setRegeneratingLore] = useState(false)
+  const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
 
   function handleExportToStudio() {
     navigate(`/studio?entry=${id}`)
@@ -239,12 +240,19 @@ export default function EntryDetail() {
       // Re-fetch entry to get latest metadata (including Director's Notes)
       const fresh = await fetchEntry(entry.id)
       const entryForLore = fresh ?? entry
-      const lore = await generateLore(entryForLore, photoUrls)
-      if (lore) {
-        await updateEntryLore(entry.id, lore)
+      const result = await generateLoreFull(entryForLore, photoUrls)
+      if (result) {
+        const meta = { ...(entryForLore.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
+        await updateEntryLore(entry.id, result.lore)
+        await updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})
         const now = new Date().toISOString()
-        setEntry({ ...entryForLore, lore, lore_generated_at: now })
-        addToast('Lore regenerated.', 'success')
+        setEntry({ ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta })
+        if (result.suggested_title) {
+          setSuggestedTitle(result.suggested_title)
+          addToast('Lore regenerated. New title suggested.', 'success')
+        } else {
+          addToast('Lore regenerated.', 'success')
+        }
       } else {
         addToast('Could not regenerate lore. Try again.', 'error')
       }
@@ -309,14 +317,22 @@ export default function EntryDetail() {
     }
   }
 
-  function handleLoreGenerated(lore: string) {
+  function handleLoreGenerated(lore: string, oneliner?: string | null, suggestedTitle?: string | null) {
     if (!entry) return
+    const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: oneliner ?? null }
     setEntry({
       ...entry,
       lore,
       lore_generated_at: new Date().toISOString(),
+      metadata: meta,
     })
-    addToast('Lore generated.', 'success')
+    if (suggestedTitle) {
+      addToast(`Lore generated. Suggested title: "${suggestedTitle}"`, 'success')
+      // Offer to apply the title
+      setSuggestedTitle(suggestedTitle)
+    } else {
+      addToast('Lore generated.', 'success')
+    }
   }
 
   // ── Loading ──
@@ -402,6 +418,38 @@ export default function EntryDetail() {
                 onLoreGenerated={handleLoreGenerated}
               />
             </motion.div>
+
+            {/* AI title suggestion banner */}
+            {suggestedTitle && (
+              <motion.div variants={staggerItem}>
+                <div className="flex items-center gap-3 bg-gold/8 border border-gold/20 rounded-lg px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gold font-body font-semibold">AI Title Suggestion</p>
+                    <p className="text-sm text-ivory font-body truncate">{suggestedTitle}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await updateEntry(entry.id, { title: suggestedTitle } as Partial<EntryWithParticipants>)
+                      setEntry({ ...entry, title: suggestedTitle })
+                      setSuggestedTitle(null)
+                      addToast('Title updated.', 'success')
+                    }}
+                    className="text-xs text-gold border border-gold/30 rounded-full px-3 py-1 hover:border-gold/60 transition-colors shrink-0 font-body"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSuggestedTitle(null)}
+                    className="text-ivory-dim hover:text-ivory transition-colors shrink-0"
+                    aria-label="Dismiss"
+                  >
+                    <XIcon size={14} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
 
             {/* Scene image */}
             {entry.scene_url && (

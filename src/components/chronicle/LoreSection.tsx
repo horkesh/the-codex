@@ -3,7 +3,7 @@ import { Sparkles, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui'
-import { generateLore } from '@/ai/lore'
+import { generateLoreFull } from '@/ai/lore'
 import { updateEntryLore, updateEntry } from '@/data/entries'
 import { fadeUp } from '@/lib/animations'
 import type { EntryWithParticipants } from '@/types/app'
@@ -11,7 +11,7 @@ import type { EntryWithParticipants } from '@/types/app'
 interface LoreSectionProps {
   entry: EntryWithParticipants
   photoUrls?: string[]
-  onLoreGenerated?: (lore: string) => void
+  onLoreGenerated?: (lore: string, oneliner?: string | null, suggestedTitle?: string | null) => void
 }
 
 export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionProps) {
@@ -48,13 +48,15 @@ export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionPr
       const entryWithHints = hints.trim()
         ? { ...entry, metadata: { ...(entry.metadata as Record<string, unknown> ?? {}), lore_hints: hints.trim() } }
         : entry
-      const lore = await generateLore(entryWithHints, photoUrls)
-      if (lore) {
-        await updateEntryLore(entry.id, lore)
+      const result = await generateLoreFull(entryWithHints, photoUrls)
+      if (result) {
+        const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
+        await updateEntryLore(entry.id, result.lore)
+        await updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})
         const now = new Date().toISOString()
-        setLocalLore(lore)
+        setLocalLore(result.lore)
         setLocalLoreDate(now)
-        onLoreGenerated?.(lore)
+        onLoreGenerated?.(result.lore, result.oneliner, result.suggested_title)
       } else {
         setError('The lore could not be summoned. Try again.')
       }
