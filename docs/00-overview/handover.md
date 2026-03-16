@@ -4,33 +4,31 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-## Current state (2026-03-18)
+## Current state (2026-03-16)
 
-**Phase**: **FULLY LIVE.** Continued post-roadmap polish and new features.
+**Phase**: **FULLY LIVE.** All implementation_plan_v2 phases complete. Continued polish.
 
-**What was just done** (Session 015 — implementation_plan_v2 phases 2–6):
+**What was just done** (Session 016):
 
-- **Entry Comments** — `entry_comments` table + Realtime subscription; CommentsSection with avatar thread UI; visible on published entries only
-- **Prospect Voting** — `prospect_votes` table; VoteStrip (emerald/red rings) with optimistic upsert/remove; on shared prospects
-- **Convert Prospect → Entry** — "Log as Entry" in ProspectCard menu; pre-fills EntryNew (title/date/location); marks prospect `converted` after submit
-- **Wishlist linked entries** — done BucketList items show gold chip linking to converted entry; MarkDoneModal "Create New Entry" shortcut
-- **Streaks** — StreaksSection on Ledger (most-frequent type per gent, current streak + personal best, bounded 4-year query)
-- **Monthly Crown** — 👑 in StatGrid column header for gent with most entries this month
-- **Quick-Log FAB** — gold `+` button above BottomNav, spring-animated, hidden on entry creation page
+- **Gold logo on Studio templates** — `public/logo-gold.webp` (167KB, converted from PNG); `BrandMark` component now renders the 3-gents circular emblem instead of text; sizes sm/md/lg (48/64/80px)
+- **Chronological Vol numbering** — Table and Pitch titles use date-ordered Vol numbers (oldest = Vol. 1); `getChronologicalVol(type, date)` computes position; `renumberVolumes(type)` fire-and-forget after entry creation updates all titles
+- **Photo storyboard** — `PhotoStoryboard.tsx` for mission and night_out entries; editorial mixed-size layout (hero → duo → trio → wide cycle) with gold dividers; other types keep `PhotoGrid`
+- **Director's Notes for lore** — collapsible "Director's Notes" textarea in `LoreSection`; auto-saves to `entry.metadata.lore_hints`; included in Claude prompt for generate + regenerate; regeneration re-fetches entry for latest hints
+- **Pitch location field** — `PlaystationForm` now has Location input; auto-fills from EXIF; passed through to `createEntry`
+- **Cover image pan/zoom** — "Adjust" button on EntryHero; drag-to-pan + zoom slider (1x–2x); CSS-only via `object-position` + `scale`; stored in entry metadata; EntryCard also respects crop
+- **Gent profile thresholds** — Honours section now shows both achievements and thresholds (Veteran, Connoisseur, Explorer, Host)
+- **implementation_plan_v2 Phase 1** marked complete (animated reactions, trophy case, signature stat were already built)
 
-**What was done before** (Sessions 013–014):
+**What was done before** (Session 015):
 
-- Entry photo → cover image pipeline fixed; `entry-photos` storage bucket RLS
-- Scouting: `event_name` extracted separately; date as `YYYY-MM-DD`; OG image as thumbnail
-- Gent profiles (`/gents/:alias`): portrait hero, stats chips, bio, chronicle
-- Prospect auto-expiry + Share with Gents (`visibility` column)
+- Entry Comments, Prospect Voting, Convert Prospect → Entry, Wishlist linking, Streaks, Monthly Crown, Quick-Log FAB
 
 **What's left / next ideas**:
 - Wishlist: Instagram URL input to auto-populate from event pages
 - Passport Stamps: `image_url` field exists but generation not hooked up
 - Toast entry type: to be removed (moving to separate app)
 - Ledger Sommelier: only populated by Toast entries — revisit once Toast removed
-- `implementation_plan_v2.md` Phase 1 (Gather push notifications) still open
+- Push notifications (PWA) — only remaining wishlist item
 
 ---
 
@@ -128,4 +126,4 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-_← Updated 2026-03-18 (Session 015)_
+_← Updated 2026-03-16 (Session 016)_

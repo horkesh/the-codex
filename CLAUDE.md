@@ -88,13 +88,17 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Time-of-day is authoritative**: EXIF time from `entry.metadata.time_of_day` is explicitly marked as ground truth in the prompt. Claude must not infer a different time from photo lighting.
 - **Weekday/weekend awareness**: day-of-week + time-of-day derive a situational hint (e.g. "weekday lunch window — likely a lunch break rendezvous") that is passed as `Context:` in the prompt.
 - **Type-specific narrative directives**: each entry type (steak, playstation, toast, night_out, mission, gathering, interlude) has a tailored `entryTypeDirectives` block that tells Claude what to focus on (food details for Table, competitive energy for Pitch, drink references for Toast, etc.).
+- **Director's Notes** (`lore_hints`): persistent free-text field stored in `entry.metadata.lore_hints`. Collapsible textarea in `LoreSection`. Auto-saves to DB after 1s of inactivity. Included in the Claude prompt as "Director's Notes (incorporate these details naturally)". Works for both initial generation and regeneration. Regeneration re-fetches entry from DB to get latest hints.
 
 ## Title generation (`supabase/functions/generate-title/`)
 - Uses `claude-haiku-4-5-20251001` with vision on the first uploaded photo.
 - Client (`src/ai/title.ts`) compresses photo to 512px / 0.6 quality base64 before sending.
 - Type-specific instructions guide what to identify (cut of meat for Table, game on screen for Pitch, drinks for Toast, etc.).
 - Suggested title auto-fills the form's title field unless the user has manually edited it.
-- For Table and Pitch, the AI title is combined with the volume number (e.g. "Wagyu Tataki at Craft · Vol. 12").
+- For Table and Pitch, the AI title is combined with a **chronological volume number** (e.g. "Wagyu Tataki at Craft · Vol. 12").
+- Vol numbers are date-ordered (oldest = Vol. 1). `getChronologicalVol(type, date)` counts entries with `date <= newDate`.
+- After creating an entry, `renumberVolumes(type)` fire-and-forget updates all `· Vol. N` titles to reflect correct order.
+- Adding a past-dated entry renumbers all existing entries of that type.
 
 ## Studio export (`src/pages/Studio.tsx`)
 - **Cover image as default background**: when an entry is selected, `cover_image_url` is immediately used as the template background.
@@ -120,9 +124,10 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - `date_end` stored in `entry.metadata.date_end` (not a DB column — avoids migration).
 - Display format: "Budapest, Hungary · Mar 5 – 12, 2026" when range, single date otherwise.
 
-## Pitch EXIF date
-- `PlaystationForm` now receives `detectedLocation` prop and auto-fills date from photo EXIF.
-- Same pattern as SteakForm: `useEffect` sets date from `detectedLocation.date` if user hasn't manually entered one.
+## Pitch form
+- `PlaystationForm` has Title, Date, Location, and Matches fields.
+- Auto-fills date and location from photo EXIF via `detectedLocation` prop.
+- Location passed through `submitPlaystation` to `createEntry`.
 
 ## Circle multi-gent relationships
 - `person_gents` table: many-to-many between people and gents (who "knows" this person).
@@ -167,6 +172,27 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 ## Weekly digest cron
 - `.github/workflows/weekly-digest.yml` — GitHub Actions cron every Monday 7:00 UTC.
 - Triggers existing `send-weekly-digest` edge function via curl. Also supports manual `workflow_dispatch`.
+
+## Studio BrandMark logo
+- `BrandMark` component (`src/export/templates/shared/BrandMark.tsx`) renders `public/logo-gold.webp` (3-gents circular gold emblem).
+- Sizes: `sm` = 48px, `md` = 64px, `lg` = 80px. Used at bottom of every Studio export template.
+
+## Photo storyboard (`src/components/chronicle/PhotoStoryboard.tsx`)
+- Editorial mixed-size photo layout for mission and night_out entries (replaces flat grid).
+- Cycle: hero (16:9) → duo (square) → trio (portrait left + 2 landscape right) → wide (2.2:1) → repeats.
+- Gold ornamental dividers between blocks. Graceful truncation for small photo counts.
+- All other entry types keep the original `PhotoGrid`.
+
+## Cover image pan/zoom (`EntryHero`)
+- "Adjust" button on entry hero opens edit mode: drag-to-pan, zoom slider (1x–2x).
+- Position stored in `entry.metadata.cover_pos_x` / `cover_pos_y` (0–100%), scale in `cover_scale`.
+- CSS-only transform (`object-position` + `transform: scale`), no re-upload.
+- `EntryCard` thumbnails in Chronicle feed also respect the crop position.
+
+## Gent profile honours
+- `/gents/:alias` shows "Honours" section with both achievements and threshold badges.
+- `fetchEarnedAchievements` + `fetchEarnedThresholds` called in parallel on mount.
+- Signature stat derived from stats: threshold-based labels (Connoisseur, Globetrotter, etc.) or relative-to-group fallback.
 
 ## Deployment workflow
 ```bash

@@ -4,6 +4,60 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-16 (016)
+
+**Goal**: Studio branding, photo layouts, lore hints, cover editing, Pitch improvements, profile polish.
+
+**Done**:
+
+### Gold logo on Studio templates
+- Converted `docs/01 Gold logo.png` (1.5MB) → `public/logo-gold.webp` (167KB) via sharp
+- `BrandMark` component renders logo image instead of text; sizes sm=48px, md=64px, lg=80px
+- All 19 export templates now show the circular gold gents emblem
+
+### Chronological Vol numbering
+- Table and Pitch titles use `· Vol. N` based on chronological date order (oldest = Vol. 1)
+- `getChronologicalVol(type, date)` in entries.ts counts entries with date <= given date
+- `renumberVolumes(type)` fire-and-forget after `createEntry` for steak/playstation — fetches all entries sorted by date ASC, regex-replaces `· Vol. N` with correct position
+- Vol recomputes live in form as date field changes
+- Removed old `fetchEntries({ type })` count-based approach from both forms
+
+### Photo storyboard layout
+- `PhotoStoryboard.tsx` — editorial mixed-size layout for mission and night_out entries
+- Cycle: hero (16:9 full width) → duo (square side-by-side) → trio (tall portrait left + 2 stacked landscape right) → wide (cinematic 2.2:1) → repeats
+- Gold ornamental dividers between blocks; graceful truncation for < 7 photos
+- All other entry types keep original `PhotoGrid`
+- Same lightbox, filter support, "set as cover" functionality
+
+### Director's Notes for lore generation
+- Collapsible "Director's Notes" textarea in `LoreSection` (below "The Lore" header)
+- Auto-saves to `entry.metadata.lore_hints` after 1s of inactivity via debounced `updateEntry`
+- Passed to `generate-lore` edge function as `Director's Notes (incorporate these details naturally): ...`
+- Works for both initial generation (LoreSection.handleGenerate) and regeneration (EntryDetail.handleRegenerateLore — re-fetches entry from DB for latest hints)
+- Gold asterisk indicator when hints exist but section is collapsed
+
+### Pitch location field
+- `PlaystationForm` now has Location input (optional), auto-fills from EXIF
+- `PlaystationFormData` interface extended with `location: string`
+- `submitPlaystation` passes location through to `handleSubmit` → `createEntry`
+
+### Cover image pan/zoom
+- "Adjust" button on `EntryHero` opens edit mode with drag-to-pan (pointer events) + zoom slider (1x–2x)
+- Crosshair guides + "Drag to pan" hint during editing
+- Position stored in `entry.metadata.cover_pos_x` / `cover_pos_y` (0–100%), scale in `cover_scale`
+- CSS-only transform: `object-position` + `transform: scale` with matching `transform-origin`
+- `EntryCard` thumbnails in Chronicle feed also respect the `object-position` crop
+- Non-destructive: no re-upload, reversible, instant
+
+### Gent profile thresholds
+- `GentProfile.tsx` now fetches `fetchEarnedThresholds(gent.id)` alongside achievements
+- Honours section displays both achievement badges and threshold badges (Veteran, Connoisseur, Explorer, Host)
+- `implementation_plan_v2.md` Phase 1 marked complete (animated reactions, trophy case, signature stat were already built in prior sessions)
+
+**Status**: Deployed. Zero TS errors. Commits: `8fed8f3` → `e5ac679`.
+
+---
+
 ## Session — 2026-03-18 (015)
 
 **Goal**: Phases 2–6 from `implementation_plan_v2.md` — Entry Comments, Prospect Voting, Convert Prospect→Entry + Wishlist Done, Streaks + Monthly Crown, Quick-Log Global FAB.

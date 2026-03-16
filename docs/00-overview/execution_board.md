@@ -111,7 +111,17 @@
 - [x] `src/lib/gents.ts` — shared `GENT_LABELS` + `GENT_ALIASES` constants
 - [x] `COMPARISON_STAT_ROWS` + `computeLeaderSummary` added to `src/data/stats.ts`
 
-### E12: The Toast Auto-Sync
+### E12: Session 016 Polish ✅
+- [x] Gold logo (`public/logo-gold.webp`) on all Studio export templates via `BrandMark`
+- [x] Chronological Vol numbering for Table + Pitch (date-ordered, auto-renumber on insert)
+- [x] `PhotoStoryboard` — editorial mixed-size layout for mission + night_out photos
+- [x] Director's Notes (`lore_hints`) — persistent hints for lore generation, auto-saved to metadata
+- [x] Pitch location field — Location input in `PlaystationForm`, passed to `createEntry`
+- [x] Cover image pan/zoom — drag-to-pan + zoom slider on `EntryHero`, CSS-only, stored in metadata
+- [x] Gent profile thresholds — Honours section shows achievements + thresholds
+- [x] `implementation_plan_v2.md` Phase 1 marked complete
+
+### E13: The Toast Auto-Sync
 - [ ] Toast app webhook / integration point _(future)_
 
 ## Backlog (future)
@@ -124,4 +134,4 @@
 - Seed Budapest 2023 Instagram profiles into Circle
 
 ## Completed
-All E1–E9 epics shipped 2026-03-13. E10 (Verdict & Dossier) shipped 2026-03-15. E11 (Threshold System & Gent Comparison) shipped 2026-03-15.
+All E1–E9 epics shipped 2026-03-13. E10 (Verdict & Dossier) shipped 2026-03-15. E11 (Threshold System & Gent Comparison) shipped 2026-03-15. E12 (Session 016 Polish) shipped 2026-03-16.
