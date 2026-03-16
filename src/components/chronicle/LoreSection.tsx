@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import { Sparkles } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Sparkles, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui'
 import { generateLore } from '@/ai/lore'
-import { updateEntryLore } from '@/data/entries'
+import { updateEntryLore, updateEntry } from '@/data/entries'
 import { fadeUp } from '@/lib/animations'
 import type { EntryWithParticipants } from '@/types/app'
 
@@ -20,11 +20,35 @@ export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionPr
   const [localLoreDate, setLocalLoreDate] = useState<string | null>(entry.lore_generated_at)
   const [error, setError] = useState<string | null>(null)
 
+  // Director's notes (lore hints)
+  const savedHints = (entry.metadata as Record<string, unknown>)?.lore_hints as string | undefined
+  const [hints, setHints] = useState(savedHints ?? '')
+  const [hintsOpen, setHintsOpen] = useState(!!savedHints)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Auto-save hints to entry metadata after 1s of inactivity
+  useEffect(() => {
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
+  }, [])
+
+  function handleHintsChange(value: string) {
+    setHints(value)
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_hints: value || null }
+      updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})
+    }, 1000)
+  }
+
   async function handleGenerate() {
     setGenerating(true)
     setError(null)
     try {
-      const lore = await generateLore(entry, photoUrls)
+      // Pass hints via entry metadata so the edge function can read them
+      const entryWithHints = hints.trim()
+        ? { ...entry, metadata: { ...(entry.metadata as Record<string, unknown> ?? {}), lore_hints: hints.trim() } }
+        : entry
+      const lore = await generateLore(entryWithHints, photoUrls)
       if (lore) {
         await updateEntryLore(entry.id, lore)
         const now = new Date().toISOString()
@@ -51,6 +75,45 @@ export function LoreSection({ entry, photoUrls, onLoreGenerated }: LoreSectionPr
         </span>
         <div className="h-px flex-1 bg-gold/20" />
       </div>
+
+      {/* Director's Notes toggle */}
+      <button
+        type="button"
+        onClick={() => setHintsOpen(!hintsOpen)}
+        className="flex items-center gap-2 text-xs text-ivory-dim hover:text-ivory-muted transition-colors font-body"
+      >
+        <ChevronDown
+          size={14}
+          className={`transition-transform duration-200 ${hintsOpen ? 'rotate-0' : '-rotate-90'}`}
+        />
+        Director's Notes
+        {hints.trim() && !hintsOpen && (
+          <span className="text-gold/60 ml-1">*</span>
+        )}
+      </button>
+
+      <AnimatePresence>
+        {hintsOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <textarea
+              value={hints}
+              onChange={(e) => handleHintsChange(e.target.value)}
+              placeholder="Add context for the AI... e.g. 'We ran into Omar's colleague at the bar' or 'Haris dominated every match'"
+              rows={2}
+              className="w-full bg-slate-mid border border-white/8 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim/50 focus:outline-none focus:border-gold/30 resize-none"
+            />
+            <p className="text-[10px] text-ivory-dim/50 font-body mt-1">
+              These hints guide lore generation. Auto-saved.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         {/* Generating shimmer skeleton */}

@@ -306,6 +306,7 @@ export default function EntryNew() {
     await handleSubmit({
       title: data.title,
       date: data.date,
+      location: data.location,
       metadata: {
         matches: data.matches,
         head_to_head_snapshot,

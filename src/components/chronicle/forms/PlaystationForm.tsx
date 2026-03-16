@@ -12,6 +12,7 @@ import type { LocationFill } from '@/lib/geo'
 export interface PlaystationFormData {
   title: string
   date: string
+  location: string
   matches: PS5Match[]
 }
 
@@ -97,6 +98,7 @@ function computeHeadToHead(matches: PS5Match[]): HeadToHead[] {
 export function PlaystationForm({ onSubmit, loading, detectedLocation, suggestedTitle, onRetitle, initialData }: PlaystationFormProps) {
   const [title, setTitle] = useState(initialData?.title ?? '')
   const [date, setDate] = useState(initialData?.date ?? '')
+  const [location, setLocation] = useState(initialData?.location ?? '')
   const [matches, setMatches] = useState<PS5Match[]>(initialData?.matches?.length ? initialData.matches : [emptyMatch(1)])
   const [errors, setErrors] = useState<FieldErrors>({})
   const [vol, setVol] = useState<number | null>(null)
@@ -117,11 +119,12 @@ export function PlaystationForm({ onSubmit, loading, detectedLocation, suggested
     setTitle(`The Pitch · Vol. ${vol}`)
   }, [vol, suggestedTitle])
 
-  // Auto-fill date from photo EXIF
+  // Auto-fill date + location from photo EXIF
   useEffect(() => {
-    if (!detectedLocation?.date || date) return
-    setDate(detectedLocation.date)
-  }, [detectedLocation, date])
+    if (!detectedLocation) return
+    if (!date && detectedLocation.date) setDate(detectedLocation.date)
+    if (!location && detectedLocation.location) setLocation(detectedLocation.location)
+  }, [detectedLocation, date, location])
 
   function addMatch() {
     setMatches((prev) => [...prev, emptyMatch(prev.length + 1)])
@@ -175,7 +178,7 @@ export function PlaystationForm({ onSubmit, loading, detectedLocation, suggested
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
-    await onSubmit({ title, date, matches })
+    await onSubmit({ title, date, location, matches })
   }
 
   const headToHead = computeHeadToHead(matches)
@@ -219,6 +222,13 @@ export function PlaystationForm({ onSubmit, loading, detectedLocation, suggested
         error={errors.date}
         required
         className={cn(!date && 'text-ivory-dim')}
+      />
+
+      <Input
+        label="Location"
+        placeholder="e.g. Haris's place, The Living Room..."
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
       />
 
       {/* Match list */}
