@@ -49,17 +49,20 @@ async function analyzeScene(
           contents: [{
             parts: [
               { inline_data: { mime_type: mimeType, data: coverBase64 } },
-              { text: `Write an image generation prompt describing this photo. START with the people, then the setting.
+              { text: `Write a SHORT image generation prompt (max 80 words) for this photo.
 
-Known people — match by hair and facial hair:
+Known people — identify by hair/facial hair:
 ${gentDescriptions}
 
-Format: one paragraph. Describe in this order:
-1. FIRST: Each person (name, face, hair, facial hair, build, skin tone, clothing, pose, position left/center/right) — you MUST describe ALL people visible
-2. THEN: What is on the table — name every food item and drink specifically
-3. LAST: Setting and camera angle — keep brief
+Rules:
+- Max 80 words total
+- Name each person with 3-4 key features only (e.g. "Haris, shaved head, handlebar mustache, purple shirt")
+- Mention main food/drinks in 5 words or less
+- Setting in 5 words or less
+- No full sentences — comma-separated phrases only
+- No preamble
 
-No preamble. Just the description.` },
+Example format: "Three men at restaurant table. Left: Almedin, high fade, clean-shaven, plaid shirt. Center: Vedad, brown quiff, full beard, tan sweater. Right: Haris, shaved head, handlebar mustache, purple shirt. Steak and fries on wooden boards. Modern glass-walled restaurant."` },
             ],
           }],
           generationConfig: {
