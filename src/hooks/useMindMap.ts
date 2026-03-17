@@ -87,6 +87,17 @@ export function useMindMap() {
     }
   }, [])
 
+  const clearPersonPosition = useCallback((personId: string) => {
+    const all = loadPositions()
+    delete all[personId]
+    localStorage.setItem(POSITIONS_KEY, JSON.stringify(all))
+    setSavedPositions(prev => {
+      const next = { ...prev }
+      delete next[personId]
+      return next
+    })
+  }, [])
+
   const resetLayout = useCallback(() => {
     clearPositions()
     setSavedPositions({})
@@ -106,6 +117,7 @@ export function useMindMap() {
     setGentFilter,
     updatePersonTier,
     handleNodeDragStop,
+    clearPersonPosition,
     resetLayout,
     searchQuery,
     setSearchQuery,

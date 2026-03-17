@@ -43,7 +43,7 @@ function MindMapCanvas() {
   const {
     loading, nodes, edges, filters, gents, savedPositions,
     toggleGentFocus, setTierFilter, setGentFilter, updatePersonTier,
-    handleNodeDragStop, resetLayout, searchQuery, setSearchQuery,
+    handleNodeDragStop, clearPersonPosition, resetLayout, searchQuery, setSearchQuery,
     searchMatchNodeIds,
   } = useMindMap()
 
@@ -222,6 +222,7 @@ function MindMapCanvas() {
               type="button"
               onClick={async () => {
                 await updatePersonTier(pendingTierChange.personId, pendingTierChange.tier)
+                clearPersonPosition(pendingTierChange.personId)
                 setPendingTierChange(null)
                 addToast(
                   isPromotion
