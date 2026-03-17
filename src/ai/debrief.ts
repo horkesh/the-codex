@@ -16,8 +16,18 @@ export async function generateMissionDebrief(
     const { data, error } = await supabase.functions.invoke('generate-mission-debrief', {
       body: { entry, photoUrls },
     })
-    if (error) throw error
-    if (!data?.debrief) return null
+    if (error) {
+      console.error('generate-mission-debrief invoke error:', error)
+      throw error
+    }
+    if (data?.error) {
+      console.error('generate-mission-debrief edge function error:', data.error)
+      return null
+    }
+    if (!data?.debrief) {
+      console.error('generate-mission-debrief: no debrief in response', data)
+      return null
+    }
     return data as MissionDebrief
   } catch (err) {
     console.error('generate-mission-debrief failed:', err)

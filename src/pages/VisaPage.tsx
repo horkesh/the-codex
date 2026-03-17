@@ -9,6 +9,7 @@ import { formatDate, flagEmoji } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
 import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw } from 'lucide-react'
+import { useUIStore } from '@/store/ui'
 import type { PassportStamp, EntryWithParticipants } from '@/types/app'
 
 interface EntryPhoto {
@@ -29,6 +30,7 @@ export default function VisaPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [generatingDebrief, setGeneratingDebrief] = useState(false)
+  const addToast = useUIStore(s => s.addToast)
 
   useEffect(() => {
     if (!stampId) { setNotFound(true); setLoading(false); return }
@@ -67,7 +69,7 @@ export default function VisaPage() {
     try {
       const urls = photos.map(p => p.url)
       const result = await generateMissionDebrief(entry, urls)
-      if (result) {
+      if (result && result.debrief) {
         const meta = {
           ...(entry.metadata as Record<string, unknown> ?? {}),
           mission_debrief: result.debrief,
@@ -75,11 +77,15 @@ export default function VisaPage() {
           debrief_highlights: result.highlights,
           risk_assessment: result.risk_assessment,
         }
-        await updateEntry(entry.id, { metadata: meta } as any)
+        await updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>)
         setEntry({ ...entry, metadata: meta })
+        addToast('Mission debrief generated.', 'success')
+      } else {
+        addToast('Could not generate debrief. Try again.', 'error')
       }
-    } catch {
-      // silent — supplementary content
+    } catch (err) {
+      console.error('Debrief generation failed:', err)
+      addToast('Debrief generation failed.', 'error')
     } finally {
       setGeneratingDebrief(false)
     }
@@ -260,32 +266,30 @@ export default function VisaPage() {
                 )
               }
 
-              // No debrief yet — show generate button
-              if (photos.length > 0) {
-                return (
-                  <>
-                    <div className="h-px bg-gold/15 my-5" />
-                    <button
-                      type="button"
-                      onClick={handleGenerateDebrief}
-                      disabled={generatingDebrief}
-                      className="w-full py-3 rounded-xl border border-gold/20 bg-gold/5 flex items-center justify-center gap-2 text-xs text-gold font-body hover:bg-gold/10 transition-colors disabled:opacity-40"
-                    >
-                      {generatingDebrief ? (
-                        <>
-                          <RefreshCw size={14} className="animate-spin" />
-                          Generating debrief...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={14} />
-                          Generate Mission Debrief
-                        </>
-                      )}
-                    </button>
-                  </>
-                )
-              }
+              // No debrief yet — always show generate button
+              return (
+                <>
+                  <div className="h-px bg-gold/15 my-5" />
+                  <button
+                    type="button"
+                    onClick={handleGenerateDebrief}
+                    disabled={generatingDebrief}
+                    className="w-full py-3 rounded-xl border border-gold/20 bg-gold/5 flex items-center justify-center gap-2 text-xs text-gold font-body hover:bg-gold/10 transition-colors disabled:opacity-40"
+                  >
+                    {generatingDebrief ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        Generating debrief...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} />
+                        Generate Mission Debrief
+                      </>
+                    )}
+                  </button>
+                </>
+              )
 
               return null
             })()}
