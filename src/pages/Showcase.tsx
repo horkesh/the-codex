@@ -33,7 +33,7 @@ export default function Showcase() {
   const missionCities = useMemo(() => extractMissionCities(entries), [entries])
 
   return (
-    <div className="min-h-dvh bg-obsidian">
+    <div className="h-dvh bg-obsidian overflow-y-auto">
       <ShowcaseHero />
       {gents.length > 0 && <GentCards gents={gents} stats={stats} />}
       <FeaturedChronicle entries={entries} />
