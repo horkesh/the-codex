@@ -57,15 +57,21 @@ export function MissionForm({ onSubmit, loading, detectedLocation, suggestedTitl
   useEffect(() => {
     if (!detectedLocation) return
     const ow = detectedLocation.overwrite
-    setForm((prev) => ({
-      ...prev,
-      // date: never overwritten by an explicit place pick (places have no date)
-      date: prev.date || detectedLocation.date || prev.date,
-      city: ow ? (detectedLocation.city ?? prev.city) : (prev.city || detectedLocation.city || prev.city),
-      country: ow ? (detectedLocation.country ?? prev.country) : (prev.country || detectedLocation.country || prev.country),
-      country_code: ow ? (detectedLocation.country_code ?? prev.country_code) : (prev.country_code || detectedLocation.country_code || prev.country_code),
-      location: ow ? (detectedLocation.location ?? prev.location) : (prev.location || detectedLocation.location || prev.location),
-    }))
+    setForm((prev) => {
+      const startDate = prev.date || detectedLocation.date || prev.date
+      // Auto-fill end date to today when start is set and end is empty
+      const today = new Date().toISOString().slice(0, 10)
+      const endDate = prev.date_end || (startDate ? today : prev.date_end)
+      return {
+        ...prev,
+        date: startDate,
+        date_end: endDate,
+        city: ow ? (detectedLocation.city ?? prev.city) : (prev.city || detectedLocation.city || prev.city),
+        country: ow ? (detectedLocation.country ?? prev.country) : (prev.country || detectedLocation.country || prev.country),
+        country_code: ow ? (detectedLocation.country_code ?? prev.country_code) : (prev.country_code || detectedLocation.country_code || prev.country_code),
+        location: ow ? (detectedLocation.location ?? prev.location) : (prev.location || detectedLocation.location || prev.location),
+      }
+    })
   }, [detectedLocation])
 
   function set(field: keyof MissionFormData, value: string) {
