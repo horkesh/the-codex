@@ -36,6 +36,6 @@ jobs:
           version: latest
 
       - name: Push edge functions
-        run: supabase functions deploy --project-ref biioztjlsrkgwjyfegey
+        run: supabase functions deploy --project-ref biioztjlsrkgwjyfegey --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

@@ -397,6 +397,9 @@ verify_jwt = false
 [functions.generate-wrapped]
 verify_jwt = false
 
+[functions.generate-mission-debrief]
+verify_jwt = false
+
 [functions.analyze-instagram]
 verify_jwt = false
 
