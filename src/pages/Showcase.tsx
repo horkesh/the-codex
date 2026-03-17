@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuthStore } from '@/store/auth'
 import { fetchPublicEntries, fetchPublicGents, fetchPublicStats, extractMissionCities } from '@/data/public'
@@ -22,13 +22,15 @@ export default function Showcase() {
   const [gents, setGents] = useState<Gent[]>([])
   const [stats, setStats] = useState<GentStats[]>([])
 
+  // Only fetch public data if not logged in — avoids wasted API calls during redirect
   useEffect(() => {
+    if (gent) return
     fetchPublicEntries().then(setEntries).catch(() => {})
     fetchPublicGents().then(setGents).catch(() => {})
     fetchPublicStats().then(setStats).catch(() => {})
-  }, [])
+  }, [gent])
 
-  const missionCities = extractMissionCities(entries)
+  const missionCities = useMemo(() => extractMissionCities(entries), [entries])
 
   return (
     <div className="min-h-dvh bg-obsidian">

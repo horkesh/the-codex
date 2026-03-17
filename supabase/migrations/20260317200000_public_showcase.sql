@@ -24,5 +24,10 @@ CREATE POLICY "ep_anon_select" ON public.entry_participants
     )
   );
 
+-- Index for the anon RLS policy filter (avoids full table scan)
+CREATE INDEX IF NOT EXISTS idx_entries_public_showcase
+  ON public.entries (pinned, visibility, status)
+  WHERE pinned = true AND visibility = 'shared';
+
 -- Grant anon access to gent_stats view
 GRANT SELECT ON public.gent_stats TO anon;
