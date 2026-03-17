@@ -25,14 +25,20 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 | Instagram screenshot analysis | `claude-haiku-4-5-20251001` | Reliable JSON, no refusals on profile data |
 | Photo/camera scan (POI) | `gemini-2.5-flash` | Claude refuses appearance scoring; Gemini does not |
 | Portrait image generation | `imagen-4.0-generate-001` | Imagen 4 via `:predict` endpoint |
-| Cover/scene/stamp image generation | `imagen-4.0-generate-001` | Same |
+| Cover/scene image generation | `imagen-4.0-generate-001` | Imagen 4 via `:predict` endpoint |
+| Passport stamp SVG generation | `claude-haiku-4-5-20251001` | Generates SVG code with guilloche, arced text, landmarks |
+| Mission debrief | `claude-sonnet-4-6` | Classified narrative from photos/lore with vision |
+| Title suggestions from lore | `claude-haiku-4-5-20251001` | 5 title options from lore text |
 | Studio restyle — scene analysis | `gemini-2.5-flash` | Vision: describes scene using saved gent identities |
 | Studio restyle — noir generation | `gemini-2.5-flash-image` | Text-only generation from scene description (no photo input — prevents filter-only output) |
+| Studio from-scratch backgrounds | `imagen-4.0-generate-001` | Noir geometric style backgrounds when no cover photo |
 
 **Critical model notes:**
 - `gemini-2.0-flash` is deprecated for new API keys (404 "no longer available to new users"). Use `gemini-2.5-flash`.
 - Claude refuses prompts that ask for appearance scoring, social categorisation ("Immediate Interest"), or openers for meeting someone. Do not send photo analysis to Claude.
 - All Gemini `fetch()` calls in Edge Functions must use an `AbortController` with a 20s timeout — Supabase free tier kills functions at ~25s at the infrastructure level, which returns a non-2xx that our catch block cannot intercept.
+- **Edge function JWT**: All edge functions have `verify_jwt = false` in `supabase/config.toml`. Deploy workflow uses `--no-verify-jwt` flag. New edge functions MUST be added to config.toml or they'll reject app requests with 401 Invalid JWT.
+- **Edge function photo URLs**: Claude API sometimes can't fetch Supabase Storage URLs (400 "Unable to download"). Edge functions that accept photo URLs should retry text-only on 400 failure (see `generate-mission-debrief` pattern).
 
 ## Design system
 - Colors: obsidian `#0a0a0f`, gold `#c9a84c`, ivory `#f5f0e8`
@@ -152,6 +158,8 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - Templates render via `BackgroundLayer` which applies both the background image and photo filter CSS from context.
 - **Template variants**: Night Out, Mission, Steak, PS5 each have 4 layout variants (prop `variant={1|2|3|4}`). Variant 1 = classic, others = bold/quote/minimal/etc. Registered in `TEMPLATES_BY_TYPE` as separate `TemplateId` entries (e.g. `night_out_card_v2`).
 - **Lore oneliner in templates**: `getOneliner(entry)` in `src/export/templates/shared/utils.ts` extracts `metadata.lore_oneliner` or falls back to first sentence of lore. All template variants display the oneliner instead of full lore.
+- **Passport templates** (mission entries): `VisaStampPage` (visa with country flag, photo, stamp), `DebriefPage` (notes with classified debrief), `PassportIdPage` (gent identity — standalone, not entry-linked). All use `PassportFrame` shared component for cream background + guilloche border.
+- **Export fix**: `exportToPng` in `src/export/exporter.ts` inlines external background-image URLs as data URLs before export to fix CORS issues with `html-to-image`. Restores originals after.
 
 ## Creator-only entry controls
 - `EntryDetail` computes `isCreator = gent?.id === entry.created_by` once, used throughout.
