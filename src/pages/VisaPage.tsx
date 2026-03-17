@@ -24,7 +24,7 @@ interface EntryPhoto {
 /* ── Helpers ── */
 
 function monthYear(date: string): string {
-  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(date)).toUpperCase()
+  return new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' }).format(new Date(date)).toUpperCase()
 }
 
 function calcDuration(start: string, end?: string): string | null {

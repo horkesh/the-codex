@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { fetchPS5HeadToHead } from '@/data/stats'
 import { fetchEntries } from '@/data/entries'
 import { staggerContainer, staggerItem } from '@/lib/animations'
+import { formatDate } from '@/lib/utils'
 import { Spinner } from '@/components/ui/Spinner'
 import type { EntryWithParticipants, GentAlias, PS5Match } from '@/types/app'
 
@@ -181,7 +182,7 @@ function RivalryCard({ stats }: RivalryCardProps) {
 
   const decisiveText =
     decisive
-      ? `Biggest win: ${GENT_LABELS[decisive.winner]} +${decisive.gap} (${decisive.date.slice(0, 10)})`
+      ? `Biggest win: ${GENT_LABELS[decisive.winner]} +${decisive.gap} (${formatDate(decisive.date)})`
       : null
 
   return (

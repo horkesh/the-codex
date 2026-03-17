@@ -6,9 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  }).format(new Date(date))
+  const d = new Date(date)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${dd}/${mm}/${d.getFullYear()}`
 }
 
 export function daysUntil(date: string | Date): number {

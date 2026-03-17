@@ -22,7 +22,7 @@ export const VARIANT_INNER: React.CSSProperties = {
 /** Format date as "MONTH YEAR" uppercase */
 export function monthYear(date: string): string {
   return new Date(date + 'T12:00:00Z')
-    .toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })
     .toUpperCase()
 }
 

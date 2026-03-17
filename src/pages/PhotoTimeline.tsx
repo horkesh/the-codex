@@ -25,7 +25,7 @@ function groupByMonth(photos: TimelinePhoto[]): Array<{ label: string; photos: T
   // Already sorted by date DESC from fetch, so insertion order is correct
   return Array.from(groups.entries()).map(([, photos]) => {
     const d = new Date(photos[0].entry_date + 'T00:00:00')
-    const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    const label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
     return { label, photos }
   })
 }

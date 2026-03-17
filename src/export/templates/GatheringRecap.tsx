@@ -57,7 +57,7 @@ export const GatheringRecap = React.forwardRef<HTMLDivElement, GatheringRecapPro
             </span>
             {location && <span style={{ color: '#c9a84c60' }}>·</span>}
             <span style={{ fontFamily: 'Instrument Sans, Arial, sans-serif', fontSize: '14px', color: '#c8c0b0', letterSpacing: '0.05em' }}>
-              {eventDate ? new Date(eventDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date(entry.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {(() => { const d = new Date(eventDate ?? entry.date); const dd = String(d.getDate()).padStart(2, '0'); const mm = String(d.getMonth() + 1).padStart(2, '0'); return `${dd}/${mm}/${d.getFullYear()}` })()}
             </span>
           </div>
 

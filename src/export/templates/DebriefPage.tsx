@@ -9,11 +9,9 @@ interface DebriefPageProps {
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${dd}/${mm}/${d.getFullYear()}`
 }
 
 export const DebriefPage = React.forwardRef<HTMLDivElement, DebriefPageProps>(

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Spinner } from '@/components/ui/Spinner'
+import { formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 import {
   fetchBucketList,
@@ -273,7 +274,7 @@ function MarkDoneModal({ item, entries, onClose, onDone }: MarkDoneModalProps) {
             <option value="">No entry</option>
             {recentEntries.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.date.slice(0, 10)} · {e.title}
+                {formatDate(e.date)} · {e.title}
               </option>
             ))}
           </select>
@@ -460,7 +461,7 @@ function BucketItemCard({ item, onMarkDone, onPass, onDelete, dimmed = false, li
           to={`/chronicle/${linkedEntry.id}`}
           className="mt-2 inline-flex items-center gap-1.5 text-[10px] text-gold/80 font-body border border-gold/20 bg-gold/5 rounded-full px-2.5 py-1 hover:border-gold/40 transition-colors"
         >
-          <span>›</span> {linkedEntry.date.slice(0, 10)} · {linkedEntry.title}
+          <span>›</span> {formatDate(linkedEntry.date)} · {linkedEntry.title}
         </Link>
       )}
     </motion.div>

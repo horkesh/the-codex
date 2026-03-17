@@ -70,7 +70,7 @@ export const PassportPageExport = React.forwardRef<HTMLDivElement, PassportPageE
 
           {/* Date */}
           <div style={{ marginTop: '24px', fontFamily: 'Instrument Sans, Arial, sans-serif', fontSize: '13px', letterSpacing: '0.2em', textTransform: 'uppercase', color: mutedColor }}>
-            {new Date(entry.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {(() => { const d = new Date(entry.date); const dd = String(d.getDate()).padStart(2, '0'); const mm = String(d.getMonth() + 1).padStart(2, '0'); return `${dd}/${mm}/${d.getFullYear()}` })()}
           </div>
 
           {/* Spacer */}

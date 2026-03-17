@@ -18,7 +18,9 @@ export const AchievementCard = React.forwardRef<HTMLDivElement, AchievementCardP
     const dateLabel = (() => {
       try {
         const d = new Date(earnedAt)
-        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+        const dd = String(d.getDate()).padStart(2, '0')
+        const mm = String(d.getMonth() + 1).padStart(2, '0')
+        return `${dd}/${mm}/${d.getFullYear()}`
       } catch {
         return earnedAt
       }
