@@ -1,4 +1,4 @@
 export { BrandMark } from './BrandMark'
 export { GoldRule } from './GoldRule'
 export { BackgroundLayer } from './BackgroundLayer'
-export { getOneliner } from './utils'
+export { getOneliner, VARIANT_INNER, monthYear, calcDuration, visaWord, aliasDisplay } from './utils'

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, GoldRule, BackgroundLayer, getOneliner } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
 
 interface SteakVerdictProps {
   entry: Entry
@@ -42,7 +42,7 @@ function V1({ entry, backgroundUrl, rewardKeys }: SteakVerdictProps) {
   const oneliner = getOneliner(entry)
   const display = oneliner || (verdict ? `"${verdict}"` : null)
   return (
-    <div style={{ ...ROOT, alignItems: 'center', paddingLeft: '80px', paddingRight: '80px' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', paddingLeft: '80px', paddingRight: '80px' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <ConnoisseurBadge rewardKeys={rewardKeys} style={{ position: 'absolute', top: '72px', right: '80px', zIndex: 3 }} />
       <div style={{ paddingTop: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', ...Z2 }}>
@@ -75,7 +75,7 @@ function V2({ entry, backgroundUrl, rewardKeys }: SteakVerdictProps) {
   const { cut, score } = getMeta(entry)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT }}>
+    <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <ConnoisseurBadge rewardKeys={rewardKeys} style={{ position: 'absolute', top: '72px', right: '80px', zIndex: 3 }} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '80px', ...Z2 }}>
@@ -96,7 +96,7 @@ function V3({ entry, backgroundUrl }: SteakVerdictProps) {
   const { cut, score } = getMeta(entry)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '80px', ...Z2 }}>
         {score !== undefined && (
@@ -120,7 +120,7 @@ function V4({ entry, backgroundUrl }: SteakVerdictProps) {
   const { cut, score } = getMeta(entry)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT }}>
+    <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ padding: '72px 80px 0', ...Z2 }}>
         <div style={{ border: '1px solid rgba(201,168,76,0.4)', borderRadius: '4px', padding: '6px 16px', display: 'inline-block' }}>
@@ -149,7 +149,7 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
     const inner = (() => {
       switch (variant) { case 2: return <V2 {...props} />; case 3: return <V3 {...props} />; case 4: return <V4 {...props} />; default: return <V1 {...props} /> }
     })()
-    return <div ref={ref}>{inner}</div>
+    return <div ref={ref} style={ROOT}>{inner}</div>
   }
 )
 SteakVerdict.displayName = 'SteakVerdict'

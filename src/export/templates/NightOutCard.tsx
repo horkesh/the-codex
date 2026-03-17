@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, GoldRule, BackgroundLayer, getOneliner } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
 
 interface NightOutCardProps {
   entry: Entry
@@ -27,7 +27,7 @@ const Z2: React.CSSProperties = { position: 'relative', zIndex: 2 }
 function V1({ entry, backgroundUrl }: NightOutCardProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT, alignItems: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ width: '100%', paddingTop: '56px', paddingLeft: '80px', paddingRight: '80px', ...Z2 }}>
         <GoldRule thick />
@@ -64,7 +64,7 @@ function V1({ entry, backgroundUrl }: NightOutCardProps) {
 function V2({ entry, backgroundUrl }: NightOutCardProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT }}>
+    <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '80px', ...Z2 }}>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600', marginBottom: '20px' }}>NIGHT OUT</p>
@@ -89,7 +89,7 @@ function V2({ entry, backgroundUrl }: NightOutCardProps) {
 function V3({ entry, backgroundUrl }: NightOutCardProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px', padding: '80px', ...Z2 }}>
         {oneliner && (
@@ -114,7 +114,7 @@ function V3({ entry, backgroundUrl }: NightOutCardProps) {
 function V4({ entry, backgroundUrl }: NightOutCardProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT }}>
+    <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       {/* Top label */}
       <div style={{ padding: '72px 80px 0', ...Z2 }}>
@@ -154,7 +154,7 @@ export const NightOutCard = React.forwardRef<HTMLDivElement, NightOutCardProps>(
         default: return <V1 {...props} />
       }
     })()
-    return <div ref={ref}>{inner}</div>
+    return <div ref={ref} style={ROOT}>{inner}</div>
   }
 )
 

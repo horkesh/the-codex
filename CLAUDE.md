@@ -125,7 +125,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Visa page (in-app)**: `/passport/visa/{stampId}` — cream passport aesthetic (`#F5F0E1`), navy text, "VIZE-ВИЗЕ-VISAS" header, stamp, polaroid photo, data fields, debrief section.
 - **AI Mission Debrief**: "Generate Mission Debrief" button calls `generate-mission-debrief` edge function (`claude-sonnet-4-6`). Retries text-only if photo URLs fail (400). Returns classified narrative, landmarks, highlights, risk assessment. Stored in `entry.metadata`. `verify_jwt = false` in config.toml.
 - **Visa carousel export** (`src/export/templates/visa-carousel/`): dynamic Instagram carousel (2–7 slides, all 1080×1350):
-  - `VisaCardSlide` — photo band, flag+VIZA, destination, bearer row (avatars+aliases), one-liner, stamp overlay
+  - `VisaCardSlide` — photo band (480px, uses `getCoverCrop`), flag+VIZA, destination (48px), bearer row (56px avatars), one-liner + stamp in flex row (not absolute)
   - `HeroLoreSlide` — cover photo top half, one-liner, title+date, participant avatars
   - `PhotoGridSlide` — 2×2 photo grid (4 per slide, max 3 slides), title+date header
   - `DebriefSlide` — classified badge, debrief text, landmark pills, highlights, risk assessment
@@ -151,7 +151,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 
 ## In-app Visa Page (`src/pages/VisaPage.tsx`)
 - Two-part layout: dense artifact card (top) + magazine-style story (below).
-- **Visa card**: photo band (h-40 with gradient overlay, flag+VIZA overlaid), destination block (city large, date+duration badge), bearer row (vertical "BEARERS" label, participant avatars+aliases), one-liner, stamp overlay (absolute positioned, rotated -12deg).
+- **Visa card**: photo band (h-40 with gradient overlay, uses `getCoverCrop(entry)` for position, flag+VIZA overlaid), destination block (city large, date+duration badge), bearer row (vertical "BEARERS" label, participant avatars+aliases), one-liner + stamp in flex row (stamp right-aligned, not absolute — avoids text overlap).
 - **Magazine story**: "The Mission" section with hero photo, lore paragraphs with gold drop-cap, interspersed photo pairs; "Intelligence Report" section with debrief card (gold border, classified badge, landmarks, highlights, risk assessment).
 - Helpers: `calcDuration(start, end)`, `loreParagraphs(lore)`, `SectionDivider` component.
 - Data fetching unchanged: entry, stamp, photos, participants via existing hooks.
@@ -173,10 +173,11 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
   - When no cover photo exists, Imagen generates a from-scratch background using type-specific prompts.
 - Templates render via `BackgroundLayer` which applies both the background image and photo filter CSS from context.
 - **Template variants**: Night Out, Mission, Steak, PS5 each have 4 layout variants (prop `variant={1|2|3|4}`). Variant 1 = classic, others = bold/quote/minimal/etc. Registered in `TEMPLATES_BY_TYPE` as separate `TemplateId` entries (e.g. `night_out_card_v2`).
-- **Lore oneliner in templates**: `getOneliner(entry)` in `src/export/templates/shared/utils.ts` extracts `metadata.lore_oneliner` or falls back to first sentence of lore. All template variants display the oneliner instead of full lore.
-- **Visa carousel** (mission entries): `VisaCarouselPreview` wraps all carousel slides, shows one at a time with dot nav + prev/next arrows. Uses lifted state pattern (`_carouselState` module variable + `useCarouselState()`) so nav renders outside the scaled `overflow:hidden` preview container. "Export Slide" (single) and "Export All" (full carousel via `exportMultipleToPng` → `shareMultipleImages`) buttons.
+- **Shared template utilities** (`src/export/templates/shared/utils.ts`): `getOneliner(entry)` extracts oneliner or falls back to first sentence. `VARIANT_INNER` CSS constant for inner variant layout. `monthYear(date)`, `calcDuration(start, end)`, `visaWord(cc)` for visa/passport templates. `aliasDisplay(alias, fullAlias)` maps gent aliases to display names.
+- **Visa carousel** (mission entries): `VisaCarouselPreview` wraps all carousel slides, shows one at a time with dot nav + prev/next arrows. `activeSlide` state is lifted to Studio parent and passed as props; `onStateReady` callback reports manifest/export state back to parent via `useMemo`-stabilised object. "Export Slide" (single) and "Export All" (full carousel via `exportMultipleToPng` → `shareMultipleImages`) buttons.
 - **Passport templates** (mission entries): `DebriefPage` (standalone debrief notes), `PassportIdPage` (gent identity — standalone, not entry-linked). All use `PassportFrame` shared component.
-- **Export fix**: `exportToPng` in `src/export/exporter.ts` inlines external background-image URLs as data URLs before export to fix CORS issues with `html-to-image`. Restores originals after.
+- **Export fix**: `exportToPng` in `src/export/exporter.ts` inlines external background-image URLs as data URLs before export to fix CORS issues with `html-to-image`. Restores originals after. No hardcoded dimensions in `EXPORT_OPTIONS` — element ref dimensions drive the export (1080x1350 for 4:5, 1080x1080 for square templates like CallingCard/AnnualWrapped).
+- **Template variant architecture**: Variant templates (NightOutCard, MissionCarousel, PS5MatchCard, SteakVerdict) use `forwardRef` wrapper with `style={ROOT}` (fixed dimensions + bg). Inner variant functions use `VARIANT_INNER` from `shared/utils.ts` (100% width/height fill). This ensures `html-to-image` captures the full template including absolutely-positioned `BackgroundLayer`.
 - **Multi-slide export**: `exportMultipleToPng(elements)` processes slides sequentially; `shareMultipleImages(blobs, prefix)` uses Web Share API with download fallback.
 
 ## Creator-only entry controls

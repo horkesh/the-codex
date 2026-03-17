@@ -1,4 +1,5 @@
 import React from 'react'
+import { monthYear } from '@/export/templates/shared/utils'
 import { PassportFrame } from '@/export/templates/shared/PassportFrame'
 import { BrandMark } from '@/export/templates/shared/BrandMark'
 
@@ -8,12 +9,6 @@ interface PhotoGridSlideProps {
   entryDate: string
 }
 
-function monthYear(date: string): string {
-  return new Date(date + 'T12:00:00Z')
-    .toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
-    .toUpperCase()
-}
-
 export const PhotoGridSlide = React.forwardRef<HTMLDivElement, PhotoGridSlideProps>(
   ({ photos, entryTitle, entryDate }, ref) => {
     // Fill to 4 slots for consistent grid
@@ -21,22 +16,22 @@ export const PhotoGridSlide = React.forwardRef<HTMLDivElement, PhotoGridSlidePro
     while (slots.length < 4) slots.push(null as unknown as typeof photos[0])
 
     return (
-      <div ref={ref}>
+      <div ref={ref} style={{ width: 1080, height: 1350 }}>
         <PassportFrame>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
             {/* Title + date */}
-            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
-                fontSize: 22, fontWeight: 700, color: '#1B3A5C', letterSpacing: '0.02em',
+                fontSize: 36, fontWeight: 700, color: '#1B3A5C', letterSpacing: '0.02em',
               }}>
                 {entryTitle}
               </div>
               <div style={{
                 fontFamily: "'Instrument Sans', sans-serif",
-                fontSize: 13, color: '#5A6B7A', letterSpacing: '0.1em',
-                textTransform: 'uppercase' as const, marginTop: 6,
+                fontSize: 20, color: '#5A6B7A', letterSpacing: '0.1em',
+                textTransform: 'uppercase' as const, marginTop: 8,
               }}>
                 {monthYear(entryDate)}
               </div>
@@ -44,13 +39,13 @@ export const PhotoGridSlide = React.forwardRef<HTMLDivElement, PhotoGridSlidePro
 
             {/* 2x2 grid */}
             <div style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
-              flex: 1, maxHeight: 900,
+              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14,
+              flex: 1, maxHeight: 920,
             }}>
               {slots.slice(0, 4).map((photo, i) => (
                 <div key={i} style={{
-                  borderRadius: 8, overflow: 'hidden',
-                  border: '1px solid rgba(201,168,76,0.2)',
+                  borderRadius: 10, overflow: 'hidden',
+                  border: '1.5px solid rgba(201,168,76,0.2)',
                   background: photo ? undefined : 'rgba(201,168,76,0.04)',
                 }}>
                   {photo ? (
@@ -67,8 +62,8 @@ export const PhotoGridSlide = React.forwardRef<HTMLDivElement, PhotoGridSlidePro
             </div>
 
             {/* BrandMark */}
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 16, paddingBottom: 8 }}>
-              <BrandMark size="sm" />
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 20, paddingBottom: 8 }}>
+              <BrandMark size="md" />
             </div>
           </div>
         </PassportFrame>

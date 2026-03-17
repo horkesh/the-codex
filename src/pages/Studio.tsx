@@ -133,22 +133,24 @@ function previewContainerHeight(dims: string): number {
 // Visa Carousel Preview — renders all slides, shows one at a time
 // ---------------------------------------------------------------------------
 
-// Shared carousel state — lifted so nav can render outside scaled preview
-let _carouselState: {
+interface CarouselState {
   manifest: Array<{ id: string; label: string }>
   activeSlide: number
   setActiveSlide: (n: number) => void
   exportAll: () => Promise<void>
   exporting: boolean
-} | null = null
+}
 
-function useCarouselState() { return _carouselState }
-
-function VisaCarouselPreview({ entry, innerRef }: { entry: Entry; innerRef: React.Ref<HTMLDivElement> }) {
+function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onStateReady }: {
+  entry: Entry
+  innerRef: React.Ref<HTMLDivElement>
+  activeSlide: number
+  setActiveSlide: (n: number) => void
+  onStateReady: (state: CarouselState | null) => void
+}) {
   const [fullEntry, setFullEntry] = useState<import('@/types/app').EntryWithParticipants | null>(null)
   const [carouselPhotos, setCarouselPhotos] = useState<Array<{ url: string; caption: string | null }>>([])
   const [carouselStamp, setCarouselStamp] = useState<import('@/types/app').PassportStamp | null>(null)
-  const [activeSlide, setActiveSlide] = useState(0)
   const slideRefs = useRef<Array<HTMLDivElement | null>>([])
   const [carouselExporting, setCarouselExporting] = useState(false)
 
@@ -184,8 +186,15 @@ function VisaCarouselPreview({ entry, innerRef }: { entry: Entry; innerRef: Reac
     }
   }, [fullEntry])
 
-  // Expose state for external nav
-  _carouselState = { manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting }
+  // Report state to parent so nav renders with fresh React state
+  const carouselStateObj = useMemo<CarouselState | null>(() => {
+    if (manifest.length === 0) return null
+    return { manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting }
+  }, [manifest, activeSlide, setActiveSlide, handleExportAll, carouselExporting])
+
+  useEffect(() => {
+    onStateReady(carouselStateObj)
+  }, [carouselStateObj, onStateReady])
 
   if (!fullEntry) return <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: 1080, height: 1350, background: '#F5F0E1' }} />
 
@@ -251,6 +260,9 @@ interface TemplateRendererProps {
   comparisonParam?: string
   achievementData?: { name: string; description: string; earnedBy: string; earnedAt: string } | null
   gent?: { display_name: string; alias: string; full_alias: string; avatar_url: string | null }
+  carouselActiveSlide?: number
+  carouselSetActiveSlide?: (n: number) => void
+  onCarouselStateReady?: (state: CarouselState | null) => void
 }
 
 function RivalryCardWrapper({
@@ -282,7 +294,7 @@ function RivalryCardWrapper({
   return <RivalryCard ref={innerRef} gentA={statA} gentB={statB} backgroundUrl={backgroundUrl} />
 }
 
-function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData, gent }: TemplateRendererProps) {
+function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData, gent, carouselActiveSlide, carouselSetActiveSlide, onCarouselStateReady }: TemplateRendererProps) {
   switch (templateId) {
     case 'night_out_card':
       return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
@@ -325,7 +337,7 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
     case 'interlude_card':
       return <InterludeCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'visa_carousel':
-      return <VisaCarouselPreview entry={entry} innerRef={innerRef} />
+      return <VisaCarouselPreview entry={entry} innerRef={innerRef} activeSlide={carouselActiveSlide ?? 0} setActiveSlide={carouselSetActiveSlide ?? (() => {})} onStateReady={onCarouselStateReady ?? (() => {})} />
     case 'debrief_page':
       return <DebriefPage ref={innerRef} entry={entry} />
     case 'passport_id_page':
@@ -483,6 +495,11 @@ export default function Studio() {
 
   const templateRef = useRef<HTMLDivElement>(null)
 
+  // Carousel state — lifted so nav renders with fresh React state
+  const [carouselActiveSlide, setCarouselActiveSlide] = useState(0)
+  const [carouselState, setCarouselState] = useState<CarouselState | null>(null)
+  const handleCarouselStateReady = useCallback((state: CarouselState | null) => setCarouselState(state), [])
+
   // Achievement data for the template renderer
   const achievementData = useMemo(() => {
     if (!selectedAchievement || !gent) return null
@@ -556,6 +573,8 @@ export default function Studio() {
   // When template changes, keep the current background (cover or AI)
   function handleSelectTemplate(templateId: TemplateId) {
     setSelectedTemplate(templateId)
+    setCarouselActiveSlide(0)
+    setCarouselState(null)
   }
 
   async function handleGenerateBg() {
@@ -891,21 +910,21 @@ export default function Studio() {
                       comparisonParam={comparisonParam ?? undefined}
                       achievementData={achievementData}
                       gent={gentData}
+                      carouselActiveSlide={carouselActiveSlide}
+                      carouselSetActiveSlide={setCarouselActiveSlide}
+                      onCarouselStateReady={handleCarouselStateReady}
                     />
                   </PhotoFilterContext.Provider>
                 </div>
               </div>
 
               {/* Carousel nav — rendered outside the scaled preview container */}
-              {selectedTemplate === 'visa_carousel' && (() => {
-                const cs = useCarouselState()
-                if (!cs || cs.manifest.length < 2) return null
-                return (
+              {selectedTemplate === 'visa_carousel' && carouselState && carouselState.manifest.length >= 2 && (
                   <div className="flex items-center justify-between mb-3 mt-1">
                     <button
                       type="button"
-                      onClick={() => cs.setActiveSlide(Math.max(0, cs.activeSlide - 1))}
-                      disabled={cs.activeSlide === 0}
+                      onClick={() => setCarouselActiveSlide(Math.max(0, carouselActiveSlide - 1))}
+                      disabled={carouselActiveSlide === 0}
                       className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 border border-white/10 disabled:opacity-30 transition-opacity"
                     >
                       <ChevronLeft size={16} className="text-ivory" />
@@ -914,14 +933,14 @@ export default function Studio() {
                     <div className="flex items-center gap-3">
                       {/* Dot indicators */}
                       <div className="flex gap-1.5">
-                        {cs.manifest.map((slide, i) => (
+                        {carouselState.manifest.map((slide, i) => (
                           <button
                             key={slide.id}
                             type="button"
-                            onClick={() => cs.setActiveSlide(i)}
+                            onClick={() => setCarouselActiveSlide(i)}
                             className={[
                               'w-2 h-2 rounded-full transition-all duration-200',
-                              i === cs.activeSlide ? 'bg-gold w-5' : 'bg-white/20 hover:bg-white/40',
+                              i === carouselActiveSlide ? 'bg-gold w-5' : 'bg-white/20 hover:bg-white/40',
                             ].join(' ')}
                             aria-label={slide.label}
                           />
@@ -929,21 +948,20 @@ export default function Studio() {
                       </div>
                       {/* Slide counter */}
                       <span className="text-[11px] font-mono text-ivory-dim">
-                        {cs.activeSlide + 1}/{cs.manifest.length}
+                        {carouselActiveSlide + 1}/{carouselState.manifest.length}
                       </span>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => cs.setActiveSlide(Math.min(cs.manifest.length - 1, cs.activeSlide + 1))}
-                      disabled={cs.activeSlide === cs.manifest.length - 1}
+                      onClick={() => setCarouselActiveSlide(Math.min(carouselState.manifest.length - 1, carouselActiveSlide + 1))}
+                      disabled={carouselActiveSlide === carouselState.manifest.length - 1}
                       className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 border border-white/10 disabled:opacity-30 transition-opacity"
                     >
                       <ChevronRight size={16} className="text-ivory" />
                     </button>
                   </div>
-                )
-              })()}
+              )}
 
               {/* Dims label */}
               <p className="text-[11px] font-mono text-ivory-dim text-center mb-4">
@@ -990,10 +1008,7 @@ export default function Studio() {
               </div>
 
               {/* Export buttons */}
-              {selectedTemplate === 'visa_carousel' && (() => {
-                const cs = useCarouselState()
-                if (cs && cs.manifest.length > 1) {
-                  return (
+              {selectedTemplate === 'visa_carousel' && carouselState && carouselState.manifest.length > 1 ? (
                     <div className="flex gap-2 mb-2">
                       <Button
                         variant="primary"
@@ -1010,19 +1025,15 @@ export default function Studio() {
                         variant="primary"
                         size="lg"
                         fullWidth
-                        loading={cs.exporting}
-                        onClick={cs.exportAll}
+                        loading={carouselState.exporting}
+                        onClick={carouselState.exportAll}
                         className="gap-2"
                       >
-                        {!cs.exporting && <Share2 size={16} strokeWidth={2} />}
-                        {cs.exporting ? 'Exporting…' : `Export All (${cs.manifest.length})`}
+                        {!carouselState.exporting && <Share2 size={16} strokeWidth={2} />}
+                        {carouselState.exporting ? 'Exporting…' : `Export All (${carouselState.manifest.length})`}
                       </Button>
                     </div>
-                  )
-                }
-                return null
-              })()}
-              {(selectedTemplate !== 'visa_carousel' || !useCarouselState() || (useCarouselState()?.manifest.length ?? 0) <= 1) && (
+              ) : (
                 <Button
                   variant="primary"
                   size="lg"

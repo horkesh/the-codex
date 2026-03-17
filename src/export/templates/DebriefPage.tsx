@@ -29,7 +29,7 @@ export const DebriefPage = React.forwardRef<HTMLDivElement, DebriefPageProps>(
       : formatDate(entry.date)
 
     return (
-      <div ref={ref}>
+      <div ref={ref} style={{ width: 1080, height: 1350 }}>
         <PassportFrame header="BILJEŠKE-ЗАБЕЛЕЖКЕ-OBSERVATIONS">
           {/* Mission title */}
           <div

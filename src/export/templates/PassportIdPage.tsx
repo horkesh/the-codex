@@ -39,7 +39,7 @@ export const PassportIdPage = React.forwardRef<HTMLDivElement, PassportIdPagePro
     ]
 
     return (
-      <div ref={ref}>
+      <div ref={ref} style={{ width: 1080, height: 1350 }}>
         <PassportFrame>
           {/* Portrait section */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 40 }}>

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, BackgroundLayer, getOneliner } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
 
 interface MissionCarouselProps {
   entry: Entry
@@ -37,7 +37,7 @@ function VeteranBadge({ rewardKeys, style }: { rewardKeys?: Set<string>; style?:
 function V1({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT, alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'space-between' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <VeteranBadge rewardKeys={rewardKeys} style={{ position: 'absolute', bottom: '120px', right: '72px', zIndex: 3 }} />
       {!backgroundUrl && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(135deg, transparent, transparent 40px, rgba(201,168,76,0.03) 40px, rgba(201,168,76,0.03) 41px)', pointerEvents: 'none', zIndex: 1 }} />}
@@ -61,7 +61,7 @@ function V1({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
 function V2({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT }}>
+    <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <VeteranBadge rewardKeys={rewardKeys} style={{ position: 'absolute', top: '72px', right: '80px', zIndex: 3 }} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '80px', ...Z2 }}>
@@ -81,7 +81,7 @@ function V2({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
 function V3({ entry, backgroundUrl }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '80px', ...Z2 }}>
         <div style={{ width: '160px', height: '160px', borderRadius: '50%', border: '2px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '4px' }}>
@@ -103,7 +103,7 @@ function V3({ entry, backgroundUrl }: MissionCarouselProps) {
 function V4({ entry, backgroundUrl }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT, alignItems: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1, opacity: 0.06 }}>
         <span style={{ fontFamily: 'var(--font-display)', fontSize: '240px', fontWeight: '700', color: '#C9A84C', whiteSpace: 'nowrap', letterSpacing: '-0.04em' }}>{entry.city}</span>
@@ -127,7 +127,7 @@ export const MissionCarousel = React.forwardRef<HTMLDivElement, MissionCarouselP
     const inner = (() => {
       switch (variant) { case 2: return <V2 {...props} />; case 3: return <V3 {...props} />; case 4: return <V4 {...props} />; default: return <V1 {...props} /> }
     })()
-    return <div ref={ref}>{inner}</div>
+    return <div ref={ref} style={ROOT}>{inner}</div>
   }
 )
 MissionCarousel.displayName = 'MissionCarousel'

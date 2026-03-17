@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry, PS5Match } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, BackgroundLayer, getOneliner } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
 
 interface PS5MatchCardProps {
   entry: Entry
@@ -64,7 +64,7 @@ function V1({ entry, backgroundUrl }: PS5MatchCardProps) {
   const pairings = buildPairings(h2h)
   const wc = winCounts(h2h)
   return (
-    <div style={{ ...ROOT, alignItems: 'center', paddingLeft: '80px', paddingRight: '80px' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', paddingLeft: '80px', paddingRight: '80px' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GridTexture backgroundUrl={backgroundUrl} />
       <div style={{ paddingTop: '64px', width: '100%', ...Z2 }}>
@@ -109,7 +109,7 @@ function V2({ entry, backgroundUrl }: PS5MatchCardProps) {
   const sorted = Object.entries(wc).sort((a, b) => b[1] - a[1])
   const winner = sorted[0]
   return (
-    <div style={{ ...ROOT }}>
+    <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GridTexture backgroundUrl={backgroundUrl} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '80px', ...Z2 }}>
@@ -135,7 +135,7 @@ function V3({ entry, backgroundUrl }: PS5MatchCardProps) {
   const { totalMatches } = getMeta(entry)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GridTexture backgroundUrl={backgroundUrl} />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px', padding: '80px', ...Z2 }}>
@@ -162,7 +162,7 @@ function V4({ entry, backgroundUrl }: PS5MatchCardProps) {
   const pairings = buildPairings(h2h)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...ROOT, alignItems: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GridTexture backgroundUrl={backgroundUrl} />
       <div style={{ paddingTop: '72px', ...Z2 }}>
@@ -191,7 +191,7 @@ export const PS5MatchCard = React.forwardRef<HTMLDivElement, PS5MatchCardProps>(
     const inner = (() => {
       switch (variant) { case 2: return <V2 {...props} />; case 3: return <V3 {...props} />; case 4: return <V4 {...props} />; default: return <V1 {...props} /> }
     })()
-    return <div ref={ref}>{inner}</div>
+    return <div ref={ref} style={ROOT}>{inner}</div>
   }
 )
 PS5MatchCard.displayName = 'PS5MatchCard'

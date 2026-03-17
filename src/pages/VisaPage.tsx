@@ -5,11 +5,12 @@ import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar, Spinner, Button } from '@/components/ui'
 import { fetchStamp } from '@/data/stamps'
 import { fetchEntry, fetchEntryPhotos, updateEntry } from '@/data/entries'
-import { flagEmoji, cn } from '@/lib/utils'
+import { flagEmoji, cn, getCoverCrop } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
 import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw } from 'lucide-react'
 import { useUIStore } from '@/store/ui'
+import { getOneliner, visaWord, aliasDisplay } from '@/export/templates/shared/utils'
 import type { PassportStamp, EntryWithParticipants } from '@/types/app'
 
 interface EntryPhoto {
@@ -22,25 +23,8 @@ interface EntryPhoto {
 
 /* ── Helpers ── */
 
-function visaWord(cc: string | null): string {
-  if (!cc) return 'ENTRY VISA'
-  const map: Record<string, string> = { HR: 'VIZA', RS: '\u0412\u0418\u0417\u0410', BA: 'VIZA', HU: 'VIZA', ME: 'VIZA', SI: 'VIZUM' }
-  return map[cc.toUpperCase()] ?? 'ENTRY VISA'
-}
-
 function monthYear(date: string): string {
   return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(date)).toUpperCase()
-}
-
-function getOneliner(entry: EntryWithParticipants): string | null {
-  const meta = entry.metadata as Record<string, unknown> | undefined
-  const oneliner = meta?.lore_oneliner as string | undefined
-  if (oneliner) return oneliner
-  if (entry.lore) {
-    const match = entry.lore.match(/^[^.!?]+[.!?]/)
-    return match ? match[0] : entry.lore.slice(0, 120)
-  }
-  return null
 }
 
 function calcDuration(start: string, end?: string): string | null {
@@ -179,6 +163,7 @@ export default function VisaPage() {
   const cc = entry.country_code?.toUpperCase() ?? null
   const oneliner = getOneliner(entry)
   const coverPhoto = entry.cover_image_url ?? photos[0]?.url ?? null
+  const coverCrop = getCoverCrop(entry)
 
   const meta = entry.metadata as Record<string, unknown> | undefined
   const missionDebrief = meta?.mission_debrief as string | undefined
@@ -254,7 +239,11 @@ export default function VisaPage() {
                   src={coverPhoto}
                   alt=""
                   className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 30%', filter: 'sepia(0.08) contrast(1.05)' }}
+                  style={{
+                    objectPosition: `${coverCrop.x}% ${coverCrop.y}%`,
+                    transform: coverCrop.scale !== 1 ? `scale(${coverCrop.scale})` : undefined,
+                    filter: 'sepia(0.08) contrast(1.05)',
+                  }}
                   draggable={false}
                 />
                 <div
@@ -358,7 +347,7 @@ export default function VisaPage() {
                             {p.display_name.split(' ')[0]}
                           </span>
                           <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '8px', color: '#8B7355', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                            {p.alias === 'lorekeeper' ? 'Lorekeeper' : p.alias === 'bass' ? 'Beard & Bass' : p.alias === 'keys' ? 'Keys & Cocktails' : p.full_alias ?? p.alias}
+                            {aliasDisplay(p.alias, p.full_alias)}
                           </span>
                         </div>
                       </div>
@@ -367,64 +356,67 @@ export default function VisaPage() {
                 </div>
               )}
 
-              {/* One-liner */}
-              {oneliner && (
-                <p
-                  className="text-center mt-3 px-2"
-                  style={{
-                    fontFamily: "'Playfair Display', Georgia, serif",
-                    fontStyle: 'italic',
-                    fontSize: '12px',
-                    color: '#5A6B7A',
-                    lineHeight: 1.55,
-                  }}
-                >
-                  &ldquo;{oneliner}&rdquo;
-                </p>
-              )}
-
-              {/* Stamp overlay — absolute positioned */}
-              {stamp.image_url ? (
-                <img
-                  src={stamp.image_url}
-                  alt="Mission stamp"
-                  className="absolute bottom-4 right-4"
-                  style={{
-                    width: '90px',
-                    height: '90px',
-                    borderRadius: '50%',
-                    transform: 'rotate(-12deg)',
-                    opacity: 0.5,
-                    filter: 'sepia(0.15)',
-                  }}
-                  draggable={false}
-                />
-              ) : (
-                <div
-                  className="absolute bottom-4 right-4"
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    border: '2.5px solid #8B4513',
-                    borderRadius: '50%',
-                    transform: 'rotate(-12deg)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    opacity: 0.45,
-                    padding: '6px',
-                  }}
-                >
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '7px', fontWeight: 700, color: '#8B4513', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.15 }}>
-                    {entry.city ?? entry.title}
-                  </span>
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '6px', color: '#8B4513', marginTop: '2px' }}>
-                    {monthYear(entry.date)}
-                  </span>
+              {/* One-liner + stamp row */}
+              <div className="flex items-end gap-3 mt-3">
+                <div className="flex-1 min-w-0">
+                  {oneliner && (
+                    <p
+                      className="px-1"
+                      style={{
+                        fontFamily: "'Playfair Display', Georgia, serif",
+                        fontStyle: 'italic',
+                        fontSize: '12px',
+                        color: '#5A6B7A',
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      &ldquo;{oneliner}&rdquo;
+                    </p>
+                  )}
                 </div>
-              )}
+                {/* Stamp */}
+                {stamp.image_url ? (
+                  <img
+                    src={stamp.image_url}
+                    alt="Mission stamp"
+                    style={{
+                      width: '72px',
+                      height: '72px',
+                      borderRadius: '50%',
+                      transform: 'rotate(-12deg)',
+                      opacity: 0.5,
+                      filter: 'sepia(0.15)',
+                      flexShrink: 0,
+                    }}
+                    draggable={false}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '64px',
+                      height: '64px',
+                      border: '2.5px solid #8B4513',
+                      borderRadius: '50%',
+                      transform: 'rotate(-12deg)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textAlign: 'center',
+                      opacity: 0.45,
+                      padding: '4px',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ fontFamily: 'Georgia, serif', fontSize: '7px', fontWeight: 700, color: '#8B4513', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.15 }}>
+                      {entry.city ?? entry.title}
+                    </span>
+                    <span style={{ fontFamily: 'Georgia, serif', fontSize: '6px', color: '#8B4513', marginTop: '2px' }}>
+                      {monthYear(entry.date)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
