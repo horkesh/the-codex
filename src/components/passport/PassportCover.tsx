@@ -19,24 +19,6 @@ interface PassportCoverProps {
   missionCount?: number
 }
 
-/** SVG chip icon matching the physical passport */
-function ChipIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 30" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="1" width="38" height="28" rx="3" stroke="currentColor" strokeWidth="1.5" />
-      <rect x="8" y="6" width="24" height="18" rx="1.5" stroke="currentColor" strokeWidth="1" />
-      <line x1="8" y1="12" x2="0" y2="12" stroke="currentColor" strokeWidth="1" />
-      <line x1="8" y1="18" x2="0" y2="18" stroke="currentColor" strokeWidth="1" />
-      <line x1="32" y1="12" x2="40" y2="12" stroke="currentColor" strokeWidth="1" />
-      <line x1="32" y1="18" x2="40" y2="18" stroke="currentColor" strokeWidth="1" />
-      <line x1="16" y1="6" x2="16" y2="0" stroke="currentColor" strokeWidth="1" />
-      <line x1="24" y1="6" x2="24" y2="0" stroke="currentColor" strokeWidth="1" />
-      <line x1="16" y1="24" x2="16" y2="30" stroke="currentColor" strokeWidth="1" />
-      <line x1="24" y1="24" x2="24" y2="30" stroke="currentColor" strokeWidth="1" />
-    </svg>
-  )
-}
-
 export function PassportCover({ gent, onOpen, stampCount, countryCount, cities, missionCount }: PassportCoverProps) {
   const intelText = useMemo(() => {
     if (!cities?.length) return null
@@ -67,24 +49,53 @@ export function PassportCover({ gent, onOpen, stampCount, countryCount, cities, 
         <div
           className={cn(
             'relative w-full',
+            'bg-slate-dark',
             'border-2 border-gold/30 rounded-xl',
             'overflow-hidden',
           )}
           style={{
-            backgroundImage: 'url(/passport-cover.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(201,168,76,0.02) 2px, rgba(201,168,76,0.02) 4px)',
             boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.08), inset 0 1px 0 rgba(201,168,76,0.1), inset 0 0 60px rgba(201,168,76,0.05)',
           }}
         >
-        {/* Spacer to push content below the cover emblem area */}
-        <div className="pt-[60%]" />
+        {/* Spine accent line */}
+        <div className="h-1 w-full bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
 
-        {/* Interior — overlaid on the cover image */}
-        <div className="px-7 pb-7 pt-2 flex flex-col items-center gap-4">
+        {/* Interior */}
+        <div className="px-7 py-8 flex flex-col items-center gap-5">
+
+          {/* Header label */}
+          <p className="text-xs tracking-[0.3em] text-gold uppercase font-body font-medium">
+            The Gents Chronicles
+          </p>
+
+          {/* Gents logo */}
+          <img
+            src="/logo-gold.webp"
+            alt="The Gents"
+            className="w-24 h-24 object-contain"
+            draggable={false}
+          />
+
+          {/* Title */}
+          <div className="flex flex-col items-center gap-1">
+            <h1 className="font-display text-3xl text-gold tracking-wide leading-none">
+              CODEX
+            </h1>
+            <p className="text-[10px] tracking-[0.2em] text-ivory-dim uppercase font-body">
+              Paso&scaron; &middot; &#1055;&#1072;&#1089;&#1086;&#1096; &middot; Putovnica &middot; Passport
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="w-full flex items-center gap-3">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-gold/30" />
+            <div className="w-1 h-1 rounded-full bg-gold/50" />
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-gold/30" />
+          </div>
 
           {/* Bearer info */}
-          <div className="flex flex-col items-center gap-2.5 w-full">
+          <div className="flex flex-col items-center gap-3 w-full">
             <Avatar
               src={gent.avatar_url}
               name={gent.display_name}
@@ -92,10 +103,10 @@ export function PassportCover({ gent, onOpen, stampCount, countryCount, cities, 
               active
             />
             <div className="flex flex-col items-center gap-0.5">
-              <p className="font-display text-xl text-ivory leading-tight drop-shadow-lg">
+              <p className="font-display text-xl text-ivory leading-tight">
                 {gent.display_name}
               </p>
-              <p className="text-xs text-gold-muted uppercase tracking-[0.2em] font-body drop-shadow-lg">
+              <p className="text-xs text-gold-muted uppercase tracking-[0.2em] font-body">
                 {gent.alias}
               </p>
             </div>
@@ -130,14 +141,6 @@ export function PassportCover({ gent, onOpen, stampCount, countryCount, cities, 
               <p className="text-xs text-ivory-dim font-body leading-relaxed">{intelText}</p>
             </div>
           )}
-
-          {/* Multi-language passport text */}
-          <div className="flex items-center gap-3 w-full justify-center">
-            <p className="font-display text-[11px] text-gold/70 tracking-[0.15em] font-semibold leading-relaxed drop-shadow-lg text-center">
-              PASO&Scaron; &middot; &#1055;&#1040;&#1057;&#1054;&#1064; &middot; PUTOVNICA &middot; PASSPORT
-            </p>
-            <ChipIcon className="w-7 h-5 text-gold/50 shrink-0" />
-          </div>
 
           {/* Open button */}
           <motion.div
