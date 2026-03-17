@@ -1,13 +1,5 @@
 import { toPng } from 'html-to-image'
 
-// Options for all exports
-const EXPORT_OPTIONS: Record<string, unknown> = {
-  pixelRatio: 3,  // High-DPI for sharp Instagram images
-  skipFonts: false,
-  fontEmbedCSS: '',  // Will be populated at runtime
-  includeQueryParams: true,
-}
-
 /** Convert a data URL string to a Blob */
 function dataUrlToBlob(dataUrl: string): Blob {
   const [header, b64] = dataUrl.split(',')
@@ -21,7 +13,7 @@ function dataUrlToBlob(dataUrl: string): Blob {
 /** Fetch a URL and return it as a data URL, or null on failure */
 async function toDataUrl(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url)
+    const res = await fetch(url, { mode: 'cors' })
     if (!res.ok) return null
     const blob = await res.blob()
     return new Promise<string>((resolve) => {
@@ -41,6 +33,7 @@ async function toDataUrl(url: string): Promise<string | null> {
  */
 async function inlineAllImages(element: HTMLElement): Promise<() => void> {
   const restorers: Array<() => void> = []
+  const fetches: Promise<void>[] = []
 
   // 1. Inline CSS background-image URLs
   const styledEls = element.querySelectorAll<HTMLElement>('[style]')
@@ -49,12 +42,15 @@ async function inlineAllImages(element: HTMLElement): Promise<() => void> {
     if (!bgImage || !bgImage.startsWith('url(')) continue
     const urlMatch = bgImage.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/)
     if (!urlMatch) continue
-    const dataUrl = await toDataUrl(urlMatch[1])
-    if (dataUrl) {
-      const original = el.style.backgroundImage
-      el.style.backgroundImage = `url(${dataUrl})`
-      restorers.push(() => { el.style.backgroundImage = original })
-    }
+    fetches.push(
+      toDataUrl(urlMatch[1]).then(dataUrl => {
+        if (dataUrl) {
+          const original = el.style.backgroundImage
+          el.style.backgroundImage = `url(${dataUrl})`
+          restorers.push(() => { el.style.backgroundImage = original })
+        }
+      })
+    )
   }
 
   // 2. Inline <img> src URLs
@@ -62,25 +58,51 @@ async function inlineAllImages(element: HTMLElement): Promise<() => void> {
   for (const img of imgs) {
     const src = img.src
     if (!src || src.startsWith('data:') || src.startsWith('blob:')) continue
-    // Only inline external URLs (http/https) — skip local assets
     if (!src.startsWith('http')) continue
-    const dataUrl = await toDataUrl(src)
-    if (dataUrl) {
-      const original = img.src
-      img.src = dataUrl
-      restorers.push(() => { img.src = original })
-    }
+    fetches.push(
+      toDataUrl(src).then(dataUrl => {
+        if (dataUrl) {
+          const original = img.src
+          img.src = dataUrl
+          restorers.push(() => { img.src = original })
+        }
+      })
+    )
   }
+
+  // Fetch all images in parallel instead of sequentially
+  await Promise.all(fetches)
 
   return () => restorers.forEach(fn => fn())
 }
 
-/** Export a DOM element to a PNG blob */
+/** Small delay to let the DOM settle after image inlining */
+const settle = (ms: number) => new Promise(r => setTimeout(r, ms))
+
+/** Export a DOM element to a PNG blob with retry */
 export async function exportToPng(element: HTMLElement): Promise<Blob> {
   const restore = await inlineAllImages(element)
+  // Let the browser paint the inlined images before capture
+  await settle(50)
   try {
-    const dataUrl = await toPng(element, EXPORT_OPTIONS)
-    return dataUrlToBlob(dataUrl)
+    const opts = {
+      pixelRatio: 3,
+      skipFonts: false,
+      fontEmbedCSS: '',
+      // Tell html-to-image to use our already-inlined images
+      skipAutoScale: true,
+      includeQueryParams: false,
+    }
+    // First attempt
+    let dataUrl = await toPng(element, opts)
+    // Retry once if the result is suspiciously small (< 10KB = likely failed)
+    const blob = dataUrlToBlob(dataUrl)
+    if (blob.size < 10_000) {
+      await settle(200)
+      dataUrl = await toPng(element, opts)
+      return dataUrlToBlob(dataUrl)
+    }
+    return blob
   } finally {
     restore()
   }

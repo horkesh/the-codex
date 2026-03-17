@@ -33,6 +33,53 @@ function getMeta(entry: Entry) {
   return { song: (m?.song as string) ?? null }
 }
 
+/** Musical note symbols flanking the song title */
+function NoteAccents() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 12 }}>
+      <svg width={28} height={28} viewBox="0 0 24 24" fill="none">
+        <path d="M9 18V5l12-2v13" stroke="#C9A84C" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={6} cy={18} r={3} stroke="#C9A84C" strokeWidth={1.5} />
+        <circle cx={18} cy={16} r={3} stroke="#C9A84C" strokeWidth={1.5} />
+      </svg>
+      <div style={{ height: 1, width: 60, backgroundColor: '#C9A84C', opacity: 0.3 }} />
+      <svg width={28} height={28} viewBox="0 0 24 24" fill="none" style={{ transform: 'scaleX(-1)' }}>
+        <path d="M9 18V5l12-2v13" stroke="#C9A84C" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={6} cy={18} r={3} stroke="#C9A84C" strokeWidth={1.5} />
+        <circle cx={18} cy={16} r={3} stroke="#C9A84C" strokeWidth={1.5} />
+      </svg>
+    </div>
+  )
+}
+
+/** Piano keys decorative bar */
+function PianoBar() {
+  const whiteKeys = 14
+  const blackKeyPattern = [1, 1, 0, 1, 1, 1, 0] // pattern of black keys (1=has black, 0=gap)
+  return (
+    <div style={{ display: 'flex', marginBottom: 20, opacity: 0.25 }}>
+      {Array.from({ length: whiteKeys }, (_, i) => (
+        <div key={i} style={{ position: 'relative', width: 32, height: 48, backgroundColor: '#F0EDE8', border: '1px solid rgba(201,168,76,0.3)', marginRight: 1 }}>
+          {blackKeyPattern[i % 7] === 1 && (
+            <div style={{ position: 'absolute', top: 0, right: -8, width: 15, height: 30, backgroundColor: '#1a1a1a', borderRadius: '0 0 2px 2px', zIndex: 1 }} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Musical staff lines behind content */
+function StaffLines() {
+  return (
+    <div style={{ position: 'absolute', left: 60, right: 60, top: '40%', zIndex: 0, pointerEvents: 'none' }}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <div key={i} style={{ height: 1, backgroundColor: 'rgba(27,58,92,0.15)', marginBottom: 16 }} />
+      ))}
+    </div>
+  )
+}
+
 /* ─── V1: Marquee — Jazz club elegant ──────────────────────────────────────── */
 
 function V1({ entry, backgroundUrl }: LiveMusicCardProps) {
@@ -53,16 +100,19 @@ function V1({ entry, backgroundUrl }: LiveMusicCardProps) {
         )}
         <div style={{ height: 1, width: 64, backgroundColor: '#C9A84C', marginTop: 16, opacity: 0.5 }} />
       </div>
-      {/* Song hero */}
+      {/* Song hero with note accents */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
         {song && (
-          <h1 style={{
-            fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 72,
-            fontWeight: 700, color: '#F0EDE8', textAlign: 'center', lineHeight: 1.1,
-            letterSpacing: '-0.02em', margin: '0 0 32px',
-          }}>
-            {song}
-          </h1>
+          <>
+            <NoteAccents />
+            <h1 style={{
+              fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 72,
+              fontWeight: 700, color: '#F0EDE8', textAlign: 'center', lineHeight: 1.1,
+              letterSpacing: '-0.02em', margin: '0 0 32px',
+            }}>
+              {song}
+            </h1>
+          </>
         )}
         <h2 style={{
           fontFamily: 'var(--font-display)', fontSize: song ? 36 : 64,
@@ -102,7 +152,7 @@ function V1({ entry, backgroundUrl }: LiveMusicCardProps) {
   )
 }
 
-/* ─── V2: Poster — Gritty concert poster ───────────────────────────────────── */
+/* ─── V2: Poster — Gritty concert poster with piano keys ───────────────────── */
 
 function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
   const { song } = getMeta(entry)
@@ -110,17 +160,6 @@ function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
   return (
     <div style={{ ...INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
-      {/* Noise texture overlay */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', opacity: 0.08,
-        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
-      }} />
-      {/* Rough border */}
-      <div style={{
-        position: 'absolute', inset: 16, zIndex: 1, pointerEvents: 'none',
-        border: '2px solid rgba(201,168,76,0.2)',
-        boxShadow: 'inset 0 0 30px rgba(0,0,0,0.3)',
-      }} />
       {/* Content bottom-aligned */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 80, ...Z2 }}>
         <p style={{
@@ -130,13 +169,16 @@ function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
           Live
         </p>
         {song && (
-          <h1 style={{
-            fontFamily: 'var(--font-display)', fontSize: 96, fontWeight: 700,
-            color: '#F0EDE8', lineHeight: 0.95, letterSpacing: '-0.03em',
-            textTransform: 'uppercase', margin: '0 0 24px',
-          }}>
-            {song}
-          </h1>
+          <>
+            <PianoBar />
+            <h1 style={{
+              fontFamily: 'var(--font-display)', fontSize: 96, fontWeight: 700,
+              color: '#F0EDE8', lineHeight: 0.95, letterSpacing: '-0.03em',
+              textTransform: 'uppercase', margin: '0 0 24px',
+            }}>
+              {song}
+            </h1>
+          </>
         )}
         <h2 style={{
           fontFamily: 'var(--font-display)', fontSize: song ? 32 : 72,
@@ -168,7 +210,7 @@ function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
   )
 }
 
-/* ─── V3: Setlist — Paper setlist card ──────────────────────────────────────── */
+/* ─── V3: Setlist — Paper setlist with staff lines ──────────────────────────── */
 
 function V3({ entry, backgroundUrl }: LiveMusicCardProps) {
   const { song } = getMeta(entry)
@@ -181,6 +223,8 @@ function V3({ entry, backgroundUrl }: LiveMusicCardProps) {
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.12,
         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(27,58,92,0.3) 39px, rgba(27,58,92,0.3) 40px)',
       }} />
+      {/* Staff lines behind song */}
+      {song && <StaffLines />}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32, padding: 80, ...Z2 }}>
         <span style={{
           fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600,
@@ -231,7 +275,7 @@ function V3({ entry, backgroundUrl }: LiveMusicCardProps) {
   )
 }
 
-/* ─── V4: Vinyl — Record sleeve ─────────────────────────────────────────────── */
+/* ─── V4: Vinyl — Song inside the record ────────────────────────────────────── */
 
 function V4({ entry, backgroundUrl }: LiveMusicCardProps) {
   const { song } = getMeta(entry)
@@ -239,18 +283,37 @@ function V4({ entry, backgroundUrl }: LiveMusicCardProps) {
   return (
     <div style={{ ...INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
-      {/* Vinyl grooves — concentric rings */}
-      <svg
-        width={500} height={500}
-        viewBox="0 0 500 500"
-        style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1, opacity: 0.08 }}
-      >
-        {Array.from({ length: 12 }, (_, i) => (
-          <circle key={i} cx={250} cy={250} r={60 + i * 18} fill="none" stroke="#C9A84C" strokeWidth={0.8} />
-        ))}
-        <circle cx={250} cy={250} r={40} fill="none" stroke="#C9A84C" strokeWidth={2} />
-        <circle cx={250} cy={250} r={8} fill="#C9A84C" opacity={0.3} />
-      </svg>
+      {/* Vinyl record — grooves + song label in centre */}
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1 }}>
+        <svg width={600} height={600} viewBox="0 0 600 600">
+          {/* Grooves */}
+          {Array.from({ length: 16 }, (_, i) => (
+            <circle key={i} cx={300} cy={300} r={70 + i * 17} fill="none" stroke="rgba(201,168,76,0.06)" strokeWidth={0.8} />
+          ))}
+          {/* Outer rim */}
+          <circle cx={300} cy={300} r={295} fill="none" stroke="rgba(201,168,76,0.12)" strokeWidth={2} />
+          {/* Label area */}
+          <circle cx={300} cy={300} r={90} fill="rgba(201,168,76,0.06)" stroke="rgba(201,168,76,0.15)" strokeWidth={1.5} />
+          {/* Spindle */}
+          <circle cx={300} cy={300} r={8} fill="#C9A84C" opacity={0.3} />
+        </svg>
+        {/* Song name inside the label */}
+        {song && (
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+            width: 160, textAlign: 'center',
+          }}>
+            <span style={{
+              fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700,
+              color: '#C9A84C', letterSpacing: '0.05em', lineHeight: 1.2,
+              textTransform: 'uppercase',
+            }}>
+              {song}
+            </span>
+          </div>
+        )}
+      </div>
+      {/* Text content at bottom */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, padding: 80, ...Z2 }}>
         {song && (
           <h1 style={{
