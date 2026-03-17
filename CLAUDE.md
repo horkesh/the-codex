@@ -46,6 +46,7 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 - Language: "Gents" not "users", "Chronicle" not "feed", "Mission" not "trip", "Circle" not "contacts"
 - **No emojis** anywhere in the UI — they undermine the premium aesthetic. Use CSS ornamental elements instead.
 - **App imagery:** Entry-type images (1–7) in `public/entry-types/*.webp`; empty-state images (8–11) in `public/empty-states/*.webp`. Prompts and paths: `docs/03-architecture/entry_type_image_prompts.md`.
+- **Date format**: DD/MM/YYYY everywhere (European). `formatDate()` in `src/lib/utils.ts` outputs `05/03/2026`. Month+year labels (e.g. photo timeline, visa pages) use `en-GB` long month format ("March 2026").
 
 ## Portrait generation (`supabase/functions/generate-portrait/`)
 Two-step pipeline:
@@ -69,7 +70,7 @@ Client: `src/hooks/useVerdictIntake.ts` — compresses all images to 1024px WebP
 **UI entry point**: FAB on Circle's POI tab opens `ScanActionSheet` (bottom sheet) with two options:
 - **Research** — Instagram screenshot analysis → opens `POIModal` in `research` mode
 - **Scan** — Camera or photo from gallery → opens `POIModal` in `scan` mode
-`POIModal` receives a `mode` prop and no longer has an internal toggle.
+`POIModal` receives a `mode` prop and no longer has an internal toggle. Scan mode file input uses `accept="image/*"` without `capture` attribute — allows both camera and gallery on mobile.
 
 ## ReactFlow canvas height
 Shell uses `min-h-dvh` (not `h-dvh`), so `flex-1` children have no definite height → canvas is 0px (black screen). Always use `style={{ height: 'calc(100dvh - Xpx)' }}` where X = TopBar + SectionNav heights. Current: `calc(100dvh - 96px)` (TopBar 56px + SectionNav 40px).
@@ -183,8 +184,10 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Shared template utilities** (`src/export/templates/shared/utils.ts`): `getOneliner(entry)` extracts oneliner or falls back to first sentence. `VARIANT_INNER` CSS constant for inner variant layout. `monthYear(date)`, `calcDuration(start, end)`, `visaWord(cc)` for visa/passport templates. `aliasDisplay(alias, fullAlias)` maps gent aliases to display names.
 - **Visa carousel** (mission entries): `VisaCarouselPreview` wraps all carousel slides, shows one at a time with dot nav + prev/next arrows. `activeSlide` state is lifted to Studio parent and passed as props; `onStateReady` callback reports manifest/export state back to parent via `useMemo`-stabilised object. "Export Slide" (single) and "Export All" (full carousel via `exportMultipleToPng` → `shareMultipleImages`) buttons.
 - **Passport templates** (mission entries): `DebriefPage` (standalone debrief notes), `PassportIdPage` (gent identity — standalone, not entry-linked). All use `PassportFrame` shared component.
-- **Export fix**: `exportToPng` in `src/export/exporter.ts` inlines external background-image URLs as data URLs before export to fix CORS issues with `html-to-image`. Restores originals after. No hardcoded dimensions in `EXPORT_OPTIONS` — element ref dimensions drive the export (1080x1350 for 4:5, 1080x1080 for square templates like CallingCard/AnnualWrapped).
-- **Template variant architecture**: Variant templates (NightOutCard, MissionCarousel, PS5MatchCard, SteakVerdict) use `forwardRef` wrapper with `style={ROOT}` (fixed dimensions + bg). Inner variant functions use `VARIANT_INNER` from `shared/utils.ts` (100% width/height fill). This ensures `html-to-image` captures the full template including absolutely-positioned `BackgroundLayer`.
+- **Export engine**: `html2canvas` (replaced `html-to-image` which had SVG serialization issues). Studio renders templates **twice**: once scaled at 0.28x for preview, once hidden at full 1080x1350 in an off-screen container (`position: fixed; left: -9999px`) for export. `exportRef` points to the hidden copy; `templateRef` points to the preview. This avoids transform/overflow issues. `useCORS: true` handles Supabase Storage images. `scale: 3` for Instagram-quality output.
+- **Template variant architecture**: Variant templates (NightOutCard, MissionCarousel, PS5MatchCard, SteakVerdict) use `forwardRef` wrapper with `style={ROOT}` (fixed dimensions + bg). Inner variant functions use `VARIANT_INNER` from `shared/utils.ts` (100% width/height fill).
+- **InsetFrame** (`src/export/templates/shared/InsetFrame.tsx`): decorative gold inset border on all dark-bg templates. 24px from edges, gold line at `rgba(201,168,76,0.25)`. Outer 24px edge strips darkened (`rgba(0,0,0,0.35)`) + blurred (`backdrop-filter: blur(6px)`). Gallery mat / vignette effect.
+- **Template content alignment**: all template variants with background photos align content to the bottom (`justifyContent: 'flex-end'`) so faces in background photos stay visible at the top.
 - **Multi-slide export**: `exportMultipleToPng(elements)` processes slides sequentially; `shareMultipleImages(blobs, prefix)` uses Web Share API with download fallback.
 
 ## Creator-only entry controls
@@ -203,7 +206,8 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 ## Mission date range
 - MissionForm has Start Date and End Date (optional) inputs.
 - `date_end` stored in `entry.metadata.date_end` (not a DB column — avoids migration).
-- Display format: "Budapest, Hungary · Mar 5 – 12, 2026" when range, single date otherwise.
+- Display format: "Budapest, Hungary · 05/03 – 12/03/2026" when range, single date otherwise.
+- **Auto-fill**: when EXIF sets the start date and end date is empty, end date defaults to today.
 
 ## Pitch form
 - `PlaystationForm` has Title, Date, Location, and Matches fields.
@@ -234,7 +238,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 
 ## Mind map interactivity (`/circle/map`)
 - **Draggable nodes**: person nodes persist positions to `localStorage` (`codex_mindmap_positions`). Gent nodes drag with snap-back to triangle.
-- **Tier change on drop**: dragging a contact into a different ring zone shows a confirmation banner. POI nodes excluded.
+- **Tier change on drop**: dragging a contact into a different ring zone shows a personality-driven confirmation banner (promotion: "You sure X deserves to be closer to you?", demotion: "You decided X is not worthy enough of the Inner Circle?"). Accepting clears saved position so node snaps to the new ring. POI nodes excluded.
 - **Connection strength**: edge thickness scales with appearance count (1.5px → 2.5px → 3.5px for gent edges).
 - **Activity pulse**: gold breathing glow on person nodes that appeared in entries within the last 7 days. CSS `@keyframes pulse-ring`.
 - **Search**: search icon → expandable input, dims non-matching nodes, auto-fits view to 1-3 matches.
