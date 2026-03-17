@@ -62,10 +62,12 @@ Two modes, routed by `source_type`:
 - `instagram_screenshot` → Claude Haiku: extracts appearance, traits, score, display_name, instagram_handle
 - `photo` → Gemini 2.5 Flash: same fields minus display_name/handle
 
-Client: `src/hooks/useVerdictIntake.ts` — compresses all images to 1024px JPEG (0.82 quality) before upload. `handleAnalyzeFile(file, sourceType)` takes explicit source type. `handleAnalyzeHandle(handle)` fetches avatar from `unavatar.io/instagram/{handle}?fallback=false` (public profiles only).
+Client: `src/hooks/useVerdictIntake.ts` — compresses all images to 1024px WebP (0.82 quality) before upload. `handleAnalyzeFile(file, sourceType)` takes explicit source type. Handle lookup was removed (unavatar.io Instagram provider is dead).
+
+**Claude prompt for screenshots**: tightened for private/closed profiles — instructs Claude to examine small profile picture thumbnails closely, extract maximum detail from bio text, highlight covers, and grid previews. Confidence score reflects image quality.
 
 **UI entry point**: FAB on Circle's POI tab opens `ScanActionSheet` (bottom sheet) with two options:
-- **Research** — Instagram screenshot or handle lookup → opens `POIModal` in `research` mode
+- **Research** — Instagram screenshot analysis → opens `POIModal` in `research` mode
 - **Scan** — Camera or photo from gallery → opens `POIModal` in `scan` mode
 `POIModal` receives a `mode` prop and no longer has an internal toggle.
 

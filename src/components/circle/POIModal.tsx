@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ImagePlus, Camera } from 'lucide-react'
 import { Modal, Button, Input } from '@/components/ui'
@@ -17,13 +17,11 @@ interface ProspectIntakeModalProps {
 export function POIModal({ open, mode, onClose, onSaved }: ProspectIntakeModalProps) {
   const screenshotInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
-  const [handleInput, setHandleInput] = useState('')
-
   const {
     step, setStep, setMode,
     analyzeError, verdictResult, portraitLoading,
     dossier, setDossier, duplicateWarning,
-    handleAnalyzeFile, handleAnalyzeHandle, handleSave, reset,
+    handleAnalyzeFile, handleSave, reset,
   } = useVerdictIntake((personId) => {
     onSaved(personId)
     onClose()
@@ -35,7 +33,6 @@ export function POIModal({ open, mode, onClose, onSaved }: ProspectIntakeModalPr
 
   const handleClose = () => {
     reset()
-    setHandleInput('')
     onClose()
   }
 
@@ -57,7 +54,7 @@ export function POIModal({ open, mode, onClose, onSaved }: ProspectIntakeModalPr
             exit="exit"
             className="flex flex-col gap-4"
           >
-            {/* Research mode — screenshot + handle */}
+            {/* Research mode — screenshot */}
             {mode === 'research' && (
               <>
                 {/* Screenshot drop zone */}
@@ -75,31 +72,6 @@ export function POIModal({ open, mode, onClose, onSaved }: ProspectIntakeModalPr
                   <p className="text-xs text-ivory-dim font-body text-center">Works with private profiles · Ctrl+V to paste</p>
                 </div>
 
-                {/* Divider */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-white/8" />
-                  <span className="text-xs text-ivory-dim font-body">or</span>
-                  <div className="flex-1 h-px bg-white/8" />
-                </div>
-
-                {/* Handle input */}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="@username"
-                    value={handleInput}
-                    onChange={(e) => setHandleInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && handleInput.trim()) handleAnalyzeHandle(handleInput.trim()) }}
-                    className="flex-1 bg-slate-light/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim focus:outline-none focus:border-gold/40"
-                  />
-                  <Button
-                    onClick={() => handleAnalyzeHandle(handleInput.trim())}
-                    disabled={!handleInput.trim()}
-                  >
-                    Scan
-                  </Button>
-                </div>
-                <p className="text-xs text-ivory-dim font-body text-center -mt-2">Public profiles only</p>
               </>
             )}
 

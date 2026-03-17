@@ -56,7 +56,7 @@ export function ScanActionSheet({ open, onClose, onSelect }: ScanActionSheetProp
                 </div>
                 <div>
                   <p className="text-sm text-ivory font-body">Research</p>
-                  <p className="text-xs text-ivory-dim font-body">Instagram screenshot or handle lookup</p>
+                  <p className="text-xs text-ivory-dim font-body">Analyze an Instagram screenshot</p>
                 </div>
               </button>
 

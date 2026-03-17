@@ -131,29 +131,6 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     }
   }, [gent, runVerdictAnalysis])
 
-  // Instagram handle lookup — fetches profile picture via unavatar proxy
-  const handleAnalyzeHandle = useCallback(async (handle: string) => {
-    if (!gent) return
-    setAnalyzeError('')
-    setStep('analyzing')
-
-    const cleanHandle = normalizeInstagramHandle(handle) || handle.replace(/^@/, '').trim()
-
-    try {
-      const res = await fetch(`https://unavatar.io/instagram/${cleanHandle}?fallback=false`)
-      if (!res.ok) throw new Error(`@${cleanHandle} not found or profile is private`)
-
-      const blob = await res.blob()
-      const file = new File([blob], `${cleanHandle}.jpg`, { type: blob.type || 'image/jpeg' })
-
-      const compressedBase64 = await imageToJpegBase64(file, { maxPx: 1024, quality: 0.82 })
-      await runVerdictAnalysis(compressedBase64, file, 'instagram_screenshot', cleanHandle)
-    } catch (err) {
-      setAnalyzeError((err as Error).message)
-      setStep('input')
-    }
-  }, [gent, runVerdictAnalysis])
-
   const handleSave = useCallback(async () => {
     if (!gent || !dossier.display_name.trim()) return
     setStep('saving')
@@ -171,8 +148,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         }
       }
 
-      const photoUrl = verdictResult?.sourcePhotoUrl ??
-        (normalizedHandle ? `https://unavatar.io/instagram/${normalizedHandle}` : null)
+      const photoUrl = verdictResult?.sourcePhotoUrl ?? null
 
       const poiIntel = [
         dossier.why_interesting,
@@ -215,7 +191,6 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     dossier, setDossier,
     duplicateWarning,
     handleAnalyzeFile,
-    handleAnalyzeHandle,
     handleSave,
     reset,
   }
