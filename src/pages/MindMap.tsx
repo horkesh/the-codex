@@ -62,7 +62,7 @@ function MindMapCanvas() {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [pendingTierChange, setPendingTierChange] = useState<{
-    personId: string; tier: PersonTier; name: string
+    personId: string; tier: PersonTier; fromTier: PersonTier; name: string
   } | null>(null)
 
   const nodeTypes = useMemo(() => ({
@@ -101,7 +101,7 @@ function MindMapCanvas() {
         const currentTier = person.tier ?? 'acquaintance'
 
         if (detectedTier !== currentTier) {
-          setPendingTierChange({ personId: person.id, tier: detectedTier, name: person.name })
+          setPendingTierChange({ personId: person.id, tier: detectedTier, fromTier: currentTier, name: person.name })
         }
       }
     }
@@ -203,34 +203,47 @@ function MindMapCanvas() {
         </div>
       </div>
 
-      {pendingTierChange && (
-        <div className="absolute bottom-20 left-3 right-3 z-10 flex items-center gap-3 bg-gold/10 border border-gold/30 rounded-xl px-4 py-3 backdrop-blur-sm">
-          <p className="flex-1 text-xs text-ivory font-body">
-            Move <span className="text-gold font-medium">{pendingTierChange.name}</span> to{' '}
-            <span className="text-gold font-medium">
-              {pendingTierChange.tier.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-            </span>?
-          </p>
-          <button
-            type="button"
-            onClick={async () => {
-              await updatePersonTier(pendingTierChange.personId, pendingTierChange.tier)
-              setPendingTierChange(null)
-              addToast('Tier updated.', 'success')
-            }}
-            className="text-xs text-gold border border-gold/30 rounded-full px-3 py-1 hover:border-gold/60 transition-colors font-body"
-          >
-            Accept
-          </button>
-          <button
-            type="button"
-            onClick={() => setPendingTierChange(null)}
-            className="text-xs text-ivory-dim hover:text-ivory transition-colors font-body"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
+      {pendingTierChange && (() => {
+        const TIER_ORDER: Record<PersonTier, number> = { inner_circle: 0, outer_circle: 1, acquaintance: 2 }
+        const tierLabel = (t: PersonTier) => t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        const isPromotion = TIER_ORDER[pendingTierChange.tier] < TIER_ORDER[pendingTierChange.fromTier]
+        const name = pendingTierChange.name.split(' ')[0]
+
+        const message = isPromotion
+          ? <>You sure <span className="text-gold font-semibold">{name}</span> deserves to be closer to you?</>
+          : <>You decided <span className="text-gold font-semibold">{name}</span> is not worthy enough of the <span className="text-gold font-semibold">{tierLabel(pendingTierChange.fromTier)}</span>?</>
+
+        return (
+          <div className="absolute bottom-20 left-3 right-3 z-10 flex items-center gap-3 bg-gold/10 border border-gold/30 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <p className="flex-1 text-xs text-ivory font-body leading-relaxed">
+              {message}
+            </p>
+            <button
+              type="button"
+              onClick={async () => {
+                await updatePersonTier(pendingTierChange.personId, pendingTierChange.tier)
+                setPendingTierChange(null)
+                addToast(
+                  isPromotion
+                    ? `${name} promoted to ${tierLabel(pendingTierChange.tier)}.`
+                    : `${name} moved to ${tierLabel(pendingTierChange.tier)}.`,
+                  'success'
+                )
+              }}
+              className="text-xs text-gold border border-gold/30 rounded-full px-3 py-1 hover:border-gold/60 transition-colors font-body whitespace-nowrap"
+            >
+              {isPromotion ? 'Promote' : 'Demote'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPendingTierChange(null)}
+              className="text-xs text-ivory-dim hover:text-ivory transition-colors font-body"
+            >
+              Cancel
+            </button>
+          </div>
+        )
+      })()}
 
       <ReactFlow
         nodes={liveNodes}
