@@ -112,10 +112,15 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - All fire-and-forget — doesn't block entry creation.
 - **Backfill**: `backfillMissionStamps()` in `src/data/stamps.ts` creates stamps for any published mission entries missing them. Called from `usePassport` once per session (guarded by `sessionStorage`).
 
-## Passport visa pages
-- Tapping a mission stamp navigates to `/passport/visa/{stampId}` — full-screen visa page (`src/pages/VisaPage.tsx`).
-- Shows: stamp image (rotated), mission title, date, location with flag, participant avatars, lore, photo strip, landmarks pills.
-- **AI Mission Debrief**: "Generate Mission Debrief" button sends all photos to `generate-mission-debrief` edge function (`claude-sonnet-4-6` with vision). Returns classified narrative, landmarks, highlights, and tongue-in-cheek risk assessment. Stored in `entry.metadata` fields: `mission_debrief`, `landmarks`, `debrief_highlights`, `risk_assessment`.
+## Passport pages & templates
+- **Cover**: uses real Pasoš cover image (`public/passport-cover.png`) with gent personalization overlay (avatar, name, alias, stats, travel intel).
+- **Visa page (in-app)**: `/passport/visa/{stampId}` — cream passport aesthetic (`#F5F0E1`), navy text, "VIZE-ВИЗЕ-VISAS" header, stamp, polaroid photo, data fields, debrief section.
+- **AI Mission Debrief**: "Generate Mission Debrief" button calls `generate-mission-debrief` edge function (`claude-sonnet-4-6`). Retries text-only if photo URLs fail (400). Returns classified narrative, landmarks, highlights, risk assessment. Stored in `entry.metadata`. `verify_jwt = false` in config.toml.
+- **Studio export templates** (all 1080x1350, 4:5):
+  - `VisaStampPage` — cream visa with country flag, "VIZA" header, polaroid cover photo with tape, destination/date/gents fields, mission stamp
+  - `DebriefPage` — "BILJEŠKE-ЗАБЕЛЕЖКЕ-OBSERVATIONS" notes page with debrief text, landmarks, risk assessment on cream guilloche paper
+  - `PassportIdPage` — gent identity page with portrait, station, signature drink, issue date
+- **Shared component**: `PassportFrame` in `src/export/templates/shared/` — cream background, SVG guilloche border pattern, Europe map watermark, footer. Used by all three templates.
 - Non-mission stamps still use the StampDetail modal.
 
 ## Passport achievements
@@ -123,13 +128,10 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - Compares against `ACHIEVEMENT_DEFINITIONS` to show locked items greyed out with "???" descriptions.
 - Component: `src/components/passport/AchievementList.tsx`.
 
-## Passport cover travel intel
-- `composeTravelIntel()` in `src/ai/travelIntel.ts` — pure client-side function composing diplomatic-style travel summary from mission stats.
-- Displayed on PassportCover below stats box: operation count, territories, primary theatre, known coordinates.
-
-## Passport texture
+## Passport cover & texture
+- Cover: `public/passport-cover.png` background image with gent overlay.
+- `composeTravelIntel()` in `src/ai/travelIntel.ts` — travel summary on cover.
 - Stamp grid: dark gradient background with gold border and inset glow.
-- Passport cover: repeating diagonal stripe pattern for leather texture effect.
 - StampDetail modal: aged paper gradient background.
 
 ## QR code for guestbook

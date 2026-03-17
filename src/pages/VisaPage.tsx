@@ -295,8 +295,6 @@ export default function VisaPage() {
                   </button>
                 </>
               )
-
-              return null
             })()}
 
             {/* Photo strip */}

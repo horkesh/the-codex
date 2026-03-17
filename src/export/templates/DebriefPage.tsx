@@ -164,3 +164,5 @@ export const DebriefPage = React.forwardRef<HTMLDivElement, DebriefPageProps>(
     )
   }
 )
+
+DebriefPage.displayName = 'DebriefPage'
