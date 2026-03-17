@@ -31,7 +31,8 @@ export function imageToWebpBlob(
 /** @deprecated Use imageToWebpBlob instead */
 export const imageToJpegBlob = imageToWebpBlob
 
-/** Like imageToJpegBlob but returns raw base64 (no data-URL prefix) for AI APIs. */
+/** Returns raw base64 WebP (no data-URL prefix) for AI APIs.
+ *  NOTE: Despite the legacy name, this produces WebP — pass 'image/webp' as MIME type. */
 export async function imageToJpegBase64(
   file: File,
   options?: { maxPx?: number; quality?: number },

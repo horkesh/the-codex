@@ -66,7 +66,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
 
     const sourcePhotoUrl = await uploadPersonScanPhoto(gent.id, file)
 
-    const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/jpeg', source_type: sourceType })
+    const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/webp', source_type: sourceType })
 
     const handle = knownHandle ?? verdict.instagram_handle ?? null
 

@@ -100,7 +100,7 @@ Rules:
 - Do not use generic filler words like "A Night of...", "An Evening of...", "The Art of..."`
 
       content = [
-        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photo } },
+        { type: 'image', source: { type: 'base64', media_type: 'image/webp', data: photo } },
         { type: 'text', text: prompt },
       ]
     }

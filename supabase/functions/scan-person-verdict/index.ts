@@ -152,7 +152,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { photo_base64, mime_type = 'image/jpeg', source_type = 'photo' } = await req.json()
+    const { photo_base64, mime_type = 'image/webp', source_type = 'photo' } = await req.json()
     if (!photo_base64) throw new Error('photo_base64 required')
 
     const parsed = source_type === 'photo'

@@ -32,7 +32,7 @@ Deno.serve(async (req: Request) => {
 "traits": an array of exactly 6 personality trait words guessed from the photo.
 Output PURE JSON only, no markdown, no explanation.`,
               },
-              { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
+              { inline_data: { mime_type: 'image/webp', data: photo_base64 } },
             ],
           }],
           generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 500 },
