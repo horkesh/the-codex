@@ -1,6 +1,5 @@
 import React from 'react'
 import { PassportFrame } from '@/export/templates/shared/PassportFrame'
-import { BrandMark } from '@/export/templates/shared/BrandMark'
 
 interface PassportIdPageProps {
   gent: {
@@ -141,18 +140,8 @@ export const PassportIdPage = React.forwardRef<HTMLDivElement, PassportIdPagePro
               paddingBottom: 20,
             }}
           >
-            <BrandMark size="md" />
-            <div
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.15em',
-                color: '#1B3A5C',
-                opacity: 0.4,
-                marginTop: 8,
-              }}
-            >
-              THE.GENTS.CHRONICLES
-            </div>
+            {/* BrandMark rendered by PassportFrame */}
+            <div style={{ height: 80 }} />
           </div>
         </PassportFrame>
       </div>

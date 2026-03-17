@@ -1,7 +1,6 @@
 import React from 'react'
 import { monthYear } from '@/export/templates/shared/utils'
 import { PassportFrame } from '@/export/templates/shared/PassportFrame'
-import { BrandMark } from '@/export/templates/shared/BrandMark'
 
 interface PhotoGridSlideProps {
   photos: { url: string; caption: string | null }[]
@@ -61,10 +60,7 @@ export const PhotoGridSlide = React.forwardRef<HTMLDivElement, PhotoGridSlidePro
               ))}
             </div>
 
-            {/* BrandMark */}
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 20, paddingBottom: 8 }}>
-              <BrandMark size="md" />
-            </div>
+            <div style={{ height: 20 }} />
           </div>
         </PassportFrame>
       </div>

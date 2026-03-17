@@ -2,7 +2,6 @@ import React from 'react'
 import type { PassportStamp } from '@/types/app'
 import { monthYear } from '@/export/templates/shared/utils'
 import { PassportFrame } from '@/export/templates/shared/PassportFrame'
-import { BrandMark } from '@/export/templates/shared/BrandMark'
 
 interface StampSlideProps {
   stamp: PassportStamp
@@ -67,10 +66,7 @@ export const StampSlide = React.forwardRef<HTMLDivElement, StampSlideProps>(
               </div>
             </div>
 
-            {/* BrandMark */}
-            <div style={{ marginTop: 'auto', paddingBottom: 8 }}>
-              <BrandMark size="md" />
-            </div>
+            <div style={{ flex: 1 }} />
           </div>
         </PassportFrame>
       </div>

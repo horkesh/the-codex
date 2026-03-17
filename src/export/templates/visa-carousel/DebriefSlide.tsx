@@ -1,6 +1,5 @@
 import React from 'react'
 import { PassportFrame } from '@/export/templates/shared/PassportFrame'
-import { BrandMark } from '@/export/templates/shared/BrandMark'
 
 interface DebriefSlideProps {
   debrief: string
@@ -86,11 +85,7 @@ export const DebriefSlide = React.forwardRef<HTMLDivElement, DebriefSlideProps>(
               </div>
             )}
 
-            {/* BrandMark */}
             <div style={{ flex: 1 }} />
-            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 8 }}>
-              <BrandMark size="md" />
-            </div>
           </div>
         </PassportFrame>
       </div>

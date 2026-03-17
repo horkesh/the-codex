@@ -1,6 +1,9 @@
+import { BrandMark } from './BrandMark'
+
 interface PassportFrameProps {
   header?: string
   children: React.ReactNode
+  hideBrandMark?: boolean
 }
 
 /**
@@ -8,7 +11,7 @@ interface PassportFrameProps {
  * watermark, and optional header. Used as the outer container for passport
  * export templates. All styles are inline for html-to-image compatibility.
  */
-export function PassportFrame({ header, children }: PassportFrameProps) {
+export function PassportFrame({ header, children, hideBrandMark }: PassportFrameProps) {
   // SVG inset from edges
   const inset = 25
   const svgW = 1080 - inset * 2 // 1030
@@ -157,6 +160,13 @@ export function PassportFrame({ header, children }: PassportFrameProps) {
       >
         {children}
       </div>
+
+      {/* BrandMark — fixed position across all slides */}
+      {!hideBrandMark && (
+        <div style={{ position: 'absolute', bottom: 28, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 3 }}>
+          <BrandMark size="md" />
+        </div>
+      )}
 
       {/* Footer */}
       <div

@@ -3,7 +3,6 @@ import type { EntryWithParticipants, PassportStamp } from '@/types/app'
 import { flagEmoji, getCoverCrop } from '@/lib/utils'
 import { getOneliner, monthYear, calcDuration, visaWord, aliasDisplay } from '@/export/templates/shared/utils'
 import { PassportFrame } from '@/export/templates/shared/PassportFrame'
-import { BrandMark } from '@/export/templates/shared/BrandMark'
 
 interface VisaCardSlideProps {
   entry: EntryWithParticipants
@@ -24,43 +23,47 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
         <PassportFrame header="VIZE-\u0412\u0418\u0417\u0415-VISAS">
           <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
 
-            {/* Photo band — tall, with cover crop */}
+            {/* Flag + VIZA header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+              {cc && <span style={{ fontSize: 48, lineHeight: 1 }}>{flagEmoji(cc)}</span>}
+              <span style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 64,
+                fontWeight: 700,
+                color: '#1B3A5C',
+                letterSpacing: '0.06em',
+                lineHeight: 1,
+              }}>
+                {visaWord(cc)}
+              </span>
+            </div>
+
+            {/* Polaroid photo */}
             {coverPhoto && (
-              <div style={{ position: 'relative', height: 480, overflow: 'hidden', margin: '-60px -55px 0', width: 'calc(100% + 110px)' }}>
+              <div style={{
+                alignSelf: 'center',
+                background: '#fff',
+                padding: '12px 12px 40px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
+                transform: 'rotate(-2deg)',
+                marginBottom: 24,
+              }}>
                 <img
                   src={coverPhoto}
                   alt=""
                   style={{
-                    width: '100%', height: '100%', objectFit: 'cover',
+                    width: 420, height: 320, objectFit: 'cover',
                     objectPosition: `${crop.x}% ${crop.y}%`,
                     transform: crop.scale !== 1 ? `scale(${crop.scale})` : undefined,
                     filter: 'sepia(0.08) contrast(1.05)',
+                    display: 'block',
                   }}
                 />
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: 'linear-gradient(180deg, rgba(245,240,225,0.15) 0%, transparent 30%, transparent 55%, rgba(245,240,225,0.95) 100%)',
-                }} />
-                {/* Flag + VIZA overlaid */}
-                <div style={{ position: 'absolute', bottom: 16, left: 55, display: 'flex', alignItems: 'center', gap: 16 }}>
-                  {cc && <span style={{ fontSize: 48, lineHeight: 1 }}>{flagEmoji(cc)}</span>}
-                  <span style={{
-                    fontFamily: "'Playfair Display', Georgia, serif",
-                    fontSize: 64,
-                    fontWeight: 700,
-                    color: '#1B3A5C',
-                    letterSpacing: '0.06em',
-                    lineHeight: 1,
-                    textShadow: '0 2px 6px rgba(245,240,225,0.9)',
-                  }}>
-                    {visaWord(cc)}
-                  </span>
-                </div>
               </div>
             )}
 
             {/* Destination */}
-            <div style={{ marginTop: coverPhoto ? 24 : 0, marginBottom: 20 }}>
+            <div style={{ marginBottom: 20 }}>
               <div style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
                 fontSize: 48,
@@ -171,11 +174,8 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
               )}
             </div>
 
-            {/* BrandMark at bottom */}
+            {/* Bottom spacing for BrandMark in PassportFrame */}
             <div style={{ flex: 1 }} />
-            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 8 }}>
-              <BrandMark size="md" />
-            </div>
           </div>
         </PassportFrame>
       </div>

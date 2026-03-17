@@ -3,7 +3,6 @@ import type { EntryWithParticipants } from '@/types/app'
 import { getOneliner, monthYear, aliasDisplay } from '@/export/templates/shared/utils'
 import { getCoverCrop } from '@/lib/utils'
 import { PassportFrame } from '@/export/templates/shared/PassportFrame'
-import { BrandMark } from '@/export/templates/shared/BrandMark'
 
 interface HeroLoreSlideProps {
   entry: EntryWithParticipants
@@ -20,22 +19,26 @@ export const HeroLoreSlide = React.forwardRef<HTMLDivElement, HeroLoreSlideProps
         <PassportFrame>
           <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
 
-            {/* Cover photo — top half */}
+            {/* Polaroid cover photo */}
             {coverPhoto && (
-              <div style={{ position: 'relative', height: 580, overflow: 'hidden', margin: '-60px -55px 0', width: 'calc(100% + 110px)' }}>
+              <div style={{
+                alignSelf: 'center',
+                background: '#fff',
+                padding: '12px 12px 40px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
+                transform: 'rotate(1.5deg)',
+                marginBottom: 24,
+              }}>
                 <img
                   src={coverPhoto}
                   alt=""
                   style={{
-                    width: '100%', height: '100%', objectFit: 'cover',
+                    width: 520, height: 400, objectFit: 'cover',
                     objectPosition: `${crop.x}% ${crop.y}%`,
                     transform: crop.scale !== 1 ? `scale(${crop.scale})` : undefined,
+                    display: 'block',
                   }}
                 />
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: 'linear-gradient(180deg, transparent 50%, rgba(245,240,225,0.95) 100%)',
-                }} />
               </div>
             )}
 
@@ -95,11 +98,7 @@ export const HeroLoreSlide = React.forwardRef<HTMLDivElement, HeroLoreSlideProps
               </div>
             )}
 
-            {/* BrandMark */}
             <div style={{ flex: 1 }} />
-            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 8 }}>
-              <BrandMark size="md" />
-            </div>
           </div>
         </PassportFrame>
       </div>
