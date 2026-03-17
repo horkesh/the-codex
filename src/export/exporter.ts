@@ -10,102 +10,88 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime })
 }
 
-/** Fetch a URL and return it as a data URL, or null on failure */
-async function toDataUrl(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, { mode: 'cors' })
-    if (!res.ok) return null
-    const blob = await res.blob()
-    return new Promise<string>((resolve) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.readAsDataURL(blob)
-    })
-  } catch {
-    return null
-  }
-}
-
-/**
- * Pre-convert all external images in an element tree to inline data URLs.
- * Handles both CSS background-image and <img> src attributes.
- * Returns a restore function that reverts all changes.
- */
-async function inlineAllImages(element: HTMLElement): Promise<() => void> {
-  const restorers: Array<() => void> = []
-  const fetches: Promise<void>[] = []
-
-  // 1. Inline CSS background-image URLs
-  const styledEls = element.querySelectorAll<HTMLElement>('[style]')
-  for (const el of [element, ...styledEls]) {
-    const bgImage = el.style.backgroundImage
-    if (!bgImage || !bgImage.startsWith('url(')) continue
-    const urlMatch = bgImage.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/)
-    if (!urlMatch) continue
-    fetches.push(
-      toDataUrl(urlMatch[1]).then(dataUrl => {
-        if (dataUrl) {
-          const original = el.style.backgroundImage
-          el.style.backgroundImage = `url(${dataUrl})`
-          restorers.push(() => { el.style.backgroundImage = original })
-        }
-      })
-    )
-  }
-
-  // 2. Inline <img> src URLs
-  const imgs = element.querySelectorAll<HTMLImageElement>('img[src]')
-  for (const img of imgs) {
-    const src = img.src
-    if (!src || src.startsWith('data:') || src.startsWith('blob:')) continue
-    if (!src.startsWith('http')) continue
-    fetches.push(
-      toDataUrl(src).then(dataUrl => {
-        if (dataUrl) {
-          const original = img.src
-          img.src = dataUrl
-          restorers.push(() => { img.src = original })
-        }
-      })
-    )
-  }
-
-  // Fetch all images in parallel instead of sequentially
-  await Promise.all(fetches)
-
-  return () => restorers.forEach(fn => fn())
-}
-
-/** Small delay to let the DOM settle after image inlining */
+/** Small delay for browser paint */
 const settle = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-/** Export a DOM element to a PNG blob with retry */
-export async function exportToPng(element: HTMLElement): Promise<Blob> {
-  const restore = await inlineAllImages(element)
-  // Let the browser paint the inlined images before capture
-  await settle(50)
+/**
+ * Clone an element to a clean off-screen container, wait for all images
+ * to load, capture it, then clean up. This avoids html-to-image capturing
+ * sibling elements, parent transforms, or stacking context bleed.
+ */
+async function captureIsolated(element: HTMLElement): Promise<Blob> {
+  // Create off-screen container
+  const container = document.createElement('div')
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;'
+  document.body.appendChild(container)
+
   try {
-    const opts = {
+    // Deep clone the element
+    const clone = element.cloneNode(true) as HTMLElement
+    // Force exact dimensions (no parent scaling)
+    clone.style.width = element.scrollWidth + 'px'
+    clone.style.height = element.scrollHeight + 'px'
+    clone.style.transform = 'none'
+    clone.style.position = 'relative'
+    container.appendChild(clone)
+
+    // Wait for all images in the clone to load
+    const imgs = clone.querySelectorAll<HTMLImageElement>('img')
+    const imgLoads = Array.from(imgs).map(img => {
+      if (img.complete) return Promise.resolve()
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve()
+        img.onerror = () => resolve() // don't block on failed images
+      })
+    })
+    await Promise.all(imgLoads)
+
+    // Also handle background-image URLs — fetch and inline them
+    const styledEls = clone.querySelectorAll<HTMLElement>('[style]')
+    const bgFetches: Promise<void>[] = []
+    for (const el of [clone, ...styledEls]) {
+      const bgImage = el.style.backgroundImage
+      if (!bgImage || !bgImage.startsWith('url(')) continue
+      const urlMatch = bgImage.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/)
+      if (!urlMatch) continue
+      bgFetches.push(
+        fetch(urlMatch[1], { mode: 'cors' })
+          .then(r => r.ok ? r.blob() : null)
+          .then(blob => {
+            if (!blob) return
+            return new Promise<void>(resolve => {
+              const reader = new FileReader()
+              reader.onload = () => {
+                el.style.backgroundImage = `url(${reader.result})`
+                resolve()
+              }
+              reader.readAsDataURL(blob)
+            })
+          })
+          .catch(() => {}) // skip on failure
+      )
+    }
+    await Promise.all(bgFetches)
+
+    // Let browser paint
+    await settle(100)
+
+    // Capture the clean clone
+    const dataUrl = await toPng(clone, {
       pixelRatio: 3,
       skipFonts: false,
       fontEmbedCSS: '',
-      // Tell html-to-image to use our already-inlined images
-      skipAutoScale: true,
       includeQueryParams: false,
-    }
-    // First attempt
-    let dataUrl = await toPng(element, opts)
-    // Retry once if the result is suspiciously small (< 10KB = likely failed)
-    const blob = dataUrlToBlob(dataUrl)
-    if (blob.size < 10_000) {
-      await settle(200)
-      dataUrl = await toPng(element, opts)
-      return dataUrlToBlob(dataUrl)
-    }
-    return blob
+    })
+
+    return dataUrlToBlob(dataUrl)
   } finally {
-    restore()
+    document.body.removeChild(container)
   }
+}
+
+/** Export a DOM element to a PNG blob */
+export async function exportToPng(element: HTMLElement): Promise<Blob> {
+  return captureIsolated(element)
 }
 
 /** Share via Web Share API (falls back to download if not supported) */
