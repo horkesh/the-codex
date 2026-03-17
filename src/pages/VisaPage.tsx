@@ -143,7 +143,7 @@ export default function VisaPage() {
           variants={fadeUp}
           initial="initial"
           animate="animate"
-          className="bg-gradient-to-br from-[#1a1610] via-[#0f0d0a] to-[#1a1610] min-h-[calc(100dvh-56px)] px-5 py-6"
+          className="bg-[#F5F0E1] min-h-[calc(100dvh-56px)] px-5 py-6"
         >
           <div className="relative">
             {/* Stamp image — absolute top-right */}
@@ -151,30 +151,35 @@ export default function VisaPage() {
               <img
                 src={stamp.image_url}
                 alt="Mission stamp"
-                className="absolute right-0 top-0 -rotate-[8deg] rounded-full ring-2 ring-gold/30 shadow-lg shadow-gold/10"
+                className="absolute right-0 top-0 -rotate-[8deg] rounded-full ring-2 ring-[#1B3A5C]/20 shadow-lg shadow-[#1B3A5C]/10"
                 style={{ width: 120, height: 120 }}
                 draggable={false}
               />
             )}
 
+            {/* Passport header */}
+            <p className="font-mono text-[11px] tracking-[0.15em] text-[#1B3A5C] font-semibold uppercase mb-3" style={{ fontVariant: 'small-caps' }}>
+              Vize — Визе — Visas
+            </p>
+
             {/* Header */}
-            <p className="font-mono text-[10px] tracking-[0.3em] text-gold/60 uppercase mb-2">
+            <p className="font-mono text-[10px] tracking-[0.3em] text-[#1B3A5C] uppercase mb-2">
               Mission Dossier
             </p>
 
             {/* Title */}
-            <h1 className={`font-display text-2xl text-ivory leading-snug ${stamp.image_url ? 'pr-32' : ''}`}>
+            <h1 className={`font-display text-2xl text-[#1B3A5C] leading-snug ${stamp.image_url ? 'pr-32' : ''}`}>
               {entry.title}
             </h1>
 
             {/* Date */}
-            <p className="font-mono text-[11px] text-ivory/40 mt-2">
+            <p className="font-mono text-[11px] text-[#5A7A9A] mt-2">
               {dateDisplay}
             </p>
 
             {/* Location */}
             {locationDisplay && (
-              <p className="font-mono text-xs text-ivory/40 mt-1">
+              <p className="font-mono text-xs text-[#5A7A9A] mt-1">
                 {locationDisplay}
               </p>
             )}
@@ -185,7 +190,7 @@ export default function VisaPage() {
                 {entry.participants.map(p => (
                   <div key={p.id} className="flex flex-col items-center gap-1">
                     <Avatar src={p.avatar_url} name={p.display_name} size="sm" />
-                    <span className="text-[10px] text-ivory/50 font-body">
+                    <span className="text-[10px] text-[#5A7A9A] font-body">
                       {p.display_name}
                     </span>
                   </div>
@@ -194,11 +199,11 @@ export default function VisaPage() {
             )}
 
             {/* Divider */}
-            <div className="h-px bg-gold/15 my-5" />
+            <div className="h-px bg-[#C9A84C]/30 my-5" />
 
             {/* Lore */}
             {entry.lore && (
-              <p className="font-display italic text-base text-gold/80 leading-relaxed mb-5">
+              <p className="font-display italic text-base text-[#8B7355] leading-relaxed mb-5">
                 {entry.lore}
               </p>
             )}
@@ -209,23 +214,23 @@ export default function VisaPage() {
                 return (
                   <>
                     {/* Divider */}
-                    <div className="h-px bg-gold/15 my-5" />
+                    <div className="h-px bg-[#C9A84C]/30 my-5" />
 
                     {/* Classified header */}
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="h-px flex-1 bg-red-500/20" />
-                      <span className="text-[10px] font-mono tracking-[0.3em] text-red-400/70 uppercase">Classified</span>
-                      <div className="h-px flex-1 bg-red-500/20" />
+                      <div className="h-px flex-1 bg-red-700/20" />
+                      <span className="text-[10px] font-mono tracking-[0.3em] text-red-700/70 uppercase">Classified</span>
+                      <div className="h-px flex-1 bg-red-700/20" />
                     </div>
 
                     {/* Debrief text */}
-                    <p className="text-sm text-ivory/60 font-body leading-relaxed whitespace-pre-wrap">{missionDebrief}</p>
+                    <p className="text-sm text-[#2C2C2C] font-body leading-relaxed whitespace-pre-wrap">{missionDebrief}</p>
 
                     {/* Landmarks */}
                     {landmarks.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-4">
                         {landmarks.map((l, i) => (
-                          <span key={i} className="rounded-full border border-gold/20 bg-gold/5 px-2.5 py-0.5 text-[10px] text-gold font-body">
+                          <span key={i} className="rounded-full border border-[#1B3A5C]/20 bg-[#1B3A5C]/5 px-2.5 py-0.5 text-[10px] text-[#1B3A5C] font-body">
                             {l}
                           </span>
                         ))}
@@ -238,7 +243,7 @@ export default function VisaPage() {
                         <p className="text-[10px] font-mono tracking-[0.2em] text-gold/50 uppercase mb-2">Key Moments</p>
                         <ol className="space-y-1.5 list-decimal list-inside">
                           {debriefHighlights.map((h, i) => (
-                            <li key={i} className="text-xs text-ivory/50 font-body leading-relaxed">{h}</li>
+                            <li key={i} className="text-xs text-[#3A5A7A] font-body leading-relaxed">{h}</li>
                           ))}
                         </ol>
                       </div>
@@ -246,9 +251,9 @@ export default function VisaPage() {
 
                     {/* Risk Assessment */}
                     {riskAssessment && (
-                      <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                      <div className="mt-4 rounded-lg border border-amber-700/30 bg-amber-700/5 px-4 py-3">
                         <p className="text-[10px] font-mono tracking-[0.2em] text-amber-400/70 uppercase mb-1">Risk Assessment</p>
-                        <p className="text-xs text-ivory/60 font-body italic">{riskAssessment}</p>
+                        <p className="text-xs text-[#2C2C2C] font-body italic">{riskAssessment}</p>
                       </div>
                     )}
 
@@ -257,7 +262,7 @@ export default function VisaPage() {
                       type="button"
                       onClick={handleGenerateDebrief}
                       disabled={generatingDebrief}
-                      className="mt-3 flex items-center gap-1.5 text-[10px] text-ivory/40 hover:text-gold font-body transition-colors disabled:opacity-40 mx-auto"
+                      className="mt-3 flex items-center gap-1.5 text-[10px] text-[#5A7A9A] hover:text-gold font-body transition-colors disabled:opacity-40 mx-auto"
                     >
                       <RefreshCw size={10} className={generatingDebrief ? 'animate-spin' : ''} />
                       Regenerate Debrief
@@ -269,12 +274,12 @@ export default function VisaPage() {
               // No debrief yet — always show generate button
               return (
                 <>
-                  <div className="h-px bg-gold/15 my-5" />
+                  <div className="h-px bg-[#C9A84C]/30 my-5" />
                   <button
                     type="button"
                     onClick={handleGenerateDebrief}
                     disabled={generatingDebrief}
-                    className="w-full py-3 rounded-xl border border-gold/20 bg-gold/5 flex items-center justify-center gap-2 text-xs text-gold font-body hover:bg-gold/10 transition-colors disabled:opacity-40"
+                    className="w-full py-3 rounded-xl border border-[#1B3A5C]/20 bg-[#1B3A5C]/5 flex items-center justify-center gap-2 text-xs text-[#1B3A5C] font-body hover:bg-[#1B3A5C]/10 transition-colors disabled:opacity-40"
                   >
                     {generatingDebrief ? (
                       <>
@@ -302,7 +307,7 @@ export default function VisaPage() {
                     key={photo.id}
                     src={photo.url}
                     alt={photo.caption ?? 'Mission photo'}
-                    className="h-24 w-auto rounded-lg border border-white/5 object-cover shrink-0"
+                    className="h-24 w-auto rounded-lg border border-[#1B3A5C]/10 object-cover shrink-0"
                     draggable={false}
                   />
                 ))}
