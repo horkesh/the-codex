@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { ReactFlowProvider } from '@xyflow/react'
-import { Plus, Users, Radar, Network } from 'lucide-react'
+import { Plus, Users, Radar } from 'lucide-react'
 import { MindMapCanvas } from '@/pages/MindMap'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
