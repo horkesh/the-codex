@@ -510,6 +510,7 @@ export default function Studio() {
   const [selectedAchievement, setSelectedAchievement] = useState<EarnedAchievement | null>(null)
 
   const templateRef = useRef<HTMLDivElement>(null)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   // Carousel state — lifted so nav renders with fresh React state
   const [carouselActiveSlide, setCarouselActiveSlide] = useState(0)
@@ -610,7 +611,8 @@ export default function Studio() {
   }
 
   async function handleExport() {
-    if (!templateRef.current) return
+    const el = exportRef.current ?? templateRef.current
+    if (!el) return
     setExporting(true)
     const filename = comparisonParam
       ? `codex-rivalry-${comparisonParam}.png`
@@ -618,7 +620,7 @@ export default function Studio() {
         ? `codex-achievement-${selectedAchievement.type}.png`
         : `codex-${selectedEntry?.type ?? 'export'}-${selectedEntry?.date ?? Date.now()}.png`
     try {
-      await exportAndShare(templateRef.current, filename)
+      await exportAndShare(el, filename)
     } catch (err) {
       console.error('Export failed:', err)
       addToast('Export failed. Try again.', 'error')
@@ -936,6 +938,25 @@ export default function Studio() {
                     />
                   </PhotoFilterContext.Provider>
                 </div>
+              </div>
+
+              {/* Hidden full-size render for export — no transforms, no overflow clip */}
+              <div style={{ position: 'fixed', left: -9999, top: 0, zIndex: -1, pointerEvents: 'none' }}>
+                <PhotoFilterContext.Provider value={filterContextValue}>
+                  <TemplateRenderer
+                    templateId={selectedTemplate}
+                    entry={selectedEntry ?? ({} as Entry)}
+                    innerRef={exportRef}
+                    backgroundUrl={bgUrl ?? undefined}
+                    rewardKeys={rewardKeys}
+                    comparisonParam={comparisonParam ?? undefined}
+                    achievementData={achievementData}
+                    gent={gentData}
+                    carouselActiveSlide={carouselActiveSlide}
+                    carouselSetActiveSlide={setCarouselActiveSlide}
+                    onCarouselStateReady={() => {}}
+                  />
+                </PhotoFilterContext.Provider>
               </div>
 
               {/* Carousel nav — rendered outside the scaled preview container */}
