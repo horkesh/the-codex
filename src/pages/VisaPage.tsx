@@ -5,7 +5,7 @@ import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar, Spinner, Button } from '@/components/ui'
 import { fetchStamp } from '@/data/stamps'
 import { fetchEntry, fetchEntryPhotos, updateEntry } from '@/data/entries'
-import { flagEmoji } from '@/lib/utils'
+import { flagEmoji, cn } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
 import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw, ChevronDown } from 'lucide-react'
@@ -20,19 +20,18 @@ interface EntryPhoto {
   taken_by: string | null
 }
 
-/** Country code → visa header word */
+/* ── Helpers ── */
+
 function visaWord(cc: string | null): string {
   if (!cc) return 'ENTRY VISA'
   const map: Record<string, string> = { HR: 'VIZA', RS: '\u0412\u0418\u0417\u0410', BA: 'VIZA', HU: 'VIZA', ME: 'VIZA', SI: 'VIZUM' }
   return map[cc.toUpperCase()] ?? 'ENTRY VISA'
 }
 
-/** Format date as "MONTH YEAR" */
 function monthYear(date: string): string {
   return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(date)).toUpperCase()
 }
 
-/** Extract lore one-liner from metadata or first sentence of lore */
 function getOneliner(entry: EntryWithParticipants): string | null {
   const meta = entry.metadata as Record<string, unknown> | undefined
   const oneliner = meta?.lore_oneliner as string | undefined
@@ -43,6 +42,35 @@ function getOneliner(entry: EntryWithParticipants): string | null {
   }
   return null
 }
+
+function calcDuration(start: string, end?: string): string | null {
+  if (!end) return null
+  const s = new Date(start + 'T12:00:00Z')
+  const e = new Date(end + 'T12:00:00Z')
+  const days = Math.round((e.getTime() - s.getTime()) / 86400000) + 1
+  return days <= 0 ? null : days === 1 ? '1 DAY' : `${days} DAYS`
+}
+
+function loreParagraphs(lore: string | null): string[] {
+  if (!lore) return []
+  return lore.split(/\n\n+/).filter(Boolean)
+}
+
+/* ── Sub-components ── */
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 my-7">
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent to-gold/30" />
+      <span className="text-[9px] font-body font-semibold tracking-[0.25em] text-gold/60 uppercase whitespace-nowrap">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-gradient-to-l from-transparent to-gold/30" />
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
 
 export default function VisaPage() {
   const { stampId } = useParams<{ stampId: string }>()
@@ -117,7 +145,8 @@ export default function VisaPage() {
     }
   }
 
-  // Loading
+  /* ── Loading / not found states ── */
+
   if (loading) {
     return (
       <>
@@ -129,7 +158,6 @@ export default function VisaPage() {
     )
   }
 
-  // Not found
   if (notFound || !stamp || !entry) {
     return (
       <>
@@ -146,13 +174,13 @@ export default function VisaPage() {
     )
   }
 
-  const dateEnd = entry.metadata?.date_end as string | undefined
-  const dateDisplay = dateEnd
-    ? `${monthYear(entry.date)} \u2013 ${monthYear(dateEnd)}`
-    : monthYear(entry.date)
+  /* ── Derived data ── */
 
+  const dateEnd = entry.metadata?.date_end as string | undefined
+  const duration = calcDuration(entry.date, dateEnd)
   const cc = entry.country_code?.toUpperCase() ?? null
   const oneliner = getOneliner(entry)
+  const coverPhoto = entry.cover_image_url ?? photos[0]?.url ?? null
 
   const meta = entry.metadata as Record<string, unknown> | undefined
   const missionDebrief = meta?.mission_debrief as string | undefined
@@ -160,10 +188,13 @@ export default function VisaPage() {
   const debriefHighlights = Array.isArray(meta?.debrief_highlights) ? meta.debrief_highlights as string[] : []
   const riskAssessment = meta?.risk_assessment as string | undefined
 
-  const participantCount = entry.participants?.length ?? 0
-  const gentsDisplay = participantCount > 3 ? `3+${participantCount - 3}` : String(participantCount)
-
-  const coverPhoto = entry.cover_image_url ?? photos[0]?.url ?? null
+  // Lore paragraphs + photo pairs for magazine layout
+  const paragraphs = loreParagraphs(entry.lore)
+  const photosForPairs = photos.slice(1) // skip first (hero)
+  const photoPairs: EntryPhoto[][] = []
+  for (let i = 0; i < photosForPairs.length; i += 2) {
+    photoPairs.push(photosForPairs.slice(i, i + 2))
+  }
 
   return (
     <>
@@ -175,337 +206,383 @@ export default function VisaPage() {
           animate="animate"
           className="px-4 py-5"
         >
-          {/* ═══ VISA CARD ═══ */}
+
+          {/* ═══════════════════════════════════════════
+              VISA CARD — The Artifact
+              ═══════════════════════════════════════════ */}
           <div
-            className="relative overflow-hidden rounded-lg"
+            className="relative overflow-hidden rounded-xl"
             style={{
               background: '#F5F0E1',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(100,160,120,0.15)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(201,168,76,0.15), inset 0 1px 0 rgba(255,255,255,0.3)',
             }}
           >
-            {/* Guilloche-inspired border */}
+            {/* Guilloche border */}
             <div
-              className="absolute inset-0 pointer-events-none"
+              className="absolute inset-0 pointer-events-none z-10"
               style={{
-                border: '10px solid transparent',
-                borderImage: 'repeating-linear-gradient(45deg, rgba(100,160,120,0.18), rgba(100,160,120,0.08) 3px, transparent 3px, transparent 6px) 10',
+                border: '8px solid transparent',
+                borderImage: 'repeating-linear-gradient(45deg, rgba(27,58,92,0.06) 0px, rgba(27,58,92,0.03) 2px, transparent 2px, transparent 6px) 8',
               }}
             />
 
             {/* Europe map watermark */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04]">
-              <svg viewBox="0 0 400 300" className="w-56 h-42" fill="none" stroke="#3a7a5a" strokeWidth="0.8">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] z-[1]">
+              <svg viewBox="0 0 400 300" className="w-56" fill="none" stroke="#1B3A5C" strokeWidth="0.8">
                 <path d="M180 40 C200 35 220 38 235 45 L250 42 C260 48 265 55 260 65 L270 75 C280 70 290 78 285 88 L290 100 C285 110 275 115 265 110 L255 120 C260 130 255 140 245 145 L235 155 C230 165 220 170 210 168 L200 175 C195 185 185 190 175 185 L165 180 C155 185 145 180 140 170 L130 165 C120 168 110 160 115 150 L108 140 C100 135 98 125 105 118 L110 108 C105 98 110 88 120 85 L125 75 C120 65 128 55 138 52 L145 45 C150 38 160 35 170 40 Z" />
               </svg>
             </div>
 
-            <div className="relative z-10 px-5 py-5">
-              {/* Header */}
-              <p
-                className="text-center mb-4"
+            {/* Header */}
+            <div className="relative z-[2] pt-2.5 pb-1 text-center" style={{ background: 'linear-gradient(180deg, rgba(27,58,92,0.06) 0%, transparent 100%)' }}>
+              <span
                 style={{
-                  fontFamily: 'Georgia, serif',
-                  fontSize: '11px',
-                  letterSpacing: '0.12em',
+                  fontFamily: "'Instrument Sans', sans-serif",
+                  fontSize: '10px',
                   fontWeight: 600,
+                  letterSpacing: '0.25em',
                   color: '#1B3A5C',
-                  fontVariant: 'small-caps',
+                  textTransform: 'uppercase',
                 }}
               >
-                Vize-{'\u0412\u0438\u0437\u0435'}-Visas
-              </p>
+                Vize &middot; {'\u0412\u0438\u0437\u0435'} &middot; Visas
+              </span>
+            </div>
 
-              {/* Row 1: Flag + VIZA + Polaroid photo */}
-              <div className="relative mb-4">
-                <div className="flex items-start gap-2.5">
-                  {cc && (
-                    <span className="text-[32px] leading-none mt-1">{flagEmoji(cc)}</span>
-                  )}
+            {/* ── Photo band ── */}
+            {coverPhoto && (
+              <div className="relative z-[2] h-40 overflow-hidden">
+                <img
+                  src={coverPhoto}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 30%', filter: 'sepia(0.08) contrast(1.05)' }}
+                  draggable={false}
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(245,240,225,0.2) 0%, transparent 25%, transparent 55%, rgba(245,240,225,0.95) 100%)',
+                  }}
+                />
+                {/* Flag + VIZA overlaid */}
+                <div className="absolute bottom-2 left-5 flex items-center gap-2.5 z-[3]">
+                  {cc && <span className="text-[28px] leading-none" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))' }}>{flagEmoji(cc)}</span>}
                   <span
                     style={{
                       fontFamily: "'Playfair Display', Georgia, serif",
-                      fontSize: '42px',
+                      fontSize: '38px',
                       fontWeight: 700,
                       color: '#1B3A5C',
                       letterSpacing: '0.06em',
                       lineHeight: 1,
+                      textShadow: '0 1px 3px rgba(245,240,225,0.8)',
                     }}
                   >
                     {visaWord(cc)}
                   </span>
                 </div>
+              </div>
+            )}
 
-                {/* Polaroid cover photo */}
-                {coverPhoto && (
-                  <div
-                    className="absolute right-0 top-0"
-                    style={{ transform: 'rotate(5deg)' }}
+            {/* ── Card body ── */}
+            <div className="relative z-[2] px-5 pb-5 pt-3">
+
+              {/* Destination — no labels */}
+              <div className="mb-3">
+                <p
+                  style={{
+                    fontFamily: "'Playfair Display', Georgia, serif",
+                    fontSize: '20px',
+                    fontWeight: 700,
+                    color: '#1B3A5C',
+                    letterSpacing: '0.03em',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {(entry.city && entry.country) ? `${entry.city.toUpperCase()}, ${entry.country.toUpperCase()}` : entry.city?.toUpperCase() ?? entry.location?.toUpperCase() ?? '\u2014'}
+                </p>
+                <div className="flex items-center gap-2.5 mt-1">
+                  <span
+                    style={{
+                      fontFamily: "'Instrument Sans', sans-serif",
+                      fontSize: '11px',
+                      color: '#5A6B7A',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                    }}
                   >
-                    {/* Tape */}
-                    <div
-                      className="absolute -top-1 right-3 z-10"
+                    {monthYear(entry.date)}
+                  </span>
+                  {duration && (
+                    <span
                       style={{
-                        width: '28px',
-                        height: '8px',
-                        background: 'rgba(200,190,170,0.55)',
-                        transform: 'rotate(-12deg)',
-                        borderRadius: '1px',
-                      }}
-                    />
-                    <div
-                      style={{
-                        width: '110px',
-                        height: '88px',
-                        padding: '4px',
-                        background: '#fff',
-                        boxShadow: '1px 2px 8px rgba(0,0,0,0.12)',
+                        fontFamily: "'Instrument Sans', sans-serif",
+                        fontSize: '9px',
+                        fontWeight: 600,
+                        color: '#8B7355',
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        background: 'rgba(139,115,85,0.1)',
+                        padding: '2px 8px',
+                        borderRadius: '3px',
                       }}
                     >
-                      <img
-                        src={coverPhoto}
-                        alt="Cover"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        draggable={false}
-                      />
-                    </div>
+                      {duration}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Bearer row */}
+              {entry.participants.length > 0 && (
+                <div className="flex items-center gap-3 py-3" style={{ borderTop: '1px solid rgba(27,58,92,0.08)', borderBottom: '1px solid rgba(27,58,92,0.08)' }}>
+                  <span
+                    style={{
+                      fontFamily: "'Instrument Sans', sans-serif",
+                      fontSize: '8px',
+                      fontWeight: 600,
+                      letterSpacing: '0.2em',
+                      color: '#8B7355',
+                      textTransform: 'uppercase',
+                      writingMode: 'vertical-lr',
+                      transform: 'rotate(180deg)',
+                    }}
+                  >
+                    Bearers
+                  </span>
+                  <div className="flex gap-3.5 flex-1">
+                    {entry.participants.map(p => (
+                      <div key={p.id} className="flex items-center gap-2">
+                        <Avatar src={p.avatar_url} name={p.display_name} size="xs" />
+                        <div className="flex flex-col">
+                          <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '11px', fontWeight: 600, color: '#2C2C2C', lineHeight: '1.2' }}>
+                            {p.display_name.split(' ')[0]}
+                          </span>
+                          <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '8px', color: '#8B7355', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                            {p.alias === 'lorekeeper' ? 'Lorekeeper' : p.alias === 'bass' ? 'Beard & Bass' : p.alias === 'keys' ? 'Keys & Cocktails' : p.full_alias ?? p.alias}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-
-              {/* Data fields */}
-              <div className="space-y-3 mt-6">
-                <div className="flex items-baseline" style={{ borderBottom: '1px solid rgba(27,58,92,0.08)', paddingBottom: '8px' }}>
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '10px', fontWeight: 700, color: '#1B3A5C', letterSpacing: '0.05em', textTransform: 'uppercase', width: '140px', flexShrink: 0 }}>
-                    Destination:
-                  </span>
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '14px', color: '#2C2C2C', fontWeight: 500 }}>
-                    {entry.city?.toUpperCase() ?? entry.location?.toUpperCase() ?? '\u2014'}
-                  </span>
                 </div>
+              )}
 
-                <div className="flex items-baseline" style={{ borderBottom: '1px solid rgba(27,58,92,0.08)', paddingBottom: '8px' }}>
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '10px', fontWeight: 700, color: '#1B3A5C', letterSpacing: '0.05em', textTransform: 'uppercase', width: '140px', flexShrink: 0 }}>
-                    Date of Trip:
-                  </span>
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '14px', color: '#2C2C2C', fontWeight: 500 }}>
-                    {dateDisplay}
-                  </span>
-                </div>
-
-                <div className="flex items-baseline" style={{ borderBottom: '1px solid rgba(27,58,92,0.08)', paddingBottom: '8px' }}>
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '10px', fontWeight: 700, color: '#1B3A5C', letterSpacing: '0.05em', textTransform: 'uppercase', width: '140px', flexShrink: 0 }}>
-                    Number of Gents:
-                  </span>
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '14px', color: '#2C2C2C', fontWeight: 500 }}>
-                    {gentsDisplay}
-                  </span>
-                </div>
-              </div>
-
-              {/* Lore one-liner */}
+              {/* One-liner */}
               {oneliner && (
                 <p
-                  className="text-center mt-5 px-2"
+                  className="text-center mt-3 px-2"
                   style={{
                     fontFamily: "'Playfair Display', Georgia, serif",
                     fontStyle: 'italic',
-                    fontSize: '13px',
-                    color: '#8B7355',
-                    lineHeight: 1.5,
+                    fontSize: '12px',
+                    color: '#5A6B7A',
+                    lineHeight: 1.55,
                   }}
                 >
                   &ldquo;{oneliner}&rdquo;
                 </p>
               )}
 
-              {/* Mission stamp */}
+              {/* Stamp overlay — absolute positioned */}
               {stamp.image_url ? (
-                <div className="flex justify-center mt-5">
-                  <img
-                    src={stamp.image_url}
-                    alt="Mission stamp"
-                    className="rounded-full"
-                    style={{
-                      width: '110px',
-                      height: '110px',
-                      transform: 'rotate(-6deg)',
-                      opacity: 0.7,
-                      filter: 'sepia(0.2)',
-                    }}
-                    draggable={false}
-                  />
-                </div>
+                <img
+                  src={stamp.image_url}
+                  alt="Mission stamp"
+                  className="absolute bottom-4 right-4"
+                  style={{
+                    width: '90px',
+                    height: '90px',
+                    borderRadius: '50%',
+                    transform: 'rotate(-12deg)',
+                    opacity: 0.5,
+                    filter: 'sepia(0.15)',
+                  }}
+                  draggable={false}
+                />
               ) : (
-                <div className="flex justify-center mt-5">
-                  <div
-                    style={{
-                      width: '110px',
-                      height: '110px',
-                      border: '3px solid #8B4513',
-                      borderRadius: '8px',
-                      transform: 'rotate(-6deg)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      textAlign: 'center',
-                      color: '#8B4513',
-                      opacity: 0.6,
-                      padding: '8px',
-                    }}
-                  >
-                    <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2 }}>
-                      {entry.title}
-                    </span>
-                    <span style={{ fontSize: '8px', marginTop: '4px' }}>
-                      {monthYear(entry.date)}
-                    </span>
-                  </div>
+                <div
+                  className="absolute bottom-4 right-4"
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    border: '2.5px solid #8B4513',
+                    borderRadius: '50%',
+                    transform: 'rotate(-12deg)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    opacity: 0.45,
+                    padding: '6px',
+                  }}
+                >
+                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '7px', fontWeight: 700, color: '#8B4513', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.15 }}>
+                    {entry.city ?? entry.title}
+                  </span>
+                  <span style={{ fontFamily: 'Georgia, serif', fontSize: '6px', color: '#8B4513', marginTop: '2px' }}>
+                    {monthYear(entry.date)}
+                  </span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* ═══ BELOW THE VISA CARD ═══ */}
-          <div className="mt-5 space-y-4">
+          {/* ═══════════════════════════════════════════
+              MAGAZINE STORY — Below the Card
+              ═══════════════════════════════════════════ */}
 
-            {/* Participants */}
-            {entry.participants.length > 0 && (
-              <div className="flex items-center gap-3 px-1">
-                {entry.participants.map(p => (
-                  <div key={p.id} className="flex flex-col items-center gap-1">
-                    <Avatar src={p.avatar_url} name={p.display_name} size="sm" />
-                    <span className="text-[10px] text-ivory-dim font-body">{p.display_name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* The Mission — hero photo + lore + interspersed photos */}
+          {(entry.lore || photos.length > 0) && (
+            <>
+              <SectionDivider label="The Mission" />
 
-            {/* Photo strip */}
-            {photos.length > 0 && (
-              <div className="overflow-x-auto no-scrollbar flex gap-2">
-                {photos.slice(0, 6).map(photo => (
+              {/* Hero photo */}
+              {(photos[0]?.url || coverPhoto) && (
+                <div className="relative rounded-lg overflow-hidden mb-5" style={{ aspectRatio: '16/9' }}>
                   <img
-                    key={photo.id}
-                    src={photo.url}
-                    alt={photo.caption ?? 'Mission photo'}
-                    className="h-20 w-auto rounded-lg border border-white/10 object-cover shrink-0"
+                    src={photos[0]?.url ?? coverPhoto!}
+                    alt=""
+                    className="w-full h-full object-cover"
                     draggable={false}
                   />
-                ))}
-              </div>
-            )}
-
-            {/* Mission Debrief — expandable */}
-            {missionDebrief ? (
-              <div className="rounded-xl border border-white/5 overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setDebriefOpen(!debriefOpen)}
-                  className="w-full flex items-center justify-between px-4 py-3 text-left"
-                >
-                  <span className="text-xs text-ivory-dim font-body tracking-wide uppercase">Mission Debrief</span>
-                  <ChevronDown
-                    size={14}
-                    className={`text-ivory-dim transition-transform duration-200 ${debriefOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
-
-                <AnimatePresence>
-                  {debriefOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-4 pb-4 space-y-3">
-                        {/* Classified header */}
-                        <div className="flex items-center gap-2">
-                          <div className="h-px flex-1 bg-red-700/20" />
-                          <span className="text-[10px] font-mono tracking-[0.3em] text-red-700/50 uppercase">Classified</span>
-                          <div className="h-px flex-1 bg-red-700/20" />
-                        </div>
-
-                        {/* Debrief text */}
-                        <p className="text-xs text-ivory-dim/90 font-body leading-relaxed whitespace-pre-wrap">{missionDebrief}</p>
-
-                        {/* Landmarks */}
-                        {landmarks.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {landmarks.map((l, i) => (
-                              <span key={i} className="rounded-full border border-gold/20 bg-gold/5 px-2.5 py-0.5 text-[10px] text-gold-muted font-body">
-                                {l}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Highlights */}
-                        {debriefHighlights.length > 0 && (
-                          <div>
-                            <p className="text-[10px] font-mono tracking-[0.2em] text-gold/40 uppercase mb-1.5">Key Moments</p>
-                            <ol className="space-y-1 list-decimal list-inside">
-                              {debriefHighlights.map((h, i) => (
-                                <li key={i} className="text-[11px] text-ivory-dim/80 font-body leading-relaxed">{h}</li>
-                              ))}
-                            </ol>
-                          </div>
-                        )}
-
-                        {/* Risk Assessment */}
-                        {riskAssessment && (
-                          <div className="rounded-lg border border-amber-700/20 bg-amber-700/5 px-3 py-2.5">
-                            <p className="text-[9px] font-mono tracking-[0.2em] text-amber-400/60 uppercase mb-1">Risk Assessment</p>
-                            <p className="text-[11px] text-ivory-dim font-body italic">{riskAssessment}</p>
-                          </div>
-                        )}
-
-                        {/* Regenerate */}
-                        <button
-                          type="button"
-                          onClick={handleGenerateDebrief}
-                          disabled={generatingDebrief}
-                          className="flex items-center gap-1.5 text-[10px] text-ivory-dim/50 hover:text-gold font-body transition-colors disabled:opacity-40 mx-auto pt-1"
-                        >
-                          <RefreshCw size={10} className={generatingDebrief ? 'animate-spin' : ''} />
-                          Regenerate
-                        </button>
-                      </div>
-                    </motion.div>
+                  {photos[0]?.caption && (
+                    <div className="absolute bottom-0 inset-x-0 px-3 pb-2 pt-5" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.5))' }}>
+                      <span className="text-[11px] text-white/70 font-body italic">{photos[0].caption}</span>
+                    </div>
                   )}
-                </AnimatePresence>
-              </div>
-            ) : (
+                </div>
+              )}
+
+              {/* Lore narrative with interspersed photos */}
+              {paragraphs.length > 0 && paragraphs.map((p, i) => (
+                <div key={i}>
+                  <p
+                    className={cn('font-display text-[15px] text-ivory/85 leading-[1.7] mb-5', i === 0 && 'first-letter:text-[48px] first-letter:float-left first-letter:leading-[1] first-letter:mr-2 first-letter:text-gold first-letter:font-bold')}
+                  >
+                    {p}
+                  </p>
+
+                  {/* Photo pair after this paragraph */}
+                  {photoPairs[i] && (
+                    <div className="grid grid-cols-2 gap-2 mb-5">
+                      {photoPairs[i].map(photo => (
+                        <img
+                          key={photo.id}
+                          src={photo.url}
+                          alt={photo.caption ?? ''}
+                          className="w-full aspect-square object-cover rounded-md border border-gold/10"
+                          draggable={false}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* If no lore but photos exist, show remaining photo pairs */}
+              {paragraphs.length === 0 && photoPairs.map((pair, i) => (
+                <div key={i} className="grid grid-cols-2 gap-2 mb-4">
+                  {pair.map(photo => (
+                    <img
+                      key={photo.id}
+                      src={photo.url}
+                      alt={photo.caption ?? ''}
+                      className="w-full aspect-square object-cover rounded-md border border-gold/10"
+                      draggable={false}
+                    />
+                  ))}
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Intelligence Report — debrief */}
+          <SectionDivider label="Intelligence Report" />
+
+          {missionDebrief ? (
+            <div className="rounded-xl border border-gold/[0.12] bg-gold/[0.04] p-5">
+              {/* Classified badge */}
+              <span className="inline-block text-[9px] font-body font-semibold tracking-[0.2em] text-gold uppercase border border-gold/30 px-2.5 py-1 rounded mb-4">
+                Classified
+              </span>
+
+              {/* Debrief text */}
+              <p className="text-[13px] text-ivory/70 font-body leading-relaxed whitespace-pre-wrap mb-4">{missionDebrief}</p>
+
+              {/* Landmarks */}
+              {landmarks.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {landmarks.map((l, i) => (
+                    <span key={i} className="text-[10px] text-gold font-body bg-gold/[0.08] border border-gold/15 px-2.5 py-0.5 rounded-full">
+                      {l}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Key Moments */}
+              {debriefHighlights.length > 0 && (
+                <div className="flex flex-col gap-2 mb-4">
+                  {debriefHighlights.map((h, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="font-display text-sm font-bold text-gold/50 min-w-[18px]">{i + 1}.</span>
+                      <span className="text-xs text-ivory/65 font-body leading-relaxed">{h}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Risk Assessment */}
+              {riskAssessment && (
+                <div className="rounded-lg border border-amber-500/15 bg-amber-500/[0.06] px-3 py-2.5 mb-3">
+                  <p className="text-[9px] font-mono tracking-[0.2em] text-amber-400/60 uppercase mb-1">Risk Assessment</p>
+                  <p className="text-[11px] text-amber-400/80 font-body italic leading-relaxed">{riskAssessment}</p>
+                </div>
+              )}
+
+              {/* Regenerate */}
               <button
                 type="button"
                 onClick={handleGenerateDebrief}
                 disabled={generatingDebrief}
-                className="w-full py-3 rounded-xl border border-white/8 flex items-center justify-center gap-2 text-xs text-ivory-dim font-body hover:bg-white/3 transition-colors disabled:opacity-40"
+                className="flex items-center gap-1.5 text-[10px] text-ivory-dim/50 hover:text-gold font-body transition-colors disabled:opacity-40 mx-auto pt-1"
               >
-                {generatingDebrief ? (
-                  <>
-                    <RefreshCw size={14} className="animate-spin" />
-                    Generating debrief...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={14} />
-                    Generate Mission Debrief
-                  </>
-                )}
+                <RefreshCw size={10} className={generatingDebrief ? 'animate-spin' : ''} />
+                Regenerate
               </button>
-            )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleGenerateDebrief}
+              disabled={generatingDebrief}
+              className="w-full py-3.5 rounded-xl border border-gold/[0.12] bg-gold/[0.04] flex items-center justify-center gap-2 text-xs text-ivory-dim font-body hover:bg-gold/[0.08] transition-colors disabled:opacity-40"
+            >
+              {generatingDebrief ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin" />
+                  Generating debrief...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} className="text-gold/60" />
+                  Generate Mission Debrief
+                </>
+              )}
+            </button>
+          )}
 
-            {/* View Full Entry */}
+          {/* View Full Entry */}
+          <div className="mt-6">
             <Button variant="outline" fullWidth onClick={handleViewEntry}>
               View Full Entry
             </Button>
-
-            {/* Bottom padding */}
-            <div className="h-6" />
           </div>
+
+          <div className="h-8" />
         </motion.div>
       </PageWrapper>
     </>
