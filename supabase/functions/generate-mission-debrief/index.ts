@@ -23,11 +23,13 @@ Deno.serve(async (req: Request) => {
     const country = entry.country || 'undisclosed'
 
     const lore = entry.lore || entry.description || ''
-    const photoSection = photos.length > 0
-      ? `You have been provided ${photos.length} photograph(s) from this mission. Study every photograph carefully. Identify locations, landmarks, restaurants, bars, activities, food, drinks, architecture, weather, time of day, mood. Identify each Gent present using the visual identification guide.`
-      : `No photographs were provided. Use the mission details, location, and lore below to construct the debrief from context alone.${lore ? `\n\nLore: ${lore}` : ''}`
 
-    const prompt = `You are writing a CLASSIFIED MISSION DEBRIEF for The Gents Chronicles — a private chronicle of three gentlemen.
+    function buildPrompt(withPhotos: boolean): string {
+      const photoSection = withPhotos && photos.length > 0
+        ? `You have been provided ${photos.length} photograph(s) from this mission. Study every photograph carefully. Identify locations, landmarks, restaurants, bars, activities, food, drinks, architecture, weather, time of day, mood. Identify each Gent present using the visual identification guide.`
+        : `No photographs are available. Use the mission details, location, and lore to construct the debrief from context alone.${lore ? `\n\nLore: ${lore}` : ''}`
+
+      return `You are writing a CLASSIFIED MISSION DEBRIEF for The Gents Chronicles — a private chronicle of three gentlemen.
 
 These are from a mission (trip) to ${city}, ${country}.
 
@@ -51,44 +53,64 @@ Return in this exact format:
 <landmarks>Landmark 1, Landmark 2, Landmark 3</landmarks>
 <highlights>First highlight|Second highlight|Third highlight</highlights>
 <risk>The one-sentence risk assessment.</risk>`
+    }
 
     // Build message content — images first, then the text prompt
     type ContentBlock =
       | { type: 'image'; source: { type: 'url'; url: string } }
       | { type: 'text'; text: string }
-    const content: ContentBlock[] = [
-      ...photos.map((url) => ({ type: 'image' as const, source: { type: 'url' as const, url } })),
-      { type: 'text', text: prompt },
-    ]
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 55000)
+    async function callClaude(withPhotos: boolean): Promise<string> {
+      const content: ContentBlock[] = []
+      if (withPhotos && photos.length > 0) {
+        for (const url of photos) {
+          content.push({ type: 'image' as const, source: { type: 'url' as const, url } })
+        }
+      }
+      content.push({ type: 'text', text: buildPrompt(withPhotos) })
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content }],
-      }),
-      signal: controller.signal,
-    })
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 55000)
 
-    clearTimeout(timeout)
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1024,
+          messages: [{ role: 'user', content }],
+        }),
+        signal: controller.signal,
+      })
 
-    if (!response.ok) {
-      const errBody = await response.text()
-      console.error('Claude API error body:', errBody)
-      throw new Error(`Claude API error: ${response.status} — ${errBody}`)
+      clearTimeout(timer)
+
+      if (!response.ok) {
+        const errBody = await response.text()
+        throw new Error(`Claude API ${response.status}: ${errBody}`)
+      }
+
+      const result = await response.json()
+      return result.content?.[0]?.text?.trim() ?? ''
     }
 
-    const result = await response.json()
-    const raw = result.content?.[0]?.text?.trim() ?? ''
+    // Try with photos first; if Claude can't fetch them (400), retry text-only
+    let raw: string
+    try {
+      raw = await callClaude(photos.length > 0)
+    } catch (e) {
+      const msg = (e as Error).message
+      if (photos.length > 0 && msg.includes('400')) {
+        console.log('Photo URLs failed, retrying text-only')
+        raw = await callClaude(false)
+      } else {
+        throw e
+      }
+    }
 
     // Parse structured response
     const debriefMatch = raw.match(/<debrief>([\s\S]*?)<\/debrief>/)

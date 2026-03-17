@@ -24,7 +24,6 @@ export async function generateMissionDebrief(
           location: entry.location,
           lore: entry.lore,
           description: entry.description,
-          metadata: entry.metadata,
           participants: entry.participants?.map(p => ({ display_name: p.display_name })) ?? [],
         },
         photoUrls,
