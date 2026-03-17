@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { ReactFlowProvider } from '@xyflow/react'
 import { Plus, Users, Radar, Network } from 'lucide-react'
+import { MindMapCanvas } from '@/pages/MindMap'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Button, Spinner, EmptyStateImage, OnboardingTip } from '@/components/ui'
@@ -26,7 +28,7 @@ export default function Circle() {
   const [availableLabels, setAvailableLabels] = useState<string[]>([])
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'contacts' | 'poi'>('contacts')
+  const [activeTab, setActiveTab] = useState<'contacts' | 'poi' | 'map'>('contacts')
   const [showPOIModal, setShowPOIModal] = useState(false)
   const [showActionSheet, setShowActionSheet] = useState(false)
   const [poiMode, setPOIMode] = useState<'research' | 'scan'>('research')
@@ -90,28 +92,20 @@ export default function Circle() {
         subtitle={
           activeTab === 'contacts'
             ? (loading ? undefined : `${people.length} contact${people.length !== 1 ? 's' : ''}`)
-            : (poiLoading ? undefined : `${poiPeople.length} on the radar`)
+            : activeTab === 'poi'
+              ? (poiLoading ? undefined : `${poiPeople.length} on the radar`)
+              : 'Mind Map'
         }
-        right={
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => navigate('/circle/map')}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-light/40 text-ivory-muted hover:text-gold hover:bg-slate-light transition-colors duration-150"
-              aria-label="Mind map"
-            >
-              <Network size={16} strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              onClick={handleFABPress}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-gold text-obsidian hover:bg-gold-light transition-colors duration-150"
-              aria-label={activeTab === 'poi' ? 'Scout someone' : 'Add contact'}
-            >
-              <Plus size={16} strokeWidth={2.5} />
-            </button>
-          </div>
-        }
+        right={activeTab !== 'map' ? (
+          <button
+            type="button"
+            onClick={handleFABPress}
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-gold text-obsidian hover:bg-gold-light transition-colors duration-150"
+            aria-label={activeTab === 'poi' ? 'Scout someone' : 'Add contact'}
+          >
+            <Plus size={16} strokeWidth={2.5} />
+          </button>
+        ) : undefined}
       />
       <SectionNav />
 
@@ -132,6 +126,14 @@ export default function Circle() {
           }`}
         >
           On the Radar
+        </button>
+        <button
+          onClick={() => setActiveTab('map')}
+          className={`flex-1 py-2.5 text-xs tracking-[0.2em] uppercase font-body transition-colors ${
+            activeTab === 'map' ? 'text-gold border-b-2 border-gold' : 'text-ivory-dim'
+          }`}
+        >
+          Map
         </button>
       </div>
 
@@ -307,6 +309,13 @@ export default function Circle() {
             </>
           )}
         </PageWrapper>
+      )}
+
+      {/* Map tab */}
+      {activeTab === 'map' && (
+        <ReactFlowProvider>
+          <MindMapCanvas height="calc(100dvh - 136px)" />
+        </ReactFlowProvider>
       )}
 
       {/* Add contact modal */}

@@ -37,9 +37,10 @@ const TIER_ZONES: Array<{ maxRadius: number; tier: PersonTier }> = [
 ]
 
 // TopBar h-14 = 56px, SectionNav h-10 = 40px → 96px total
-const CANVAS_HEIGHT = 'calc(100dvh - 96px)'
+const DEFAULT_CANVAS_HEIGHT = 'calc(100dvh - 96px)'
 
-function MindMapCanvas() {
+export function MindMapCanvas({ height }: { height?: string }) {
+  const canvasHeight = height ?? DEFAULT_CANVAS_HEIGHT
   const {
     loading, nodes, edges, filters, gents, savedPositions,
     toggleGentFocus, setTierFilter, setGentFilter, updatePersonTier,
@@ -120,14 +121,14 @@ function MindMapCanvas() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center bg-obsidian" style={{ height: CANVAS_HEIGHT }}>
+      <div className="flex items-center justify-center bg-obsidian" style={{ height: canvasHeight }}>
         <Spinner size="lg" />
       </div>
     )
   }
 
   return (
-    <div className="relative bg-obsidian" style={{ height: CANVAS_HEIGHT }}>
+    <div className="relative bg-obsidian" style={{ height: canvasHeight }}>
       {/* Filter chips — float over canvas */}
       <div className="absolute top-3 left-3 right-3 z-10 flex flex-col gap-2">
         {searchOpen ? (
