@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, GoldRule, BackgroundLayer, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
 
 interface NightOutCardProps {
   entry: Entry
@@ -154,7 +154,7 @@ export const NightOutCard = React.forwardRef<HTMLDivElement, NightOutCardProps>(
         default: return <V1 {...props} />
       }
     })()
-    return <div ref={ref} style={ROOT}>{inner}</div>
+    return <div ref={ref} style={ROOT}><InsetFrame />{inner}</div>
   }
 )
 

@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrandMark, GoldRule, BackgroundLayer } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, InsetFrame } from '@/export/templates/shared'
 import { formatDate } from '@/lib/utils'
 import type { Entry } from '@/types/app'
 
@@ -15,6 +15,7 @@ const GatheringInviteCard = React.forwardRef<HTMLDivElement, Props>(({ entry, ba
   return (
     <div ref={ref} style={{ width: '1080px', height: '1350px', backgroundColor: '#0D0B0F', fontFamily: 'var(--font-body)', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '80px', boxSizing: 'border-box' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
+      <InsetFrame />
       {/* Host seal — threshold reward */}
       {isHost && (
         <div style={{ position: 'absolute', top: '56px', right: '72px', zIndex: 3, width: '72px', height: '72px', border: '1.5px solid #C9A84C', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

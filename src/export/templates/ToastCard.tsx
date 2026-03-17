@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, GoldRule, BackgroundLayer } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, InsetFrame } from '@/export/templates/shared'
 
 interface ToastCardProps {
   entry: Entry
@@ -28,6 +28,7 @@ export const ToastCard = React.forwardRef<HTMLDivElement, ToastCardProps>(
         }}
       >
         <BackgroundLayer url={backgroundUrl} gradient="strong" />
+        <InsetFrame />
 
         {/* Top gold rule */}
         <div style={{ width: '100%', paddingTop: '56px', paddingLeft: '80px', paddingRight: '80px', position: 'relative', zIndex: 2 }}>

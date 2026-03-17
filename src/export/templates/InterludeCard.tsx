@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, BackgroundLayer } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer, InsetFrame } from '@/export/templates/shared'
 
 interface InterludeCardProps {
   entry: Entry
@@ -33,6 +33,7 @@ export const InterludeCard = React.forwardRef<HTMLDivElement, InterludeCardProps
         }}
       >
         <BackgroundLayer url={backgroundUrl} gradient="strong" />
+        <InsetFrame />
 
         {/* Corner marks */}
         <div style={{ position: 'absolute', top: '48px', left: '48px', width: '24px', height: '24px', borderTop: '1px solid rgba(201,168,76,0.5)', borderLeft: '1px solid rgba(201,168,76,0.5)', zIndex: 2 }} />

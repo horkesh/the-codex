@@ -1,6 +1,6 @@
 import React from 'react'
 import type { Entry } from '@/types/app'
-import { BackgroundLayer } from './shared'
+import { BackgroundLayer, InsetFrame } from './shared'
 import { BrandMark } from './shared'
 import { GoldRule } from './shared'
 
@@ -30,6 +30,7 @@ export const GatheringRecap = React.forwardRef<HTMLDivElement, GatheringRecapPro
         }}
       >
         {backgroundUrl && <BackgroundLayer url={backgroundUrl} gradient="strong" />}
+        <InsetFrame />
 
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', padding: '80px' }}>
 

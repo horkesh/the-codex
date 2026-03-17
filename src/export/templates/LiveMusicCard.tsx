@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BackgroundLayer, getOneliner } from '@/export/templates/shared'
+import { BackgroundLayer, InsetFrame, getOneliner } from '@/export/templates/shared'
 
 interface LiveMusicCardProps {
   entry: Entry
@@ -364,7 +364,7 @@ export const LiveMusicCard = React.forwardRef<HTMLDivElement, LiveMusicCardProps
         default: return <V1 {...props} />
       }
     })()
-    return <div ref={ref} style={ROOT}>{inner}</div>
+    return <div ref={ref} style={ROOT}><InsetFrame />{inner}</div>
   }
 )
 LiveMusicCard.displayName = 'LiveMusicCard'

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, BackgroundLayer, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
 
 interface MissionCarouselProps {
   entry: Entry
@@ -127,7 +127,7 @@ export const MissionCarousel = React.forwardRef<HTMLDivElement, MissionCarouselP
     const inner = (() => {
       switch (variant) { case 2: return <V2 {...props} />; case 3: return <V3 {...props} />; case 4: return <V4 {...props} />; default: return <V1 {...props} /> }
     })()
-    return <div ref={ref} style={ROOT}>{inner}</div>
+    return <div ref={ref} style={ROOT}><InsetFrame />{inner}</div>
   }
 )
 MissionCarousel.displayName = 'MissionCarousel'

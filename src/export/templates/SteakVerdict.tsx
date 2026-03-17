@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, GoldRule, BackgroundLayer, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
 
 interface SteakVerdictProps {
   entry: Entry
@@ -149,7 +149,7 @@ export const SteakVerdict = React.forwardRef<HTMLDivElement, SteakVerdictProps>(
     const inner = (() => {
       switch (variant) { case 2: return <V2 {...props} />; case 3: return <V3 {...props} />; case 4: return <V4 {...props} />; default: return <V1 {...props} /> }
     })()
-    return <div ref={ref} style={ROOT}>{inner}</div>
+    return <div ref={ref} style={ROOT}><InsetFrame />{inner}</div>
   }
 )
 SteakVerdict.displayName = 'SteakVerdict'

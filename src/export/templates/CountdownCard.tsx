@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrandMark, GoldRule, BackgroundLayer } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, InsetFrame } from '@/export/templates/shared'
 import { formatDate, daysUntil as computeDaysUntil } from '@/lib/utils'
 import type { Entry } from '@/types/app'
 
@@ -14,6 +14,7 @@ const CountdownCard = React.forwardRef<HTMLDivElement, Props>(({ entry, daysUnti
   return (
     <div ref={ref} style={{ width: '1080px', height: '1350px', backgroundColor: '#0D0B0F', fontFamily: 'var(--font-body)', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '80px', boxSizing: 'border-box' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
+      <InsetFrame />
       <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '16px', textAlign: 'center', position: 'relative', zIndex: 2 }}>Until</p>
       <p style={{ fontFamily: 'var(--font-display)', fontSize: '180px', lineHeight: 0.9, color: '#C9A84C', textAlign: 'center', marginBottom: '8px', fontWeight: 400, textShadow: '0 0 60px rgba(201,168,76,0.3)', position: 'relative', zIndex: 2 }}>{Math.abs(days)}</p>
       <p style={{ fontFamily: 'var(--font-body)', fontSize: '20px', letterSpacing: '0.5em', textTransform: 'uppercase', color: backgroundUrl ? '#A09890' : '#8C8680', marginBottom: '48px', textAlign: 'center', position: 'relative', zIndex: 2 }}>{Math.abs(days) === 1 ? 'Day' : 'Days'}</p>
