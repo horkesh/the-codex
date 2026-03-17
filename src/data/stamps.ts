@@ -25,6 +25,18 @@ export async function fetchStamp(id: string): Promise<PassportStamp | null> {
   return data as PassportStamp
 }
 
+export async function fetchStampByEntryId(entryId: string): Promise<PassportStamp | null> {
+  const { data, error } = await supabase
+    .from('passport_stamps')
+    .select('*')
+    .eq('entry_id', entryId)
+    .eq('type', 'mission')
+    .limit(1)
+    .maybeSingle()
+  if (error) { console.error('fetchStampByEntryId error:', error); return null }
+  return data as PassportStamp | null
+}
+
 export async function createMissionStamp(entry: {
   id: string
   title: string
