@@ -19,7 +19,7 @@ function deriveLabel(stats: GentStats): string {
   for (const rule of STAT_RULES) {
     if ((stats[rule.field] as number) >= rule.threshold) return rule.label
   }
-  return 'Chronicle Member'
+  return 'Codex Member'
 }
 
 interface GentCardsProps {
@@ -35,7 +35,7 @@ export function GentCards({ gents, stats }: GentCardsProps) {
       <p className="text-[10px] font-body tracking-[0.3em] uppercase text-gold/50 text-center mb-8">
         The Gents
       </p>
-      <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory max-w-lg mx-auto">
+      <div className="flex flex-col gap-4 max-w-sm mx-auto">
         {gents.map(g => {
           const s = statsMap[g.id]
           const drink = SIGNATURE_DRINKS[g.alias] ?? null
@@ -47,7 +47,7 @@ export function GentCards({ gents, stats }: GentCardsProps) {
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
-              className="min-w-[200px] snap-center flex flex-col items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-6"
+              className="flex flex-col items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-6"
             >
               {/* Portrait */}
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gold/20 bg-slate-dark">

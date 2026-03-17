@@ -60,7 +60,7 @@ export function ShowcaseHero() {
         <motion.div variants={staggerItem} className="mt-8">
           <Link
             to={gent ? '/home' : '/login'}
-            className="px-5 py-2 rounded-full border border-gold/40 text-gold text-xs font-body tracking-widest uppercase hover:bg-gold/10 transition-all"
+            className="px-5 py-2 rounded-full bg-gold text-obsidian text-xs font-body font-semibold tracking-widest uppercase hover:bg-gold-light transition-all"
           >
             The Gents Lounge
           </Link>
