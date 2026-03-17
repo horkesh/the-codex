@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar, Spinner, Button } from '@/components/ui'
 import { fetchStamp } from '@/data/stamps'
@@ -8,7 +8,7 @@ import { fetchEntry, fetchEntryPhotos, updateEntry } from '@/data/entries'
 import { flagEmoji, cn } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
 import { generateMissionDebrief } from '@/ai/debrief'
-import { Sparkles, RefreshCw, ChevronDown } from 'lucide-react'
+import { Sparkles, RefreshCw } from 'lucide-react'
 import { useUIStore } from '@/store/ui'
 import type { PassportStamp, EntryWithParticipants } from '@/types/app'
 
@@ -82,7 +82,6 @@ export default function VisaPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [generatingDebrief, setGeneratingDebrief] = useState(false)
-  const [debriefOpen, setDebriefOpen] = useState(false)
   const addToast = useUIStore(s => s.addToast)
 
   useEffect(() => {
@@ -132,7 +131,6 @@ export default function VisaPage() {
         }
         await updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>)
         setEntry({ ...entry, metadata: meta })
-        setDebriefOpen(true)
         addToast('Mission debrief generated.', 'success')
       } else {
         addToast('Could not generate debrief. Try again.', 'error')
