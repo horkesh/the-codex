@@ -104,7 +104,6 @@ export function POIModal({ open, mode, onClose, onSaved }: ProspectIntakeModalPr
               ref={photoInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAnalyzeFile(f, 'photo') }}
             />
