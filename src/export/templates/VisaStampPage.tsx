@@ -51,8 +51,8 @@ const VALUE_STYLE: React.CSSProperties = {
 
 export const VisaStampPage = React.forwardRef<HTMLDivElement, VisaStampPageProps>(
   ({ entry }, ref) => {
-    const participantCount = (entry as Record<string, unknown>).participants
-      ? ((entry as Record<string, unknown>).participants as unknown[]).length
+    const participantCount = 'participants' in entry
+      ? (entry as unknown as { participants: unknown[] }).participants.length
       : 0
 
     return (
