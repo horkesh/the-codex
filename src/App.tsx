@@ -6,6 +6,7 @@ import { Shell } from '@/components/layout'
 
 // Pages
 import Landing from '@/pages/Landing'
+import Showcase from '@/pages/Showcase'
 import Home from '@/pages/Home'
 import Chronicle from '@/pages/Chronicle'
 import EntryDetail from '@/pages/EntryDetail'
@@ -50,7 +51,9 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
         {/* Public routes — no Shell */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<Showcase />} />
+        <Route path="/login" element={<Landing />} />
+        <Route path="/lounge" element={<ProtectedRoute><Navigate to="/home" replace /></ProtectedRoute>} />
         <Route path="/g/:slug" element={<PublicInvite />} />
         <Route path="/g/:slug/guestbook" element={<PublicGuestBook />} />
 

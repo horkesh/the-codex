@@ -299,6 +299,15 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - `fetchEarnedAchievements` + `fetchEarnedThresholds` called in parallel on mount.
 - Signature stat derived from stats: threshold-based labels (Connoisseur, Globetrotter, etc.) or relative-to-group fallback.
 
+## Public showcase (`src/pages/Showcase.tsx`)
+- Public-facing page at `/` — no auth required. Instagram link-in-bio destination.
+- Logged-in gents auto-redirect to `/home`. Login page moved to `/login`.
+- Five sections: ShowcaseHero (logo, title, "The Gents Lounge" pill), GentCards (portrait, alias, stats, signature drink, threshold label), FeaturedChronicle (pinned+shared entries as cream cards with polaroid photos), TravelMap (static SVG with gold pins on mission cities), ShowcaseFooter.
+- Data: `src/data/public.ts` — public queries using anon RLS policies. Only pinned+shared+published entries visible.
+- `/lounge` redirects to `/home` (protected).
+- Travel map: `CITY_COORDS` lookup in `TravelMap.tsx` maps city names to SVG coordinates. Add new cities as missions grow.
+- Anon RLS policies in `20260317200000_public_showcase.sql`: `gents` (full select), `entries` (pinned+shared+published only), `entry_participants` (for publicly visible entries), `gent_stats` view (granted to anon).
+
 ## Deployment workflow
 ```bash
 git add <files> && git commit -m "..." && git push
