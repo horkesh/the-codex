@@ -203,6 +203,25 @@ function MindMapCanvas() {
         </div>
       </div>
 
+      <ReactFlow
+        nodes={liveNodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onNodeClick={onNodeClick}
+        onNodeDragStop={onDragStop}
+        fitView
+        fitViewOptions={{ padding: 0.3 }}
+        minZoom={0.3}
+        maxZoom={3}
+        proOptions={{ hideAttribution: true }}
+        style={{ width: '100%', height: '100%' }}
+      >
+        <Background color="rgba(201,168,76,0.04)" gap={40} />
+        <RingGuides />
+      </ReactFlow>
+
+      {/* Tier change confirmation — rendered after ReactFlow so it's on top */}
       {pendingTierChange && (() => {
         const TIER_ORDER: Record<PersonTier, number> = { inner_circle: 0, outer_circle: 1, acquaintance: 2 }
         const tierLabel = (t: PersonTier) => t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -214,7 +233,7 @@ function MindMapCanvas() {
           : <>You decided <span className="text-gold font-semibold">{name}</span> is not worthy enough of the <span className="text-gold font-semibold">{tierLabel(pendingTierChange.fromTier)}</span>?</>
 
         return (
-          <div className="absolute bottom-20 left-3 right-3 z-10 flex items-center gap-3 bg-gold/10 border border-gold/30 rounded-xl px-4 py-3 backdrop-blur-sm">
+          <div className="absolute bottom-20 left-3 right-3 z-50 flex items-center gap-3 bg-obsidian/90 border border-gold/30 rounded-xl px-4 py-3 backdrop-blur-sm shadow-lg">
             <p className="flex-1 text-xs text-ivory font-body leading-relaxed">
               {message}
             </p>
@@ -245,24 +264,6 @@ function MindMapCanvas() {
           </div>
         )
       })()}
-
-      <ReactFlow
-        nodes={liveNodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onNodeClick={onNodeClick}
-        onNodeDragStop={onDragStop}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-        minZoom={0.3}
-        maxZoom={3}
-        proOptions={{ hideAttribution: true }}
-        style={{ width: '100%', height: '100%' }}
-      >
-        <Background color="rgba(201,168,76,0.04)" gap={40} />
-        <RingGuides />
-      </ReactFlow>
 
       <NodeDetailSheet
         person={selectedPerson}
