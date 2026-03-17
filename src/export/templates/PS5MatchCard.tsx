@@ -135,7 +135,7 @@ function V3({ entry, backgroundUrl }: PS5MatchCardProps) {
   const { totalMatches } = getMeta(entry)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GridTexture backgroundUrl={backgroundUrl} />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px', padding: '80px', ...Z2 }}>
@@ -168,7 +168,7 @@ function V4({ entry, backgroundUrl }: PS5MatchCardProps) {
       <div style={{ paddingTop: '72px', ...Z2 }}>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>PS5 SESSION · {totalMatches} BATTLES</p>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 80px', gap: '40px', ...Z2 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0 80px', gap: '40px', ...Z2 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '64px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', margin: '0' }}>{entry.title}</h1>
         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {pairings.map(({ p1, p2, p1wins, p2wins }) => (

@@ -27,7 +27,7 @@ export const InterludeCard = React.forwardRef<HTMLDivElement, InterludeCardProps
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-end',
           padding: '80px',
           boxSizing: 'border-box',
         }}

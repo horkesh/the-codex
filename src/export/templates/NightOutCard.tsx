@@ -32,7 +32,7 @@ function V1({ entry, backgroundUrl }: NightOutCardProps) {
       <div style={{ width: '100%', paddingTop: '56px', paddingLeft: '80px', paddingRight: '80px', ...Z2 }}>
         <GoldRule thick />
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingLeft: '80px', paddingRight: '80px', ...Z2 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingLeft: '80px', paddingRight: '80px', ...Z2 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '80px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', letterSpacing: '-0.02em', margin: '0 0 36px 0' }}>{entry.title}</h1>
         {entry.location && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px' }}>
@@ -89,7 +89,7 @@ function V2({ entry, backgroundUrl }: NightOutCardProps) {
 function V3({ entry, backgroundUrl }: NightOutCardProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px', padding: '80px', ...Z2 }}>
         {oneliner && (
@@ -122,8 +122,8 @@ function V4({ entry, backgroundUrl }: NightOutCardProps) {
           <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>NIGHT OUT</span>
         </div>
       </div>
-      {/* Centre */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 80px', ...Z2 }}>
+      {/* Content — bottom aligned */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
         <p style={{ fontFamily: 'var(--font-display)', fontSize: '120px', fontWeight: '700', color: 'rgba(201,168,76,0.15)', lineHeight: '1', letterSpacing: '-0.04em', marginBottom: '24px' }}>
           {new Date(entry.date + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()}
         </p>

@@ -12,7 +12,7 @@ const CountdownCard = React.forwardRef<HTMLDivElement, Props>(({ entry, daysUnti
   const days = daysUntil ?? computeDaysUntil(eventDate)
 
   return (
-    <div ref={ref} style={{ width: '1080px', height: '1350px', backgroundColor: '#0D0B0F', fontFamily: 'var(--font-body)', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px', boxSizing: 'border-box' }}>
+    <div ref={ref} style={{ width: '1080px', height: '1350px', backgroundColor: '#0D0B0F', fontFamily: 'var(--font-body)', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '80px', boxSizing: 'border-box' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '16px', textAlign: 'center', position: 'relative', zIndex: 2 }}>Until</p>
       <p style={{ fontFamily: 'var(--font-display)', fontSize: '180px', lineHeight: 0.9, color: '#C9A84C', textAlign: 'center', marginBottom: '8px', fontWeight: 400, textShadow: '0 0 60px rgba(201,168,76,0.3)', position: 'relative', zIndex: 2 }}>{Math.abs(days)}</p>

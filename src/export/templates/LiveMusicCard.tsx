@@ -54,7 +54,7 @@ function V1({ entry, backgroundUrl }: LiveMusicCardProps) {
         <div style={{ height: 1, width: 64, backgroundColor: '#C9A84C', marginTop: 16, opacity: 0.5 }} />
       </div>
       {/* Song hero */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 80px', ...Z2 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
         {song && (
           <h1 style={{
             fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 72,
@@ -237,7 +237,7 @@ function V4({ entry, backgroundUrl }: LiveMusicCardProps) {
   const { song } = getMeta(entry)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...INNER, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       {/* Vinyl grooves — concentric rings */}
       <svg

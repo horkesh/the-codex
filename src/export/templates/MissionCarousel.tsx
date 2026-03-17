@@ -45,7 +45,7 @@ function V1({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
         <span style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: '#C9A84C', letterSpacing: '0.35em', textTransform: 'uppercase', fontWeight: '600' }}>MISSION</span>
         <div style={{ height: '1px', width: '64px', backgroundColor: '#C9A84C', marginTop: '12px', opacity: 0.6 }} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'center', ...Z2 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'flex-end', ...Z2 }}>
         {entry.city && <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '72px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', letterSpacing: '-0.02em', margin: '0 0 16px 0', paddingLeft: '60px', paddingRight: '60px' }}>{entry.city}</h1>}
         {entry.country && <p style={{ fontFamily: 'var(--font-body)', fontSize: '26px', color: backgroundUrl ? '#A09890' : '#8C8680', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '40px' }}>{entry.country}</p>}
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '16px', color: '#C9A84C', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '48px' }}>{formatDate(entry.date)}</p>
@@ -81,7 +81,7 @@ function V2({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
 function V3({ entry, backgroundUrl }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '80px', ...Z2 }}>
         <div style={{ width: '160px', height: '160px', borderRadius: '50%', border: '2px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '4px' }}>
@@ -108,7 +108,7 @@ function V4({ entry, backgroundUrl }: MissionCarouselProps) {
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1, opacity: 0.06 }}>
         <span style={{ fontFamily: 'var(--font-display)', fontSize: '240px', fontWeight: '700', color: '#C9A84C', whiteSpace: 'nowrap', letterSpacing: '-0.04em' }}>{entry.city}</span>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px', gap: '24px', ...Z2 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '80px', gap: '24px', ...Z2 }}>
         <div style={{ border: '1px solid rgba(201,168,76,0.3)', borderRadius: '4px', padding: '6px 16px' }}>
           <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>MISSION</span>
         </div>

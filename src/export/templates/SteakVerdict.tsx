@@ -49,7 +49,7 @@ function V1({ entry, backgroundUrl, rewardKeys }: SteakVerdictProps) {
         <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>THE VERDICT</span>
         <div style={{ height: '1px', width: '48px', backgroundColor: '#C9A84C', marginTop: '16px', opacity: 0.5 }} />
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', ...Z2 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', ...Z2 }}>
         {score !== undefined && (
           <div style={{ display: 'flex', alignItems: 'flex-end', lineHeight: '1', marginBottom: '48px' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '160px', fontWeight: '700', color: '#C9A84C', lineHeight: '1', letterSpacing: '-0.04em' }}>{score}</span>
@@ -96,7 +96,7 @@ function V3({ entry, backgroundUrl }: SteakVerdictProps) {
   const { cut, score } = getMeta(entry)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '80px', ...Z2 }}>
         {score !== undefined && (
@@ -127,7 +127,7 @@ function V4({ entry, backgroundUrl }: SteakVerdictProps) {
           <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>THE TABLE</span>
         </div>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 80px', gap: '20px', ...Z2 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0 80px', gap: '20px', ...Z2 }}>
         {cut && <p style={{ fontFamily: 'var(--font-display)', fontSize: '100px', fontWeight: '700', color: 'rgba(201,168,76,0.12)', lineHeight: '1', textTransform: 'uppercase' }}>{cut}</p>}
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '56px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.1', margin: '0' }}>{entry.title}</h1>
         {score !== undefined && (

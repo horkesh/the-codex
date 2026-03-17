@@ -40,7 +40,7 @@ export const ToastCard = React.forwardRef<HTMLDivElement, ToastCardProps>(
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-end',
           paddingLeft: '80px',
           paddingRight: '80px',
           position: 'relative',

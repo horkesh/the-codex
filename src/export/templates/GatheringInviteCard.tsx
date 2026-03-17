@@ -13,7 +13,7 @@ const GatheringInviteCard = React.forwardRef<HTMLDivElement, Props>(({ entry, ba
   const isHost = rewardKeys?.has('host_seal') ?? false
 
   return (
-    <div ref={ref} style={{ width: '1080px', height: '1350px', backgroundColor: '#0D0B0F', fontFamily: 'var(--font-body)', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px', boxSizing: 'border-box' }}>
+    <div ref={ref} style={{ width: '1080px', height: '1350px', backgroundColor: '#0D0B0F', fontFamily: 'var(--font-body)', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '80px', boxSizing: 'border-box' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       {/* Host seal — threshold reward */}
       {isHost && (
