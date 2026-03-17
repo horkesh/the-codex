@@ -123,7 +123,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Visa page (in-app)**: `/passport/visa/{stampId}` — cream passport aesthetic (`#F5F0E1`), navy text, "VIZE-ВИЗЕ-VISAS" header, stamp, polaroid photo, data fields, debrief section.
 - **AI Mission Debrief**: "Generate Mission Debrief" button calls `generate-mission-debrief` edge function (`claude-sonnet-4-6`). Retries text-only if photo URLs fail (400). Returns classified narrative, landmarks, highlights, risk assessment. Stored in `entry.metadata`. `verify_jwt = false` in config.toml.
 - **Studio export templates** (all 1080x1350, 4:5):
-  - `VisaStampPage` — cream visa with country flag, "VIZA" header, polaroid cover photo with tape, destination/date/gents fields, mission stamp
+  - `VisaStampPage` — cream visa with country flag, "VIZA" header, polaroid cover photo with tape, destination/date/gents fields, lore one-liner, mission stamp (SVG or CSS fallback), BrandMark footer
   - `DebriefPage` — "BILJEŠKE-ЗАБЕЛЕЖКЕ-OBSERVATIONS" notes page with debrief text, landmarks, risk assessment on cream guilloche paper
   - `PassportIdPage` — gent identity page with portrait, station, signature drink, issue date
 - **Shared component**: `PassportFrame` in `src/export/templates/shared/` — cream background, SVG guilloche border pattern, Europe map watermark, footer. Used by all three templates.
@@ -135,10 +135,22 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - Component: `src/components/passport/AchievementList.tsx`.
 
 ## Passport cover & texture
-- Cover: `public/passport-cover.png` background image with gent overlay.
+- Cover: `public/passport-cover.png` background image with gent overlay (avatar, name, alias, stats, travel intel, "Open Passport" button).
+- Multi-language text "PASOŠ · ПАСОШ · PUTOVNICA · PASSPORT" and chip icon on cover, matching physical passport.
 - `composeTravelIntel()` in `src/ai/travelIntel.ts` — travel summary on cover.
 - Stamp grid: dark gradient background with gold border and inset glow.
 - StampDetail modal: aged paper gradient background.
+
+## In-app Visa Page (`src/pages/VisaPage.tsx`)
+- Matches the physical Pasoš visa layout (reference: `docs/passport-ref/visa-ref-makarska.png`).
+- Cream card (`#F5F0E1`) with CSS guilloche-inspired border and Europe map watermark.
+- Country flag emoji + "VIZA" / "ВИЗА" / "ENTRY VISA" header (country-specific mapping).
+- Polaroid cover photo (white border, rotated 5deg, tape strip).
+- Data fields: DESTINATION, DATE OF TRIP, NUMBER OF GENTS — serif labels, structured layout.
+- Lore one-liner in italic Playfair Display, quoted.
+- Mission stamp (SVG image or CSS fallback), rotated -6deg.
+- Below the visa card: participant avatars, photo strip, expandable mission debrief (collapsed by default), "View Full Entry" button.
+- Debrief section uses AnimatePresence for smooth expand/collapse.
 
 ## QR code for guestbook
 - GatheringDetail shows a "Share" section with copy-to-clipboard buttons for invite + guestbook URLs.
