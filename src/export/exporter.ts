@@ -5,9 +5,7 @@ const EXPORT_OPTIONS: Record<string, unknown> = {
   pixelRatio: 3,  // High-DPI for sharp Instagram images
   skipFonts: false,
   fontEmbedCSS: '',  // Will be populated at runtime
-  // Inline all images as data URLs to avoid CORS issues with external backgrounds
   includeQueryParams: true,
-  cacheBust: true,
 }
 
 /** Convert a data URL string to a Blob */
@@ -20,45 +18,66 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime })
 }
 
-/**
- * Pre-convert all background-image URLs in an element tree to inline data URLs.
- * This fixes cross-origin image export issues with html-to-image.
- */
-async function inlineBackgroundImages(element: HTMLElement): Promise<() => void> {
-  const restorers: Array<() => void> = []
-  const els = element.querySelectorAll<HTMLElement>('[style]')
+/** Fetch a URL and return it as a data URL, or null on failure */
+async function toDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const blob = await res.blob()
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
+}
 
-  for (const el of [element, ...els]) {
+/**
+ * Pre-convert all external images in an element tree to inline data URLs.
+ * Handles both CSS background-image and <img> src attributes.
+ * Returns a restore function that reverts all changes.
+ */
+async function inlineAllImages(element: HTMLElement): Promise<() => void> {
+  const restorers: Array<() => void> = []
+
+  // 1. Inline CSS background-image URLs
+  const styledEls = element.querySelectorAll<HTMLElement>('[style]')
+  for (const el of [element, ...styledEls]) {
     const bgImage = el.style.backgroundImage
     if (!bgImage || !bgImage.startsWith('url(')) continue
     const urlMatch = bgImage.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/)
     if (!urlMatch) continue
-    const url = urlMatch[1]
-
-    try {
-      const res = await fetch(url)
-      if (!res.ok) continue
-      const blob = await res.blob()
-      const reader = new FileReader()
-      const dataUrl = await new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string)
-        reader.readAsDataURL(blob)
-      })
+    const dataUrl = await toDataUrl(urlMatch[1])
+    if (dataUrl) {
       const original = el.style.backgroundImage
       el.style.backgroundImage = `url(${dataUrl})`
       restorers.push(() => { el.style.backgroundImage = original })
-    } catch {
-      // skip — will export without this background
+    }
+  }
+
+  // 2. Inline <img> src URLs
+  const imgs = element.querySelectorAll<HTMLImageElement>('img[src]')
+  for (const img of imgs) {
+    const src = img.src
+    if (!src || src.startsWith('data:') || src.startsWith('blob:')) continue
+    // Only inline external URLs (http/https) — skip local assets
+    if (!src.startsWith('http')) continue
+    const dataUrl = await toDataUrl(src)
+    if (dataUrl) {
+      const original = img.src
+      img.src = dataUrl
+      restorers.push(() => { img.src = original })
     }
   }
 
   return () => restorers.forEach(fn => fn())
 }
 
-// Convert a DOM element ref to a PNG blob
+/** Export a DOM element to a PNG blob */
 export async function exportToPng(element: HTMLElement): Promise<Blob> {
-  // Inline external background images before export
-  const restore = await inlineBackgroundImages(element)
+  const restore = await inlineAllImages(element)
   try {
     const dataUrl = await toPng(element, EXPORT_OPTIONS)
     return dataUrlToBlob(dataUrl)
@@ -67,7 +86,7 @@ export async function exportToPng(element: HTMLElement): Promise<Blob> {
   }
 }
 
-// Share via Web Share API (falls back to download if not supported)
+/** Share via Web Share API (falls back to download if not supported) */
 export async function shareImage(blob: Blob, filename: string): Promise<void> {
   const file = new File([blob], filename, { type: 'image/png' })
 
@@ -77,7 +96,6 @@ export async function shareImage(blob: Blob, filename: string): Promise<void> {
       title: 'The Gents Chronicles',
     })
   } else {
-    // Fallback: trigger download
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -87,13 +105,13 @@ export async function shareImage(blob: Blob, filename: string): Promise<void> {
   }
 }
 
-// Export and share in one call
+/** Export and share in one call */
 export async function exportAndShare(element: HTMLElement, filename: string): Promise<void> {
   const blob = await exportToPng(element)
   await shareImage(blob, filename)
 }
 
-// Export multiple slides to PNG blobs (for carousel export)
+/** Export multiple elements to PNG blobs (for carousel export) */
 export async function exportMultipleToPng(elements: HTMLElement[]): Promise<Blob[]> {
   const blobs: Blob[] = []
   for (const el of elements) {
@@ -102,7 +120,7 @@ export async function exportMultipleToPng(elements: HTMLElement[]): Promise<Blob
   return blobs
 }
 
-// Share multiple images via Web Share API (falls back to individual downloads)
+/** Share multiple images via Web Share API (falls back to individual downloads) */
 export async function shareMultipleImages(blobs: Blob[], filenamePrefix: string): Promise<void> {
   const files = blobs.map((blob, i) =>
     new File([blob], `${filenamePrefix}-${i + 1}.png`, { type: 'image/png' })
