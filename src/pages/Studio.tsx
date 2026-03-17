@@ -1,15 +1,15 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router'
 import { fetchAllStats } from '@/data/stats'
 import { useThresholds } from '@/hooks/useThresholds'
 import type { GentStats, GentAlias } from '@/types/app'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ImageIcon, Share2, Sparkles, Camera, Award } from 'lucide-react'
+import { ImageIcon, Share2, Sparkles, Camera, Award, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Button, Spinner, OnboardingTip } from '@/components/ui'
 import { useUIStore } from '@/store/ui'
-import { fetchEntries } from '@/data/entries'
+import { fetchEntries, fetchEntry as fetchEntryFull, fetchEntryPhotos } from '@/data/entries'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { PhotoFilterContext, getFilter } from '@/lib/photoFilters'
 import { getStoredFilter } from '@/hooks/useEntryFilter'
@@ -28,8 +28,6 @@ import { GatheringInviteCard } from '@/export/templates/GatheringInviteCard'
 import { CountdownCard } from '@/export/templates/CountdownCard'
 import { ToastCard } from '@/export/templates/ToastCard'
 import { InterludeCard } from '@/export/templates/InterludeCard'
-import { PassportPageExport } from '@/export/templates/PassportPageExport'
-import { VisaStampPage } from '@/export/templates/VisaStampPage'
 import { DebriefPage } from '@/export/templates/DebriefPage'
 import { PassportIdPage } from '@/export/templates/PassportIdPage'
 import { GatheringRecap } from '@/export/templates/GatheringRecap'
@@ -38,6 +36,9 @@ import { RivalryCard } from '@/export/templates/RivalryCard'
 import { AchievementCard } from '@/export/templates/AchievementCard'
 import { fetchEarnedAchievements } from '@/data/achievements'
 import type { EarnedAchievement } from '@/data/achievements'
+import { VisaCardSlide, HeroLoreSlide, PhotoGridSlide, DebriefSlide, StampSlide, buildVisaCarouselManifest } from '@/export/templates/visa-carousel'
+import { fetchStampByEntryId } from '@/data/stamps'
+import { exportMultipleToPng, shareMultipleImages } from '@/export/exporter'
 import { useAuthStore } from '@/store/auth'
 
 // ---------------------------------------------------------------------------
@@ -53,14 +54,13 @@ type TemplateId =
   | 'countdown'
   | 'toast_card'
   | 'interlude_card'
-  | 'passport_page'
-  | 'visa_stamp_page'
   | 'debrief_page'
   | 'passport_id_page'
   | 'gathering_recap'
   | 'wrapped_card'
   | 'rivalry_card'
   | 'achievement_card'
+  | 'visa_carousel'
 
 interface TemplateConfig {
   id: TemplateId
@@ -86,8 +86,7 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
     { id: 'mission_carousel_v2', label: 'Bold City',   dims: '1080×1350', bgAspect: '3:4' },
     { id: 'mission_carousel_v3', label: 'Passport',    dims: '1080×1350', bgAspect: '3:4' },
     { id: 'mission_carousel_v4', label: 'Overlay',     dims: '1080×1350', bgAspect: '3:4' },
-    { id: 'passport_page',       label: 'Visa Page',   dims: '1080×1350', bgAspect: '3:4' },
-    { id: 'visa_stamp_page',     label: 'Visa Stamp',  dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'visa_carousel',        label: 'Visa Carousel', dims: '1080×1350', bgAspect: '3:4' },
     { id: 'debrief_page',        label: 'Debrief Notes', dims: '1080×1350', bgAspect: '3:4' },
   ],
   steak: [
@@ -128,6 +127,115 @@ function previewContainerHeight(dims: string): number {
   const w = parseInt(parts[0], 10)
   if (!h || !w) return Math.round(CANVAS_WIDTH * PREVIEW_SCALE)
   return Math.round((CANVAS_WIDTH * (h / w)) * PREVIEW_SCALE)
+}
+
+// ---------------------------------------------------------------------------
+// Visa Carousel Preview — renders all slides, shows one at a time
+// ---------------------------------------------------------------------------
+
+// Shared carousel state — lifted so nav can render outside scaled preview
+let _carouselState: {
+  manifest: Array<{ id: string; label: string }>
+  activeSlide: number
+  setActiveSlide: (n: number) => void
+  exportAll: () => Promise<void>
+  exporting: boolean
+} | null = null
+
+function useCarouselState() { return _carouselState }
+
+function VisaCarouselPreview({ entry, innerRef }: { entry: Entry; innerRef: React.Ref<HTMLDivElement> }) {
+  const [fullEntry, setFullEntry] = useState<import('@/types/app').EntryWithParticipants | null>(null)
+  const [carouselPhotos, setCarouselPhotos] = useState<Array<{ url: string; caption: string | null }>>([])
+  const [carouselStamp, setCarouselStamp] = useState<import('@/types/app').PassportStamp | null>(null)
+  const [activeSlide, setActiveSlide] = useState(0)
+  const slideRefs = useRef<Array<HTMLDivElement | null>>([])
+  const [carouselExporting, setCarouselExporting] = useState(false)
+
+  useEffect(() => {
+    fetchEntryFull(entry.id).then(setFullEntry).catch(() => {})
+    fetchEntryPhotos(entry.id).then(p => setCarouselPhotos(p.map(x => ({ url: x.url, caption: x.caption })))).catch(() => {})
+    fetchStampByEntryId(entry.id).then(setCarouselStamp).catch(() => {})
+  }, [entry.id])
+
+  const manifest = useMemo(() => {
+    if (!fullEntry) return []
+    return buildVisaCarouselManifest(fullEntry, carouselPhotos.length, carouselStamp)
+  }, [fullEntry, carouselPhotos.length, carouselStamp])
+
+  // Expose active slide ref as innerRef for single-slide export
+  useEffect(() => {
+    const activeEl = slideRefs.current[activeSlide]
+    if (activeEl && typeof innerRef === 'function') innerRef(activeEl)
+    else if (activeEl && innerRef && typeof innerRef === 'object') (innerRef as React.MutableRefObject<HTMLDivElement | null>).current = activeEl
+  }, [activeSlide, innerRef, manifest])
+
+  const handleExportAll = useCallback(async () => {
+    if (!fullEntry) return
+    setCarouselExporting(true)
+    try {
+      const els = slideRefs.current.filter(Boolean) as HTMLElement[]
+      const blobs = await exportMultipleToPng(els)
+      await shareMultipleImages(blobs, `visa-${fullEntry.city ?? 'mission'}`)
+    } catch (e) {
+      console.error('Carousel export failed:', e)
+    } finally {
+      setCarouselExporting(false)
+    }
+  }, [fullEntry])
+
+  // Expose state for external nav
+  _carouselState = { manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting }
+
+  if (!fullEntry) return <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: 1080, height: 1350, background: '#F5F0E1' }} />
+
+  const meta = fullEntry.metadata as Record<string, unknown>
+
+  const gridPhotos = carouselPhotos.slice(1)
+  const photoChunks: Array<typeof carouselPhotos> = []
+  for (let i = 0; i < gridPhotos.length && photoChunks.length < 3; i += 4) {
+    photoChunks.push(gridPhotos.slice(i, i + 4))
+  }
+
+  const setSlideRef = (idx: number) => (el: HTMLDivElement | null) => { slideRefs.current[idx] = el }
+
+  return (
+    <div>
+      {manifest.map((slide, i) => (
+        <div key={slide.id} style={{ display: i === activeSlide ? 'block' : 'none' }}>
+          {slide.id === 'visa-card' && (
+            <VisaCardSlide ref={setSlideRef(i)} entry={fullEntry} stamp={carouselStamp} />
+          )}
+          {slide.id === 'hero-lore' && (
+            <HeroLoreSlide ref={setSlideRef(i)} entry={fullEntry} />
+          )}
+          {slide.id.startsWith('photo-grid-') && (() => {
+            const chunkIdx = parseInt(slide.id.split('-')[2])
+            return (
+              <PhotoGridSlide
+                ref={setSlideRef(i)}
+                photos={photoChunks[chunkIdx] ?? []}
+                entryTitle={fullEntry.title}
+                entryDate={fullEntry.date}
+              />
+            )
+          })()}
+          {slide.id === 'debrief' && (
+            <DebriefSlide
+              ref={setSlideRef(i)}
+              debrief={(meta?.mission_debrief as string) ?? ''}
+              landmarks={(meta?.landmarks as string[]) ?? []}
+              highlights={(meta?.debrief_highlights as string[]) ?? []}
+              riskAssessment={(meta?.risk_assessment as string) ?? null}
+            />
+          )}
+          {slide.id === 'stamp' && carouselStamp && (
+            <StampSlide ref={setSlideRef(i)} stamp={carouselStamp} entryTitle={fullEntry.title} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -216,10 +324,8 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
       return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'interlude_card':
       return <InterludeCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
-    case 'passport_page':
-      return <PassportPageExport ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
-    case 'visa_stamp_page':
-      return <VisaStampPage ref={innerRef} entry={entry} />
+    case 'visa_carousel':
+      return <VisaCarouselPreview entry={entry} innerRef={innerRef} />
     case 'debrief_page':
       return <DebriefPage ref={innerRef} entry={entry} />
     case 'passport_id_page':
@@ -790,6 +896,55 @@ export default function Studio() {
                 </div>
               </div>
 
+              {/* Carousel nav — rendered outside the scaled preview container */}
+              {selectedTemplate === 'visa_carousel' && (() => {
+                const cs = useCarouselState()
+                if (!cs || cs.manifest.length < 2) return null
+                return (
+                  <div className="flex items-center justify-between mb-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => cs.setActiveSlide(Math.max(0, cs.activeSlide - 1))}
+                      disabled={cs.activeSlide === 0}
+                      className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 border border-white/10 disabled:opacity-30 transition-opacity"
+                    >
+                      <ChevronLeft size={16} className="text-ivory" />
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                      {/* Dot indicators */}
+                      <div className="flex gap-1.5">
+                        {cs.manifest.map((slide, i) => (
+                          <button
+                            key={slide.id}
+                            type="button"
+                            onClick={() => cs.setActiveSlide(i)}
+                            className={[
+                              'w-2 h-2 rounded-full transition-all duration-200',
+                              i === cs.activeSlide ? 'bg-gold w-5' : 'bg-white/20 hover:bg-white/40',
+                            ].join(' ')}
+                            aria-label={slide.label}
+                          />
+                        ))}
+                      </div>
+                      {/* Slide counter */}
+                      <span className="text-[11px] font-mono text-ivory-dim">
+                        {cs.activeSlide + 1}/{cs.manifest.length}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => cs.setActiveSlide(Math.min(cs.manifest.length - 1, cs.activeSlide + 1))}
+                      disabled={cs.activeSlide === cs.manifest.length - 1}
+                      className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 border border-white/10 disabled:opacity-30 transition-opacity"
+                    >
+                      <ChevronRight size={16} className="text-ivory" />
+                    </button>
+                  </div>
+                )
+              })()}
+
               {/* Dims label */}
               <p className="text-[11px] font-mono text-ivory-dim text-center mb-4">
                 {activeTemplateConfig?.dims ?? '1080×1350'} px · PNG · 3×
@@ -834,18 +989,52 @@ export default function Studio() {
                 </Button>
               </div>
 
-              {/* Export button */}
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                loading={exporting}
-                onClick={handleExport}
-                className="gap-2"
-              >
-                {!exporting && <Share2 size={16} strokeWidth={2} />}
-                {exporting ? 'Exporting…' : 'Export & Share'}
-              </Button>
+              {/* Export buttons */}
+              {selectedTemplate === 'visa_carousel' && (() => {
+                const cs = useCarouselState()
+                if (cs && cs.manifest.length > 1) {
+                  return (
+                    <div className="flex gap-2 mb-2">
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                        loading={exporting}
+                        onClick={handleExport}
+                        className="gap-2"
+                      >
+                        {!exporting && <Share2 size={16} strokeWidth={2} />}
+                        {exporting ? 'Exporting…' : 'Export Slide'}
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                        loading={cs.exporting}
+                        onClick={cs.exportAll}
+                        className="gap-2"
+                      >
+                        {!cs.exporting && <Share2 size={16} strokeWidth={2} />}
+                        {cs.exporting ? 'Exporting…' : `Export All (${cs.manifest.length})`}
+                      </Button>
+                    </div>
+                  )
+                }
+                return null
+              })()}
+              {(selectedTemplate !== 'visa_carousel' || !useCarouselState() || (useCarouselState()?.manifest.length ?? 0) <= 1) && (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  loading={exporting}
+                  onClick={handleExport}
+                  className="gap-2"
+                >
+                  {!exporting && <Share2 size={16} strokeWidth={2} />}
+                  {exporting ? 'Exporting…' : 'Export & Share'}
+                </Button>
+              )}
             </motion.section>
           )}
         </AnimatePresence>
