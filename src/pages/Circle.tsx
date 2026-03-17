@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { ReactFlowProvider } from '@xyflow/react'
-import { Plus, Users, Radar } from 'lucide-react'
+import { Plus, Users, Radar, Network } from 'lucide-react'
 import { MindMapCanvas } from '@/pages/MindMap'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
@@ -113,27 +113,30 @@ export default function Circle() {
       <div className="flex border-b border-white/5 mx-4 mb-0">
         <button
           onClick={() => setActiveTab('contacts')}
-          className={`flex-1 py-2.5 text-xs tracking-[0.2em] uppercase font-body transition-colors ${
+          className={`flex-1 py-2.5 text-xs tracking-[0.2em] uppercase font-body transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === 'contacts' ? 'text-gold border-b-2 border-gold' : 'text-ivory-dim'
           }`}
         >
+          <Users size={13} />
           Contacts
         </button>
         <button
-          onClick={() => setActiveTab('poi')}
-          className={`flex-1 py-2.5 text-xs tracking-[0.2em] uppercase font-body transition-colors ${
-            activeTab === 'poi' ? 'text-gold border-b-2 border-gold' : 'text-ivory-dim'
-          }`}
-        >
-          On the Radar
-        </button>
-        <button
           onClick={() => setActiveTab('map')}
-          className={`flex-1 py-2.5 text-xs tracking-[0.2em] uppercase font-body transition-colors ${
+          className={`flex-1 py-2.5 text-xs tracking-[0.2em] uppercase font-body transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === 'map' ? 'text-gold border-b-2 border-gold' : 'text-ivory-dim'
           }`}
         >
+          <Network size={13} />
           Map
+        </button>
+        <button
+          onClick={() => setActiveTab('poi')}
+          className={`flex-1 py-2.5 text-xs tracking-[0.2em] uppercase font-body transition-colors flex items-center justify-center gap-1.5 ${
+            activeTab === 'poi' ? 'text-gold border-b-2 border-gold' : 'text-ivory-dim'
+          }`}
+        >
+          <Radar size={13} />
+          Radar
         </button>
       </div>
 
