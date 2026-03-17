@@ -29,6 +29,9 @@ import { CountdownCard } from '@/export/templates/CountdownCard'
 import { ToastCard } from '@/export/templates/ToastCard'
 import { InterludeCard } from '@/export/templates/InterludeCard'
 import { PassportPageExport } from '@/export/templates/PassportPageExport'
+import { VisaStampPage } from '@/export/templates/VisaStampPage'
+import { DebriefPage } from '@/export/templates/DebriefPage'
+import { PassportIdPage } from '@/export/templates/PassportIdPage'
 import { GatheringRecap } from '@/export/templates/GatheringRecap'
 import { WrappedCard } from '@/export/templates/WrappedCard'
 import { RivalryCard } from '@/export/templates/RivalryCard'
@@ -51,6 +54,9 @@ type TemplateId =
   | 'toast_card'
   | 'interlude_card'
   | 'passport_page'
+  | 'visa_stamp_page'
+  | 'debrief_page'
+  | 'passport_id_page'
   | 'gathering_recap'
   | 'wrapped_card'
   | 'rivalry_card'
@@ -81,6 +87,8 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
     { id: 'mission_carousel_v3', label: 'Passport',    dims: '1080×1350', bgAspect: '3:4' },
     { id: 'mission_carousel_v4', label: 'Overlay',     dims: '1080×1350', bgAspect: '3:4' },
     { id: 'passport_page',       label: 'Visa Page',   dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'visa_stamp_page',     label: 'Visa Stamp',  dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'debrief_page',        label: 'Debrief Notes', dims: '1080×1350', bgAspect: '3:4' },
   ],
   steak: [
     { id: 'steak_verdict',    label: 'Classic',        dims: '1080×1350', bgAspect: '3:4' },
@@ -104,6 +112,7 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
   annual:      [{ id: 'wrapped_card',     label: 'Wrapped Card',    dims: '1080×1350', bgAspect: '3:4' }],
   comparison:  [{ id: 'rivalry_card',     label: 'The Rivalry',     dims: '1080×1350', bgAspect: '3:4' }],
   achievement: [{ id: 'achievement_card', label: 'Achievement Card', dims: '1080×1350', bgAspect: '3:4' }],
+  passport:    [{ id: 'passport_id_page', label: 'Passport ID',      dims: '1080×1350', bgAspect: '3:4' }],
 }
 
 // Scale factor for the in-page preview
@@ -133,6 +142,7 @@ interface TemplateRendererProps {
   rewardKeys?: Set<string>
   comparisonParam?: string
   achievementData?: { name: string; description: string; earnedBy: string; earnedAt: string } | null
+  gent?: { display_name: string; alias: string; full_alias: string; avatar_url: string | null }
 }
 
 function RivalryCardWrapper({
@@ -164,7 +174,7 @@ function RivalryCardWrapper({
   return <RivalryCard ref={innerRef} gentA={statA} gentB={statB} backgroundUrl={backgroundUrl} />
 }
 
-function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData }: TemplateRendererProps) {
+function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData, gent }: TemplateRendererProps) {
   switch (templateId) {
     case 'night_out_card':
       return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
@@ -208,6 +218,13 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
       return <InterludeCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'passport_page':
       return <PassportPageExport ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+    case 'visa_stamp_page':
+      return <VisaStampPage ref={innerRef} entry={entry} />
+    case 'debrief_page':
+      return <DebriefPage ref={innerRef} entry={entry} />
+    case 'passport_id_page':
+      if (!gent) return null
+      return <PassportIdPage ref={innerRef} gent={gent} />
     case 'gathering_recap':
       return <GatheringRecap ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'wrapped_card':
@@ -760,6 +777,7 @@ export default function Studio() {
                       rewardKeys={rewardKeys}
                       comparisonParam={comparisonParam ?? undefined}
                       achievementData={achievementData}
+                      gent={gent ? { display_name: gent.display_name, alias: gent.alias, full_alias: gent.full_alias ?? gent.alias, avatar_url: gent.avatar_url } : undefined}
                     />
                   </PhotoFilterContext.Provider>
                 </div>
