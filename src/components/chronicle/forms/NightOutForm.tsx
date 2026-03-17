@@ -10,6 +10,8 @@ export interface NightOutFormData {
   date: string
   location: string
   description: string
+  flavour?: string
+  song?: string
 }
 
 interface NightOutFormProps {
@@ -26,7 +28,15 @@ const empty: NightOutFormData = {
   date: '',
   location: '',
   description: '',
+  flavour: undefined,
+  song: undefined,
 }
+
+const FLAVOURS = [
+  { value: undefined, label: 'Regular' },
+  { value: 'live_music', label: 'Live Music' },
+  { value: 'movie_night', label: 'Movie Night' },
+] as const
 
 interface FieldErrors {
   title?: string
@@ -98,6 +108,42 @@ export function NightOutForm({ onSubmit, loading, detectedLocation, suggestedTit
           </button>
         )}
       </div>
+
+      {/* Flavour pills */}
+      <div className="flex gap-2">
+        {FLAVOURS.map((f) => (
+          <button
+            key={f.label}
+            type="button"
+            onClick={() => {
+              const newFlavour = f.value
+              setForm((prev) => ({
+                ...prev,
+                flavour: newFlavour,
+                song: newFlavour !== 'live_music' ? undefined : prev.song,
+              }))
+            }}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-xs font-body tracking-wide border transition-all',
+              form.flavour === f.value || (!form.flavour && !f.value)
+                ? 'border-gold/50 bg-gold/10 text-gold'
+                : 'border-white/10 bg-white/5 text-ivory-dim hover:border-white/25'
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Song field — Live Music only */}
+      {form.flavour === 'live_music' && (
+        <Input
+          label="Song"
+          placeholder="What was playing?"
+          value={form.song ?? ''}
+          onChange={(e) => set('song', e.target.value)}
+        />
+      )}
 
       <Input
         label="Date"

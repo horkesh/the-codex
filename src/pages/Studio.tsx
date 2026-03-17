@@ -28,6 +28,7 @@ import { GatheringInviteCard } from '@/export/templates/GatheringInviteCard'
 import { CountdownCard } from '@/export/templates/CountdownCard'
 import { ToastCard } from '@/export/templates/ToastCard'
 import { InterludeCard } from '@/export/templates/InterludeCard'
+import { LiveMusicCard } from '@/export/templates/LiveMusicCard'
 import { DebriefPage } from '@/export/templates/DebriefPage'
 import { PassportIdPage } from '@/export/templates/PassportIdPage'
 import { GatheringRecap } from '@/export/templates/GatheringRecap'
@@ -47,6 +48,7 @@ import { useAuthStore } from '@/store/auth'
 
 type TemplateId =
   | 'night_out_card' | 'night_out_card_v2' | 'night_out_card_v3' | 'night_out_card_v4'
+  | 'live_music_v1' | 'live_music_v2' | 'live_music_v3' | 'live_music_v4'
   | 'mission_carousel' | 'mission_carousel_v2' | 'mission_carousel_v3' | 'mission_carousel_v4'
   | 'steak_verdict' | 'steak_verdict_v2' | 'steak_verdict_v3' | 'steak_verdict_v4'
   | 'ps5_match_card' | 'ps5_match_card_v2' | 'ps5_match_card_v3' | 'ps5_match_card_v4'
@@ -68,6 +70,8 @@ interface TemplateConfig {
   dims: string
   /** Which aspect ratio to pass when generating an AI background */
   bgAspect?: '1:1' | '3:4' | '9:16'
+  /** Only show this template when the entry has this metadata.flavour */
+  requiresFlavour?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +84,10 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
     { id: 'night_out_card_v2', label: 'Bold',          dims: '1080×1350', bgAspect: '3:4' },
     { id: 'night_out_card_v3', label: 'Quote',         dims: '1080×1350', bgAspect: '3:4' },
     { id: 'night_out_card_v4', label: 'Date Stamp',    dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'live_music_v1',    label: 'Marquee',       dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'live_music' },
+    { id: 'live_music_v2',    label: 'Poster',        dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'live_music' },
+    { id: 'live_music_v3',    label: 'Setlist',       dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'live_music' },
+    { id: 'live_music_v4',    label: 'Vinyl',         dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'live_music' },
   ],
   mission: [
     { id: 'mission_carousel',    label: 'Classic',     dims: '1080×1350', bgAspect: '3:4' },
@@ -304,6 +312,14 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
       return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
     case 'night_out_card_v4':
       return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
+    case 'live_music_v1':
+      return <LiveMusicCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
+    case 'live_music_v2':
+      return <LiveMusicCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={2} />
+    case 'live_music_v3':
+      return <LiveMusicCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
+    case 'live_music_v4':
+      return <LiveMusicCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
     case 'mission_carousel':
       return <MissionCarousel ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={1} />
     case 'mission_carousel_v2':
@@ -614,7 +630,11 @@ export default function Studio() {
   const availableTemplates = selectedAchievement
     ? (TEMPLATES_BY_TYPE['achievement'] ?? [])
     : selectedEntry
-      ? (TEMPLATES_BY_TYPE[selectedEntry.type] ?? [])
+      ? (TEMPLATES_BY_TYPE[selectedEntry.type] ?? []).filter(t => {
+          if (!t.requiresFlavour) return true
+          const meta = selectedEntry.metadata as Record<string, unknown> | undefined
+          return meta?.flavour === t.requiresFlavour
+        })
       : []
 
   const activeTemplateConfig = selectedTemplate

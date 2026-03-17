@@ -77,6 +77,13 @@ Shell uses `min-h-dvh` (not `h-dvh`), so `flex-1` children have no definite heig
 ## Instagram photo auto-fetch
 When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/instagram/{handle}`. On edit, only updates if the handle actually changed.
 
+## Night Out flavours
+- `metadata.flavour`: optional tag — `'live_music'` or `'movie_night'` (undefined = regular).
+- `metadata.song`: optional, only for `live_music` flavour.
+- NightOutForm shows flavour pills (Regular / Live Music / Movie Night) below title. Song field appears when Live Music selected.
+- Lore generation: `live_music` gets a piano-focused directive; other flavours and undefined fall back to standard Night Out directive.
+- Studio: `LiveMusicCard` (4 variants: Marquee, Poster, Setlist, Vinyl) — no BrandMark, registered with `requiresFlavour: 'live_music'`. Only shown when entry has matching flavour. Regular Night Out V1-V4 always shown.
+
 ## Photo filters (`src/lib/photoFilters.ts`)
 16 CSS-based filters: Raw, Chronicle, The Pitch, Noir, Velvet, Havana, Dusk, Fade, Tokyo, Amber, Ember, Frost, Haze, Slate, Midnight, Sepia. Each filter has a CSS `filter` string and a `radial-gradient` vignette overlay. Default: `chronicle`. Stored per-entry in localStorage (`photo-filter:{entryId}`). Filters propagate to Studio export templates via `PhotoFilterContext`.
 

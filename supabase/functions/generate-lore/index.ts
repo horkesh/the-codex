@@ -26,6 +26,8 @@ const entryTypeDirectives: Record<string, string> = {
   interlude: `This is an Interlude entry — a smaller moment worth recording. The prose should treat this as a quiet aside in the chronicle: a chance encounter, a brief coffee, an errand that turned into something memorable. Keep the tone lighter, more observational. Not every entry needs grandeur — some are valuable precisely because they are unhurried and small.`,
 }
 
+const liveMusicDirective = `This is a Live Music night — one of the Gents at the keys, performing live at a small venue. The prose should capture his presence at the piano, fingers on the keys, the sound filling a tight room. If photos show the performer, describe his command of the instrument and the stage. If photos show the crowd, describe the atmosphere — drinks in hand, conversations paused, eyes on the piano. Reference the song if provided. This is a night where the music came from one of their own.`
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -70,7 +72,10 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const typeDirective = entryTypeDirectives[entry.type] || ''
+    const flavour = entry.metadata?.flavour as string | undefined
+    const typeDirective = (entry.type === 'night_out' && flavour === 'live_music')
+      ? liveMusicDirective
+      : (entryTypeDirectives[entry.type] || '')
     const loreHints = entry.metadata?.lore_hints as string | undefined
 
     const prompt = `You are the chronicler of The Gents — three sophisticated gentlemen who document their lives together with style and wit. Write exactly 2-3 sentences of narrative lore for their private chronicle. The prose should be eloquent, slightly self-aware, warm, and feel like an entry in a very exclusive private journal.
@@ -81,7 +86,7 @@ Date: ${entry.date}
 ${timeContext}${situationalHint ? `\nContext: ${situationalHint}` : ''}
 Location: ${[entry.city, entry.country].filter(Boolean).join(', ') || entry.location || 'undisclosed location'}
 Present: ${participantNames}
-Description: ${entry.description || 'No additional details provided.'}${loreHints ? `\nDirector's Notes (incorporate these details naturally): ${loreHints}` : ''}
+Description: ${entry.description || 'No additional details provided.'}${entry.metadata?.song ? `\nSong: ${entry.metadata.song}` : ''}${loreHints ? `\nDirector's Notes (incorporate these details naturally): ${loreHints}` : ''}
 ${typeDirective ? `\n${typeDirective}` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
 IMPORTANT: The Day and Time fields above are from the camera's EXIF data and are authoritative. Always use them to set the time of day in the narrative — do NOT infer a different time of day from photo lighting or ambiance. If the Context field is present, weave that situational awareness into the prose naturally.
 Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text.

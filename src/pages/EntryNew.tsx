@@ -315,11 +315,15 @@ export default function EntryNew() {
   }
 
   async function submitNightOut(data: NightOutFormData) {
+    const meta: Record<string, unknown> = {}
+    if (data.flavour) meta.flavour = data.flavour
+    if (data.song) meta.song = data.song
     await handleSubmit({
       title: data.title,
       date: data.date,
       location: data.location,
       description: data.description,
+      metadata: Object.keys(meta).length > 0 ? meta : undefined,
     })
   }
 
