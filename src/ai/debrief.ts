@@ -13,26 +13,46 @@ export async function generateMissionDebrief(
   photoUrls: string[],
 ): Promise<MissionDebrief | null> {
   try {
-    // Send only the fields the edge function needs — avoids serialization issues with large entry objects
-    const { data, error } = await supabase.functions.invoke('generate-mission-debrief', {
-      body: {
-        entry: {
-          title: entry.title,
-          date: entry.date,
-          city: entry.city,
-          country: entry.country,
-          location: entry.location,
-          lore: entry.lore,
-          description: entry.description,
-          participants: entry.participants?.map(p => ({ display_name: p.display_name })) ?? [],
-        },
-        photoUrls,
-      },
-    })
-    if (error) {
-      console.error('generate-mission-debrief invoke error:', error)
-      throw error
+    // Get the current session token for auth
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) {
+      console.error('generate-mission-debrief: no auth session')
+      return null
     }
+
+    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string).trim()
+    const body = JSON.stringify({
+      entry: {
+        title: entry.title,
+        date: entry.date,
+        city: entry.city,
+        country: entry.country,
+        location: entry.location,
+        lore: entry.lore,
+        description: entry.description,
+        participants: entry.participants?.map(p => ({ display_name: p.display_name })) ?? [],
+      },
+      photoUrls,
+    })
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/generate-mission-debrief`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'apikey': (import.meta.env.VITE_SUPABASE_ANON_KEY as string).trim(),
+      },
+      body,
+    })
+
+    if (!response.ok) {
+      const errText = await response.text()
+      console.error(`generate-mission-debrief HTTP ${response.status}:`, errText)
+      return null
+    }
+
+    const data = await response.json()
     if (data?.error) {
       console.error('generate-mission-debrief edge function error:', data.error)
       return null
