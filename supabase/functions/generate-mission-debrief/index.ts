@@ -22,23 +22,29 @@ Deno.serve(async (req: Request) => {
     const city = entry.city || 'an undisclosed city'
     const country = entry.country || 'undisclosed'
 
+    const lore = entry.lore || entry.description || ''
+    const photoSection = photos.length > 0
+      ? `You have been provided ${photos.length} photograph(s) from this mission. Study every photograph carefully. Identify locations, landmarks, restaurants, bars, activities, food, drinks, architecture, weather, time of day, mood. Identify each Gent present using the visual identification guide.`
+      : `No photographs were provided. Use the mission details, location, and lore below to construct the debrief from context alone.${lore ? `\n\nLore: ${lore}` : ''}`
+
     const prompt = `You are writing a CLASSIFIED MISSION DEBRIEF for The Gents Chronicles — a private chronicle of three gentlemen.
 
-Analyze the photographs provided. These are from a mission (trip) to ${city}, ${country}.
+These are from a mission (trip) to ${city}, ${country}.
 
 Mission: ${entry.title}
 Date: ${entry.date}
 Present: ${participantNames}
+${entry.location ? `Venue: ${entry.location}` : ''}
 
 ${GENT_VISUAL_ID}
 
+${photoSection}
+
 Your task:
-1. Study every photograph carefully. Identify locations, landmarks, restaurants, bars, activities, food, drinks, architecture, weather, time of day, mood.
-2. Identify each Gent present using the visual identification guide above.
-3. Write a 2-3 paragraph CLASSIFIED MISSION DEBRIEF in formal diplomatic language. Write as if you are an intelligence analyst filing a report. Use phrases like "Operatives deployed to...", "Surveillance confirmed...", "Field intelligence suggests...", "Subject was observed...". Reference specific details from the photos.
-4. List all identifiable landmarks, venues, and locations.
-5. Extract 3-5 key highlights/moments from the mission.
-6. Write a tongue-in-cheek 1-sentence risk assessment covering categories like: culinary exposure, nightlife threat level, budget impact, cultural enrichment.
+1. Write a 2-3 paragraph CLASSIFIED MISSION DEBRIEF in formal diplomatic language. Write as if you are an intelligence analyst filing a report. Use phrases like "Operatives deployed to...", "Surveillance confirmed...", "Field intelligence suggests...", "Subject was observed...". Reference specific details from the photos or lore.
+2. List all identifiable landmarks, venues, and locations.
+3. Extract 3-5 key highlights/moments from the mission.
+4. Write a tongue-in-cheek 1-sentence risk assessment covering categories like: culinary exposure, nightlife threat level, budget impact, cultural enrichment.
 
 Return in this exact format:
 <debrief>The 2-3 paragraph classified narrative.</debrief>
@@ -56,7 +62,7 @@ Return in this exact format:
     ]
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 20000)
+    const timeout = setTimeout(() => controller.abort(), 55000)
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -76,7 +82,9 @@ Return in this exact format:
     clearTimeout(timeout)
 
     if (!response.ok) {
-      throw new Error(`Claude API error: ${response.status}`)
+      const errBody = await response.text()
+      console.error('Claude API error body:', errBody)
+      throw new Error(`Claude API error: ${response.status} — ${errBody}`)
     }
 
     const result = await response.json()
