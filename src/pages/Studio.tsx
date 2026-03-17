@@ -506,6 +506,13 @@ export default function Studio() {
     [selectedEntry?.id],
   )
 
+  const gentData = useMemo(() => gent ? {
+    display_name: gent.display_name,
+    alias: gent.alias,
+    full_alias: gent.full_alias ?? gent.alias,
+    avatar_url: gent.avatar_url,
+  } : undefined, [gent])
+
   // ---------------------------------------------------------------------------
   // Render: loading
   // ---------------------------------------------------------------------------
@@ -777,7 +784,7 @@ export default function Studio() {
                       rewardKeys={rewardKeys}
                       comparisonParam={comparisonParam ?? undefined}
                       achievementData={achievementData}
-                      gent={gent ? { display_name: gent.display_name, alias: gent.alias, full_alias: gent.full_alias ?? gent.alias, avatar_url: gent.avatar_url } : undefined}
+                      gent={gentData}
                     />
                   </PhotoFilterContext.Provider>
                 </div>
