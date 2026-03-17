@@ -13,8 +13,22 @@ export async function generateMissionDebrief(
   photoUrls: string[],
 ): Promise<MissionDebrief | null> {
   try {
+    // Send only the fields the edge function needs — avoids serialization issues with large entry objects
     const { data, error } = await supabase.functions.invoke('generate-mission-debrief', {
-      body: { entry, photoUrls },
+      body: {
+        entry: {
+          title: entry.title,
+          date: entry.date,
+          city: entry.city,
+          country: entry.country,
+          location: entry.location,
+          lore: entry.lore,
+          description: entry.description,
+          metadata: entry.metadata,
+          participants: entry.participants?.map(p => ({ display_name: p.display_name })) ?? [],
+        },
+        photoUrls,
+      },
     })
     if (error) {
       console.error('generate-mission-debrief invoke error:', error)
