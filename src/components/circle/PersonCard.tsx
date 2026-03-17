@@ -38,9 +38,15 @@ export function PersonCard({ person, onClick }: PersonCardProps) {
 
           {/* Instagram */}
           {person.instagram && (
-            <p className="text-xs text-gold-muted leading-tight mt-0.5 truncate">
+            <a
+              href={`https://instagram.com/${person.instagram.replace(/^@/, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-gold-muted hover:text-gold leading-tight mt-0.5 truncate block transition-colors"
+            >
               @{person.instagram.replace(/^@/, '')}
-            </p>
+            </a>
           )}
 
           {/* Where met */}

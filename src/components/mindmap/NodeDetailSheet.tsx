@@ -35,9 +35,14 @@ export function NodeDetailSheet({ person, isOpen, onClose, onTierChange }: NodeD
           <div className="flex-1 min-w-0">
             <p className="font-display text-lg text-ivory truncate">{person.name}</p>
             {person.instagram && (
-              <p className="text-xs text-gold-muted font-body truncate">
+              <a
+                href={`https://instagram.com/${person.instagram.replace(/^@/, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-gold-muted hover:text-gold font-body truncate block transition-colors"
+              >
                 @{person.instagram.replace(/^@/, '')}
-              </p>
+              </a>
             )}
             {person.met_location && (
               <p className="text-xs text-ivory-dim font-body mt-0.5 truncate">
