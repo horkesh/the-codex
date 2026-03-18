@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
+import { DatePicker } from '@/components/ui/DatePicker'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import type { Person } from '@/types/app'
@@ -126,21 +127,17 @@ export function PersonForm({ person, onSave, onClose, isOpen }: PersonFormProps)
         />
 
         {/* Met date */}
-        <Input
+        <DatePicker
           label="Date Met"
-          type="date"
           value={form.met_date}
-          onChange={(e) => set('met_date', (e.target as HTMLInputElement).value)}
-          className="[color-scheme:dark]"
+          onChange={(v) => set('met_date', v)}
         />
 
         {/* Birthday */}
-        <Input
+        <DatePicker
           label="Birthday"
-          type="date"
           value={form.birthday}
-          onChange={(e) => set('birthday', (e.target as HTMLInputElement).value)}
-          className="[color-scheme:dark]"
+          onChange={(v) => set('birthday', v)}
         />
 
         {/* Notes */}

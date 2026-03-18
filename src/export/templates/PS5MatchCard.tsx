@@ -22,7 +22,7 @@ const ROOT: React.CSSProperties = {
 
 const Z2: React.CSSProperties = { position: 'relative', zIndex: 2 }
 
-function getMeta(entry: Entry) {
+function getMeta(entry: PS5MatchCardProps['entry']) {
   const m = entry.metadata as Record<string, unknown>
   const matches = (m?.matches as PS5Match[]) ?? []
   const totalMatches = (m?.total_matches as number) ?? matches.length

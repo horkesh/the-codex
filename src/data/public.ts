@@ -3,6 +3,7 @@ import { fetchParticipantsMap } from '@/data/entries'
 import type { Entry, EntryWithParticipants, Gent, GentStats, GentAlias } from '@/types/app'
 
 const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, cover_image_url, metadata, pinned, created_at'
+const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio, portrait_url, status, status_expires_at'
 
 /** Fetch pinned+shared+published entries (no auth needed) */
 export async function fetchPublicEntries(): Promise<EntryWithParticipants[]> {

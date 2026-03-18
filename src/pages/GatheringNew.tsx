@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { X, Plus } from 'lucide-react'
 import { TopBar, PageWrapper } from '@/components/layout'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, DatePicker } from '@/components/ui'
 import { createEntry, updateEntry } from '@/data/entries'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -131,11 +131,10 @@ export default function GatheringNew() {
           />
 
           {/* Event Date */}
-          <Input
+          <DatePicker
             label="Event Date"
-            type="date"
             value={eventDate}
-            onChange={e => setEventDate(e.target.value)}
+            onChange={v => setEventDate(v)}
             error={errors.eventDate}
           />
 

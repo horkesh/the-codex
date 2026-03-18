@@ -25,7 +25,7 @@ export const COLOR = {
 } as const
 
 /** Extract lore one-liner from metadata, falling back to first sentence of lore */
-export function getOneliner(entry: Entry): string | null {
+export function getOneliner(entry: Pick<Entry, 'lore' | 'metadata'>): string | null {
   const meta = entry.metadata as Record<string, unknown> | undefined
   const oneliner = meta?.lore_oneliner as string | undefined
   if (oneliner) return oneliner

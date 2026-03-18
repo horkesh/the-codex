@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Input } from '@/components/ui'
+import { Input, DatePicker } from '@/components/ui'
 import { Button } from '@/components/ui'
-import { cn } from '@/lib/utils'
 import { staggerItem } from '@/lib/animations'
 import { getChronologicalVol } from '@/data/entries'
 import type { GentAlias, PS5Match } from '@/types/app'
@@ -211,17 +210,15 @@ export function PlaystationForm({ onSubmit, loading, detectedLocation, suggested
         )}
       </div>
 
-      <Input
+      <DatePicker
         label="Date"
-        type="date"
         value={date}
-        onChange={(e) => {
-          setDate(e.target.value)
+        onChange={(v) => {
+          setDate(v)
           if (errors.date) setErrors((p) => ({ ...p, date: undefined }))
         }}
         error={errors.date}
         required
-        className={cn(!date && 'text-ivory-dim')}
       />
 
       <Input

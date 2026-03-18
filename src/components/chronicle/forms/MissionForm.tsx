@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { Input } from '@/components/ui'
+import { Input, DatePicker } from '@/components/ui'
 import { Button } from '@/components/ui'
-import { cn } from '@/lib/utils'
 import type { LocationFill } from '@/lib/geo'
 
 export interface MissionFormData {
@@ -122,21 +121,17 @@ export function MissionForm({ onSubmit, loading, detectedLocation, suggestedTitl
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Input
+        <DatePicker
           label="Start Date"
-          type="date"
           value={form.date}
-          onChange={(e) => set('date', e.target.value)}
+          onChange={(v) => set('date', v)}
           error={errors.date}
           required
-          className={cn(!form.date && 'text-ivory-dim')}
         />
-        <Input
+        <DatePicker
           label="End Date"
-          type="date"
           value={form.date_end}
-          onChange={(e) => set('date_end', e.target.value)}
-          className={cn(!form.date_end && 'text-ivory-dim')}
+          onChange={(v) => set('date_end', v)}
           hint="Optional"
         />
       </div>

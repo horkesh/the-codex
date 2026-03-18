@@ -22,7 +22,7 @@ const ROOT: React.CSSProperties = {
 
 const Z2: React.CSSProperties = { position: 'relative', zIndex: 2 }
 
-function getMeta(entry: Entry) {
+function getMeta(entry: ToastCardProps['entry']) {
   const m = entry.metadata as Record<string, unknown>
   return { spirit: m?.spirit as string | undefined, dram: m?.dram as string | undefined, occasion: m?.occasion as string | undefined }
 }

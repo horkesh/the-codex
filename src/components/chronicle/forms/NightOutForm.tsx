@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { Input } from '@/components/ui'
+import { Input, DatePicker } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import type { LocationFill } from '@/lib/geo'
@@ -145,14 +145,12 @@ export function NightOutForm({ onSubmit, loading, detectedLocation, suggestedTit
         />
       )}
 
-      <Input
+      <DatePicker
         label="Date"
-        type="date"
         value={form.date}
-        onChange={(e) => set('date', e.target.value)}
+        onChange={(v) => set('date', v)}
         error={errors.date}
         required
-        className={cn(!form.date && 'text-ivory-dim')}
       />
 
       <Input

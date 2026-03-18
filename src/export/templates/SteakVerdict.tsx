@@ -30,7 +30,7 @@ function ConnoisseurBadge({ rewardKeys, style }: { rewardKeys?: Set<string>; sty
   )
 }
 
-function getMeta(entry: Entry) {
+function getMeta(entry: SteakVerdictProps['entry']) {
   const m = entry.metadata as Record<string, unknown>
   return { cut: m?.cut as string | undefined, score: m?.score as number | undefined, verdict: m?.verdict as string | undefined }
 }
