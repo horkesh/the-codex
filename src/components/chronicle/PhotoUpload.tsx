@@ -351,9 +351,19 @@ export function usePendingPhotos(maxPhotos = DEFAULT_MAX_PHOTOS) {
   }, [])
 
   const uploadAll = useCallback(
-    async (entryId: string): Promise<{ urls: string[]; firstError: string | null }> => {
+    async (entryId: string, onProgress?: (done: number, total: number) => void): Promise<{ urls: string[]; firstError: string | null }> => {
+      const total = pendingFiles.length
+      let done = 0
+      onProgress?.(0, total)
+
       const results = await Promise.allSettled(
-        pendingFiles.map((file, i) => uploadEntryPhoto(entryId, file, i)),
+        pendingFiles.map((file, i) =>
+          uploadEntryPhoto(entryId, file, i).then(url => {
+            done++
+            onProgress?.(done, total)
+            return url
+          }),
+        ),
       )
       const urls: string[] = []
       let firstError: string | null = null
@@ -361,6 +371,8 @@ export function usePendingPhotos(maxPhotos = DEFAULT_MAX_PHOTOS) {
         if (result.status === 'fulfilled') {
           urls.push(result.value)
         } else {
+          done++
+          onProgress?.(done, total)
           const err = result.reason as { message?: string; error?: string }
           const msg = err?.message ?? err?.error ?? String(result.reason)
           console.error('Failed to upload photo:', msg)

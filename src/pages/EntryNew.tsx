@@ -78,6 +78,7 @@ export default function EntryNew() {
   const [selectedType, setSelectedType] = useState<EntryType | null>(null)
   const [participants, setParticipants] = useState<string[]>(() => (gent ? [gent.id] : []))
   const [submitting, setSubmitting] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [locationFill, setLocationFill] = useState<LocationFill | undefined>()
   const [savedPlaces, setSavedPlaces] = useState<SavedLocation[]>([])
   const [prospectId, setProspectId] = useState<string | null>(null)
@@ -244,8 +245,10 @@ export default function EntryNew() {
       // 3. Upload pending photos; promote first to cover image
       let uploadedUrls: string[] = []
       if (pendingFiles.length > 0) {
-        const { urls, firstError } = await uploadAll(entry.id)
+        setUploadProgress({ done: 0, total: pendingFiles.length })
+        const { urls, firstError } = await uploadAll(entry.id, (done, total) => setUploadProgress({ done, total }))
         uploadedUrls = urls
+        setUploadProgress(null)
         clearFiles()
         if (uploadedUrls[0]) {
           await updateEntryCover(entry.id, uploadedUrls[0])
@@ -611,6 +614,32 @@ export default function EntryNew() {
 
   return (
     <>
+      {/* Upload progress overlay */}
+      {submitting && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-obsidian/90 backdrop-blur-sm">
+          <img
+            src="/logo-gold.webp"
+            alt=""
+            className="w-16 h-16 animate-spin mb-4"
+            style={{ animationDuration: '2.5s' }}
+          />
+          <p className="text-ivory font-display text-lg mb-1">
+            {uploadProgress
+              ? `Uploading ${uploadProgress.done}/${uploadProgress.total} photos`
+              : 'Creating entry...'}
+          </p>
+          {uploadProgress && (
+            <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden mt-2">
+              <div
+                className="h-full bg-gold rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress.total > 0 ? (uploadProgress.done / uploadProgress.total) * 100 : 0}%` }}
+              />
+            </div>
+          )}
+          <p className="text-ivory-dim/50 text-xs font-body mt-3">This may take a moment</p>
+        </div>
+      )}
+
       <TopBar
         title={topBarTitle}
         back
