@@ -235,41 +235,33 @@ export default function PersonDetail() {
             Dossier No. {dossierNumber}
           </span>
 
-          {/* Avatar area */}
-          <div className="relative mt-1">
+          {/* Avatar area — flex row: portrait/avatar + photo thumbnail + tier stamp */}
+          <div className="mt-1 flex items-end gap-3">
             {person.portrait_url ? (
-              <div className="flex items-end gap-3">
-                <div className="relative group w-20 h-20 overflow-hidden rounded-2xl border border-gold/30">
-                  <img
-                    src={person.portrait_url}
-                    alt={`${person.name} portrait`}
-                    className={cn('w-full h-full object-cover', regeneratingPortrait && 'opacity-40')}
-                  />
-                  {regeneratingPortrait && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Spinner size="sm" />
-                    </div>
-                  )}
-                  {scan?.appearance_description && !regeneratingPortrait && (
-                    <button
-                      type="button"
-                      onClick={handleRegeneratePortrait}
-                      className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Regenerate portrait"
-                    >
-                      <RefreshCw size={16} className="text-gold" />
-                    </button>
-                  )}
-                </div>
-                {person.photo_url && (
-                  <div className="flex flex-col items-center gap-1 mb-0.5">
-                    <Avatar src={person.photo_url} name={person.name} size="sm" />
-                    <span className="text-[9px] text-ivory-dim font-body">Photo</span>
+              <div className="relative group w-20 h-20 overflow-hidden rounded-2xl border border-gold/30 shrink-0">
+                <img
+                  src={person.portrait_url}
+                  alt={`${person.name} portrait`}
+                  className={cn('w-full h-full object-cover', regeneratingPortrait && 'opacity-40')}
+                />
+                {regeneratingPortrait && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Spinner size="sm" />
                   </div>
+                )}
+                {scan?.appearance_description && !regeneratingPortrait && (
+                  <button
+                    type="button"
+                    onClick={handleRegeneratePortrait}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Regenerate portrait"
+                  >
+                    <RefreshCw size={16} className="text-gold" />
+                  </button>
                 )}
               </div>
             ) : (
-              <div className="relative group">
+              <div className="relative group shrink-0">
                 <Avatar src={person.photo_url} name={person.name} size="xl" />
                 {scan?.appearance_description && !regeneratingPortrait && (
                   <button
@@ -289,14 +281,22 @@ export default function PersonDetail() {
               </div>
             )}
 
-            {/* Tier stamp — positioned to the right of avatar */}
+            {/* Small photo thumbnail (only when portrait exists) */}
+            {person.portrait_url && person.photo_url && (
+              <div className="flex flex-col items-center gap-1 mb-0.5 shrink-0">
+                <Avatar src={person.photo_url} name={person.name} size="sm" />
+                <span className="text-[9px] text-ivory-dim font-body">Photo</span>
+              </div>
+            )}
+
+            {/* Tier stamp — inline in the flex row */}
             {person.category === 'contact' && currentTier && (
               <button
                 type="button"
                 onClick={() => setShowTierModal(true)}
-                className="absolute -right-10 -top-1"
+                className="shrink-0 mb-0.5"
               >
-                <div className="relative w-16 h-16 flex items-center justify-center">
+                <div className="relative w-14 h-14 flex items-center justify-center">
                   <div
                     className="absolute inset-0 rounded-full border-2 border-gold/40"
                     style={{ transform: 'rotate(-12deg)' }}
@@ -305,7 +305,7 @@ export default function PersonDetail() {
                     className="absolute inset-1 rounded-full border border-gold/20"
                     style={{ transform: 'rotate(-12deg)' }}
                   />
-                  <span className="text-[8px] uppercase tracking-[0.2em] text-gold font-body font-semibold text-center leading-tight px-1">
+                  <span className="text-[7px] uppercase tracking-[0.15em] text-gold font-body font-semibold text-center leading-tight px-1">
                     {currentTier.label}
                   </span>
                 </div>
@@ -317,7 +317,7 @@ export default function PersonDetail() {
                 type="button"
                 onClick={handlePromoteToContact}
                 disabled={promoting}
-                className="absolute -right-10 -top-1"
+                className="shrink-0 mb-0.5"
                 aria-label="Promote to contact"
               >
                 <div className="relative w-16 h-16 flex items-center justify-center">
