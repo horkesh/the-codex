@@ -83,8 +83,65 @@ export function haversineMetres(
   return R * 2 * Math.asin(Math.sqrt(a))
 }
 
+/** Nominatim reverse geocode — returns city, country, and best-effort location name. */
+async function fetchNominatim(lat: number, lng: number): Promise<{
+  city?: string; country?: string; country_code?: string; location?: string
+} | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=18`,
+      { headers: { 'User-Agent': 'TheGentsChronicles/1.0' }, signal: AbortSignal.timeout(5000) },
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    const addr = data.address ?? {}
+    const poiName = addr.amenity || addr.leisure || addr.tourism || addr.shop
+    const first = data.display_name?.split(',')[0]?.trim()
+    return {
+      city: addr.city || addr.town || addr.village || addr.municipality,
+      country: addr.country,
+      country_code: addr.country_code?.toUpperCase(),
+      location: poiName || first,
+    }
+  } catch {
+    return null
+  }
+}
+
+/** Overpass API — find the nearest named POI (bar, restaurant, hotel, etc.) within 150m. */
+async function fetchNearestPOI(lat: number, lng: number): Promise<string | null> {
+  try {
+    const query = `[out:json][timeout:5];(
+      node(around:150,${lat},${lng})["amenity"~"restaurant|bar|cafe|pub|nightclub|cinema|theatre|biergarten|ice_cream"];
+      node(around:150,${lat},${lng})["tourism"~"hotel|hostel|guest_house|museum|attraction|viewpoint"];
+      node(around:150,${lat},${lng})["leisure"~"fitness_centre|sports_centre|bowling_alley|stadium"];
+      node(around:150,${lat},${lng})["shop"~"mall"];
+    );out body 3;`
+    const res = await fetch(
+      `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
+      { signal: AbortSignal.timeout(5000) },
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    const elements = data.elements as Array<{ tags?: Record<string, string>; lat: number; lon: number }> | undefined
+    if (!elements?.length) return null
+
+    // Pick the closest named element
+    let best: { name: string; dist: number } | null = null
+    for (const el of elements) {
+      const name = el.tags?.name
+      if (!name) continue
+      const dist = haversineMetres(lat, lng, el.lat, el.lon)
+      if (!best || dist < best.dist) best = { name, dist }
+    }
+    return best?.name ?? null
+  } catch {
+    return null
+  }
+}
+
 /**
- * Reads EXIF GPS + datetime from a photo and reverse-geocodes via Nominatim.
+ * Reads EXIF GPS + datetime from a photo and reverse-geocodes via Nominatim + Overpass POI lookup.
  * Returns null if no useful data is found.
  * Includes lat/lng so the caller can do proximity checks against saved places.
  */
@@ -107,28 +164,24 @@ export async function extractLocationFromPhoto(file: File): Promise<LocationFill
       if (timeMatch) result.time = `${timeMatch[1]}:${timeMatch[2]}`
     }
 
-    // GPS reverse geocoding
+    // GPS reverse geocoding + POI lookup (parallel)
     if (typeof exif.latitude === 'number' && typeof exif.longitude === 'number') {
       result.lat = exif.latitude
       result.lng = exif.longitude
 
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${exif.latitude}&lon=${exif.longitude}&format=json&zoom=18`,
-        { headers: { 'User-Agent': 'TheGentsChronicles/1.0' } },
-      )
-      if (res.ok) {
-        const data = await res.json()
-        const addr = data.address ?? {}
-        result.city = addr.city || addr.town || addr.village || addr.municipality
-        result.country = addr.country
-        result.country_code = addr.country_code?.toUpperCase()
-        // Prefer the named POI fields Nominatim returns at zoom=18 (amenity, leisure,
-        // tourism, shop) over display_name which can be a street address instead.
-        const poiName = addr.amenity || addr.leisure || addr.tourism || addr.shop
-        const first = data.display_name?.split(',')[0]?.trim()
-        const location = poiName || first
-        if (location) result.location = location
-        console.debug('[geo] Nominatim addr:', addr, '→ location:', location)
+      // Run Nominatim (city/country) and Overpass (nearest POI) in parallel
+      const [nominatimResult, overpassResult] = await Promise.all([
+        fetchNominatim(exif.latitude, exif.longitude),
+        fetchNearestPOI(exif.latitude, exif.longitude),
+      ])
+
+      if (nominatimResult) {
+        result.city = nominatimResult.city
+        result.country = nominatimResult.country
+        result.country_code = nominatimResult.country_code
+        // Use Overpass POI name if available (more reliable for venues), fall back to Nominatim
+        result.location = overpassResult ?? nominatimResult.location
+        console.debug('[geo] Nominatim:', nominatimResult.location, '| Overpass POI:', overpassResult, '→', result.location)
       }
     }
 
