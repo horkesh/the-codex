@@ -46,16 +46,6 @@ function DossierSectionHeader({ label }: { label: string }) {
   )
 }
 
-function RedactedPlaceholder() {
-  return (
-    <div className="space-y-2">
-      <div className="h-3 bg-white/5 rounded w-full" />
-      <div className="h-3 bg-white/5 rounded w-3/4" />
-      <div className="h-3 bg-white/5 rounded w-1/2" />
-    </div>
-  )
-}
-
 export default function PersonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -489,13 +479,13 @@ export default function PersonDetail() {
             )}
 
             {/* ── FIELD NOTES ── */}
-            <DossierSectionHeader label="Field Notes" />
-            {person.notes ? (
-              <p className="text-sm text-ivory-muted font-body leading-relaxed whitespace-pre-wrap">
-                {person.notes}
-              </p>
-            ) : (
-              <RedactedPlaceholder />
+            {person.notes && (
+              <>
+                <DossierSectionHeader label="Field Notes" />
+                <p className="text-sm text-ivory-muted font-body leading-relaxed whitespace-pre-wrap">
+                  {person.notes}
+                </p>
+              </>
             )}
 
             <div className="mt-2">
