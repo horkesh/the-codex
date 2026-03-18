@@ -194,6 +194,216 @@ export function visaNumber(entryId: string, cc: string | null): string {
   return `${prefix}-${hash.slice(0, 4)}-${hash.slice(4, 8)}`
 }
 
+/* ── City-specific localisation ── */
+
+export interface CityInfo {
+  /** Rotating epithets / nicknames — picked deterministically per entry */
+  epithets: string[]
+  /** Local greeting in native language */
+  greeting: string
+  /** Specific port-of-entry name (airport, border crossing, etc.) */
+  portName: string
+}
+
+const CITY_INFO: Record<string, CityInfo> = {
+  /* ── Croatia ── */
+  Split: {
+    epithets: ['Diocletian\'s City', 'Pearl of the Adriatic', 'Heart of Dalmatia', 'City of Marble'],
+    greeting: 'Dobrodošli u Split',
+    portName: 'SPU — Resnik',
+  },
+  Zagreb: {
+    epithets: ['City of a Million Hearts', 'The Northern Capital', 'Gornji Grad Gateway', 'Ban\'s City'],
+    greeting: 'Dobrodošli u Zagreb',
+    portName: 'ZAG — Pleso',
+  },
+  Dubrovnik: {
+    epithets: ['Pearl of the Adriatic', 'King\'s Landing', 'The Walled City', 'Jewel of the Coast'],
+    greeting: 'Dobrodošli u Dubrovnik',
+    portName: 'DBV — Čilipi',
+  },
+  Zadar: {
+    epithets: ['City of the Sea Organ', 'Sun Salutation City', 'The Ancient Harbour', 'Dalmatian Jewel'],
+    greeting: 'Dobrodošli u Zadar',
+    portName: 'ZAD — Zemunik',
+  },
+  Rijeka: {
+    epithets: ['Gateway to the Islands', 'The Port City', 'Kvarner Capital', 'City of Flow'],
+    greeting: 'Dobrodošli u Rijeku',
+    portName: 'RJK — Omišalj',
+  },
+  Pula: {
+    epithets: ['Arena City', 'Istrian Jewel', 'City of the Amphitheatre', 'Roman Pola'],
+    greeting: 'Dobrodošli u Pulu',
+    portName: 'PUY — Pula',
+  },
+  /* ── Serbia ── */
+  Belgrade: {
+    epithets: ['The White City', 'City at the Confluence', 'Balkan\'s Capital of Night', 'Singidunum'],
+    greeting: 'Добро дошли у Београд',
+    portName: 'BEG — Nikola Tesla',
+  },
+  'Novi Sad': {
+    epithets: ['Serbian Athens', 'EXIT City', 'Danube Jewel', 'The Freedom City'],
+    greeting: 'Добро дошли у Нови Сад',
+    portName: 'QND — Novi Sad',
+  },
+  Niš: {
+    epithets: ['Constantine\'s City', 'Southern Gateway', 'City of the Emperor', 'Crossroads of the Balkans'],
+    greeting: 'Добро дошли у Ниш',
+    portName: 'INI — Niš',
+  },
+  /* ── Bosnia ── */
+  Sarajevo: {
+    epithets: ['Jerusalem of Europe', 'City Where East Meets West', 'The Baščaršija City', 'Olympic City'],
+    greeting: 'Dobro došli u Sarajevo',
+    portName: 'SJJ — Butmir',
+  },
+  Mostar: {
+    epithets: ['City of the Old Bridge', 'Neretva\'s Jewel', 'The Diving City', 'Herzegovina\'s Heart'],
+    greeting: 'Dobro došli u Mostar',
+    portName: 'OMO — Mostar',
+  },
+  /* ── Hungary ── */
+  Budapest: {
+    epithets: ['Pearl of the Danube', 'City of Spas', 'Paris of the East', 'The Twin City'],
+    greeting: 'Üdvözöljük Budapesten',
+    portName: 'BUD — Liszt Ferenc',
+  },
+  /* ── Montenegro ── */
+  Kotor: {
+    epithets: ['City of Cats', 'The Fjord City', 'Boka Jewel', 'Montenegro\'s Gem'],
+    greeting: 'Dobrodošli u Kotor',
+    portName: 'TIV — Tivat',
+  },
+  Budva: {
+    epithets: ['Montenegrin Miami', 'The Riviera City', 'Old Town by the Sea', 'Adriatic\'s Party Capital'],
+    greeting: 'Dobrodošli u Budvu',
+    portName: 'TGD — Podgorica',
+  },
+  Podgorica: {
+    epithets: ['The Capital', 'City on Five Rivers', 'Ribnica Crossroads', 'Montenegro\'s Heart'],
+    greeting: 'Dobrodošli u Podgoricu',
+    portName: 'TGD — Podgorica',
+  },
+  /* ── Slovenia ── */
+  Ljubljana: {
+    epithets: ['Dragon City', 'The Green Capital', 'Plečnik\'s City', 'City on the Ljubljanica'],
+    greeting: 'Dobrodošli v Ljubljani',
+    portName: 'LJU — Brnik',
+  },
+  /* ── Italy ── */
+  Rome: {
+    epithets: ['The Eternal City', 'Caput Mundi', 'City of Seven Hills', 'The Open-Air Museum'],
+    greeting: 'Benvenuti a Roma',
+    portName: 'FCO — Fiumicino',
+  },
+  Milan: {
+    epithets: ['Fashion Capital', 'The Moral Capital', 'City of the Madonnina', 'La Scala\'s City'],
+    greeting: 'Benvenuti a Milano',
+    portName: 'MXP — Malpensa',
+  },
+  Venice: {
+    epithets: ['La Serenissima', 'City of Bridges', 'The Floating City', 'Queen of the Adriatic'],
+    greeting: 'Benvenuti a Venezia',
+    portName: 'VCE — Marco Polo',
+  },
+  Naples: {
+    epithets: ['City of the Sun', 'Partenope', 'Vesuvius\' Shadow', 'Pizza\'s Birthplace'],
+    greeting: 'Benvenuti a Napoli',
+    portName: 'NAP — Capodichino',
+  },
+  Florence: {
+    epithets: ['Cradle of the Renaissance', 'The Lily City', 'City of Medici', 'Firenze la Bella'],
+    greeting: 'Benvenuti a Firenze',
+    portName: 'FLR — Peretola',
+  },
+  /* ── Austria ── */
+  Vienna: {
+    epithets: ['City of Music', 'The Imperial Capital', 'City of Dreams', 'Waltz Capital'],
+    greeting: 'Willkommen in Wien',
+    portName: 'VIE — Schwechat',
+  },
+  /* ── Germany ── */
+  Berlin: {
+    epithets: ['City of Freedom', 'The Reunited Capital', 'Bohemian Capital', 'Techno\'s Throne'],
+    greeting: 'Willkommen in Berlin',
+    portName: 'BER — Brandenburg',
+  },
+  Munich: {
+    epithets: ['City of Beer', 'Bavarian Capital', 'Isar Metropolis', 'The Millionendorf'],
+    greeting: 'Willkommen in München',
+    portName: 'MUC — Franz Josef Strauss',
+  },
+  /* ── France ── */
+  Paris: {
+    epithets: ['City of Light', 'La Ville Lumière', 'The Capital of Fashion', 'City of Love'],
+    greeting: 'Bienvenue à Paris',
+    portName: 'CDG — Charles de Gaulle',
+  },
+  /* ── Spain ── */
+  Barcelona: {
+    epithets: ['City of Gaudí', 'The Catalan Capital', 'La Ciudad Condal', 'Mediterranean Jewel'],
+    greeting: 'Bienvenidos a Barcelona',
+    portName: 'BCN — El Prat',
+  },
+  Madrid: {
+    epithets: ['The Bear and the Tree', 'Villa y Corte', 'City That Never Sleeps', 'Heart of Spain'],
+    greeting: 'Bienvenidos a Madrid',
+    portName: 'MAD — Barajas',
+  },
+  /* ── UK ── */
+  London: {
+    epithets: ['The Great Smoke', 'City on the Thames', 'The Old Smoke', 'The Square Mile & Beyond'],
+    greeting: 'Welcome to London',
+    portName: 'LHR — Heathrow',
+  },
+  /* ── Greece ── */
+  Athens: {
+    epithets: ['Cradle of Democracy', 'City of the Acropolis', 'The Violet Crown', 'Athena\'s City'],
+    greeting: 'Καλώς ορίσατε στην Αθήνα',
+    portName: 'ATH — Eleftherios Venizelos',
+  },
+  /* ── Turkey ── */
+  Istanbul: {
+    epithets: ['City on Two Continents', 'The Sultan\'s Capital', 'Constantinople Reborn', 'Gateway Between Worlds'],
+    greeting: 'İstanbul\'a hoş geldiniz',
+    portName: 'IST — İstanbul',
+  },
+  /* ── Czech Republic ── */
+  Prague: {
+    epithets: ['City of a Hundred Spires', 'The Golden City', 'Heart of Bohemia', 'The Mother of Cities'],
+    greeting: 'Vítejte v Praze',
+    portName: 'PRG — Václav Havel',
+  },
+  /* ── Portugal ── */
+  Lisbon: {
+    epithets: ['City of Seven Hills', 'The White City', 'City of Fado', 'Olisipo'],
+    greeting: 'Bem-vindos a Lisboa',
+    portName: 'LIS — Humberto Delgado',
+  },
+}
+
+/** Deterministic index from entry ID — rotates through an array */
+function hashIndex(entryId: string, len: number): number {
+  let h = 0
+  for (let i = 0; i < entryId.length; i++) h = ((h << 5) - h + entryId.charCodeAt(i)) | 0
+  return ((h % len) + len) % len
+}
+
+/** Get city-specific info with a deterministic epithet rotation per entry.
+ *  Returns null if the city isn't in our data. */
+export function getCityInfo(city: string | null, entryId: string): { epithet: string; greeting: string; portName: string } | null {
+  if (!city) return null
+  const info = CITY_INFO[city]
+  if (!info) return null
+  return {
+    epithet: info.epithets[hashIndex(entryId, info.epithets.length)],
+    greeting: info.greeting,
+    portName: info.portName,
+  }
+}
+
 const ALIAS_DISPLAY: Record<string, string> = {
   lorekeeper: 'Lorekeeper',
   bass: 'Beard & Bass',

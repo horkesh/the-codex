@@ -1,7 +1,7 @@
 import React from 'react'
 import type { EntryWithParticipants, PassportStamp } from '@/types/app'
 import { flagEmoji, getCoverCrop } from '@/lib/utils'
-import { getOneliner, monthYear, calcDuration, visaWord, aliasDisplay } from '@/export/templates/shared/utils'
+import { getOneliner, monthYear, calcDuration, visaWord, aliasDisplay, getCityInfo, getCountryVisaInfo } from '@/export/templates/shared/utils'
 import { BrandMark } from '@/export/templates/shared'
 
 interface VisaCardSlideProps {
@@ -36,6 +36,8 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
     const duration = calcDuration(entry.date, dateEnd)
     const coverPhoto = entry.cover_image_url
     const crop = getCoverCrop(entry)
+    const cityInfo = getCityInfo(entry.city, entry.id)
+    const countryInfo = getCountryVisaInfo(cc)
 
     return (
       <div ref={ref} style={{ width: 1080, height: 1350, backgroundColor: '#F5F0E1', position: 'relative', overflow: 'hidden', fontFamily: "Georgia, 'Times New Roman', serif" }}>
@@ -72,8 +74,19 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
             </span>
           </div>
           {/* Multi-language header in top-right */}
-          <div style={{ position: 'absolute', top: 20, right: 55, zIndex: 2, fontSize: 10, fontWeight: 600, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.6)', fontVariant: 'small-caps' as const, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
-            VIZE-\u0412\u0418\u0417\u0415-VISAS
+          <div style={{ position: 'absolute', top: 20, right: 55, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.6)', fontVariant: 'small-caps' as const, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+              VIZE-{'\u0412\u0418\u0417\u0415'}-VISAS
+            </span>
+            {cityInfo && (
+              <span style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontStyle: 'italic', fontSize: 12, color: 'rgba(255,255,255,0.45)',
+                letterSpacing: '0.04em', textShadow: '0 1px 4px rgba(0,0,0,0.3)',
+              }}>
+                {cityInfo.greeting}
+              </span>
+            )}
           </div>
         </div>
 
@@ -91,6 +104,15 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
                 ? `${entry.city.toUpperCase()}, ${entry.country.toUpperCase()}`
                 : entry.city?.toUpperCase() ?? '\u2014'}
             </div>
+            {cityInfo && (
+              <div style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontStyle: 'italic', fontSize: 20, color: countryInfo.accent,
+                letterSpacing: '0.06em', opacity: 0.6, marginTop: 4,
+              }}>
+                {cityInfo.epithet}
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 14 }}>
               <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: 20, color: '#5A6B7A', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
                 {monthYear(entry.date)}

@@ -10,7 +10,7 @@ import { fadeUp } from '@/lib/animations'
 import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw } from 'lucide-react'
 import { useUIStore } from '@/store/ui'
-import { getOneliner, visaWord, aliasDisplay, getCountryVisaInfo, visaNumber } from '@/export/templates/shared/utils'
+import { getOneliner, visaWord, aliasDisplay, getCountryVisaInfo, visaNumber, getCityInfo } from '@/export/templates/shared/utils'
 import type { PassportStamp, EntryWithParticipants } from '@/types/app'
 
 interface EntryPhoto {
@@ -165,6 +165,7 @@ export default function VisaPage() {
   const coverPhoto = entry.cover_image_url ?? photos[0]?.url ?? null
   const coverCrop = getCoverCrop(entry)
   const countryInfo = getCountryVisaInfo(cc)
+  const cityInfo = getCityInfo(entry.city, entry.id)
   const visaNo = visaNumber(entry.id, cc)
 
   const meta = entry.metadata as Record<string, unknown> | undefined
@@ -251,8 +252,22 @@ export default function VisaPage() {
               >
                 {countryInfo.header}
               </span>
-              {/* Visa number */}
-              <div className="mt-0.5">
+              {/* Local greeting + visa number */}
+              <div className="mt-0.5 flex flex-col items-center gap-0.5">
+                {cityInfo && (
+                  <span
+                    style={{
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                      fontStyle: 'italic',
+                      fontSize: '9px',
+                      color: countryInfo.accent,
+                      opacity: 0.5,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {cityInfo.greeting}
+                  </span>
+                )}
                 <span
                   style={{
                     fontFamily: 'monospace',
@@ -323,6 +338,21 @@ export default function VisaPage() {
                 >
                   {(entry.city && entry.country) ? `${entry.city.toUpperCase()}, ${entry.country.toUpperCase()}` : entry.city?.toUpperCase() ?? entry.location?.toUpperCase() ?? '\u2014'}
                 </p>
+                {cityInfo && (
+                  <p
+                    style={{
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                      fontStyle: 'italic',
+                      fontSize: '11px',
+                      color: countryInfo.accent,
+                      letterSpacing: '0.06em',
+                      opacity: 0.7,
+                      marginTop: '2px',
+                    }}
+                  >
+                    {cityInfo.epithet}
+                  </p>
+                )}
                 <div className="flex items-center gap-2.5 mt-1">
                   <span
                     style={{
@@ -375,7 +405,7 @@ export default function VisaPage() {
                   <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#2C2C2C', fontWeight: 600 }}>
                     {dateEnd
                       ? new Date(dateEnd + 'T12:00:00Z').toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })
-                      : entry.city ?? '\u2014'
+                      : cityInfo?.portName ?? entry.city ?? '\u2014'
                     }
                   </span>
                 </div>
