@@ -70,8 +70,12 @@ function V2({ entry, backgroundUrl }: NightOutCardProps) {
   return (
     <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '80px', ...Z2 }}>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600', marginBottom: '20px' }}>NIGHT OUT</p>
+      {/* Top label */}
+      <div style={{ padding: '72px 80px 0', ...Z2 }}>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>NIGHT OUT</p>
+      </div>
+      {/* Bottom content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '96px', fontWeight: '700', color: '#F0EDE8', lineHeight: '0.95', letterSpacing: '-0.03em', margin: '0 0 32px 0' }}>{entry.title}</h1>
         {oneliner && (
           <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '24px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '40px' }}>{oneliner}</p>
@@ -93,12 +97,16 @@ function V2({ entry, backgroundUrl }: NightOutCardProps) {
 function V3({ entry, backgroundUrl }: NightOutCardProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px', padding: '80px', ...Z2 }}>
-        {oneliner && (
+      {/* Top: quote */}
+      {oneliner && (
+        <div style={{ paddingTop: '80px', paddingLeft: '80px', paddingRight: '80px', ...Z2 }}>
           <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '40px', fontWeight: '400', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.45', maxWidth: '800px' }}>"{oneliner}"</p>
-        )}
+        </div>
+      )}
+      {/* Bottom: attribution */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0 80px 80px', gap: '48px', ...Z2 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ height: '1px', width: '60px', backgroundColor: '#C9A84C', opacity: 0.5 }} />
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>

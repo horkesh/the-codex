@@ -64,8 +64,12 @@ function V2({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
     <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <VeteranBadge rewardKeys={rewardKeys} style={{ position: 'absolute', top: '72px', right: '80px', zIndex: 3 }} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '80px', ...Z2 }}>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600', marginBottom: '16px' }}>MISSION</p>
+      {/* Top label */}
+      <div style={{ padding: '72px 80px 0', ...Z2 }}>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>MISSION</p>
+      </div>
+      {/* Bottom content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
         {entry.city && <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '110px', fontWeight: '700', color: '#F0EDE8', lineHeight: '0.9', letterSpacing: '-0.04em', margin: '0 0 16px 0' }}>{entry.city}</h1>}
         {entry.country && <p style={{ fontFamily: 'var(--font-body)', fontSize: '22px', color: '#C9A84C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '32px' }}>{entry.country}</p>}
         {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '24px' }}>{oneliner}</p>}
@@ -81,13 +85,17 @@ function V2({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
 function V3({ entry, backgroundUrl }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '80px', ...Z2 }}>
+      {/* Top: passport stamp circle */}
+      <div style={{ paddingTop: '80px', ...Z2 }}>
         <div style={{ width: '160px', height: '160px', borderRadius: '50%', border: '2px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '4px' }}>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '48px', fontWeight: '700', color: '#C9A84C', lineHeight: '1' }}>{entry.city?.slice(0, 3).toUpperCase()}</span>
           <span style={{ fontFamily: 'var(--font-body)', fontSize: '10px', color: '#8C8680', letterSpacing: '0.3em', textTransform: 'uppercase' }}>{entry.country_code || entry.country?.slice(0, 2).toUpperCase()}</span>
         </div>
+      </div>
+      {/* Bottom content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: '32px', padding: '0 80px 80px', ...Z2 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '56px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.1', margin: '0' }}>{entry.city}</h1>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '20px', color: '#C9A84C', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{entry.country}</p>
         {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', textAlign: 'center', lineHeight: '1.55', maxWidth: '700px' }}>{oneliner}</p>}

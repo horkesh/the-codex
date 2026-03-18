@@ -112,8 +112,12 @@ function V2({ entry, backgroundUrl }: PS5MatchCardProps) {
     <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GridTexture backgroundUrl={backgroundUrl} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '80px', ...Z2 }}>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600', marginBottom: '16px' }}>THE PITCH</p>
+      {/* Top label */}
+      <div style={{ padding: '72px 80px 0', ...Z2 }}>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>THE PITCH</p>
+      </div>
+      {/* Bottom content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '80px', fontWeight: '700', color: '#F0EDE8', lineHeight: '0.95', margin: '0 0 24px' }}>{entry.title}</h1>
         {winner && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '24px' }}>
@@ -135,13 +139,17 @@ function V3({ entry, backgroundUrl }: PS5MatchCardProps) {
   const { totalMatches } = getMeta(entry)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GridTexture backgroundUrl={backgroundUrl} />
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px', padding: '80px', ...Z2 }}>
+      {/* Top badge */}
+      <div style={{ paddingTop: '80px', ...Z2 }}>
         <div style={{ border: '1px solid rgba(201,168,76,0.4)', borderRadius: '4px', padding: '6px 16px' }}>
           <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>THE PITCH</span>
         </div>
+      </div>
+      {/* Bottom content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: '40px', padding: '0 80px 80px', ...Z2 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '64px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', margin: '0' }}>{entry.title}</h1>
         {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '28px', color: '#C8C0B0', textAlign: 'center', lineHeight: '1.45', maxWidth: '780px' }}>"{oneliner}"</p>}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

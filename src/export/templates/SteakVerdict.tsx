@@ -78,8 +78,12 @@ function V2({ entry, backgroundUrl, rewardKeys }: SteakVerdictProps) {
     <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <ConnoisseurBadge rewardKeys={rewardKeys} style={{ position: 'absolute', top: '72px', right: '80px', zIndex: 3 }} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '80px', ...Z2 }}>
-        {score !== undefined && <p style={{ fontFamily: 'var(--font-display)', fontSize: '200px', fontWeight: '700', color: 'rgba(201,168,76,0.12)', lineHeight: '0.85', letterSpacing: '-0.04em' }}>{score}</p>}
+      {/* Top: ghost score watermark */}
+      <div style={{ padding: '72px 80px 0', ...Z2 }}>
+        {score !== undefined && <p style={{ fontFamily: 'var(--font-display)', fontSize: '200px', fontWeight: '700', color: 'rgba(201,168,76,0.12)', lineHeight: '0.85', letterSpacing: '-0.04em', margin: 0 }}>{score}</p>}
+      </div>
+      {/* Bottom content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '72px', fontWeight: '700', color: '#F0EDE8', lineHeight: '1', margin: '0 0 16px 0' }}>{entry.title}</h1>
         {cut && <p style={{ fontFamily: 'var(--font-body)', fontSize: '18px', color: '#C9A84C', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '24px' }}>{cut}</p>}
         {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '24px' }}>{oneliner}</p>}
@@ -96,14 +100,18 @@ function V3({ entry, backgroundUrl }: SteakVerdictProps) {
   const { cut, score } = getMeta(entry)
   const oneliner = getOneliner(entry)
   return (
-    <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'flex-end' }}>
+    <div style={{ ...VARIANT_INNER, alignItems: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '80px', ...Z2 }}>
-        {score !== undefined && (
+      {/* Top: score circle */}
+      {score !== undefined && (
+        <div style={{ paddingTop: '80px', ...Z2 }}>
           <div style={{ width: '180px', height: '180px', borderRadius: '50%', border: '3px solid #C9A84C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '80px', fontWeight: '700', color: '#C9A84C', lineHeight: '1' }}>{score}</span>
           </div>
-        )}
+        </div>
+      )}
+      {/* Bottom content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: '32px', padding: '0 80px 80px', ...Z2 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '48px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.1', margin: '0' }}>{entry.title}</h1>
         {cut && <p style={{ fontFamily: 'var(--font-body)', fontSize: '16px', color: '#C9A84C', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{cut}</p>}
         {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', textAlign: 'center', lineHeight: '1.5', maxWidth: '700px' }}>"{oneliner}"</p>}
