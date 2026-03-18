@@ -101,6 +101,12 @@ export default function EntryNew() {
     fetchLocations().then(setSavedPlaces)
   }, [])
 
+  // Reset mood/chronicle state when entry type changes
+  useEffect(() => {
+    setMoodTags([])
+    setFullChronicle(false)
+  }, [selectedType])
+
   // Prospect pre-fill: read query params once and pre-populate the form
   useEffect(() => {
     if (prospectHandled.current) return

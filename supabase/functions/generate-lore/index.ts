@@ -126,9 +126,8 @@ Deno.serve(async (req: Request) => {
     // Full Chronicle mode — extended narrative
     const isFullChronicle = entry.metadata?.full_chronicle === true
 
-    // Weather — fetched in parallel with prompt construction
-    const weatherPromise = fetchWeather(entry.date, entry.city, entry.country)
-    const weather = await weatherPromise
+    // Weather — non-critical, 5s timeout per call
+    const weather = await fetchWeather(entry.date, entry.city, entry.country)
     const weatherLine = weather ? `\nWeather: ${weather}` : ''
 
     const lengthInstruction = isFullChronicle

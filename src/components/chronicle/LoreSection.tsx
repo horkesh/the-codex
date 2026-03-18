@@ -53,6 +53,10 @@ export function LoreSection({ entry, photoUrls, readOnly, gentId, onLoreGenerate
     k => k.startsWith('lore_hints_') && k !== hintsKey && typeof meta[k] === 'string' && (meta[k] as string).trim()
   ).length
 
+  // Keep a ref to entry so the debounced save always reads fresh metadata
+  const entryRef = useRef(entry)
+  entryRef.current = entry
+
   // Auto-save hints to entry metadata after 1s of inactivity
   const unmounted = useRef(false)
   useEffect(() => {
@@ -67,7 +71,9 @@ export function LoreSection({ entry, photoUrls, readOnly, gentId, onLoreGenerate
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
       if (unmounted.current) return
-      const updated = { ...meta, [hintsKey]: value || null }
+      // Read fresh metadata from ref to avoid stale closure overwrites
+      const freshMeta = (entryRef.current.metadata as Record<string, unknown>) ?? {}
+      const updated = { ...freshMeta, [hintsKey]: value || null }
       updateEntry(entry.id, { metadata: updated } as Partial<EntryWithParticipants>).catch(() => {})
     }, 1000)
   }
@@ -103,8 +109,9 @@ export function LoreSection({ entry, photoUrls, readOnly, gentId, onLoreGenerate
     }
   }
 
-  // All gents can add notes; only creator can generate
-  const canAddNotes = !!gentId
+  // Any participant can add notes; only creator can generate
+  const isParticipant = gentId ? entry.participants?.some(p => p.id === gentId) ?? false : false
+  const canAddNotes = isParticipant
   const canGenerate = !readOnly
 
   return (
