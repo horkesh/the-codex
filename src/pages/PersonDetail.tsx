@@ -9,7 +9,7 @@ import { usePersonDossier } from '@/hooks/usePersonDossier'
 import { PrivateNoteSection } from '@/components/circle/PrivateNoteSection'
 import { PersonForm } from '@/components/circle/PersonForm'
 import type { PersonFormData } from '@/components/circle/PersonForm'
-import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents } from '@/data/people'
+import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents, convertPOIToContact } from '@/data/people'
 import { fetchScanByPerson } from '@/data/personScans'
 import { generatePersonPortrait } from '@/ai/personPortrait'
 import { fetchAllGents } from '@/data/gents'
@@ -46,16 +46,6 @@ function DossierSectionHeader({ label }: { label: string }) {
   )
 }
 
-function RedactedPlaceholder() {
-  return (
-    <div className="space-y-2">
-      <div className="h-3 bg-white/5 rounded w-full" />
-      <div className="h-3 bg-white/5 rounded w-3/4" />
-      <div className="h-3 bg-white/5 rounded w-1/2" />
-    </div>
-  )
-}
-
 export default function PersonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -75,6 +65,7 @@ export default function PersonDetail() {
   const [showGentModal, setShowGentModal] = useState(false)
   const [gentSaving, setGentSaving] = useState(false)
   const [knownByGentIds, setKnownByGentIds] = useState<string[]>([])
+  const [promoting, setPromoting] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -172,6 +163,20 @@ export default function PersonDetail() {
       addToast('Portrait generation failed.', 'error')
     } finally {
       setRegeneratingPortrait(false)
+    }
+  }
+
+  const handlePromoteToContact = async () => {
+    if (!person || promoting) return
+    setPromoting(true)
+    try {
+      await convertPOIToContact(person.id)
+      setPerson({ ...person, category: 'contact', tier: 'acquaintance', private_note: person.private_note } as PersonWithPrivateNote)
+      addToast('Promoted to contact', 'success')
+    } catch {
+      addToast('Failed to promote', 'error')
+    } finally {
+      setPromoting(false)
     }
   }
 
@@ -302,6 +307,26 @@ export default function PersonDetail() {
                   />
                   <span className="text-[8px] uppercase tracking-[0.2em] text-gold font-body font-semibold text-center leading-tight px-1">
                     {currentTier.label}
+                  </span>
+                </div>
+              </button>
+            )}
+            {/* POI stamp — tap to promote */}
+            {person.category === 'person_of_interest' && (
+              <button
+                type="button"
+                onClick={handlePromoteToContact}
+                disabled={promoting}
+                className="absolute -right-10 -top-1"
+                aria-label="Promote to contact"
+              >
+                <div className="relative w-16 h-16 flex items-center justify-center">
+                  <div
+                    className="absolute inset-0 rounded-full border-2 border-dashed border-ivory-dim/30"
+                    style={{ transform: 'rotate(-12deg)' }}
+                  />
+                  <span className="text-[8px] uppercase tracking-[0.2em] text-ivory-dim font-body font-semibold text-center leading-tight px-1">
+                    {promoting ? '...' : 'POI'}
                   </span>
                 </div>
               </button>
@@ -454,13 +479,13 @@ export default function PersonDetail() {
             )}
 
             {/* ── FIELD NOTES ── */}
-            <DossierSectionHeader label="Field Notes" />
-            {person.notes ? (
-              <p className="text-sm text-ivory-muted font-body leading-relaxed whitespace-pre-wrap">
-                {person.notes}
-              </p>
-            ) : (
-              <RedactedPlaceholder />
+            {person.notes && (
+              <>
+                <DossierSectionHeader label="Field Notes" />
+                <p className="text-sm text-ivory-muted font-body leading-relaxed whitespace-pre-wrap">
+                  {person.notes}
+                </p>
+              </>
             )}
 
             <div className="mt-2">
@@ -564,8 +589,23 @@ export default function PersonDetail() {
               </>
             )}
 
+            {/* Promote POI to Contact */}
+            {person.category === 'person_of_interest' && (
+              <div className="mt-8 flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  loading={promoting}
+                  onClick={handlePromoteToContact}
+                  className="gap-2 border border-gold/30 text-gold hover:bg-gold/10"
+                >
+                  Promote to Contact
+                </Button>
+              </div>
+            )}
+
             {/* Delete button */}
-            <div className="mt-8 flex justify-center">
+            <div className={cn(person.category === 'person_of_interest' ? 'mt-3' : 'mt-8', 'flex justify-center')}>
               <Button
                 variant="danger"
                 size="sm"

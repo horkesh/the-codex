@@ -268,7 +268,7 @@ export async function fetchPeopleByCategory(category: 'contact' | 'person_of_int
 export async function convertPOIToContact(id: string): Promise<void> {
   const { error } = await supabase
     .from('people')
-    .update({ category: 'contact', poi_visibility: 'private' })
+    .update({ category: 'contact', tier: 'acquaintance', poi_visibility: 'private' })
     .eq('id', id)
   if (error) throw error
 }
