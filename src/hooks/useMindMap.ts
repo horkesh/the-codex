@@ -46,7 +46,7 @@ export function useMindMap() {
     const p = fetchPeople().then(setPeople).catch(() => {})
     const a = fetchAllAppearances().then(setAppearances).catch(() => {})
     const r = fetchRecentEntryIds(7).then(ids => setRecentEntryIds(new Set(ids))).catch(() => {})
-    const pg = fetchAllPersonGents().then(setPersonGents).catch(() => {})
+    const pg = fetchAllPersonGents().then(rows => { console.debug('[mindmap] person_gents:', rows.length); setPersonGents(rows) }).catch(e => console.error('[mindmap] person_gents failed:', e))
     Promise.all([g, p, a, r, pg]).finally(() => setLoading(false))
   }, [])
 

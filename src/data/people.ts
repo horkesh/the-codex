@@ -306,11 +306,14 @@ export async function fetchPeopleQuick(query?: string): Promise<Array<{ id: stri
 // ── Person–Gent relationships ───────────────────────────────────────────────
 
 export async function fetchAllPersonGents(): Promise<Array<{ person_id: string; gent_id: string }>> {
-  const { data, error } = await (supabase
-    .from('person_gents' as never)
-    .select('person_id, gent_id') as never as Promise<{ data: Array<{ person_id: string; gent_id: string }> | null; error: unknown }>)
-  if (error) throw error
-  return data ?? []
+  // person_gents not in generated Supabase types — use any cast
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('person_gents' as never).select('person_id, gent_id') as any)
+  if (error) {
+    console.error('[person_gents] fetch error:', error)
+    return []
+  }
+  return (data ?? []) as Array<{ person_id: string; gent_id: string }>
 }
 
 export async function fetchPersonGents(personId: string): Promise<string[]> {
