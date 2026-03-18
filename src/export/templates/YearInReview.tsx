@@ -1,4 +1,5 @@
 import React from 'react'
+import { flagEmoji } from '@/lib/utils'
 import { BrandMark, GoldRule, InsetFrame } from './shared'
 
 interface CityEntry {
@@ -30,10 +31,6 @@ const ROOT: React.CSSProperties = {
   position: 'relative',
   display: 'flex',
   flexDirection: 'column',
-}
-
-function flagEmoji(cc: string): string {
-  return cc.toUpperCase().split('').map(c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))).join('')
 }
 
 export const YearInReview = React.forwardRef<HTMLDivElement, YearInReviewProps>(

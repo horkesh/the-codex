@@ -4,13 +4,13 @@ import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar, Spinner, Button } from '@/components/ui'
 import { fetchStamp } from '@/data/stamps'
-import { fetchEntry, fetchEntryPhotos, updateEntry, fetchCityVisits } from '@/data/entries'
+import { fetchEntry, fetchEntryPhotos, updateEntry, fetchCityVisits, type CityVisit } from '@/data/entries'
 import { flagEmoji, cn, getCoverCrop } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
 import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw } from 'lucide-react'
 import { useUIStore } from '@/store/ui'
-import { getOneliner, visaWord, aliasDisplay, getCountryVisaInfo, visaNumber, getCityInfo, getSeason, SEASON_FILTER } from '@/export/templates/shared/utils'
+import { getOneliner, visaWord, aliasDisplay, getCountryVisaInfo, visaNumber, getCityInfo, getSeason, SEASON_FILTER, toRoman, monthYear, calcDuration } from '@/export/templates/shared/utils'
 import type { PassportStamp, EntryWithParticipants } from '@/types/app'
 
 interface EntryPhoto {
@@ -22,28 +22,6 @@ interface EntryPhoto {
 }
 
 /* ── Helpers ── */
-
-function toRoman(n: number): string {
-  const vals = [10, 9, 5, 4, 1]
-  const syms = ['X', 'IX', 'V', 'IV', 'I']
-  let s = ''
-  for (let i = 0; i < vals.length; i++) {
-    while (n >= vals[i]) { s += syms[i]; n -= vals[i] }
-  }
-  return s
-}
-
-function monthYear(date: string): string {
-  return new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' }).format(new Date(date)).toUpperCase()
-}
-
-function calcDuration(start: string, end?: string): string | null {
-  if (!end) return null
-  const s = new Date(start + 'T12:00:00Z')
-  const e = new Date(end + 'T12:00:00Z')
-  const days = Math.round((e.getTime() - s.getTime()) / 86400000) + 1
-  return days <= 0 ? null : days === 1 ? '1 DAY' : `${days} DAYS`
-}
 
 function loreParagraphs(lore: string | null): string[] {
   if (!lore) return []
@@ -76,7 +54,7 @@ export default function VisaPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [generatingDebrief, setGeneratingDebrief] = useState(false)
-  const [cityVisit, setCityVisit] = useState<{ visitNumber: number; totalVisits: number; companions: { id: string; date: string; title: string }[] } | null>(null)
+  const [cityVisit, setCityVisit] = useState<CityVisit | null>(null)
   const addToast = useUIStore(s => s.addToast)
 
   useEffect(() => {
@@ -98,17 +76,19 @@ export default function VisaPage() {
         setPhotos(p)
 
         // Fetch city visit data (fire-and-forget for non-blocking render)
-        if (e.city) {
-          fetchCityVisits(e.city, e.id).then(setCityVisit).catch(() => {})
+        if (e.city && !cancelled) {
+          fetchCityVisits(e.city, e.id).then(v => { if (!cancelled) setCityVisit(v) }).catch(() => {})
         }
       } catch {
-        setNotFound(true)
+        if (!cancelled) setNotFound(true)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
+    let cancelled = false
     load()
+    return () => { cancelled = true }
   }, [stampId])
 
   const handleViewEntry = useCallback(() => {
@@ -183,8 +163,7 @@ export default function VisaPage() {
   const countryInfo = getCountryVisaInfo(cc)
   const cityInfo = getCityInfo(entry.city, entry.id)
   const visaNo = visaNumber(entry.id, cc)
-  const season = getSeason(entry.date)
-  const seasonFilter = SEASON_FILTER[season]
+  const seasonFilter = SEASON_FILTER[getSeason(entry.date)]
   const isReturn = (cityVisit?.visitNumber ?? 1) > 1
 
   const meta = entry.metadata as Record<string, unknown> | undefined

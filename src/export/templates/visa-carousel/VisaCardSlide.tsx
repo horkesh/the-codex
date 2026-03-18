@@ -1,14 +1,15 @@
 import React from 'react'
 import type { EntryWithParticipants, PassportStamp } from '@/types/app'
+import type { CityVisit } from '@/data/entries'
 import { flagEmoji, getCoverCrop } from '@/lib/utils'
-import { getOneliner, monthYear, calcDuration, visaWord, aliasDisplay, getCityInfo, getCountryVisaInfo, getSeason, SEASON_FILTER } from '@/export/templates/shared/utils'
+import { getOneliner, monthYear, calcDuration, visaWord, aliasDisplay, getCityInfo, getCountryVisaInfo, getSeason, SEASON_FILTER, toRoman } from '@/export/templates/shared/utils'
 import { BrandMark } from '@/export/templates/shared'
 
 interface VisaCardSlideProps {
   entry: EntryWithParticipants
   stamp: PassportStamp | null
   /** City visit data for companion timeline — optional, provided by Studio */
-  cityVisit?: { visitNumber: number; totalVisits: number; companions: { id: string; date: string }[] } | null
+  cityVisit?: CityVisit | null
 }
 
 /* Guilloche wave pattern for border — inlined for html2canvas compat */
@@ -28,16 +29,6 @@ function GuillocheFrame() {
       <rect x={20} y={20} width={w - 40} height={h - 40} rx={4} fill="none" stroke="rgba(100,160,120,0.12)" strokeWidth={1} />
     </svg>
   )
-}
-
-function toRoman(n: number): string {
-  const vals = [10, 9, 5, 4, 1]
-  const syms = ['X', 'IX', 'V', 'IV', 'I']
-  let s = ''
-  for (let i = 0; i < vals.length; i++) {
-    while (n >= vals[i]) { s += syms[i]; n -= vals[i] }
-  }
-  return s
 }
 
 export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps>(

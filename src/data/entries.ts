@@ -368,12 +368,14 @@ export async function addPersonAppearances(entryId: string, personIds: string[],
   if (error) throw error
 }
 
-/** Fetch all missions to the same city, ordered by date ASC. Returns { visitNumber, totalVisits, companions } for the given entry. */
-export async function fetchCityVisits(city: string, entryId: string): Promise<{
+export interface CityVisit {
   visitNumber: number
   totalVisits: number
   companions: { id: string; date: string; title: string }[]
-}> {
+}
+
+/** Fetch all missions to the same city, ordered by date ASC. Returns visit data for the given entry. */
+export async function fetchCityVisits(city: string, entryId: string): Promise<CityVisit> {
   const { data, error } = await supabase
     .from('entries')
     .select('id, date, title')

@@ -404,6 +404,19 @@ export function getCityInfo(city: string | null, entryId: string): { epithet: st
   }
 }
 
+/* ── Roman numerals ── */
+
+/** Convert a number (1–39) to Roman numerals */
+export function toRoman(n: number): string {
+  const vals = [10, 9, 5, 4, 1]
+  const syms = ['X', 'IX', 'V', 'IV', 'I']
+  let s = ''
+  for (let i = 0; i < vals.length; i++) {
+    while (n >= vals[i]) { s += syms[i]; n -= vals[i] }
+  }
+  return s
+}
+
 /* ── Season from date ── */
 
 export type Season = 'spring' | 'summer' | 'autumn' | 'winter'
