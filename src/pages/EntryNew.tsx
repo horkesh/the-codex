@@ -239,7 +239,7 @@ export default function EntryNew() {
 
       // 2b. Tag people present (person_appearances)
       if (taggedPeople.length > 0) {
-        addPersonAppearances(entry.id, taggedPeople, gent.id).catch(() => {})
+        addPersonAppearances(entry.id, taggedPeople, gent.id, allParticipantIds).catch(() => {})
       }
 
       // 3. Upload pending photos; promote first to cover image

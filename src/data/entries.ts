@@ -356,7 +356,13 @@ export async function getChronologicalVol(type: string, date: string): Promise<n
   return (count ?? 0) + 1
 }
 
-export async function addPersonAppearances(entryId: string, personIds: string[], gentId: string): Promise<void> {
+export async function addPersonAppearances(
+  entryId: string,
+  personIds: string[],
+  gentId: string,
+  /** All gent IDs participating in this entry — auto-links contacts to all of them */
+  participantGentIds?: string[],
+): Promise<void> {
   if (personIds.length === 0) return
   const rows = personIds.map((personId) => ({
     entry_id: entryId,
@@ -368,6 +374,17 @@ export async function addPersonAppearances(entryId: string, personIds: string[],
     .upsert(rows, { onConflict: 'person_id,entry_id' })
 
   if (error) throw error
+
+  // Auto-link tagged people to all entry participants in person_gents
+  if (participantGentIds && participantGentIds.length > 0) {
+    const gentsRows = personIds.flatMap((personId) =>
+      participantGentIds.map((gId) => ({ person_id: personId, gent_id: gId }))
+    )
+    // upsert to avoid duplicates (person_gents has unique constraint on person_id+gent_id)
+    await (supabase.from('person_gents' as never) as any)
+      .upsert(gentsRows, { onConflict: 'person_id,gent_id' })
+      .catch(() => {}) // non-fatal
+  }
 }
 
 export interface CityVisit {

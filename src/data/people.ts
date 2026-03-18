@@ -101,7 +101,14 @@ export async function createPerson(data: {
     .single()
 
   if (error) throw error
-  return rawPerson as unknown as Person
+  const person = rawPerson as unknown as Person
+
+  // Auto-link creator in person_gents
+  await (supabase.from('person_gents' as never) as any)
+    .insert({ person_id: person.id, gent_id: data.added_by })
+    .catch(() => {}) // non-fatal
+
+  return person
 }
 
 export async function createPersonFromScan(data: {
@@ -138,7 +145,14 @@ export async function createPersonFromScan(data: {
     .single()
 
   if (error) throw error
-  return rawPerson as unknown as Person
+  const person = rawPerson as unknown as Person
+
+  // Auto-link creator in person_gents
+  await (supabase.from('person_gents' as never) as any)
+    .insert({ person_id: person.id, gent_id: data.added_by })
+    .catch(() => {})
+
+  return person
 }
 
 export async function updatePerson(
