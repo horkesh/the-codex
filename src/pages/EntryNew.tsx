@@ -386,16 +386,18 @@ export default function EntryNew() {
   }
 
   async function submitSteak(data: SteakFormData) {
+    const meta: Record<string, unknown> = {
+      cut: data.cut || null,
+      score: data.score ? parseFloat(data.score) : null,
+      verdict: data.verdict || null,
+    }
+    if (data.flavour) meta.flavour = data.flavour
     await handleSubmit({
       title: data.title,
       date: data.date,
       location: data.location,
       description: data.description,
-      metadata: {
-        cut: data.cut || null,
-        score: data.score ? parseFloat(data.score) : null,
-        verdict: data.verdict || null,
-      },
+      metadata: meta,
     })
   }
 

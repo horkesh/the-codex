@@ -28,6 +28,8 @@ const entryTypeDirectives: Record<string, string> = {
 
 const liveMusicDirective = `This is a Live Music night — one of the Gents at the keys, performing live at a small venue. The prose should capture his presence at the piano, fingers on the keys, the sound filling a tight room. If photos show the performer, describe his command of the instrument and the stage. If photos show the crowd, describe the atmosphere — drinks in hand, conversations paused, eyes on the piano. Reference the song if provided. This is a night where the music came from one of their own.`
 
+const iftarDirective = `This is an Iftar — the breaking of the fast. The prose should carry the quiet weight of a day's patience rewarded: the first sip of water, the dates, the unhurried gratitude before the feast begins. Let the ritual texture the scene — the communal table, the generosity of the spread, the way conversation deepens when it follows silence. Reference the food with reverence but not formality. If the setting is a restaurant, note the shared atmosphere; if it is intimate, honour the closeness. The tone is warm, grounded, and gently reverent — faith woven into fellowship, never preachy.`
+
 // WMO weather code to description
 const WMO_CODES: Record<number, string> = {
   0: 'clear skies', 1: 'mostly clear', 2: 'partly cloudy', 3: 'overcast',
@@ -119,7 +121,9 @@ Deno.serve(async (req: Request) => {
     }
 
     const flavour = entry.metadata?.flavour as string | undefined
-    const typeDirective = (entry.type === 'night_out' && flavour === 'live_music')
+    const typeDirective = (entry.type === 'steak' && flavour === 'iftar')
+      ? iftarDirective
+      : (entry.type === 'night_out' && flavour === 'live_music')
       ? liveMusicDirective
       : (entryTypeDirectives[entry.type] || '')
     const loreHints = entry.metadata?.lore_hints as string | undefined

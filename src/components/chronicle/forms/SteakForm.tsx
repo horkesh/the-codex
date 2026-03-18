@@ -14,6 +14,7 @@ export interface SteakFormData {
   cut: string
   score: string
   verdict: string
+  flavour?: string
 }
 
 interface SteakFormProps {
@@ -27,6 +28,11 @@ interface SteakFormProps {
 
 const CUTS = ['Ribeye', 'Wagyu', 'T-Bone', 'Striploin', 'Fillet', 'Other']
 
+const TABLE_FLAVOURS = [
+  { value: undefined, label: 'Regular' },
+  { value: 'iftar', label: 'Iftar' },
+] as const
+
 const empty: SteakFormData = {
   title: '',
   date: '',
@@ -35,6 +41,7 @@ const empty: SteakFormData = {
   cut: '',
   score: '',
   verdict: '',
+  flavour: undefined,
 }
 
 interface FieldErrors {
@@ -125,6 +132,25 @@ export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle,
             <RefreshCw size={14} />
           </button>
         )}
+      </div>
+
+      {/* Flavour pills */}
+      <div className="flex gap-2">
+        {TABLE_FLAVOURS.map((f) => (
+          <button
+            key={f.label}
+            type="button"
+            onClick={() => setForm((prev) => ({ ...prev, flavour: f.value }))}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-xs font-body tracking-wide border transition-all',
+              form.flavour === f.value || (!form.flavour && !f.value)
+                ? 'border-gold/50 bg-gold/10 text-gold'
+                : 'border-white/10 bg-white/5 text-ivory-dim hover:border-white/25'
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       <DatePicker
