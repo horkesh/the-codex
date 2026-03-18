@@ -28,6 +28,47 @@ const entryTypeDirectives: Record<string, string> = {
 
 const liveMusicDirective = `This is a Live Music night — one of the Gents at the keys, performing live at a small venue. The prose should capture his presence at the piano, fingers on the keys, the sound filling a tight room. If photos show the performer, describe his command of the instrument and the stage. If photos show the crowd, describe the atmosphere — drinks in hand, conversations paused, eyes on the piano. Reference the song if provided. This is a night where the music came from one of their own.`
 
+// WMO weather code to description
+const WMO_CODES: Record<number, string> = {
+  0: 'clear skies', 1: 'mostly clear', 2: 'partly cloudy', 3: 'overcast',
+  45: 'foggy', 48: 'rime fog', 51: 'light drizzle', 53: 'drizzle', 55: 'heavy drizzle',
+  61: 'light rain', 63: 'rain', 65: 'heavy rain', 71: 'light snow', 73: 'snow', 75: 'heavy snow',
+  80: 'rain showers', 81: 'heavy rain showers', 82: 'violent rain showers',
+  85: 'light snow showers', 86: 'heavy snow showers', 95: 'thunderstorm',
+  96: 'thunderstorm with hail', 99: 'thunderstorm with heavy hail',
+}
+
+/** Fetch weather for a date+location via Open-Meteo archive API (free, no key). */
+async function fetchWeather(date: string, city: string | null, country: string | null): Promise<string | null> {
+  if (!city) return null
+  try {
+    // Geocode city → lat/lng
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en`
+    const geoRes = await fetch(geoUrl, { signal: AbortSignal.timeout(5000) })
+    if (!geoRes.ok) return null
+    const geoData = await geoRes.json()
+    const loc = geoData?.results?.[0]
+    if (!loc) return null
+    const { latitude, longitude } = loc
+
+    // Fetch daily weather for that date
+    const weatherUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&start_date=${date}&end_date=${date}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`
+    const wRes = await fetch(weatherUrl, { signal: AbortSignal.timeout(5000) })
+    if (!wRes.ok) return null
+    const wData = await wRes.json()
+    const daily = wData?.daily
+    if (!daily?.temperature_2m_max?.[0]) return null
+
+    const hi = Math.round(daily.temperature_2m_max[0])
+    const lo = Math.round(daily.temperature_2m_min[0])
+    const code = daily.weathercode?.[0] ?? 0
+    const desc = WMO_CODES[code] ?? 'unknown conditions'
+    return `${desc}, ${lo}-${hi}\u00B0C`
+  } catch {
+    return null // Non-critical — weather is a nice-to-have
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -78,21 +119,36 @@ Deno.serve(async (req: Request) => {
       : (entryTypeDirectives[entry.type] || '')
     const loreHints = entry.metadata?.lore_hints as string | undefined
 
-    const prompt = `You are the chronicler of The Gents — three sophisticated gentlemen who document their lives together with style and wit. Write exactly 2-3 sentences of narrative lore for their private chronicle. The prose should be eloquent, slightly self-aware, warm, and feel like an entry in a very exclusive private journal.
+    // Mood tags from entry creation
+    const moodTags = Array.isArray(entry.metadata?.mood_tags) ? entry.metadata.mood_tags as string[] : []
+    const moodLine = moodTags.length > 0 ? `\nMood: ${moodTags.join(', ')}` : ''
+
+    // Full Chronicle mode — extended narrative
+    const isFullChronicle = entry.metadata?.full_chronicle === true
+
+    // Weather — non-critical, 5s timeout per call
+    const weather = await fetchWeather(entry.date, entry.city, entry.country)
+    const weatherLine = weather ? `\nWeather: ${weather}` : ''
+
+    const lengthInstruction = isFullChronicle
+      ? 'Write a full chronicle entry — 4-6 sentences of dense, meaningful narrative. Not longer for the sake of length: every sentence must earn its place with a specific detail, a name, a sensory moment, or an observation that only someone who was there would know. Prefer one vivid, precise image over two vague ones. Cover the arc — how it started, the turning point, and the feeling it left behind.'
+      : 'Write exactly 2-3 sentences of narrative lore for their private chronicle.'
+
+    const prompt = `You are the chronicler of The Gents — three sophisticated gentlemen who document their lives together with style and wit. ${lengthInstruction} The prose should be eloquent, slightly self-aware, warm, and feel like an entry in a very exclusive private journal.
 
 Entry Type: ${entryTypeLabels[entry.type] || entry.type}
 Title: ${entry.title}
 Date: ${entry.date}
 ${timeContext}${situationalHint ? `\nContext: ${situationalHint}` : ''}
-Location: ${[entry.city, entry.country].filter(Boolean).join(', ') || entry.location || 'undisclosed location'}
+Location: ${[entry.city, entry.country].filter(Boolean).join(', ') || entry.location || 'undisclosed location'}${weatherLine}${moodLine}
 Present: ${participantNames}
 Description: ${entry.description || 'No additional details provided.'}${entry.metadata?.song ? `\nSong: ${entry.metadata.song}` : ''}${loreHints ? `\nDirector's Notes (incorporate these details naturally): ${loreHints}` : ''}
-${typeDirective ? `\n${typeDirective}` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
-IMPORTANT: The Day and Time fields above are from the camera's EXIF data and are authoritative. Always use them to set the time of day in the narrative — do NOT infer a different time of day from photo lighting or ambiance. If the Context field is present, weave that situational awareness into the prose naturally.
+${typeDirective ? `\n${typeDirective}` : ''}${moodTags.length > 0 ? `\nThe mood tags above reflect the energy of this occasion — let them subtly shape the tone and vocabulary of the narrative. Don't list or name the moods explicitly; embody them.` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
+IMPORTANT: The Day and Time fields above are from the camera's EXIF data and are authoritative. Always use them to set the time of day in the narrative — do NOT infer a different time of day from photo lighting or ambiance. If the Context field is present, weave that situational awareness into the prose naturally.${weather ? ` If Weather is provided, let it inform atmosphere and sensory details naturally — don't force a weather report, but let the conditions colour the scene.` : ''}
 Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text.
 
 Return your response in exactly this format (three lines, no labels on the first line):
-<lore>The 2-3 sentence narrative.</lore>
+<lore>The ${isFullChronicle ? '4-6 sentence' : '2-3 sentence'} narrative.</lore>
 <oneliner>One punchy sentence distilled from the lore — the kind of line you'd put on a poster or Instagram export card.</oneliner>
 <title>A short, evocative title for this entry (3-7 words, no dates, no quotes).</title>`
 
@@ -114,7 +170,7 @@ Return your response in exactly this format (three lines, no labels on the first
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 400,
+        max_tokens: isFullChronicle ? 600 : 400,
         messages: [{ role: 'user', content }],
       }),
     })

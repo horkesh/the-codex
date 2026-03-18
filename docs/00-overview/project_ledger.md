@@ -4,6 +4,90 @@ A running log of every build session. Most recent at top.
 
 ---
 
+## Session — 2026-03-18 (017)
+
+**Goal**: Studio template polish, visa page overhaul, lore generation enhancements.
+
+**Done**:
+
+### Studio template breathing room
+- All template variants (Night Out, Steak, Mission, PS5, Toast, Gathering, Interlude, Live Music) restructured to split content top/bottom, giving background photos breathing room in the centre
+- Night Out V1: title/location/date moved to top; lore stays at bottom
+
+### VisaCardSlide redesign
+- Full-width 520px photo band with flag+VIZA overlay
+- Cleaner vertical rhythm: destination → rule → bearers → oneliner+stamp
+
+### Country-specific visa styling (16 countries)
+- Local multi-language headers (e.g. "VIZA · VISA · VISUM" for Croatia)
+- National emblem watermarks, accent colours per country
+- Deterministic visa number from entry ID (e.g. "HR-A3F2-8B1C")
+- Entry/Exit date rows with port of entry in local language
+- Fallback for unlisted countries
+
+### City localization (30+ cities)
+- 4 rotating epithets per city picked deterministically by entry ID
+- Local-language greetings (e.g. "Dobrodosli u Split", "Udvozoljuk Budapesten")
+- IATA-code port-of-entry names (e.g. "SPU — Resnik")
+- Shared utilities: `getCityInfo()`, `getCountryVisaInfo()` in `shared/utils.ts`
+
+### Visit counter + Return badge
+- `fetchCityVisits()` in entries.ts counts missions to the same city
+- Repeat visits show "RETURN" + "Mission III" (Roman numeral) instead of VIZA
+- `toRoman()` extracted to `shared/utils.ts`
+
+### Season-tinted photo bands
+- `getSeason()` derives season from entry date (Northern Hemisphere)
+- `SEASON_FILTER` maps to CSS filter strings (warm sepia for summer, cool blue for winter)
+- Applied to visa page photo bands — same city, different season = different visual mood
+
+### Companion timeline strip
+- Horizontal bar showing all missions to the same city, current highlighted in gold
+- Shows on both VisaPage (Tailwind) and VisaCardSlide (inline styles)
+- `CityVisit` type exported from entries.ts
+
+### Toast template variants (4)
+- Classic (centred occasion+title+spirit), Cocktail Menu (ghost spirit watermark), Quote-forward (large quote marks), Date Stamp (bold day/month block)
+- Registered in `TEMPLATES_BY_TYPE` and `TemplateRenderer`
+
+### Year in Review template
+- Stats grid (2x3: missions, countries, cities, nights out, steaks, toasts)
+- Total chronicles count, top-5 cities with flag emojis, 3x3 passport stamp grid
+- Registered alongside existing WrappedCard in `annual` type
+
+### POI promote-to-contact
+- POI stamp badge next to avatar (dashed border, tappable to promote)
+- "Promote to Contact" button sets category to 'contact', tier to 'acquaintance'
+
+### Empty state cleanup
+- Hide Field Notes section when notes are empty (no redacted bars)
+
+### Lore generation enhancements
+- **Mood tags**: Generic pills (Chaotic, Elegant, Spontaneous, Mellow, Nostalgic, Euphoric) + type-specific (e.g. Competitive/Grudge Match for Pitch). Multi-select, stored in `metadata.mood_tags`. Claude embodies the mood without naming it. Reset on type switch.
+- **Weather auto-fetch**: Edge function calls Open-Meteo archive API (free, no key) with date+city. Returns conditions like "overcast, 8-14C". 5s timeout, non-blocking. Claude weaves into atmosphere.
+- **Multi-gent Director's Notes**: Each gent edits their own field (`lore_hints_{gentId}`). `collectAllHints()` combines all notes. UI shows "+N others". Only participants can add notes. Fresh metadata via `entryRef` prevents stale closure overwrites.
+- **Full Chronicle mode**: Toggle on mission/night_out. 4-6 dense, meaningful sentences (not rambling paragraphs). Every sentence must earn its place with a specific detail. `max_tokens`: 600.
+
+### Code quality (simplify passes)
+- Extracted `toRoman()` to shared utils, removed duplicates
+- Imported `flagEmoji` from `@/lib/utils` in YearInReview
+- Removed duplicate `monthYear`/`calcDuration` from VisaPage
+- Exported `CityVisit` type from entries.ts
+- Added unmount guard for `fetchCityVisits` in VisaPage
+- Fixed stale metadata closure in LoreSection via `entryRef`
+- Reset `moodTags`/`fullChronicle` on entry type change
+- Changed `canAddNotes` from `!!gentId` to `isParticipant` check
+
+**Key decisions**:
+- Full Chronicle = depth over length (4-6 meaningful sentences, not 2-3 filler paragraphs)
+- Weather is non-critical — 5s timeout, silently skipped on failure
+- Per-gent Director's Notes use `lore_hints_{gentId}` keys in metadata (not a separate table)
+- Only entry participants can add Director's Notes; only creator can generate lore
+
+**Files changed**: `entries.ts`, `EntryNew.tsx`, `EntryDetail.tsx`, `LoreSection.tsx`, `Studio.tsx`, `VisaPage.tsx`, `VisaCardSlide.tsx`, `ToastCard.tsx`, `YearInReview.tsx`, `shared/utils.ts`, `shared/index.ts`, `generate-lore/index.ts`, `NightOutCard.tsx`, `SteakVerdict.tsx`, `MissionCarousel.tsx`, `PS5MatchCard.tsx`, `LiveMusicCard.tsx`, `GatheringInviteCard.tsx`, `InterludeCard.tsx`, `PersonDetail.tsx`
+
+---
+
 ## Session — 2026-03-16 (016)
 
 **Goal**: Studio branding, photo layouts, lore hints, cover editing, Pitch improvements, profile polish.

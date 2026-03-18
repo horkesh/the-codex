@@ -485,6 +485,7 @@ export default function EntryDetail() {
                 entry={entry}
                 photoUrls={photoUrls}
                 readOnly={!isCreator}
+                gentId={gent?.id}
                 onLoreGenerated={handleLoreGenerated}
               />
             </motion.div>

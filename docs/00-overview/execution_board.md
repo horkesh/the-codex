@@ -128,17 +128,32 @@
 - [x] 4 Studio template variants per entry type (Night Out, Mission, Steak, PS5)
 - [x] Simplify pass: shared `getCoverCrop`, parallel DB writes, unmount safety
 
-### E13: The Toast Auto-Sync
+### E13: Session 017 — Visa Overhaul + Lore Enhancements ✅
+- [x] Studio template breathing room — all variants split content top/bottom
+- [x] VisaCardSlide redesign — full-width photo band, flag+VIZA overlay
+- [x] Country-specific visa styling (16 countries) — local headers, accent colours, emblem watermarks
+- [x] City localization (30+ cities) — rotating epithets, local greetings, port-of-entry names
+- [x] Visit counter + Return badge — Roman numeral visit numbers, companion timeline strip
+- [x] Season-tinted photo bands — CSS filter shifts per season
+- [x] Toast template variants (4) — Classic, Cocktail Menu, Quote, Date Stamp
+- [x] Year in Review template — stats grid, top cities, stamp grid
+- [x] POI promote-to-contact — upgrade POI tier with button
+- [x] Mood/energy tags — generic + type-specific pills on entry creation
+- [x] Weather auto-fetch — Open-Meteo archive API in generate-lore edge function
+- [x] Multi-gent Director's Notes — per-gent hints combined before Claude prompt
+- [x] Full Chronicle mode — 4-6 dense sentences for mission/night_out
+- [x] Simplify passes — shared utils, type exports, stale closure fix, state resets
+
+### E14: The Toast Auto-Sync
 - [ ] Toast app webhook / integration point _(future)_
 
 ## Backlog (future)
-- QR code calling card (deep link to Gent profile)
 - Push notifications ("Vedo just logged a mission")
-- Voice memo per entry
+- Voice memo transcription → Director's Notes
+- Photo captions before lore generation
 - Map view of all missions (Leaflet, like Grand Tour)
 - Budget tracker per mission
-- Gathering Recap Carousel Studio template
 - Seed Budapest 2023 Instagram profiles into Circle
 
 ## Completed
-All E1–E9 epics shipped 2026-03-13. E10 (Verdict & Dossier) shipped 2026-03-15. E11 (Threshold System & Gent Comparison) shipped 2026-03-15. E12 (Session 016 Polish) shipped 2026-03-16.
+All E1–E9 epics shipped 2026-03-13. E10 (Verdict & Dossier) shipped 2026-03-15. E11 (Threshold System & Gent Comparison) shipped 2026-03-15. E12 (Session 016 Polish) shipped 2026-03-16. E13 (Session 017 — Visa Overhaul + Lore Enhancements) shipped 2026-03-18.

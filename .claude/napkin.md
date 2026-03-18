@@ -103,6 +103,14 @@ At session end, Chronicle agent:
 
 30. **EXIF geo uses `exifr`** — `exifr.gps(file)` for coordinates, `exifr.parse(file, ['DateTimeOriginal'])` for date. Reverse-geocode with Nominatim `zoom=14` (neighbourhood level). Always set `User-Agent: TheGentsChronicles/1.0`. _(Added 2026-03-14)_
 
+31. **Per-gent metadata keys use `{field}_{gentId}` pattern** — Director's Notes are stored as `lore_hints_{gentId}` in entry metadata. `collectAllHints()` aggregates all matching keys. Never query a single `lore_hints` field alone — always combine all per-gent fields. _(Added 2026-03-18)_
+
+32. **Weather in lore is non-critical** — Open-Meteo API calls in `generate-lore` have 5s timeouts and silently return null on failure. Never let weather fetch block or fail the lore generation pipeline. _(Added 2026-03-18)_
+
+33. **Full Chronicle means depth, not length** — The `full_chronicle` flag asks for 4-6 dense sentences, not 2-3 rambling paragraphs. Every sentence must earn its place with a specific detail, name, or sensory moment. _(Added 2026-03-18)_
+
+34. **Reset transient form state on type switch** — `moodTags` and `fullChronicle` in EntryNew must reset when `selectedType` changes. Any future per-type form state should follow this pattern with a `useEffect` dependency on `selectedType`. _(Added 2026-03-18)_
+
 ---
 
 ## Shell / environment

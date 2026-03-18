@@ -4,36 +4,33 @@ _Updated at the end of every session. Read this first when resuming._
 
 ---
 
-## Current state (2026-03-16)
+## Current state (2026-03-18)
 
 **Phase**: **FULLY LIVE.** All implementation_plan_v2 phases complete. Continued polish.
 
-**What was just done** (Session 016):
+**What was just done** (Session 017):
 
-- **Gold logo on Studio templates** — `BrandMark` renders `public/logo-gold.webp` (167KB)
-- **Chronological Vol numbering** — oldest entry = Vol. 1; auto-renumber on insert
-- **Photo storyboard** — editorial mixed-size layout for mission + night_out
-- **Director's Notes** — persistent lore hints, auto-saved, included in Claude prompt
-- **Pitch location** — new field + EXIF auto-fill + MetadataCard display
-- **Cover pan/zoom** — drag + zoom slider, CSS-only, stored in metadata
-- **Gent profile thresholds** — Honours shows achievements + thresholds
-- **DossierMap fix** — geocoding uses `country_code` instead of arbitrary country names (fixes Sarajevo)
-- **Passport stamps on mission** — auto-creates stamp + generates artwork on publish
-- **Lore one-liner** — `generate-lore` returns `oneliner` + `suggested_title`; oneliner stored in metadata
-- **AI title suggestion** — gold banner after lore generation with Apply/Dismiss
-- **QR code for guestbook** — QR image + share links on GatheringDetail
-- **Wishlist Instagram import** — paste event URL → auto-fill title/city/country/notes
-- **4 Studio template variants** — Night Out, Mission, Steak, PS5 each get 4 layout options using oneliner
-- **Simplify pass** — shared `getCoverCrop`, parallel DB writes, unmount safety
+- **Studio template breathing room** — all variants restructured: content split top/bottom, background photos visible in centre
+- **Visa page overhaul** — country-specific styling (16 countries), city localization (30+ cities with rotating epithets, greetings, port names), season-tinted photo bands, visit counter with RETURN badge + Roman numerals, companion timeline strip
+- **VisaCardSlide redesign** — full-width 520px photo band, flag+VIZA overlay, cleaner vertical rhythm
+- **Toast template variants (4)** — Classic, Cocktail Menu, Quote, Date Stamp
+- **Year in Review template** — stats grid, top cities with flags, stamp grid
+- **Mood/energy tags** — generic + type-specific pills on entry creation, stored in metadata, Claude embodies without naming
+- **Weather auto-fetch** — Open-Meteo archive API in edge function, conditions colour the lore naturally
+- **Multi-gent Director's Notes** — each gent edits their own hints field, combined before Claude prompt
+- **Full Chronicle mode** — 4-6 dense meaningful sentences (depth, not length) for mission/night_out
+- **POI promote-to-contact** — upgrade POI to contact with tier selector
+- **Empty state cleanup** — hide Field Notes when empty
+- **Simplify passes** — shared `toRoman`, `CityVisit` type, stale closure fix, state reset on type switch
 
-**What was done before** (Session 015):
+**What was done before** (Session 016):
 
-- Entry Comments, Prospect Voting, Convert Prospect → Entry, Wishlist linking, Streaks, Monthly Crown, Quick-Log FAB
+- Gold logo, Vol numbering, photo storyboard, Director's Notes, cover pan/zoom, passport stamps, lore one-liner, AI title suggestion, QR codes, 4 template variants per type
 
 **What's left / next ideas**:
 - Push notifications (PWA) — infra exists (`push_subscriptions`, `send-push`), needs VAPID keys in env
-- Toast entry type: to be removed (moving to separate app)
-- Ledger Sommelier: only populated by Toast entries — revisit once Toast removed
+- Voice memo transcription → Director's Notes (Web Speech API or Whisper)
+- Photo captions before lore generation (per-photo annotations)
 - Budapest 2023 Instagram profiles seed — no data file in repo yet
 
 ---
