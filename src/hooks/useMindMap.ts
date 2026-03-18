@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { fetchAllGents } from '@/data/gents'
-import { fetchPeople } from '@/data/people'
+import { fetchPeople, fetchAllPersonGents } from '@/data/people'
 import { fetchAllAppearances } from '@/data/personAppearances'
 import { fetchRecentEntryIds } from '@/data/entries'
 import { computeGraphData, type MindMapFilters } from '@/lib/mindMapLayout'
@@ -30,6 +30,7 @@ export function useMindMap() {
   const [gents, setGents] = useState<Gent[]>([])
   const [people, setPeople] = useState<Person[]>([])
   const [appearances, setAppearances] = useState<PersonAppearance[]>([])
+  const [personGents, setPersonGents] = useState<Array<{ person_id: string; gent_id: string }>>([])
   const [loading, setLoading] = useState(true)
   const [recentEntryIds, setRecentEntryIds] = useState<Set<string>>(new Set())
 
@@ -45,7 +46,8 @@ export function useMindMap() {
     const p = fetchPeople().then(setPeople).catch(() => {})
     const a = fetchAllAppearances().then(setAppearances).catch(() => {})
     const r = fetchRecentEntryIds(7).then(ids => setRecentEntryIds(new Set(ids))).catch(() => {})
-    Promise.all([g, p, a, r]).finally(() => setLoading(false))
+    const pg = fetchAllPersonGents().then(setPersonGents).catch(() => {})
+    Promise.all([g, p, a, r, pg]).finally(() => setLoading(false))
   }, [])
 
   const recentlyActivePersonIds = useMemo(() => {
@@ -57,8 +59,8 @@ export function useMindMap() {
   }, [appearances, recentEntryIds])
 
   const graphData = useMemo(
-    () => computeGraphData(gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds, searchQuery),
-    [gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds, searchQuery]
+    () => computeGraphData(gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds, searchQuery, personGents),
+    [gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds, searchQuery, personGents]
   )
 
   const toggleGentFocus = useCallback((gentId: string) => {

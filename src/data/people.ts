@@ -305,6 +305,14 @@ export async function fetchPeopleQuick(query?: string): Promise<Array<{ id: stri
 
 // ── Person–Gent relationships ───────────────────────────────────────────────
 
+export async function fetchAllPersonGents(): Promise<Array<{ person_id: string; gent_id: string }>> {
+  const { data, error } = await (supabase
+    .from('person_gents' as never)
+    .select('person_id, gent_id') as never as Promise<{ data: Array<{ person_id: string; gent_id: string }> | null; error: unknown }>)
+  if (error) throw error
+  return data ?? []
+}
+
 export async function fetchPersonGents(personId: string): Promise<string[]> {
   const { data, error } = await (supabase
     .from('person_gents' as never)

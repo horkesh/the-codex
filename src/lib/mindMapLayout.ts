@@ -62,6 +62,7 @@ export function computeGraphData(
   savedPositions?: Record<string, { x: number; y: number }>,
   recentlyActiveIds?: Set<string>,
   searchQuery?: string,
+  personGents?: Array<{ person_id: string; gent_id: string }>,
 ): { nodes: Node[]; edges: Edge[]; searchMatchNodeIds: string[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
@@ -115,7 +116,16 @@ export function computeGraphData(
     }
   }
 
-  // 3. Build appearance index: person_id → Set<entry_id>, person_id → Set<gent_id (noted_by)>
+  // 3. Build person→gent connections from person_gents table (authoritative)
+  const personGentMap = new Map<string, Set<string>>()
+  if (personGents) {
+    for (const pg of personGents) {
+      if (!personGentMap.has(pg.person_id)) personGentMap.set(pg.person_id, new Set())
+      personGentMap.get(pg.person_id)!.add(pg.gent_id)
+    }
+  }
+
+  // Also build appearance index for edge thickness + filtering
   const personEntries = new Map<string, Set<string>>()
   const personNoters = new Map<string, Set<string>>()
 
@@ -149,9 +159,10 @@ export function computeGraphData(
     const targetGent = gents.find(g => g.alias === filters.gent)
     if (targetGent) {
       filtered = filtered.filter(p => {
+        const isLinked = personGentMap.get(p.id)?.has(targetGent.id) ?? false
         const isAddedBy = p.added_by === targetGent.id
         const isNotedBy = personNoters.get(p.id)?.has(targetGent.id) ?? false
-        return isAddedBy || isNotedBy
+        return isLinked || isAddedBy || isNotedBy
       })
     }
   }
@@ -168,11 +179,11 @@ export function computeGraphData(
   const connectedToFocused = new Set<string>()
 
   if (focusedGentId) {
-    // Find all people connected to focused gent
     for (const p of filtered) {
+      const isLinked = personGentMap.get(p.id)?.has(focusedGentId) ?? false
       const isAddedBy = p.added_by === focusedGentId
       const isNotedBy = personNoters.get(p.id)?.has(focusedGentId) ?? false
-      if (isAddedBy || isNotedBy) connectedToFocused.add(p.id)
+      if (isLinked || isAddedBy || isNotedBy) connectedToFocused.add(p.id)
     }
   }
 
@@ -206,36 +217,23 @@ export function computeGraphData(
         draggable: true,
       })
 
-      // Gent → Person edges
-      // Edge from added_by gent
-      if (gentIds.has(person.added_by)) {
-        const alias = gentIdToAlias.get(person.added_by) ?? 'lorekeeper'
-        const edgeDimmed = (focusedGentId !== null && focusedGentId !== person.added_by) || searchDimmed
-        const addedCount = (gentPersonCount.get(`${person.added_by}-${person.id}`) ?? 0) + 1
-        edges.push({
-          id: `edge-added-${person.added_by}-${person.id}`,
-          source: `gent-${person.added_by}`,
-          target: `person-${person.id}`,
-          style: gentPersonEdgeStyle(alias, edgeDimmed, addedCount),
-        })
-      }
+      // Gent → Person edges — from person_gents (authoritative), fallback to added_by
+      const connectedGentIds = personGentMap.get(person.id)
+      const edgeGentIds = connectedGentIds && connectedGentIds.size > 0
+        ? connectedGentIds
+        : new Set(gentIds.has(person.added_by) ? [person.added_by] : [])
 
-      // Edges from noted_by gents (if different from added_by)
-      const noters = personNoters.get(person.id)
-      if (noters) {
-        for (const noterId of noters) {
-          if (noterId === person.added_by) continue
-          if (!gentIds.has(noterId)) continue
-          const alias = gentIdToAlias.get(noterId) ?? 'lorekeeper'
-          const edgeDimmed = (focusedGentId !== null && focusedGentId !== noterId) || searchDimmed
-          const notedCount = gentPersonCount.get(`${noterId}-${person.id}`) ?? 1
-          edges.push({
-            id: `edge-noted-${noterId}-${person.id}`,
-            source: `gent-${noterId}`,
-            target: `person-${person.id}`,
-            style: gentPersonEdgeStyle(alias, edgeDimmed, notedCount),
-          })
-        }
+      for (const gId of edgeGentIds) {
+        if (!gentIds.has(gId)) continue
+        const alias = gentIdToAlias.get(gId) ?? 'lorekeeper'
+        const edgeDimmed = (focusedGentId !== null && focusedGentId !== gId) || searchDimmed
+        const count = (gentPersonCount.get(`${gId}-${person.id}`) ?? 0) + 1
+        edges.push({
+          id: `edge-gp-${gId}-${person.id}`,
+          source: `gent-${gId}`,
+          target: `person-${person.id}`,
+          style: gentPersonEdgeStyle(alias, edgeDimmed, count),
+        })
       }
     })
   }
