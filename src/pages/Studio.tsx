@@ -35,6 +35,7 @@ import { GatheringRecap } from '@/export/templates/GatheringRecap'
 import { WrappedCard } from '@/export/templates/WrappedCard'
 import { RivalryCard } from '@/export/templates/RivalryCard'
 import { AchievementCard } from '@/export/templates/AchievementCard'
+import { YearInReview } from '@/export/templates/YearInReview'
 import { fetchEarnedAchievements } from '@/data/achievements'
 import type { EarnedAchievement } from '@/data/achievements'
 import { VisaCardSlide, HeroLoreSlide, PhotoGridSlide, DebriefSlide, StampSlide, buildVisaCarouselManifest } from '@/export/templates/visa-carousel'
@@ -54,7 +55,7 @@ type TemplateId =
   | 'ps5_match_card' | 'ps5_match_card_v2' | 'ps5_match_card_v3' | 'ps5_match_card_v4'
   | 'gathering_invite'
   | 'countdown'
-  | 'toast_card'
+  | 'toast_card' | 'toast_card_v2' | 'toast_card_v3' | 'toast_card_v4'
   | 'interlude_card'
   | 'debrief_page'
   | 'passport_id_page'
@@ -63,6 +64,7 @@ type TemplateId =
   | 'rivalry_card'
   | 'achievement_card'
   | 'visa_carousel'
+  | 'year_in_review'
 
 interface TemplateConfig {
   id: TemplateId
@@ -114,9 +116,17 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
     { id: 'countdown',        label: 'Countdown',      dims: '1080×1350', bgAspect: '3:4' },
     { id: 'gathering_recap',  label: 'Recap',          dims: '1080×1350', bgAspect: '3:4' },
   ],
-  toast:       [{ id: 'toast_card',       label: 'Toast Card',      dims: '1080×1350', bgAspect: '3:4' }],
+  toast: [
+    { id: 'toast_card',       label: 'Classic',        dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'toast_card_v2',    label: 'Cocktail Menu',  dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'toast_card_v3',    label: 'Quote',          dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'toast_card_v4',    label: 'Date Stamp',     dims: '1080×1350', bgAspect: '3:4' },
+  ],
   interlude:   [{ id: 'interlude_card',   label: 'Interlude Card',  dims: '1080×1350', bgAspect: '3:4' }],
-  annual:      [{ id: 'wrapped_card',     label: 'Wrapped Card',    dims: '1080×1350', bgAspect: '3:4' }],
+  annual: [
+    { id: 'wrapped_card',     label: 'Wrapped Card',    dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'year_in_review',   label: 'Year in Review',  dims: '1080×1350', bgAspect: '3:4' },
+  ],
   comparison:  [{ id: 'rivalry_card',     label: 'The Rivalry',     dims: '1080×1350', bgAspect: '3:4' }],
   achievement: [{ id: 'achievement_card', label: 'Achievement Card', dims: '1080×1350', bgAspect: '3:4' }],
   passport:    [{ id: 'passport_id_page', label: 'Passport ID',      dims: '1080×1350', bgAspect: '3:4' }],
@@ -349,7 +359,13 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
     case 'countdown':
       return <CountdownCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'toast_card':
-      return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+      return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
+    case 'toast_card_v2':
+      return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={2} />
+    case 'toast_card_v3':
+      return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
+    case 'toast_card_v4':
+      return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
     case 'interlude_card':
       return <InterludeCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'visa_carousel':
@@ -371,6 +387,20 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
           totalSteaks={0}
           totalNightsOut={0}
           totalToasts={0}
+        />
+      )
+    case 'year_in_review':
+      return (
+        <YearInReview
+          ref={innerRef}
+          year={new Date().getFullYear()}
+          totalMissions={0}
+          totalCountries={0}
+          totalCities={0}
+          totalSteaks={0}
+          totalNightsOut={0}
+          totalToasts={0}
+          totalEntries={0}
         />
       )
     case 'rivalry_card':

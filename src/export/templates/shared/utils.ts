@@ -404,6 +404,27 @@ export function getCityInfo(city: string | null, entryId: string): { epithet: st
   }
 }
 
+/* ── Season from date ── */
+
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter'
+
+/** Derive season from a YYYY-MM-DD date string (Northern Hemisphere) */
+export function getSeason(date: string): Season {
+  const m = new Date(date + 'T12:00:00Z').getUTCMonth() // 0-indexed
+  if (m >= 2 && m <= 4) return 'spring'
+  if (m >= 5 && m <= 7) return 'summer'
+  if (m >= 8 && m <= 10) return 'autumn'
+  return 'winter'
+}
+
+/** CSS filter tint per season — subtle shift applied to photo bands */
+export const SEASON_FILTER: Record<Season, string> = {
+  spring: 'sepia(0.06) saturate(1.1) brightness(1.02)',
+  summer: 'sepia(0.12) saturate(1.15) contrast(1.05) brightness(1.02)',
+  autumn: 'sepia(0.15) saturate(0.9) contrast(1.08) hue-rotate(-5deg)',
+  winter: 'sepia(0.04) saturate(0.85) contrast(1.1) brightness(0.96) hue-rotate(10deg)',
+}
+
 const ALIAS_DISPLAY: Record<string, string> = {
   lorekeeper: 'Lorekeeper',
   bass: 'Beard & Bass',

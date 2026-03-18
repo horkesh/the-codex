@@ -368,6 +368,30 @@ export async function addPersonAppearances(entryId: string, personIds: string[],
   if (error) throw error
 }
 
+/** Fetch all missions to the same city, ordered by date ASC. Returns { visitNumber, totalVisits, companions } for the given entry. */
+export async function fetchCityVisits(city: string, entryId: string): Promise<{
+  visitNumber: number
+  totalVisits: number
+  companions: { id: string; date: string; title: string }[]
+}> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id, date, title')
+    .eq('type', 'mission')
+    .eq('city', city)
+    .in('status', ['published', 'gathering_post'])
+    .order('date', { ascending: true })
+
+  if (error) throw error
+  const rows = (data ?? []) as { id: string; date: string; title: string }[]
+  const idx = rows.findIndex(r => r.id === entryId)
+  return {
+    visitNumber: idx >= 0 ? idx + 1 : rows.length + 1,
+    totalVisits: rows.length,
+    companions: rows.filter(r => r.id !== entryId),
+  }
+}
+
 export async function fetchRecentEntryIds(days: number): Promise<string[]> {
   const since = new Date()
   since.setDate(since.getDate() - days)

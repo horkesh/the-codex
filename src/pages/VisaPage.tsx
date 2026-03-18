@@ -4,13 +4,13 @@ import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar, Spinner, Button } from '@/components/ui'
 import { fetchStamp } from '@/data/stamps'
-import { fetchEntry, fetchEntryPhotos, updateEntry } from '@/data/entries'
+import { fetchEntry, fetchEntryPhotos, updateEntry, fetchCityVisits } from '@/data/entries'
 import { flagEmoji, cn, getCoverCrop } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
 import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw } from 'lucide-react'
 import { useUIStore } from '@/store/ui'
-import { getOneliner, visaWord, aliasDisplay, getCountryVisaInfo, visaNumber, getCityInfo } from '@/export/templates/shared/utils'
+import { getOneliner, visaWord, aliasDisplay, getCountryVisaInfo, visaNumber, getCityInfo, getSeason, SEASON_FILTER } from '@/export/templates/shared/utils'
 import type { PassportStamp, EntryWithParticipants } from '@/types/app'
 
 interface EntryPhoto {
@@ -22,6 +22,16 @@ interface EntryPhoto {
 }
 
 /* ── Helpers ── */
+
+function toRoman(n: number): string {
+  const vals = [10, 9, 5, 4, 1]
+  const syms = ['X', 'IX', 'V', 'IV', 'I']
+  let s = ''
+  for (let i = 0; i < vals.length; i++) {
+    while (n >= vals[i]) { s += syms[i]; n -= vals[i] }
+  }
+  return s
+}
 
 function monthYear(date: string): string {
   return new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' }).format(new Date(date)).toUpperCase()
@@ -66,6 +76,7 @@ export default function VisaPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [generatingDebrief, setGeneratingDebrief] = useState(false)
+  const [cityVisit, setCityVisit] = useState<{ visitNumber: number; totalVisits: number; companions: { id: string; date: string; title: string }[] } | null>(null)
   const addToast = useUIStore(s => s.addToast)
 
   useEffect(() => {
@@ -85,6 +96,11 @@ export default function VisaPage() {
         if (!e) { setNotFound(true); setLoading(false); return }
         setEntry(e)
         setPhotos(p)
+
+        // Fetch city visit data (fire-and-forget for non-blocking render)
+        if (e.city) {
+          fetchCityVisits(e.city, e.id).then(setCityVisit).catch(() => {})
+        }
       } catch {
         setNotFound(true)
       } finally {
@@ -167,6 +183,9 @@ export default function VisaPage() {
   const countryInfo = getCountryVisaInfo(cc)
   const cityInfo = getCityInfo(entry.city, entry.id)
   const visaNo = visaNumber(entry.id, cc)
+  const season = getSeason(entry.date)
+  const seasonFilter = SEASON_FILTER[season]
+  const isReturn = (cityVisit?.visitNumber ?? 1) > 1
 
   const meta = entry.metadata as Record<string, unknown> | undefined
   const missionDebrief = meta?.mission_debrief as string | undefined
@@ -291,7 +310,7 @@ export default function VisaPage() {
                   style={{
                     objectPosition: `${coverCrop.x}% ${coverCrop.y}%`,
                     transform: coverCrop.scale !== 1 ? `scale(${coverCrop.scale})` : undefined,
-                    filter: 'sepia(0.08) contrast(1.05)',
+                    filter: seasonFilter,
                   }}
                   draggable={false}
                 />
@@ -301,7 +320,7 @@ export default function VisaPage() {
                     background: 'linear-gradient(180deg, rgba(245,240,225,0.2) 0%, transparent 25%, transparent 55%, rgba(245,240,225,0.95) 100%)',
                   }}
                 />
-                {/* Flag + VIZA overlaid */}
+                {/* Flag + VIZA + Return badge overlaid */}
                 <div className="absolute bottom-2 left-5 flex items-center gap-2.5 z-[3]">
                   {cc && <span className="text-[28px] leading-none" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))' }}>{flagEmoji(cc)}</span>}
                   <span
@@ -315,8 +334,26 @@ export default function VisaPage() {
                       textShadow: '0 1px 3px rgba(245,240,225,0.8)',
                     }}
                   >
-                    {visaWord(cc)}
+                    {isReturn ? 'RETURN' : visaWord(cc)}
                   </span>
+                  {isReturn && cityVisit && (
+                    <span
+                      style={{
+                        fontFamily: "'Instrument Sans', sans-serif",
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        color: '#1B3A5C',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                        background: 'rgba(245,240,225,0.7)',
+                        padding: '2px 8px',
+                        borderRadius: '3px',
+                        textShadow: 'none',
+                      }}
+                    >
+                      Mission {toRoman(cityVisit.visitNumber)}
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -517,6 +554,47 @@ export default function VisaPage() {
               </div>
             </div>
           </div>
+
+          {/* ═══════════════════════════════════════════
+              COMPANION TIMELINE — All visits to this city
+              ═══════════════════════════════════════════ */}
+          {cityVisit && cityVisit.totalVisits > 1 && (
+            <div className="mt-5 px-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[8px] font-body font-semibold tracking-[0.25em] text-gold/50 uppercase">
+                  {entry.city} Timeline
+                </span>
+                <span className="text-[8px] font-mono text-ivory-dim/40">
+                  {cityVisit.totalVisits} missions
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                {[...cityVisit.companions, { id: entry.id, date: entry.date, title: entry.title }]
+                  .sort((a, b) => a.date.localeCompare(b.date))
+                  .map(v => {
+                    const isCurrent = v.id === entry.id
+                    return (
+                      <div key={v.id} className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                        <div
+                          className={cn(
+                            'w-full h-1 rounded-full',
+                            isCurrent ? 'bg-gold' : 'bg-gold/20',
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            'text-[7px] font-mono truncate max-w-full',
+                            isCurrent ? 'text-gold font-semibold' : 'text-ivory-dim/40',
+                          )}
+                        >
+                          {new Date(v.date + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: '2-digit', timeZone: 'UTC' })}
+                        </span>
+                      </div>
+                    )
+                  })}
+              </div>
+            </div>
+          )}
 
           {/* ═══════════════════════════════════════════
               MAGAZINE STORY — Below the Card
