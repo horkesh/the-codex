@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BackgroundLayer, InsetFrame, getOneliner } from '@/export/templates/shared'
+import { BackgroundLayer, InsetFrame, getOneliner, FONT } from '@/export/templates/shared'
 
 interface LiveMusicCardProps {
   entry: Entry
@@ -13,7 +13,7 @@ const ROOT: React.CSSProperties = {
   width: '1080px',
   height: '1350px',
   backgroundColor: '#0D0B0F',
-  fontFamily: 'var(--font-body)',
+  fontFamily: FONT.body,
   overflow: 'hidden',
   position: 'relative',
   display: 'flex',
@@ -92,7 +92,7 @@ function V1({ entry, backgroundUrl }: LiveMusicCardProps) {
       <div style={{ paddingTop: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', ...Z2 }}>
         {entry.location && (
           <span style={{
-            fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 600,
+            fontFamily: FONT.body, fontSize: 16, fontWeight: 600,
             letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C',
           }}>
             {entry.location}
@@ -106,7 +106,7 @@ function V1({ entry, backgroundUrl }: LiveMusicCardProps) {
           <>
             <NoteAccents />
             <h1 style={{
-              fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 72,
+              fontFamily: FONT.display, fontStyle: 'italic', fontSize: 72,
               fontWeight: 700, color: '#F0EDE8', textAlign: 'center', lineHeight: 1.1,
               letterSpacing: '-0.02em', margin: '0 0 32px',
             }}>
@@ -115,7 +115,7 @@ function V1({ entry, backgroundUrl }: LiveMusicCardProps) {
           </>
         )}
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: song ? 36 : 64,
+          fontFamily: FONT.display, fontSize: song ? 36 : 64,
           fontWeight: 700, color: song ? '#C8C0B0' : '#F0EDE8', textAlign: 'center',
           lineHeight: 1.1, margin: '0 0 24px',
         }}>
@@ -123,7 +123,7 @@ function V1({ entry, backgroundUrl }: LiveMusicCardProps) {
         </h2>
         {oneliner && (
           <p style={{
-            fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22,
+            fontFamily: FONT.display, fontStyle: 'italic', fontSize: 22,
             color: backgroundUrl ? '#C8C0B0' : '#8C8680', textAlign: 'center',
             lineHeight: 1.6, maxWidth: 800,
           }}>
@@ -135,14 +135,14 @@ function V1({ entry, backgroundUrl }: LiveMusicCardProps) {
       <div style={{ paddingBottom: 72, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, ...Z2 }}>
         <div style={{ border: '1px solid rgba(201,168,76,0.4)', borderRadius: 4, padding: '5px 14px' }}>
           <span style={{
-            fontFamily: 'var(--font-body)', fontSize: 11, letterSpacing: '0.3em',
+            fontFamily: FONT.body, fontSize: 11, letterSpacing: '0.3em',
             textTransform: 'uppercase', color: '#C9A84C', fontWeight: 600,
           }}>
             Live Session
           </span>
         </div>
         <span style={{
-          fontFamily: 'var(--font-body)', fontSize: 15, color: '#8C8680',
+          fontFamily: FONT.body, fontSize: 15, color: '#8C8680',
           letterSpacing: '0.12em', textTransform: 'uppercase',
         }}>
           {formatDate(entry.date)}
@@ -163,7 +163,7 @@ function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
       {/* Top label */}
       <div style={{ padding: '72px 80px 0', ...Z2 }}>
         <p style={{
-          fontFamily: 'var(--font-body)', fontSize: 13, color: '#C9A84C',
+          fontFamily: FONT.body, fontSize: 13, color: '#C9A84C',
           letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: 600,
         }}>
           Live
@@ -175,7 +175,7 @@ function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
           <>
             <PianoBar />
             <h1 style={{
-              fontFamily: 'var(--font-display)', fontSize: 96, fontWeight: 700,
+              fontFamily: FONT.display, fontSize: 96, fontWeight: 700,
               color: '#F0EDE8', lineHeight: 0.95, letterSpacing: '-0.03em',
               textTransform: 'uppercase', margin: '0 0 24px',
             }}>
@@ -184,7 +184,7 @@ function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
           </>
         )}
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: song ? 32 : 72,
+          fontFamily: FONT.display, fontSize: song ? 32 : 72,
           fontWeight: 700, color: song ? '#C8C0B0' : '#F0EDE8',
           lineHeight: 1, margin: '0 0 32px',
         }}>
@@ -192,7 +192,7 @@ function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
         </h2>
         {oneliner && (
           <p style={{
-            fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 20,
+            fontFamily: FONT.display, fontStyle: 'italic', fontSize: 20,
             color: '#C8C0B0', lineHeight: 1.5, maxWidth: 800, marginBottom: 32,
           }}>
             {oneliner}
@@ -200,11 +200,11 @@ function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           {entry.location && (
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 18, color: '#C9A84C', letterSpacing: '0.05em' }}>
+            <span style={{ fontFamily: FONT.body, fontSize: 18, color: '#C9A84C', letterSpacing: '0.05em' }}>
               {entry.location}
             </span>
           )}
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          <span style={{ fontFamily: FONT.body, fontSize: 15, color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
             {formatDate(entry.date)}
           </span>
         </div>
@@ -230,21 +230,21 @@ function V3({ entry, backgroundUrl }: LiveMusicCardProps) {
       {song && <StaffLines />}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32, padding: 80, ...Z2 }}>
         <span style={{
-          fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600,
+          fontFamily: FONT.body, fontSize: 12, fontWeight: 600,
           letterSpacing: '0.35em', textTransform: 'uppercase', color: '#8B7355',
         }}>
           Setlist
         </span>
         {song && (
           <h1 style={{
-            fontFamily: 'var(--font-display)', fontSize: 64, fontWeight: 700,
+            fontFamily: FONT.display, fontSize: 64, fontWeight: 700,
             color: '#1B3A5C', textAlign: 'center', lineHeight: 1.1, margin: 0,
           }}>
             {song}
           </h1>
         )}
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: song ? 28 : 56,
+          fontFamily: FONT.display, fontSize: song ? 28 : 56,
           fontWeight: 700, color: song ? '#5A6B7A' : '#1B3A5C',
           textAlign: 'center', lineHeight: 1.1, margin: 0,
         }}>
@@ -252,21 +252,21 @@ function V3({ entry, backgroundUrl }: LiveMusicCardProps) {
         </h2>
         {entry.location && (
           <span style={{
-            fontFamily: 'var(--font-body)', fontSize: 18, color: '#8B7355',
+            fontFamily: FONT.body, fontSize: 18, color: '#8B7355',
             letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
             {entry.location}
           </span>
         )}
         <span style={{
-          fontFamily: 'var(--font-body)', fontSize: 15, color: '#8B7355',
+          fontFamily: FONT.body, fontSize: 15, color: '#8B7355',
           letterSpacing: '0.12em', textTransform: 'uppercase',
         }}>
           {formatDate(entry.date)}
         </span>
         {oneliner && (
           <p style={{
-            fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22,
+            fontFamily: FONT.display, fontStyle: 'italic', fontSize: 22,
             color: '#5A6B7A', textAlign: 'center', lineHeight: 1.6, maxWidth: 700,
             marginTop: 16,
           }}>
@@ -307,7 +307,7 @@ function V4({ entry, backgroundUrl }: LiveMusicCardProps) {
             width: 160, textAlign: 'center',
           }}>
             <span style={{
-              fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700,
+              fontFamily: FONT.display, fontSize: 16, fontWeight: 700,
               color: '#C9A84C', letterSpacing: '0.05em', lineHeight: 1.2,
               textTransform: 'uppercase',
             }}>
@@ -320,30 +320,30 @@ function V4({ entry, backgroundUrl }: LiveMusicCardProps) {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, padding: 80, ...Z2 }}>
         {song && (
           <h1 style={{
-            fontFamily: 'var(--font-display)', fontSize: 56, fontWeight: 700,
+            fontFamily: FONT.display, fontSize: 56, fontWeight: 700,
             color: '#F0EDE8', textAlign: 'center', lineHeight: 1.1, margin: 0,
           }}>
             {song}
           </h1>
         )}
         <h2 style={{
-          fontFamily: 'var(--font-display)', fontSize: song ? 28 : 56,
+          fontFamily: FONT.display, fontSize: song ? 28 : 56,
           fontWeight: 700, color: song ? '#C8C0B0' : '#F0EDE8',
           textAlign: 'center', lineHeight: 1.1, margin: 0,
         }}>
           {entry.title}
         </h2>
         {entry.location && (
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 18, color: '#C9A84C', letterSpacing: '0.1em' }}>
+          <span style={{ fontFamily: FONT.body, fontSize: 18, color: '#C9A84C', letterSpacing: '0.1em' }}>
             {entry.location}
           </span>
         )}
-        <span style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+        <span style={{ fontFamily: FONT.body, fontSize: 15, color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
           {formatDate(entry.date)}
         </span>
         {oneliner && (
           <p style={{
-            fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22,
+            fontFamily: FONT.display, fontStyle: 'italic', fontSize: 22,
             color: backgroundUrl ? '#C8C0B0' : '#8C8680', textAlign: 'center',
             lineHeight: 1.6, maxWidth: 700, marginTop: 16,
           }}>

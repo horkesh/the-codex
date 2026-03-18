@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, BackgroundLayer, InsetFrame } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer, InsetFrame, FONT } from '@/export/templates/shared'
 
 interface InterludeCardProps {
   entry: Entry
@@ -21,7 +21,7 @@ export const InterludeCard = React.forwardRef<HTMLDivElement, InterludeCardProps
           width: '1080px',
           height: '1350px',
           backgroundColor: '#0D0B0F',
-          fontFamily: 'var(--font-body)',
+          fontFamily: FONT.body,
           overflow: 'hidden',
           position: 'relative',
           display: 'flex',
@@ -48,7 +48,7 @@ export const InterludeCard = React.forwardRef<HTMLDivElement, InterludeCardProps
           zIndex: 2,
         }}>
           <span style={{
-            fontFamily: 'var(--font-display)',
+            fontFamily: FONT.display,
             fontSize: '120px',
             color: 'rgba(201,168,76,0.25)',
             lineHeight: '0.6',
@@ -71,7 +71,7 @@ export const InterludeCard = React.forwardRef<HTMLDivElement, InterludeCardProps
           alignSelf: 'center',
         }}>
           <p style={{
-            fontFamily: 'var(--font-display)',
+            fontFamily: FONT.display,
             fontStyle: 'italic',
             fontSize: '36px',
             color: '#F0EDE8',
@@ -87,7 +87,7 @@ export const InterludeCard = React.forwardRef<HTMLDivElement, InterludeCardProps
 
           {entry.lore && (
             <p style={{
-              fontFamily: 'var(--font-body)',
+              fontFamily: FONT.body,
               fontSize: '18px',
               color: '#C9A84C',
               letterSpacing: '0.1em',
@@ -100,7 +100,7 @@ export const InterludeCard = React.forwardRef<HTMLDivElement, InterludeCardProps
           )}
 
           <p style={{
-            fontFamily: 'var(--font-body)',
+            fontFamily: FONT.body,
             fontSize: '14px',
             color: backgroundUrl ? '#A09890' : '#8C8680',
             letterSpacing: '0.2em',

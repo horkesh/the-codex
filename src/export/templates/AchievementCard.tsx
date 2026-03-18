@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrandMark, GoldRule } from '@/export/templates/shared'
+import { BrandMark, GoldRule, FONT } from '@/export/templates/shared'
 
 interface AchievementCardProps {
   name: string
@@ -33,7 +33,7 @@ export const AchievementCard = React.forwardRef<HTMLDivElement, AchievementCardP
           width: '1080px',
           height: '1350px',
           backgroundColor: '#0a0a0f',
-          fontFamily: 'var(--font-body)',
+          fontFamily: FONT.body,
           overflow: 'hidden',
           position: 'relative',
           display: 'flex',
@@ -90,7 +90,7 @@ export const AchievementCard = React.forwardRef<HTMLDivElement, AchievementCardP
 
           {/* "ACHIEVEMENT UNLOCKED" label */}
           <p style={{
-            fontFamily: 'var(--font-body)',
+            fontFamily: FONT.body,
             fontSize: '14px',
             color: '#C9A84C',
             letterSpacing: '0.35em',
@@ -103,7 +103,7 @@ export const AchievementCard = React.forwardRef<HTMLDivElement, AchievementCardP
 
           {/* Achievement name */}
           <p style={{
-            fontFamily: 'var(--font-display)',
+            fontFamily: FONT.display,
             fontSize: '60px',
             color: '#f5f0e8',
             textAlign: 'center',
@@ -117,7 +117,7 @@ export const AchievementCard = React.forwardRef<HTMLDivElement, AchievementCardP
 
           {/* Description */}
           <p style={{
-            fontFamily: 'var(--font-body)',
+            fontFamily: FONT.body,
             fontSize: '24px',
             color: '#8C8680',
             textAlign: 'center',
@@ -135,7 +135,7 @@ export const AchievementCard = React.forwardRef<HTMLDivElement, AchievementCardP
 
           {/* Earned by line */}
           <p style={{
-            fontFamily: 'var(--font-body)',
+            fontFamily: FONT.body,
             fontSize: '18px',
             color: '#C9A84C',
             letterSpacing: '0.15em',
@@ -147,7 +147,7 @@ export const AchievementCard = React.forwardRef<HTMLDivElement, AchievementCardP
 
           {/* Date */}
           <p style={{
-            fontFamily: 'var(--font-body)',
+            fontFamily: FONT.body,
             fontSize: '14px',
             color: '#6B6460',
             letterSpacing: '0.2em',

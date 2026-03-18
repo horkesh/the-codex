@@ -197,6 +197,20 @@ export interface ProspectVote {
   created_at: string
 }
 
+// Story day episode (for mission day-by-day breakdown)
+export interface StoryDayEpisode {
+  day: string       // YYYY-MM-DD (logical day, 3am boundary)
+  label: string     // "Day 1 — Friday, 14 March"
+  photoIds: string[]
+  lore?: string     // per-day narrative (optional)
+}
+
+export interface StoryMetadata {
+  source?: 'mission' | 'manual'
+  mission_entry_id?: string
+  day_episodes?: StoryDayEpisode[]
+}
+
 // Story (curated multi-entry narrative arc for Passport)
 export interface Story {
   id: string
@@ -208,6 +222,7 @@ export interface Story {
   created_by: string
   entry_ids: string[]
   status: 'draft' | 'published'
+  metadata: StoryMetadata
   created_at: string
   updated_at: string
 }

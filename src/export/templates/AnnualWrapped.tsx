@@ -1,6 +1,6 @@
 import React from 'react'
 import { GentStats } from '@/types/app'
-import { BrandMark, GoldRule } from '@/export/templates/shared'
+import { BrandMark, GoldRule, FONT } from '@/export/templates/shared'
 
 interface AnnualWrappedProps {
   year: number
@@ -21,7 +21,7 @@ export const AnnualWrapped = React.forwardRef<HTMLDivElement, AnnualWrappedProps
           width: '1080px',
           height: '1080px',
           backgroundColor: '#0D0D0D',
-          fontFamily: 'var(--font-body)',
+          fontFamily: FONT.body,
           overflow: 'hidden',
           position: 'relative',
           display: 'flex',
@@ -44,7 +44,7 @@ export const AnnualWrapped = React.forwardRef<HTMLDivElement, AnnualWrappedProps
         >
           <span
             style={{
-              fontFamily: 'var(--font-body)',
+              fontFamily: FONT.body,
               fontSize: '13px',
               color: '#C9A84C',
               letterSpacing: '0.45em',
@@ -58,7 +58,7 @@ export const AnnualWrapped = React.forwardRef<HTMLDivElement, AnnualWrappedProps
 
           <span
             style={{
-              fontFamily: 'var(--font-display)',
+              fontFamily: FONT.display,
               fontSize: '160px',
               fontWeight: '700',
               color: '#C9A84C',
@@ -100,7 +100,7 @@ export const AnnualWrapped = React.forwardRef<HTMLDivElement, AnnualWrappedProps
             >
               <span
                 style={{
-                  fontFamily: 'var(--font-display)',
+                  fontFamily: FONT.display,
                   fontSize: '52px',
                   fontWeight: '700',
                   color: '#F0EDE8',
@@ -111,7 +111,7 @@ export const AnnualWrapped = React.forwardRef<HTMLDivElement, AnnualWrappedProps
               </span>
               <span
                 style={{
-                  fontFamily: 'var(--font-body)',
+                  fontFamily: FONT.body,
                   fontSize: '12px',
                   color: '#8C8680',
                   letterSpacing: '0.2em',
@@ -147,7 +147,7 @@ export const AnnualWrapped = React.forwardRef<HTMLDivElement, AnnualWrappedProps
             >
               <span
                 style={{
-                  fontFamily: 'var(--font-body)',
+                  fontFamily: FONT.body,
                   fontSize: '17px',
                   color: '#C9A84C',
                   letterSpacing: '0.1em',
@@ -182,7 +182,7 @@ export const AnnualWrapped = React.forwardRef<HTMLDivElement, AnnualWrappedProps
                   >
                     <span
                       style={{
-                        fontFamily: 'var(--font-mono)',
+                        fontFamily: FONT.mono,
                         fontSize: '22px',
                         color: '#F0EDE8',
                         lineHeight: '1',
@@ -192,7 +192,7 @@ export const AnnualWrapped = React.forwardRef<HTMLDivElement, AnnualWrappedProps
                     </span>
                     <span
                       style={{
-                        fontFamily: 'var(--font-body)',
+                        fontFamily: FONT.body,
                         fontSize: '10px',
                         color: '#8C8680',
                         letterSpacing: '0.15em',
@@ -212,7 +212,7 @@ export const AnnualWrapped = React.forwardRef<HTMLDivElement, AnnualWrappedProps
         {narrative && (
           <p
             style={{
-              fontFamily: 'var(--font-display)',
+              fontFamily: FONT.display,
               fontStyle: 'italic',
               fontSize: '19px',
               color: '#8C8680',

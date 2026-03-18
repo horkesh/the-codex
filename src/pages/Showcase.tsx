@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuthStore } from '@/store/auth'
-import { fetchPublicEntries, fetchPublicGents, fetchPublicStats, extractMissionCities } from '@/data/public'
+import { fetchPublicEntries, fetchPublicGents, fetchPublicStats, fetchPublicMissionCities } from '@/data/public'
 import { ShowcaseHero } from '@/components/showcase/ShowcaseHero'
 import { GentCards } from '@/components/showcase/GentCards'
 import { FeaturedChronicle } from '@/components/showcase/FeaturedChronicle'
@@ -21,6 +21,7 @@ export default function Showcase() {
   const [entries, setEntries] = useState<EntryWithParticipants[]>([])
   const [gents, setGents] = useState<Gent[]>([])
   const [stats, setStats] = useState<GentStats[]>([])
+  const [missionCities, setMissionCities] = useState<Array<{ city: string; country: string; countryCode: string }>>([])
 
   // Only fetch public data if not logged in — avoids wasted API calls during redirect
   useEffect(() => {
@@ -28,9 +29,8 @@ export default function Showcase() {
     fetchPublicEntries().then(setEntries).catch(() => {})
     fetchPublicGents().then(setGents).catch(() => {})
     fetchPublicStats().then(setStats).catch(() => {})
+    fetchPublicMissionCities().then(setMissionCities).catch(() => {})
   }, [gent])
-
-  const missionCities = useMemo(() => extractMissionCities(entries), [entries])
 
   return (
     <div className="h-dvh bg-obsidian overflow-y-auto">

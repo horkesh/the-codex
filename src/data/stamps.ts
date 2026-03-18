@@ -33,7 +33,7 @@ export async function fetchStampByEntryId(entryId: string): Promise<PassportStam
     .eq('type', 'mission')
     .limit(1)
     .maybeSingle()
-  if (error) { console.error('fetchStampByEntryId error:', error); return null }
+  if (error) throw error
   return data as PassportStamp | null
 }
 

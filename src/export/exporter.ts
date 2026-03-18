@@ -1,14 +1,24 @@
 import html2canvas from 'html2canvas'
 
-/** Export a DOM element to a PNG blob */
+const EXPORT_TIMEOUT_MS = 30_000
+
+/** Export a DOM element to a PNG blob (with 30s timeout) */
 export async function exportToPng(element: HTMLElement): Promise<Blob> {
-  const canvas = await html2canvas(element, {
+  const canvasPromise = html2canvas(element, {
     scale: 3,
     useCORS: true,
     allowTaint: false,
     backgroundColor: null,
     logging: false,
   })
+
+  let timer: ReturnType<typeof setTimeout>
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Export timed out — try again')), EXPORT_TIMEOUT_MS)
+  })
+
+  const canvas = await Promise.race([canvasPromise, timeoutPromise])
+  clearTimeout(timer!)
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -45,10 +55,14 @@ export async function exportAndShare(element: HTMLElement, filename: string): Pr
 }
 
 /** Export multiple elements to PNG blobs (for carousel export) */
-export async function exportMultipleToPng(elements: HTMLElement[]): Promise<Blob[]> {
+export async function exportMultipleToPng(
+  elements: HTMLElement[],
+  onProgress?: (current: number, total: number) => void
+): Promise<Blob[]> {
   const blobs: Blob[] = []
-  for (const el of elements) {
-    blobs.push(await exportToPng(el))
+  for (let i = 0; i < elements.length; i++) {
+    blobs.push(await exportToPng(elements[i]))
+    onProgress?.(i + 1, elements.length)
   }
   return blobs
 }

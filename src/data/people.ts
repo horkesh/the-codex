@@ -232,13 +232,13 @@ export async function fetchAllLabels(): Promise<string[]> {
   const { data, error } = await supabase
     .from('people')
     .select('labels')
+    .not('labels', 'eq', '{}')
 
   if (error) throw error
 
   const rows = (data ?? []) as unknown as Array<{ labels: string[] | null }>
   const allLabels = rows.flatMap((row) => row.labels ?? [])
-  const unique = Array.from(new Set(allLabels)).sort()
-  return unique
+  return Array.from(new Set(allLabels)).sort()
 }
 
 /**
