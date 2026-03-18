@@ -2,11 +2,30 @@ import React from 'react'
 import type { EntryWithParticipants, PassportStamp } from '@/types/app'
 import { flagEmoji, getCoverCrop } from '@/lib/utils'
 import { getOneliner, monthYear, calcDuration, visaWord, aliasDisplay } from '@/export/templates/shared/utils'
-import { PassportFrame } from '@/export/templates/shared/PassportFrame'
+import { BrandMark } from '@/export/templates/shared'
 
 interface VisaCardSlideProps {
   entry: EntryWithParticipants
   stamp: PassportStamp | null
+}
+
+/* Guilloche wave pattern for border — inlined for html2canvas compat */
+function GuillocheFrame() {
+  const inset = 20
+  const w = 1080 - inset * 2
+  const h = 1350 - inset * 2
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ position: 'absolute', top: inset, left: inset, zIndex: 1, pointerEvents: 'none' }}>
+      <defs>
+        <pattern id="gc" patternUnits="userSpaceOnUse" width={20} height={20}>
+          <path d="M0 10 Q5 0 10 10 Q15 20 20 10" stroke="rgba(100,160,120,0.25)" fill="none" strokeWidth={0.8} />
+          <path d="M0 15 Q5 5 10 15 Q15 25 20 15" stroke="rgba(100,160,120,0.15)" fill="none" strokeWidth={0.5} />
+        </pattern>
+      </defs>
+      <rect x={0} y={0} width={w} height={h} rx={8} fill="none" stroke="url(#gc)" strokeWidth={18} />
+      <rect x={20} y={20} width={w - 40} height={h - 40} rx={4} fill="none" stroke="rgba(100,160,120,0.12)" strokeWidth={1} />
+    </svg>
+  )
 }
 
 export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps>(
@@ -19,165 +38,167 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
     const crop = getCoverCrop(entry)
 
     return (
-      <div ref={ref} style={{ width: 1080, height: 1350 }}>
-        <PassportFrame header="VIZE-\u0412\u0418\u0417\u0415-VISAS">
-          <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div ref={ref} style={{ width: 1080, height: 1350, backgroundColor: '#F5F0E1', position: 'relative', overflow: 'hidden', fontFamily: "Georgia, 'Times New Roman', serif" }}>
+        <GuillocheFrame />
 
-            {/* Flag + VIZA header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-              {cc && <span style={{ fontSize: 48, lineHeight: 1 }}>{flagEmoji(cc)}</span>}
-              <span style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                fontSize: 64,
-                fontWeight: 700,
-                color: '#1B3A5C',
-                letterSpacing: '0.06em',
-                lineHeight: 1,
-              }}>
-                {visaWord(cc)}
+        {/* ── Photo band ── */}
+        <div style={{ position: 'relative', width: '100%', height: 520, overflow: 'hidden' }}>
+          {coverPhoto ? (
+            <img
+              src={coverPhoto}
+              alt=""
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+                objectPosition: `${crop.x}% ${crop.y}%`,
+                transform: crop.scale !== 1 ? `scale(${crop.scale})` : undefined,
+                display: 'block',
+              }}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1B3A5C 0%, #2C5A8C 100%)' }} />
+          )}
+          {/* Bottom gradient fade to cream */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 160, background: 'linear-gradient(to top, #F5F0E1, transparent)' }} />
+          {/* Flag + VIZA overlay on photo */}
+          <div style={{ position: 'absolute', bottom: 24, left: 55, display: 'flex', alignItems: 'center', gap: 14, zIndex: 2 }}>
+            {cc && <span style={{ fontSize: 36, lineHeight: 1, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.3))' }}>{flagEmoji(cc)}</span>}
+            <span style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 28, fontWeight: 700, color: '#fff',
+              letterSpacing: '0.12em', textTransform: 'uppercase' as const,
+              textShadow: '0 2px 8px rgba(0,0,0,0.4)',
+            }}>
+              {visaWord(cc)}
+            </span>
+          </div>
+          {/* Multi-language header in top-right */}
+          <div style={{ position: 'absolute', top: 20, right: 55, zIndex: 2, fontSize: 10, fontWeight: 600, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.6)', fontVariant: 'small-caps' as const, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+            VIZE-\u0412\u0418\u0417\u0415-VISAS
+          </div>
+        </div>
+
+        {/* ── Content area ── */}
+        <div style={{ position: 'relative', zIndex: 2, padding: '28px 55px 0', display: 'flex', flexDirection: 'column', height: 830, boxSizing: 'border-box' }}>
+
+          {/* Destination */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 52, fontWeight: 700, color: '#1B3A5C',
+              letterSpacing: '0.02em', lineHeight: 1.05,
+            }}>
+              {(entry.city && entry.country)
+                ? `${entry.city.toUpperCase()}, ${entry.country.toUpperCase()}`
+                : entry.city?.toUpperCase() ?? '\u2014'}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 14 }}>
+              <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: 20, color: '#5A6B7A', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
+                {monthYear(entry.date)}
               </span>
-            </div>
-
-            {/* Polaroid photo */}
-            {coverPhoto && (
-              <div style={{
-                alignSelf: 'center',
-                background: '#fff',
-                padding: '12px 12px 40px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
-                transform: 'rotate(-2deg)',
-                marginBottom: 24,
-              }}>
-                <img
-                  src={coverPhoto}
-                  alt=""
-                  style={{
-                    width: 420, height: 320, objectFit: 'cover',
-                    objectPosition: `${crop.x}% ${crop.y}%`,
-                    transform: crop.scale !== 1 ? `scale(${crop.scale})` : undefined,
-                    filter: 'sepia(0.08) contrast(1.05)',
-                    display: 'block',
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Destination */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                fontSize: 48,
-                fontWeight: 700,
-                color: '#1B3A5C',
-                letterSpacing: '0.03em',
-                lineHeight: 1.1,
-              }}>
-                {(entry.city && entry.country) ? `${entry.city.toUpperCase()}, ${entry.country.toUpperCase()}` : entry.city?.toUpperCase() ?? '\u2014'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 10 }}>
-                <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: 20, color: '#5A6B7A', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
-                  {monthYear(entry.date)}
-                </span>
-                {duration && (
-                  <span style={{
-                    fontFamily: "'Instrument Sans', sans-serif", fontSize: 16, fontWeight: 600, color: '#8B7355',
-                    letterSpacing: '0.1em', textTransform: 'uppercase' as const,
-                    background: 'rgba(139,115,85,0.1)', padding: '5px 14px', borderRadius: 6,
-                  }}>
-                    {duration}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Bearer row */}
-            {entry.participants.length > 0 && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 20, padding: '18px 0',
-                borderTop: '1.5px solid rgba(27,58,92,0.08)', borderBottom: '1.5px solid rgba(27,58,92,0.08)',
-                marginBottom: 20,
-              }}>
+              {duration && (
                 <span style={{
-                  fontFamily: "'Instrument Sans', sans-serif", fontSize: 12, fontWeight: 600,
-                  letterSpacing: '0.2em', color: '#8B7355', textTransform: 'uppercase' as const,
-                  writingMode: 'vertical-lr' as const, transform: 'rotate(180deg)',
+                  fontFamily: "'Instrument Sans', sans-serif", fontSize: 16, fontWeight: 600, color: '#8B7355',
+                  letterSpacing: '0.1em', textTransform: 'uppercase' as const,
+                  background: 'rgba(139,115,85,0.1)', padding: '5px 14px', borderRadius: 6,
                 }}>
-                  Bearers
+                  {duration}
                 </span>
-                <div style={{ display: 'flex', gap: 28 }}>
-                  {entry.participants.map(p => (
-                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                      <div style={{
-                        width: 56, height: 56, borderRadius: '50%', background: '#d4cfc4',
-                        border: '2.5px solid rgba(27,58,92,0.12)', overflow: 'hidden',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        {p.avatar_url ? (
-                          <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <span style={{ fontSize: 22, fontWeight: 600, color: '#1B3A5C' }}>
-                            {p.display_name.charAt(0)}
-                          </span>
-                        )}
+              )}
+            </div>
+          </div>
+
+          {/* Thin rule */}
+          <div style={{ height: 1, background: 'rgba(27,58,92,0.1)', marginBottom: 24 }} />
+
+          {/* Bearer row */}
+          {entry.participants.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28 }}>
+              <span style={{
+                fontFamily: "'Instrument Sans', sans-serif", fontSize: 11, fontWeight: 600,
+                letterSpacing: '0.25em', color: '#8B7355', textTransform: 'uppercase' as const,
+                writingMode: 'vertical-lr' as const, transform: 'rotate(180deg)',
+              }}>
+                Bearers
+              </span>
+              <div style={{ display: 'flex', gap: 32 }}>
+                {entry.participants.map(p => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{
+                      width: 52, height: 52, borderRadius: '50%', background: '#d4cfc4',
+                      border: '2.5px solid rgba(27,58,92,0.12)', overflow: 'hidden',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {p.avatar_url ? (
+                        <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: 20, fontWeight: 600, color: '#1B3A5C' }}>
+                          {p.display_name.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: 20, fontWeight: 600, color: '#2C2C2C', lineHeight: '1.2' }}>
+                        {p.display_name.split(' ')[0]}
                       </div>
-                      <div>
-                        <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: 20, fontWeight: 600, color: '#2C2C2C', lineHeight: '1.2' }}>
-                          {p.display_name.split(' ')[0]}
-                        </div>
-                        <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: 14, color: '#8B7355', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
-                          {aliasDisplay(p.alias, p.full_alias)}
-                        </div>
+                      <div style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: 13, color: '#8B7355', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
+                        {aliasDisplay(p.alias, p.full_alias)}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* One-liner + stamp row */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, marginTop: 8 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {oneliner && (
-                  <div style={{
-                    fontFamily: "'Playfair Display', Georgia, serif",
-                    fontStyle: 'italic', fontSize: 24, color: '#5A6B7A',
-                    lineHeight: 1.5,
-                  }}>
-                    &ldquo;{oneliner}&rdquo;
                   </div>
-                )}
+                ))}
               </div>
-              {/* Stamp — in flow, not overlapping */}
-              {stamp?.image_url ? (
-                <img
-                  src={stamp.image_url}
-                  alt="Mission stamp"
-                  style={{
-                    width: 150, height: 150, borderRadius: '50%', flexShrink: 0,
-                    transform: 'rotate(-12deg)', opacity: 0.5, filter: 'sepia(0.15)',
-                  }}
-                />
-              ) : (
+            </div>
+          )}
+
+          {/* One-liner + stamp row */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {oneliner && (
                 <div style={{
-                  width: 130, height: 130, border: '3px solid #8B4513', borderRadius: '50%',
-                  transform: 'rotate(-12deg)', display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-                  opacity: 0.45, padding: 10, flexShrink: 0,
+                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontStyle: 'italic', fontSize: 24, color: '#5A6B7A',
+                  lineHeight: 1.55,
                 }}>
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: 14, fontWeight: 700, color: '#8B4513', textTransform: 'uppercase' as const, letterSpacing: '0.06em', lineHeight: 1.15 }}>
-                    {entry.city ?? entry.title}
-                  </span>
-                  <span style={{ fontFamily: 'Georgia, serif', fontSize: 11, color: '#8B4513', marginTop: 4 }}>
-                    {monthYear(entry.date)}
-                  </span>
+                  &ldquo;{oneliner}&rdquo;
                 </div>
               )}
             </div>
-
-            {/* Bottom spacing for BrandMark in PassportFrame */}
-            <div style={{ flex: 1 }} />
+            {stamp?.image_url ? (
+              <img
+                src={stamp.image_url}
+                alt="Mission stamp"
+                style={{
+                  width: 160, height: 160, borderRadius: '50%', flexShrink: 0,
+                  transform: 'rotate(-12deg)', opacity: 0.45, filter: 'sepia(0.15)',
+                }}
+              />
+            ) : (
+              <div style={{
+                width: 140, height: 140, border: '3px solid #8B4513', borderRadius: '50%',
+                transform: 'rotate(-12deg)', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+                opacity: 0.4, padding: 10, flexShrink: 0,
+              }}>
+                <span style={{ fontFamily: 'Georgia, serif', fontSize: 15, fontWeight: 700, color: '#8B4513', textTransform: 'uppercase' as const, letterSpacing: '0.06em', lineHeight: 1.15 }}>
+                  {entry.city ?? entry.title}
+                </span>
+                <span style={{ fontFamily: 'Georgia, serif', fontSize: 11, color: '#8B4513', marginTop: 4 }}>
+                  {monthYear(entry.date)}
+                </span>
+              </div>
+            )}
           </div>
-        </PassportFrame>
+
+          {/* BrandMark */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 16, paddingTop: 12 }}>
+            <BrandMark size="md" />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ position: 'absolute', bottom: 8, width: '100%', textAlign: 'center', fontSize: 8, letterSpacing: '0.3em', color: 'rgba(27,58,92,0.25)', textTransform: 'uppercase' as const, zIndex: 3 }}>
+          THE GENTS CHRONICLES
+        </div>
       </div>
     )
   }

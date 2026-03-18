@@ -35,19 +35,17 @@ export const ToastCard = React.forwardRef<HTMLDivElement, ToastCardProps>(
           <GoldRule thick />
         </div>
 
-        {/* Main content */}
+        {/* Top: occasion + title + spirit */}
         <div style={{
-          flex: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'flex-end',
           paddingLeft: '80px',
           paddingRight: '80px',
+          paddingTop: '16px',
           position: 'relative',
           zIndex: 2,
         }}>
-          {/* Spirit / occasion label */}
           <span style={{
             fontFamily: 'var(--font-body)',
             fontSize: '13px',
@@ -60,7 +58,6 @@ export const ToastCard = React.forwardRef<HTMLDivElement, ToastCardProps>(
             {meta.occasion ?? 'The Toast'}
           </span>
 
-          {/* Title */}
           <h1 style={{
             fontFamily: 'var(--font-display)',
             fontSize: '76px',
@@ -74,9 +71,8 @@ export const ToastCard = React.forwardRef<HTMLDivElement, ToastCardProps>(
             {entry.title}
           </h1>
 
-          {/* Spirit / dram detail */}
           {(meta.spirit || meta.dram) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '36px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div style={{ width: '32px', height: '1px', backgroundColor: '#C9A84C', opacity: 0.5 }} />
               <span style={{
                 fontFamily: 'var(--font-body)',
@@ -90,8 +86,20 @@ export const ToastCard = React.forwardRef<HTMLDivElement, ToastCardProps>(
               <div style={{ width: '32px', height: '1px', backgroundColor: '#C9A84C', opacity: 0.5 }} />
             </div>
           )}
+        </div>
 
-          {/* Location + date */}
+        {/* Bottom: location, date, divider, lore */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          paddingLeft: '80px',
+          paddingRight: '80px',
+          position: 'relative',
+          zIndex: 2,
+        }}>
           {entry.location && (
             <p style={{
               fontFamily: 'var(--font-body)',
@@ -114,14 +122,12 @@ export const ToastCard = React.forwardRef<HTMLDivElement, ToastCardProps>(
             {formatDate(entry.date)}
           </p>
 
-          {/* Ornamental divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '64px' }}>
             <div style={{ height: '1px', width: '80px', backgroundColor: '#C9A84C', opacity: 0.35 }} />
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', border: '1px solid rgba(201,168,76,0.7)' }} />
             <div style={{ height: '1px', width: '80px', backgroundColor: '#C9A84C', opacity: 0.35 }} />
           </div>
 
-          {/* Lore / toast text */}
           {entry.lore && (
             <p style={{
               fontFamily: 'var(--font-display)',

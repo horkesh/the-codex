@@ -160,14 +160,17 @@ function V2({ entry, backgroundUrl }: LiveMusicCardProps) {
   return (
     <div style={{ ...INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
-      {/* Content bottom-aligned */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 80, ...Z2 }}>
+      {/* Top label */}
+      <div style={{ padding: '72px 80px 0', ...Z2 }}>
         <p style={{
           fontFamily: 'var(--font-body)', fontSize: 13, color: '#C9A84C',
-          letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 16,
+          letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: 600,
         }}>
           Live
         </p>
+      </div>
+      {/* Bottom content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
         {song && (
           <>
             <PianoBar />
