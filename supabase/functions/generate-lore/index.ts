@@ -131,7 +131,7 @@ Deno.serve(async (req: Request) => {
     const weatherLine = weather ? `\nWeather: ${weather}` : ''
 
     const lengthInstruction = isFullChronicle
-      ? 'Write 2-3 paragraphs of narrative lore — a full chronicle entry. Each paragraph should be 2-4 sentences. Cover the arc of the occasion: setup, highlights, and denouement.'
+      ? 'Write a full chronicle entry — 4-6 sentences of dense, meaningful narrative. Not longer for the sake of length: every sentence must earn its place with a specific detail, a name, a sensory moment, or an observation that only someone who was there would know. Prefer one vivid, precise image over two vague ones. Cover the arc — how it started, the turning point, and the feeling it left behind.'
       : 'Write exactly 2-3 sentences of narrative lore for their private chronicle.'
 
     const prompt = `You are the chronicler of The Gents — three sophisticated gentlemen who document their lives together with style and wit. ${lengthInstruction} The prose should be eloquent, slightly self-aware, warm, and feel like an entry in a very exclusive private journal.
@@ -148,7 +148,7 @@ IMPORTANT: The Day and Time fields above are from the camera's EXIF data and are
 Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text.
 
 Return your response in exactly this format (three lines, no labels on the first line):
-<lore>The ${isFullChronicle ? '2-3 paragraph' : '2-3 sentence'} narrative.</lore>
+<lore>The ${isFullChronicle ? '4-6 sentence' : '2-3 sentence'} narrative.</lore>
 <oneliner>One punchy sentence distilled from the lore — the kind of line you'd put on a poster or Instagram export card.</oneliner>
 <title>A short, evocative title for this entry (3-7 words, no dates, no quotes).</title>`
 
@@ -170,7 +170,7 @@ Return your response in exactly this format (three lines, no labels on the first
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: isFullChronicle ? 1000 : 400,
+        max_tokens: isFullChronicle ? 600 : 400,
         messages: [{ role: 'user', content }],
       }),
     })

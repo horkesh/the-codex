@@ -560,7 +560,7 @@ export default function EntryNew() {
                   Full Chronicle
                 </p>
                 <p className="text-[11px] text-ivory-dim font-body">
-                  Extended 2-3 paragraph narrative instead of 2-3 sentences
+                  Deeper, more detailed narrative with specific moments
                 </p>
               </div>
             </button>
