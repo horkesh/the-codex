@@ -258,12 +258,30 @@ export default function EntryNew() {
         }
       }
 
-      // 4. Fire generateLoreFull async — saves lore, oneliner, and suggested title
+      // 4. For missions, create story first to get day labels for lore generation
+      let storyDayLabels: string[] | undefined
+      if (selectedType === 'mission' && city && country) {
+        try {
+          const story = await createMissionStory({
+            id: entry.id,
+            title: formData.title,
+            date: formData.date,
+            cover_image_url: entry.cover_image_url ?? null,
+            created_by: entry.created_by,
+            metadata: entry.metadata as Record<string, unknown>,
+          })
+          if (story?.metadata?.day_episodes && story.metadata.day_episodes.length > 1) {
+            storyDayLabels = story.metadata.day_episodes.map(d => d.label)
+          }
+        } catch { /* non-critical */ }
+      }
+
+      // 4b. Fire generateLoreFull async — saves lore, oneliner, and suggested title
       const entryWithParticipants = {
         ...entry,
         participants: [],
       }
-      generateLoreFull(entryWithParticipants, uploadedUrls).then(async (result) => {
+      generateLoreFull(entryWithParticipants, uploadedUrls, storyDayLabels).then(async (result) => {
         if (!result) return
         try {
           const meta = {
@@ -276,6 +294,18 @@ export default function EntryNew() {
             updateEntryLore(entry.id, result.lore),
             updateEntry(entry.id, updates),
           ])
+          // Save per-day lore to story
+          if (result.day_lore && storyDayLabels) {
+            const { fetchStoryByEntryId, updateStory } = await import('@/data/stories')
+            const story = await fetchStoryByEntryId(entry.id)
+            if (story?.metadata?.day_episodes) {
+              const episodes = story.metadata.day_episodes.map((ep, i) => ({
+                ...ep,
+                lore: result.day_lore?.[i] || ep.lore,
+              }))
+              await updateStory(story.id, { metadata: { ...story.metadata, day_episodes: episodes } }).catch(() => {})
+            }
+          }
         } catch {
           // non-critical — lore will be visible on next visit
         }
@@ -288,7 +318,7 @@ export default function EntryNew() {
         })
       }
 
-      // 5b. Auto-create passport stamp + story for missions (fire-and-forget)
+      // 5b. Auto-create passport stamp for missions (story already created in step 4)
       if (selectedType === 'mission' && city && country) {
         createMissionStamp({
           id: entry.id,
@@ -298,20 +328,9 @@ export default function EntryNew() {
           country_code: country_code ?? '',
           date: formData.date,
         }).then((stamp) => {
-          // Generate stamp artwork async
           generateStamp(stamp).then((url) => {
             if (url) updateStampImage(stamp.id, url).catch(() => {})
           }).catch(() => {})
-        }).catch(() => {})
-
-        // Auto-create story with day episodes from photo EXIF
-        createMissionStory({
-          id: entry.id,
-          title: formData.title,
-          date: formData.date,
-          cover_image_url: entry.cover_image_url ?? null,
-          created_by: entry.created_by,
-          metadata: entry.metadata as Record<string, unknown>,
         }).catch(() => {})
       }
 

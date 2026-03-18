@@ -75,7 +75,9 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { entry, photoUrls } = await req.json()
+    const { entry, photoUrls, dayLabels } = await req.json()
+    // dayLabels: optional string[] like ["Day 1 — Friday, 14 March", "Day 2 — Saturday, 15 March"]
+    const isMultiDay = Array.isArray(dayLabels) && dayLabels.length > 1
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
 
@@ -133,9 +135,15 @@ Deno.serve(async (req: Request) => {
     const weather = await fetchWeather(entry.date, entry.city, entry.country)
     const weatherLine = weather ? `\nWeather: ${weather}` : ''
 
-    const lengthInstruction = isFullChronicle
-      ? 'Write a full chronicle entry — 4-6 sentences of dense, meaningful narrative. Not longer for the sake of length: every sentence must earn its place with a specific detail, a name, a sensory moment, or an observation that only someone who was there would know. Prefer one vivid, precise image over two vague ones. Cover the arc — how it started, the turning point, and the feeling it left behind.'
-      : 'Write exactly 2-3 sentences of narrative lore for their private chronicle.'
+    const lengthInstruction = isMultiDay
+      ? 'Write a mission chronicle with an overview and per-day narratives.'
+      : isFullChronicle
+        ? 'Write a full chronicle entry — 4-6 sentences of dense, meaningful narrative. Not longer for the sake of length: every sentence must earn its place with a specific detail, a name, a sensory moment, or an observation that only someone who was there would know. Prefer one vivid, precise image over two vague ones. Cover the arc — how it started, the turning point, and the feeling it left behind.'
+        : 'Write exactly 2-3 sentences of narrative lore for their private chronicle.'
+
+    const multiDayFormat = isMultiDay
+      ? `\n\nThis is a multi-day mission spanning ${dayLabels.length} days: ${dayLabels.join('; ')}.\n\nReturn your response in this format:\n<lore>2-3 sentence overview of the entire mission — the arc, the mood, the defining character of this trip.</lore>\n${dayLabels.map((_: string, i: number) => `<day${i + 1}>1-2 sentences capturing the essence of ${dayLabels[i]} — what happened, what stood out, the energy of that day.</day${i + 1}>`).join('\n')}\n<oneliner>One punchy sentence distilled from the mission — poster-worthy.</oneliner>\n<title>A short, evocative title (3-7 words, no dates, no quotes).</title>`
+      : `\n\nReturn your response in exactly this format (three lines, no labels on the first line):\n<lore>The ${isFullChronicle ? '4-6 sentence' : '2-3 sentence'} narrative.</lore>\n<oneliner>One punchy sentence distilled from the lore — the kind of line you'd put on a poster or Instagram export card.</oneliner>\n<title>A short, evocative title for this entry (3-7 words, no dates, no quotes).</title>`
 
     const prompt = `You are the chronicler of The Gents — three sophisticated gentlemen who document their lives together with style and wit. ${lengthInstruction} The prose should be eloquent, slightly self-aware, warm, and feel like an entry in a very exclusive private journal.
 
@@ -148,12 +156,7 @@ Present: ${participantNames}
 Description: ${entry.description || 'No additional details provided.'}${entry.metadata?.song ? `\nSong: ${entry.metadata.song}` : ''}${loreHints ? `\nDirector's Notes (incorporate these details naturally): ${loreHints}` : ''}
 ${typeDirective ? `\n${typeDirective}` : ''}${moodTags.length > 0 ? `\nThe mood tags above reflect the energy of this occasion — let them subtly shape the tone and vocabulary of the narrative. Don't list or name the moods explicitly; embody them.` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) sampled from ${allPhotos.length} total from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
 IMPORTANT: The Day and Time fields above are from the camera's EXIF data and are authoritative. Always use them to set the time of day in the narrative — do NOT infer a different time of day from photo lighting or ambiance. If the Context field is present, weave that situational awareness into the prose naturally.${weather ? ` If Weather is provided, let it inform atmosphere and sensory details naturally — don't force a weather report, but let the conditions colour the scene.` : ''}
-Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text.
-
-Return your response in exactly this format (three lines, no labels on the first line):
-<lore>The ${isFullChronicle ? '4-6 sentence' : '2-3 sentence'} narrative.</lore>
-<oneliner>One punchy sentence distilled from the lore — the kind of line you'd put on a poster or Instagram export card.</oneliner>
-<title>A short, evocative title for this entry (3-7 words, no dates, no quotes).</title>`
+Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text.${multiDayFormat}`
 
     // Build message content — images first, then the text prompt
     type ContentBlock =
@@ -173,7 +176,7 @@ Return your response in exactly this format (three lines, no labels on the first
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: isFullChronicle ? 600 : 400,
+        max_tokens: isMultiDay ? 800 : isFullChronicle ? 600 : 400,
         messages: [{ role: 'user', content }],
       }),
       signal: AbortSignal.timeout(20000),
@@ -195,7 +198,17 @@ Return your response in exactly this format (three lines, no labels on the first
     const oneliner = onelinerMatch?.[1]?.trim() || null
     const suggested_title = titleMatch?.[1]?.trim() || null
 
-    return new Response(JSON.stringify({ lore, oneliner, suggested_title }), {
+    // Extract per-day lore for multi-day missions
+    let day_lore: string[] | undefined
+    if (isMultiDay) {
+      day_lore = []
+      for (let i = 0; i < dayLabels.length; i++) {
+        const dayMatch = raw.match(new RegExp(`<day${i + 1}>([\\s\\S]*?)<\\/day${i + 1}>`))
+        day_lore.push(dayMatch?.[1]?.trim() || '')
+      }
+    }
+
+    return new Response(JSON.stringify({ lore, oneliner, suggested_title, day_lore }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {

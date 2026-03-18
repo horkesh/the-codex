@@ -1,9 +1,9 @@
 /**
- * Day boundary logic — a "day" runs 03:01 to 03:00 next calendar day.
+ * Day boundary logic — a "day" runs 05:01 to 05:00 next calendar day.
  * Photos taken at 02:30 Saturday belong to Friday's episode.
  */
 
-const DAY_CUTOFF_HOUR = 3
+const DAY_CUTOFF_HOUR = 5
 
 /** Given an ISO date and optional HH:MM time, return the "logical day" YYYY-MM-DD */
 export function logicalDay(date: string, time?: string | null): string {

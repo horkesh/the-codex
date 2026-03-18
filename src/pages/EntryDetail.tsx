@@ -255,23 +255,60 @@ export default function EntryDetail() {
       // Re-fetch entry to get latest metadata (including Director's Notes)
       const fresh = await fetchEntry(entry.id)
       const entryForLore = fresh ?? entry
-      const result = await generateLoreFull(entryForLore, photoUrls)
-      if (result) {
-        const meta = { ...(entryForLore.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
-        await Promise.all([
-          updateEntryLore(entry.id, result.lore),
-          updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {}),
-        ])
-        const now = new Date().toISOString()
-        setEntry({ ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta })
-        if (result.suggested_title) {
-          setSuggestedTitle(result.suggested_title)
-          addToast('Lore regenerated. New title suggested.', 'success')
+
+      // For missions, fetch story to get day labels
+      let dayLabels: string[] | undefined
+      if (entry.type === 'mission') {
+        const { fetchStoryByEntryId, updateStory } = await import('@/data/stories')
+        const story = await fetchStoryByEntryId(entry.id)
+        if (story?.metadata?.day_episodes && story.metadata.day_episodes.length > 1) {
+          dayLabels = story.metadata.day_episodes.map(d => d.label)
+        }
+        const result = await generateLoreFull(entryForLore, photoUrls, dayLabels)
+        if (result) {
+          const meta = { ...(entryForLore.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
+          await Promise.all([
+            updateEntryLore(entry.id, result.lore),
+            updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {}),
+          ])
+          // Save per-day lore to story
+          if (result.day_lore && story?.metadata?.day_episodes) {
+            const episodes = story.metadata.day_episodes.map((ep, i) => ({
+              ...ep,
+              lore: result.day_lore?.[i] || ep.lore,
+            }))
+            await updateStory(story.id, { metadata: { ...story.metadata, day_episodes: episodes } }).catch(() => {})
+          }
+          const now = new Date().toISOString()
+          setEntry({ ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta })
+          if (result.suggested_title) {
+            setSuggestedTitle(result.suggested_title)
+            addToast('Lore regenerated. New title suggested.', 'success')
+          } else {
+            addToast('Lore regenerated.', 'success')
+          }
         } else {
-          addToast('Lore regenerated.', 'success')
+          addToast('Could not regenerate lore. Try again.', 'error')
         }
       } else {
-        addToast('Could not regenerate lore. Try again.', 'error')
+        const result = await generateLoreFull(entryForLore, photoUrls)
+        if (result) {
+          const meta = { ...(entryForLore.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
+          await Promise.all([
+            updateEntryLore(entry.id, result.lore),
+            updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {}),
+          ])
+          const now = new Date().toISOString()
+          setEntry({ ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta })
+          if (result.suggested_title) {
+            setSuggestedTitle(result.suggested_title)
+            addToast('Lore regenerated. New title suggested.', 'success')
+          } else {
+            addToast('Lore regenerated.', 'success')
+          }
+        } else {
+          addToast('Could not regenerate lore. Try again.', 'error')
+        }
       }
     } catch {
       addToast('Lore regeneration failed.', 'error')

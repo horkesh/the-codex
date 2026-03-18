@@ -146,11 +146,15 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
     return map
   }, [photos])
 
-  // Split lore across days
-  const loreByDay = useMemo(() =>
-    isMultiDay ? splitLoreByDay(paragraphs, dayEpisodes.length) : [],
-    [isMultiDay, paragraphs, dayEpisodes.length],
-  )
+  // Per-day lore: prefer story's day_episodes[].lore, fall back to splitting overall lore
+  const loreByDay = useMemo(() => {
+    if (!isMultiDay) return []
+    const hasPerDayLore = dayEpisodes.some(d => d.lore)
+    if (hasPerDayLore) {
+      return dayEpisodes.map(d => d.lore ? [d.lore] : [])
+    }
+    return splitLoreByDay(paragraphs, dayEpisodes.length)
+  }, [isMultiDay, dayEpisodes, paragraphs])
 
   // Total pages: visa card + day pages + debrief
   const totalPages = isMultiDay ? 1 + dayEpisodes.length + 1 : 0

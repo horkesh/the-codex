@@ -5,6 +5,8 @@ export interface LoreResult {
   lore: string
   oneliner: string | null
   suggested_title: string | null
+  /** Per-day lore for multi-day missions (same order as dayLabels) */
+  day_lore?: string[]
 }
 
 export async function generateLore(entry: EntryWithParticipants, photoUrls?: string[]): Promise<string | null> {
@@ -12,10 +14,14 @@ export async function generateLore(entry: EntryWithParticipants, photoUrls?: str
   return result?.lore ?? null
 }
 
-export async function generateLoreFull(entry: EntryWithParticipants, photoUrls?: string[]): Promise<LoreResult | null> {
+export async function generateLoreFull(
+  entry: EntryWithParticipants,
+  photoUrls?: string[],
+  dayLabels?: string[],
+): Promise<LoreResult | null> {
   try {
     const { data, error } = await supabase.functions.invoke('generate-lore', {
-      body: { entry, photoUrls },
+      body: { entry, photoUrls, dayLabels },
     })
     if (error) throw error
     if (data?.error) {
@@ -27,6 +33,7 @@ export async function generateLoreFull(entry: EntryWithParticipants, photoUrls?:
       lore: data.lore,
       oneliner: data.oneliner ?? null,
       suggested_title: data.suggested_title ?? null,
+      day_lore: Array.isArray(data.day_lore) ? data.day_lore : undefined,
     }
   } catch (err) {
     console.error('generate-lore failed:', err)
