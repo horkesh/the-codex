@@ -80,9 +80,12 @@ Deno.serve(async (req: Request) => {
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
 
     const participantNames = entry.participants?.map((p: { display_name: string }) => p.display_name).join(', ') || 'The Gents'
-    // Mission/night_out send all photos; other types cap at 4
-    const maxPhotos = entry.type === 'mission' ? 20 : entry.type === 'night_out' ? 15 : 4
-    const photos: string[] = Array.isArray(photoUrls) ? photoUrls.slice(0, maxPhotos) : []
+    // Cap photos for vision API — too many causes timeouts. Spread evenly across the set.
+    const maxPhotos = entry.type === 'mission' ? 8 : entry.type === 'night_out' ? 6 : 4
+    const allPhotos: string[] = Array.isArray(photoUrls) ? photoUrls : []
+    const photos: string[] = allPhotos.length <= maxPhotos
+      ? allPhotos
+      : Array.from({ length: maxPhotos }, (_, i) => allPhotos[Math.floor(i * allPhotos.length / maxPhotos)])
 
     // Derive day-of-week from date; read stored time-of-day from metadata
     const dateObj = new Date(entry.date + 'T12:00:00Z')
@@ -143,7 +146,7 @@ ${timeContext}${situationalHint ? `\nContext: ${situationalHint}` : ''}
 Location: ${[entry.city, entry.country].filter(Boolean).join(', ') || entry.location || 'undisclosed location'}${weatherLine}${moodLine}
 Present: ${participantNames}
 Description: ${entry.description || 'No additional details provided.'}${entry.metadata?.song ? `\nSong: ${entry.metadata.song}` : ''}${loreHints ? `\nDirector's Notes (incorporate these details naturally): ${loreHints}` : ''}
-${typeDirective ? `\n${typeDirective}` : ''}${moodTags.length > 0 ? `\nThe mood tags above reflect the energy of this occasion — let them subtly shape the tone and vocabulary of the narrative. Don't list or name the moods explicitly; embody them.` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
+${typeDirective ? `\n${typeDirective}` : ''}${moodTags.length > 0 ? `\nThe mood tags above reflect the energy of this occasion — let them subtly shape the tone and vocabulary of the narrative. Don't list or name the moods explicitly; embody them.` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) sampled from ${allPhotos.length} total from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
 IMPORTANT: The Day and Time fields above are from the camera's EXIF data and are authoritative. Always use them to set the time of day in the narrative — do NOT infer a different time of day from photo lighting or ambiance. If the Context field is present, weave that situational awareness into the prose naturally.${weather ? ` If Weather is provided, let it inform atmosphere and sensory details naturally — don't force a weather report, but let the conditions colour the scene.` : ''}
 Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text.
 
@@ -173,6 +176,7 @@ Return your response in exactly this format (three lines, no labels on the first
         max_tokens: isFullChronicle ? 600 : 400,
         messages: [{ role: 'user', content }],
       }),
+      signal: AbortSignal.timeout(20000),
     })
 
     if (!response.ok) {

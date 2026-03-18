@@ -18,6 +18,10 @@ export async function generateLoreFull(entry: EntryWithParticipants, photoUrls?:
       body: { entry, photoUrls },
     })
     if (error) throw error
+    if (data?.error) {
+      console.error('generate-lore edge error:', data.error)
+      return null
+    }
     if (!data?.lore) return null
     return {
       lore: data.lore,
