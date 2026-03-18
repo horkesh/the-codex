@@ -231,7 +231,7 @@ export default function Profile() {
                 <img
                   src={gent.portrait_url}
                   alt="Portrait"
-                  className="w-24 h-24 rounded-full border border-gold/30 object-cover"
+                  className="w-24 h-24 rounded-full overflow-hidden border border-gold/30 object-cover"
                 />
                 <div>
                   <p className="text-xs text-ivory-muted font-body">AI-generated character portrait</p>

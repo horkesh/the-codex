@@ -157,7 +157,7 @@ export function POIModal({ open, mode, onClose, onSaved }: ProspectIntakeModalPr
                   <img
                     src={verdictResult.sourcePhotoUrl}
                     alt="Source"
-                    className="w-20 h-20 rounded-full object-cover border border-white/10"
+                    className="w-20 h-20 rounded-full overflow-hidden object-cover border border-white/10"
                   />
                   <span className="text-[10px] text-ivory-dim font-body">Source</span>
                 </div>
@@ -171,7 +171,7 @@ export function POIModal({ open, mode, onClose, onSaved }: ProspectIntakeModalPr
                   <img
                     src={verdictResult.portraitUrl}
                     alt="AI Portrait"
-                    className="w-20 h-20 rounded-full object-cover border border-gold/30"
+                    className="w-20 h-20 rounded-full overflow-hidden object-cover border border-gold/30"
                   />
                 ) : null}
                 {(portraitLoading || verdictResult?.portraitUrl) && (

@@ -1,10 +1,10 @@
 import React from 'react'
-import { Entry } from '@/types/app'
+import type { Gent } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER, FONT } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, ParticipantRow, getOneliner, VARIANT_INNER, FONT } from '@/export/templates/shared'
 
 interface NightOutCardProps {
-  entry: Entry
+  entry: { title: string; date: string; location: string | null; lore: string | null; metadata: Record<string, unknown>; participants?: Gent[] }
   backgroundUrl?: string
   variant?: 1 | 2 | 3 | 4
 }
@@ -84,6 +84,11 @@ function V2({ entry, backgroundUrl }: NightOutCardProps) {
           {entry.location && <span style={{ fontFamily: FONT.body, fontSize: '18px', color: '#C9A84C', letterSpacing: '0.05em' }}>{entry.location}</span>}
           <span style={{ fontFamily: FONT.body, fontSize: '15px', color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{formatDate(entry.date)}</span>
         </div>
+        {entry.participants && entry.participants.length > 0 && (
+          <div style={{ marginTop: '32px' }}>
+            <ParticipantRow participants={entry.participants} />
+          </div>
+        )}
       </div>
       <div style={{ padding: '0 80px 64px', display: 'flex', justifyContent: 'flex-start', ...Z2 }}>
         <BrandMark size="md" />

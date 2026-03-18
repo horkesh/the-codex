@@ -79,7 +79,7 @@ export function ContactTagger({ selectedIds, onChange }: ContactTaggerProps) {
                 <img
                   src={person.photo_url}
                   alt=""
-                  className="w-5 h-5 rounded-full object-cover"
+                  className="w-5 h-5 rounded-full overflow-hidden object-cover"
                 />
               ) : (
                 <span className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center text-[9px] text-gold font-semibold">
@@ -142,7 +142,7 @@ export function ContactTagger({ selectedIds, onChange }: ContactTaggerProps) {
                   <img
                     src={person.photo_url}
                     alt=""
-                    className="w-6 h-6 rounded-full object-cover"
+                    className="w-6 h-6 rounded-full overflow-hidden object-cover"
                   />
                 ) : (
                   <span className="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center text-[10px] text-gold font-semibold">

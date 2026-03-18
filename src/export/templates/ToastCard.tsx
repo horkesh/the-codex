@@ -1,10 +1,10 @@
 import React from 'react'
-import { Entry } from '@/types/app'
+import type { Gent } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER, FONT } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, ParticipantRow, getOneliner, VARIANT_INNER, FONT } from '@/export/templates/shared'
 
 interface ToastCardProps {
-  entry: Entry
+  entry: { title: string; date: string; location: string | null; lore: string | null; metadata: Record<string, unknown>; participants?: Gent[] }
   backgroundUrl?: string
   variant?: 1 | 2 | 3 | 4
 }
@@ -104,6 +104,11 @@ function V2({ entry, backgroundUrl }: ToastCardProps) {
         {dram && <p style={{ fontFamily: FONT.body, fontSize: '18px', color: '#C9A84C', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '24px' }}>{dram}</p>}
         {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '24px' }}>{oneliner}</p>}
         <p style={{ fontFamily: FONT.body, fontSize: '15px', color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{[entry.location, formatDate(entry.date)].filter(Boolean).join(' · ')}</p>
+        {entry.participants && entry.participants.length > 0 && (
+          <div style={{ marginTop: '32px' }}>
+            <ParticipantRow participants={entry.participants} />
+          </div>
+        )}
       </div>
       <div style={{ padding: '0 80px 64px', ...Z2 }}><BrandMark size="md" /></div>
     </div>
