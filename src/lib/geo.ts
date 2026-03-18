@@ -12,6 +12,8 @@ export interface LocationFill {
   lng?: number
   /** Set when the GPS coords matched a saved Place within 200m. */
   matchedPlaceName?: string
+  /** Date from the last photo's EXIF (for mission end-date auto-fill) */
+  lastPhotoDate?: string
   /** If true, overwrite existing form values. If false/undefined, only fill empty fields. */
   overwrite?: boolean
 }
@@ -131,6 +133,21 @@ export async function extractLocationFromPhoto(file: File): Promise<LocationFill
     }
 
     return (result.date || result.city || result.country) ? result : null
+  } catch {
+    return null
+  }
+}
+
+/** Extract only the EXIF date from a photo (no geocoding). */
+export async function extractExifDate(file: File): Promise<string | null> {
+  try {
+    const exif = await exifr.parse(file, ['DateTimeOriginal'])
+    if (!exif?.DateTimeOriginal) return null
+    const raw = exif.DateTimeOriginal instanceof Date
+      ? exif.DateTimeOriginal.toISOString()
+      : String(exif.DateTimeOriginal).replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3')
+    const d = new Date(raw)
+    return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0]
   } catch {
     return null
   }

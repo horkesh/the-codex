@@ -58,9 +58,9 @@ export function MissionForm({ onSubmit, loading, detectedLocation, suggestedTitl
     const ow = detectedLocation.overwrite
     setForm((prev) => {
       const startDate = prev.date || detectedLocation.date || prev.date
-      // Auto-fill end date to today when start is set and end is empty
-      const today = new Date().toISOString().slice(0, 10)
-      const endDate = prev.date_end || (startDate ? today : prev.date_end)
+      // Auto-fill end date from last photo's EXIF date (falls back to start date if only one photo)
+      const fallbackEnd = detectedLocation.lastPhotoDate || detectedLocation.date || ''
+      const endDate = prev.date_end || (startDate && fallbackEnd ? fallbackEnd : prev.date_end)
       return {
         ...prev,
         date: startDate,

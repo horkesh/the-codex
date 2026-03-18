@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { Spinner } from '@/components/ui'
 import { uploadEntryPhoto } from '@/data/entries'
 import { fadeIn } from '@/lib/animations'
-import { extractLocationFromPhoto, haversineMetres, getDevicePosition } from '@/lib/geo'
+import { extractLocationFromPhoto, extractExifDate, haversineMetres, getDevicePosition } from '@/lib/geo'
 import type { LocationFill } from '@/lib/geo'
 import { fetchLocations } from '@/data/locations'
 
@@ -64,9 +64,15 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
 
       // Try to extract GPS/date from the first photo (only once per session)
       if (onGeoDetected && !geoFiredRef.current && toAdd.length > 0) {
-        extractLocationFromPhoto(toAdd[0]).then(async (loc) => {
+        // Extract first photo geo + last photo date in parallel
+        const lastPhoto = toAdd.length > 1 ? toAdd[toAdd.length - 1] : null
+        const lastDatePromise = lastPhoto ? extractExifDate(lastPhoto) : Promise.resolve(null)
+
+        Promise.all([extractLocationFromPhoto(toAdd[0]), lastDatePromise]).then(async ([loc, lastPhotoDate]) => {
           if (!loc || geoFiredRef.current) return
           geoFiredRef.current = true
+
+          if (lastPhotoDate) loc.lastPhotoDate = lastPhotoDate
 
           // Try to match against a saved place — GPS proximity first, name fallback second
           let finalLoc = loc
