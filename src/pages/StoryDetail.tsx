@@ -6,12 +6,12 @@ import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner } from '@/components/ui'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { fetchStory, updateStory } from '@/data/stories'
-import { fetchEntries } from '@/data/entries'
+import { fetchEntries, fetchEntryPhotos } from '@/data/entries'
 import { generateStoryArc } from '@/ai/storyArc'
 import { useUIStore } from '@/store/ui'
 import { cn, formatDate } from '@/lib/utils'
 import { STORY_TYPE_COLORS as TYPE_COLORS, STORY_TYPE_LABELS as TYPE_LABELS } from '@/lib/entryTypes'
-import type { Story, Entry } from '@/types/app'
+import type { Story, Entry, StoryDayEpisode } from '@/types/app'
 
 // ─── Section divider ──────────────────────────────────────────────────────────
 
@@ -37,6 +37,7 @@ export default function StoryDetail() {
 
   const [story, setStory] = useState<Story | null>(null)
   const [linkedEntries, setLinkedEntries] = useState<Entry[]>([])
+  const [photoMap, setPhotoMap] = useState<Record<string, { id: string; url: string }>>({})
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
@@ -58,6 +59,17 @@ export default function StoryDetail() {
           if (!cancelled) {
             const linked = [...all].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             setLinkedEntries(linked)
+          }
+
+          // Fetch photos for mission stories with day episodes
+          const meta = (s.metadata ?? {}) as { day_episodes?: StoryDayEpisode[]; mission_entry_id?: string }
+          if (meta.day_episodes && meta.mission_entry_id) {
+            const photos = await fetchEntryPhotos(meta.mission_entry_id)
+            if (!cancelled) {
+              const map: Record<string, { id: string; url: string }> = {}
+              for (const p of photos) map[p.id] = { id: p.id, url: p.url }
+              setPhotoMap(map)
+            }
           }
         }
       } catch {
@@ -260,6 +272,68 @@ export default function StoryDetail() {
               </div>
             ))}
           </div>
+
+          {/* ── Day Episodes (mission stories) ── */}
+          {(story.metadata as { day_episodes?: StoryDayEpisode[] })?.day_episodes &&
+           (story.metadata as { day_episodes: StoryDayEpisode[] }).day_episodes.length > 0 && (
+            <>
+              <SectionLabel label="The Days" />
+              <motion.div
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
+                className="flex flex-col gap-4"
+              >
+                {(story.metadata as { day_episodes: StoryDayEpisode[] }).day_episodes.map((episode) => (
+                  <motion.div
+                    key={episode.day}
+                    variants={staggerItem}
+                    className="bg-slate-dark border border-white/6 rounded-xl overflow-hidden"
+                  >
+                    {/* Day header */}
+                    <div className="px-4 py-3 border-b border-white/5">
+                      <h3 className="font-display text-sm text-ivory">{episode.label}</h3>
+                    </div>
+
+                    {/* Photo strip */}
+                    {episode.photoIds.length > 0 && Object.keys(photoMap).length > 0 && (
+                      <div className="flex gap-1 overflow-x-auto p-2 scrollbar-hide">
+                        {episode.photoIds.map((pid) => {
+                          const photo = photoMap[pid]
+                          if (!photo) return null
+                          return (
+                            <img
+                              key={pid}
+                              src={photo.url}
+                              alt=""
+                              className="h-20 w-20 object-cover rounded-lg shrink-0"
+                              draggable={false}
+                            />
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Episode lore */}
+                    {episode.lore && (
+                      <div className="px-4 py-3">
+                        <p className="text-xs text-ivory-dim italic font-body leading-relaxed">
+                          {episode.lore}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* No photos fallback */}
+                    {episode.photoIds.length === 0 && !episode.lore && (
+                      <div className="px-4 py-3">
+                        <p className="text-xs text-ivory-dim/50 font-body">No photos for this day yet</p>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </motion.div>
+            </>
+          )}
 
           {/* ── Moments Timeline ── */}
           {linkedEntries.length > 0 && (

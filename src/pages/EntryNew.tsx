@@ -25,6 +25,7 @@ import { notifyOthers } from '@/hooks/usePushNotifications'
 import { generateCover } from '@/ai/cover'
 import { generateStamp } from '@/ai/stamp'
 import { createMissionStamp, updateStampImage } from '@/data/stamps'
+import { createMissionStory } from '@/data/stories'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { fadeUp } from '@/lib/animations'
@@ -284,7 +285,7 @@ export default function EntryNew() {
         })
       }
 
-      // 5b. Auto-create passport stamp for missions (fire-and-forget)
+      // 5b. Auto-create passport stamp + story for missions (fire-and-forget)
       if (selectedType === 'mission' && city && country) {
         createMissionStamp({
           id: entry.id,
@@ -298,6 +299,16 @@ export default function EntryNew() {
           generateStamp(stamp).then((url) => {
             if (url) updateStampImage(stamp.id, url).catch(() => {})
           }).catch(() => {})
+        }).catch(() => {})
+
+        // Auto-create story with day episodes from photo EXIF
+        createMissionStory({
+          id: entry.id,
+          title: formData.title,
+          date: formData.date,
+          cover_image_url: entry.cover_image_url ?? null,
+          created_by: entry.created_by,
+          metadata: entry.metadata as Record<string, unknown>,
         }).catch(() => {})
       }
 

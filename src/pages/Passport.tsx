@@ -7,7 +7,6 @@ import { PassportCover } from '@/components/passport/PassportCover'
 import { StampGrid } from '@/components/passport/StampGrid'
 import { StampDetail } from '@/components/passport/StampDetail'
 import { StoryCard } from '@/components/passport/StoryCard'
-import { AchievementList } from '@/components/passport/AchievementList'
 import { Spinner, OnboardingTip } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
 import { fadeUp } from '@/lib/animations'
@@ -27,7 +26,7 @@ export default function Passport() {
 
   const [view, setView] = useState<View>('cover')
   const [selectedStamp, setSelectedStamp] = useState<PassportStamp | null>(null)
-  const [activeTab, setActiveTab] = useState<'stamps' | 'stories' | 'achievements'>('stamps')
+  const [activeTab, setActiveTab] = useState<'stamps' | 'stories'>('stamps')
 
   const [stories, setStories] = useState<Story[]>([])
   const [storiesLoading, setStoriesLoading] = useState(false)
@@ -141,7 +140,7 @@ export default function Passport() {
             >
               {/* Tab bar */}
               <div className="flex border-b border-white/5 mx-4 mb-4">
-                {(['stamps', 'stories', 'achievements'] as const).map(tab => (
+                {(['stamps', 'stories'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -220,12 +219,6 @@ export default function Passport() {
                 </div>
               )}
 
-              {/* Achievements tab */}
-              {activeTab === 'achievements' && (
-                <div className="px-4 pb-6">
-                  <AchievementList />
-                </div>
-              )}
             </motion.div>
           </PageWrapper>
         )}
