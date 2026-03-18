@@ -17,6 +17,7 @@ import { MetadataCard } from '@/components/chronicle/MetadataCard'
 import { PS5Scoreboard } from '@/components/chronicle/PS5Scoreboard'
 import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
 import { CommentsSection } from '@/components/chronicle/CommentsSection'
+import { MissionLayout } from '@/components/chronicle/MissionLayout'
 import { useEntry } from '@/hooks/useEntry'
 import { useEntryFilter } from '@/hooks/useEntryFilter'
 import { fetchEntry, deleteEntry, updateEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
@@ -428,6 +429,104 @@ export default function EntryDetail() {
     entry.city ||
     entry.description
 
+  // ── Shared controls (used by both mission and generic layouts) ──
+  const loreSection = (
+    <div id="lore-section">
+      <LoreSection
+        entry={entry}
+        photoUrls={photoUrls}
+        readOnly={!isCreator}
+        gentId={gent?.id}
+        onLoreGenerated={handleLoreGenerated}
+      />
+    </div>
+  )
+
+  const titleSuggestionBanner = suggestedTitle && (
+    <div className="flex items-center gap-3 bg-gold/8 border border-gold/20 rounded-lg px-4 py-3">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-gold font-body font-semibold">AI Title Suggestion</p>
+        <p className="text-sm text-ivory font-body truncate">{suggestedTitle}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => handlePickTitle(suggestedTitle)}
+        className="text-xs text-gold border border-gold/30 rounded-full px-3 py-1 hover:border-gold/60 transition-colors shrink-0 font-body"
+      >
+        Apply
+      </button>
+      <button
+        type="button"
+        onClick={() => setSuggestedTitle(null)}
+        className="text-ivory-dim hover:text-ivory transition-colors shrink-0"
+        aria-label="Dismiss"
+      >
+        <XIcon size={14} />
+      </button>
+    </div>
+  )
+
+  const controlsContent = (
+    <>
+      {/* Reactions */}
+      {entry.status === 'published' && (
+        <div className="px-4 pt-2 pb-4">
+          <EntryReactions entryId={entry.id} />
+        </div>
+      )}
+
+      {/* Participants */}
+      <ParticipantsSection entry={entry} />
+
+      {/* People Present */}
+      <PeoplePresent entryId={entry.id} />
+
+      {/* Comments */}
+      {entry.status === 'published' && (
+        <CommentsSection entryId={entry.id} entryTitle={entry.title} />
+      )}
+
+      {/* Actions */}
+      <div className="space-y-3 pt-2">
+        {isCreator && (
+          <Button
+            variant="outline"
+            size="md"
+            fullWidth
+            onClick={() => navigate(`/chronicle/${entry.id}/edit`)}
+          >
+            <Edit2 size={16} />
+            Edit Entry
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          size="md"
+          fullWidth
+          onClick={handleExportToStudio}
+        >
+          <Share2 size={16} />
+          Export to Studio
+        </Button>
+        {isCreator && (
+          <Button
+            variant="ghost"
+            size="md"
+            fullWidth
+            className="text-[--color-error] hover:bg-[--color-error]/10"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 size={16} />
+            Delete Entry
+          </Button>
+        )}
+      </div>
+    </>
+  )
+
+  // ── Mission layout ──
+  const isMission = entry.type === 'mission'
+
   return (
     <>
       {/* TopBar — sits above hero, not inside it */}
@@ -459,180 +558,169 @@ export default function EntryDetail() {
         }
       />
 
-      {/* Hero — full-bleed, no horizontal padding */}
-      <EntryHero entry={entry} filterId={filterId} onEntryUpdate={setEntry} />
+      {isMission ? (
+        /* ── Mission: visa card + magazine + debrief ── */
+        <PageWrapper scrollable>
+          {titleSuggestionBanner && <div className="px-4 pt-4">{titleSuggestionBanner}</div>}
+          <MissionLayout
+            entry={entry}
+            photos={photos}
+            isCreator={isCreator}
+            onEntryUpdate={setEntry}
+            loreSlot={loreSection}
+            controlsSlot={controlsContent}
+          />
+        </PageWrapper>
+      ) : (
+        /* ── Generic layout (all other entry types) ── */
+        <>
+          <EntryHero entry={entry} filterId={filterId} onEntryUpdate={setEntry} />
 
-      {/* Scrollable content */}
-      <PageWrapper padded scrollable className="space-y-6 pt-4">
-        <AnimatePresence>
-          <motion.div
-            key="content"
-            variants={staggerContainer}
-            initial="initial"
-            animate="animate"
-            className="space-y-6"
-          >
-            {/* Metadata card */}
-            {hasMetadata && (
-              <motion.div variants={staggerItem}>
-                <MetadataCard entry={entry} />
-              </motion.div>
-            )}
-
-            {/* Lore section */}
-            <motion.div variants={staggerItem} id="lore-section">
-              <LoreSection
-                entry={entry}
-                photoUrls={photoUrls}
-                readOnly={!isCreator}
-                gentId={gent?.id}
-                onLoreGenerated={handleLoreGenerated}
-              />
-            </motion.div>
-
-            {/* AI title suggestion banner (from lore generation) */}
-            {suggestedTitle && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                <div className="flex items-center gap-3 bg-gold/8 border border-gold/20 rounded-lg px-4 py-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gold font-body font-semibold">AI Title Suggestion</p>
-                    <p className="text-sm text-ivory font-body truncate">{suggestedTitle}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handlePickTitle(suggestedTitle)}
-                    className="text-xs text-gold border border-gold/30 rounded-full px-3 py-1 hover:border-gold/60 transition-colors shrink-0 font-body"
-                  >
-                    Apply
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSuggestedTitle(null)}
-                    className="text-ivory-dim hover:text-ivory transition-colors shrink-0"
-                    aria-label="Dismiss"
-                  >
-                    <XIcon size={14} />
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Scene image */}
-            {entry.scene_url && (
-              <motion.div variants={staggerItem}>
-                <div className="px-4 pb-4">
-                  <img
-                    src={entry.scene_url}
-                    alt="AI Scene"
-                    className="w-full rounded-xl border border-white/5 object-cover"
-                    style={{ maxHeight: '320px' }}
-                  />
-                  <p className="text-[10px] tracking-[0.2em] uppercase text-ivory-dim/50 text-center mt-2 font-body">AI Scene</p>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Entry reactions */}
-            {entry.status === 'published' && (
-              <motion.div variants={staggerItem}>
-                <div className="px-4 pt-2 pb-4">
-                  <EntryReactions entryId={entry.id} />
-                </div>
-              </motion.div>
-            )}
-
-            {/* Photos */}
-            {photos.length > 0 && (
-              <motion.div variants={staggerItem}>
-                <div className="space-y-3">
-                  <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold">
-                    Photos
-                  </p>
-                  <FilterPicker filterId={filterId} onChange={setFilter} previewUrl={entry.cover_image_url ?? undefined} />
-                  {entry.type === 'mission' || entry.type === 'night_out' ? (
-                    <PhotoStoryboard
-                      photos={photos}
-                      onSetAsCover={handleSetAsCover}
-                      currentCoverUrl={entry.cover_image_url ?? undefined}
-                      filterId={filterId}
-                    />
-                  ) : (
-                    <PhotoGrid
-                      photos={photos}
-                      onSetAsCover={handleSetAsCover}
-                      currentCoverUrl={entry.cover_image_url ?? undefined}
-                      filterId={filterId}
-                    />
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {/* PlayStation scoreboard */}
-            {entry.type === 'playstation' && (
-              <motion.div variants={staggerItem}>
-                <PS5Scoreboard entry={entry} />
-              </motion.div>
-            )}
-
-            {/* Participants */}
-            <motion.div variants={staggerItem}>
-              <ParticipantsSection entry={entry} />
-            </motion.div>
-
-            {/* People Present (non-gent people tagged to this entry) */}
-            <motion.div variants={staggerItem}>
-              <PeoplePresent entryId={entry.id} />
-            </motion.div>
-
-            {/* Comments */}
-            {entry.status === 'published' && (
-              <motion.div variants={staggerItem}>
-                <CommentsSection entryId={entry.id} entryTitle={entry.title} />
-              </motion.div>
-            )}
-
-            {/* Actions */}
-            <motion.div variants={staggerItem} className="space-y-3 pt-2">
-              {isCreator && (
-                <Button
-                  variant="outline"
-                  size="md"
-                  fullWidth
-                  onClick={() => navigate(`/chronicle/${entry.id}/edit`)}
-                >
-                  <Edit2 size={16} />
-                  Edit Entry
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="md"
-                fullWidth
-                onClick={handleExportToStudio}
+          <PageWrapper padded scrollable className="space-y-6 pt-4">
+            <AnimatePresence>
+              <motion.div
+                key="content"
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
+                className="space-y-6"
               >
-                <Share2 size={16} />
-                Export to Studio
-              </Button>
-              {isCreator && (
-                <Button
-                  variant="ghost"
-                  size="md"
-                  fullWidth
-                  className="text-[--color-error] hover:bg-[--color-error]/10"
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  <Trash2 size={16} />
-                  Delete Entry
-                </Button>
-              )}
-            </motion.div>
+                {/* Metadata card */}
+                {hasMetadata && (
+                  <motion.div variants={staggerItem}>
+                    <MetadataCard entry={entry} />
+                  </motion.div>
+                )}
 
-            {/* Bottom breathing room */}
-            <div className="h-8" />
-          </motion.div>
-        </AnimatePresence>
-      </PageWrapper>
+                {/* Lore section */}
+                <motion.div variants={staggerItem}>
+                  {loreSection}
+                </motion.div>
+
+                {/* AI title suggestion banner */}
+                {titleSuggestionBanner && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                    {titleSuggestionBanner}
+                  </motion.div>
+                )}
+
+                {/* Scene image */}
+                {entry.scene_url && (
+                  <motion.div variants={staggerItem}>
+                    <div className="px-4 pb-4">
+                      <img
+                        src={entry.scene_url}
+                        alt="AI Scene"
+                        className="w-full rounded-xl border border-white/5 object-cover"
+                        style={{ maxHeight: '320px' }}
+                      />
+                      <p className="text-[10px] tracking-[0.2em] uppercase text-ivory-dim/50 text-center mt-2 font-body">AI Scene</p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Entry reactions */}
+                {entry.status === 'published' && (
+                  <motion.div variants={staggerItem}>
+                    <div className="px-4 pt-2 pb-4">
+                      <EntryReactions entryId={entry.id} />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Photos */}
+                {photos.length > 0 && (
+                  <motion.div variants={staggerItem}>
+                    <div className="space-y-3">
+                      <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold">
+                        Photos
+                      </p>
+                      <FilterPicker filterId={filterId} onChange={setFilter} previewUrl={entry.cover_image_url ?? undefined} />
+                      {entry.type === 'night_out' ? (
+                        <PhotoStoryboard
+                          photos={photos}
+                          onSetAsCover={handleSetAsCover}
+                          currentCoverUrl={entry.cover_image_url ?? undefined}
+                          filterId={filterId}
+                        />
+                      ) : (
+                        <PhotoGrid
+                          photos={photos}
+                          onSetAsCover={handleSetAsCover}
+                          currentCoverUrl={entry.cover_image_url ?? undefined}
+                          filterId={filterId}
+                        />
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* PlayStation scoreboard */}
+                {entry.type === 'playstation' && (
+                  <motion.div variants={staggerItem}>
+                    <PS5Scoreboard entry={entry} />
+                  </motion.div>
+                )}
+
+                {/* Participants */}
+                <motion.div variants={staggerItem}>
+                  <ParticipantsSection entry={entry} />
+                </motion.div>
+
+                {/* People Present */}
+                <motion.div variants={staggerItem}>
+                  <PeoplePresent entryId={entry.id} />
+                </motion.div>
+
+                {/* Comments */}
+                {entry.status === 'published' && (
+                  <motion.div variants={staggerItem}>
+                    <CommentsSection entryId={entry.id} entryTitle={entry.title} />
+                  </motion.div>
+                )}
+
+                {/* Actions */}
+                <motion.div variants={staggerItem} className="space-y-3 pt-2">
+                  {isCreator && (
+                    <Button
+                      variant="outline"
+                      size="md"
+                      fullWidth
+                      onClick={() => navigate(`/chronicle/${entry.id}/edit`)}
+                    >
+                      <Edit2 size={16} />
+                      Edit Entry
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="md"
+                    fullWidth
+                    onClick={handleExportToStudio}
+                  >
+                    <Share2 size={16} />
+                    Export to Studio
+                  </Button>
+                  {isCreator && (
+                    <Button
+                      variant="ghost"
+                      size="md"
+                      fullWidth
+                      className="text-[--color-error] hover:bg-[--color-error]/10"
+                      onClick={() => setDeleteOpen(true)}
+                    >
+                      <Trash2 size={16} />
+                      Delete Entry
+                    </Button>
+                  )}
+                </motion.div>
+
+                <div className="h-8" />
+              </motion.div>
+            </AnimatePresence>
+          </PageWrapper>
+        </>
+      )}
 
       {/* Options menu modal */}
       <OptionsMenu

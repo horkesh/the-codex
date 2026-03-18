@@ -30,7 +30,7 @@ import BucketList from '@/pages/BucketList'
 import Agenda from '@/pages/Agenda'
 import GentProfile from '@/pages/GentProfile'
 import PhotoTimeline from '@/pages/PhotoTimeline'
-import VisaPage from '@/pages/VisaPage'
+import VisaRedirect from '@/pages/VisaRedirect'
 
 // Public pages (no auth)
 import PublicInvite from '@/pages/public/PublicInvite'
@@ -69,7 +69,7 @@ function AnimatedRoutes() {
         {/* Legacy redirects */}
         <Route path="/bucket-list" element={<Navigate to="/agenda/wishlist" replace />} />
         <Route path="/prospects" element={<Navigate to="/agenda/scouting" replace />} />
-        <Route path="/passport/visa/:stampId" element={<ProtectedRoute><VisaPage /></ProtectedRoute>} />
+        <Route path="/passport/visa/:stampId" element={<ProtectedRoute><VisaRedirect /></ProtectedRoute>} />
         <Route path="/passport/stories/new" element={<ProtectedRoute><StoryNew /></ProtectedRoute>} />
         <Route path="/passport/stories/:id" element={<ProtectedRoute><StoryDetail /></ProtectedRoute>} />
         <Route path="/dossier" element={<ProtectedRoute><DossierMap /></ProtectedRoute>} />

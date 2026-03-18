@@ -37,8 +37,8 @@ export default function Passport() {
   const rawCities = useMemo(() => missionStamps.map(s => s.city).filter(Boolean) as string[], [missionStamps])
 
   const handleStampPress = useCallback((stamp: PassportStamp) => {
-    if (stamp.type === 'mission') {
-      navigate(`/passport/visa/${stamp.id}`)
+    if (stamp.type === 'mission' && stamp.entry_id) {
+      navigate(`/chronicle/${stamp.entry_id}`)
     } else {
       setSelectedStamp(stamp)
     }
