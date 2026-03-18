@@ -1,8 +1,8 @@
 import { supabase } from '@/lib/supabase'
+import { fetchParticipantsMap } from '@/data/entries'
 import type { Entry, EntryWithParticipants, Gent, GentStats, GentAlias } from '@/types/app'
 
 const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, cover_image_url, metadata, pinned, created_at'
-const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, portrait_url'
 
 /** Fetch pinned+shared+published entries (no auth needed) */
 export async function fetchPublicEntries(): Promise<EntryWithParticipants[]> {
@@ -16,19 +16,7 @@ export async function fetchPublicEntries(): Promise<EntryWithParticipants[]> {
 
   if (error || !rawEntries?.length) return []
   const entries = rawEntries as unknown as Entry[]
-  const entryIds = entries.map(e => e.id)
-
-  const { data: participantRows } = await supabase
-    .from('entry_participants')
-    .select(`gent_id, entry_id, gents:gent_id (${GENT_COLUMNS})`)
-    .in('entry_id', entryIds)
-
-  const participantMap: Record<string, Gent[]> = {}
-  for (const row of participantRows ?? []) {
-    const r = row as unknown as { entry_id: string; gents: Gent | null }
-    if (!participantMap[r.entry_id]) participantMap[r.entry_id] = []
-    if (r.gents) participantMap[r.entry_id].push(r.gents)
-  }
+  const participantMap = await fetchParticipantsMap(entries.map(e => e.id))
 
   return entries.map(entry => ({ ...entry, participants: participantMap[entry.id] ?? [] }))
 }
@@ -64,20 +52,6 @@ export async function fetchPublicStats(): Promise<GentStats[]> {
     cities_visited: row.cities_visited ?? 0,
     stamps_collected: row.stamps_collected ?? 0,
   }))
-}
-
-/** Extract unique mission cities from entries for the travel map */
-export function extractMissionCities(entries: EntryWithParticipants[]): Array<{ city: string; country: string; countryCode: string }> {
-  const seen = new Set<string>()
-  const cities: Array<{ city: string; country: string; countryCode: string }> = []
-  for (const e of entries) {
-    if (e.type !== 'mission' || !e.city || !e.country) continue
-    const key = `${e.city}|${e.country}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    cities.push({ city: e.city, country: e.country, countryCode: e.country_code ?? '' })
-  }
-  return cities
 }
 
 /** Fetch ALL mission cities (not just pinned) for the travel map */

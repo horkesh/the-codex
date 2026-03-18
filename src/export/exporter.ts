@@ -12,11 +12,13 @@ export async function exportToPng(element: HTMLElement): Promise<Blob> {
     logging: false,
   })
 
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Export timed out — try again')), EXPORT_TIMEOUT_MS)
-  )
+  let timer: ReturnType<typeof setTimeout>
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Export timed out — try again')), EXPORT_TIMEOUT_MS)
+  })
 
   const canvas = await Promise.race([canvasPromise, timeoutPromise])
+  clearTimeout(timer!)
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(

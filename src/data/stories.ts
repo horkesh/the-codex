@@ -55,20 +55,12 @@ export async function createMissionStory(entry: {
 }): Promise<Story | null> {
   const dateEnd = entry.metadata?.date_end as string | undefined
 
-  // Check if a story already exists for this mission
-  const { data: existing } = await supabase
-    .from('stories')
-    .select('id')
-    .contains('metadata', { mission_entry_id: entry.id })
-    .limit(1)
+  // Check existing + fetch photos in parallel (independent queries)
+  const [{ data: existing }, { data: photos }] = await Promise.all([
+    supabase.from('stories').select('id').contains('metadata', { mission_entry_id: entry.id }).limit(1),
+    supabase.from('entry_photos').select('id, exif_taken_at, sort_order').eq('entry_id', entry.id).order('sort_order', { ascending: true }),
+  ])
   if (existing && existing.length > 0) return null
-
-  // Fetch photos with EXIF timestamps
-  const { data: photos } = await supabase
-    .from('entry_photos')
-    .select('id, exif_taken_at, sort_order')
-    .eq('entry_id', entry.id)
-    .order('sort_order', { ascending: true })
 
   // Build day episodes from photos
   const photoData = (photos ?? []).map(p => {

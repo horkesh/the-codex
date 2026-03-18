@@ -3,7 +3,6 @@ import type { Entry, EntryWithParticipants, Gent } from '@/types/app'
 import { checkAndAwardAchievements } from '@/data/achievements'
 import { checkAndAwardThresholds } from '@/data/thresholds'
 import { imageToWebpBlob } from '@/lib/image'
-import exifr from 'exifr'
 
 export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, scene_url, status, pinned, visibility, metadata, created_by, created_at, updated_at'
 const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio'
@@ -244,6 +243,15 @@ export async function uploadEntryPhoto(
     .slice(0, 60)                          // cap length
   const path = `${entryId}/${Date.now()}-${baseName}.webp`
 
+  // Run storage upload and EXIF extraction in parallel
+  const exifPromise = import('exifr').then(async (exifr) => {
+    try {
+      const parsed = await exifr.default.parse(file, ['DateTimeOriginal'])
+      if (parsed?.DateTimeOriginal instanceof Date) return parsed.DateTimeOriginal.toISOString()
+    } catch { /* non-critical */ }
+    return null
+  })
+
   const { error: uploadError } = await supabase.storage
     .from('entry-photos')
     .upload(path, blob, { upsert: false, contentType: 'image/webp' })
@@ -255,15 +263,7 @@ export async function uploadEntryPhoto(
     .getPublicUrl(path)
 
   const publicUrl = urlData.publicUrl
-
-  // Extract EXIF datetime (non-fatal)
-  let exifTakenAt: string | null = null
-  try {
-    const parsed = await exifr.parse(file, ['DateTimeOriginal'])
-    if (parsed?.DateTimeOriginal instanceof Date) {
-      exifTakenAt = parsed.DateTimeOriginal.toISOString()
-    }
-  } catch { /* EXIF extraction is non-critical */ }
+  const exifTakenAt = await exifPromise
 
   // Insert metadata row — non-fatal; storage upload already succeeded so we always return the URL
   await supabase

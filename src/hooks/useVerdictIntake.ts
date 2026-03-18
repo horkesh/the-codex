@@ -65,6 +65,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     knownHandle?: string,
   ) => {
     if (!gent) return
+    cancelledRef.current = false
 
     const sourcePhotoUrl = await uploadPersonScanPhoto(gent.id, file)
 
@@ -108,7 +109,6 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     setVerdictResult({ verdict, portraitUrl: null, sourcePhotoUrl, scanId: scan.id })
     setPortraitLoading(true)
     setStep('review')
-    cancelledRef.current = false
 
     generatePersonPortrait({ appearance: verdict.appearance, traits: verdict.trait_words, scan_id: scan.id })
       .then((result) => {

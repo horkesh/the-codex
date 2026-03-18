@@ -55,21 +55,22 @@ export default function StoryDetail() {
         setStory(s)
 
         if (s.entry_ids.length > 0) {
-          const all = await fetchEntries({ ids: s.entry_ids })
-          if (!cancelled) {
-            const linked = [...all].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            setLinkedEntries(linked)
-          }
+          const meta = s.metadata
+          // Fetch entries and photos in parallel (both depend only on story, not each other)
+          const [all, photos] = await Promise.all([
+            fetchEntries({ ids: s.entry_ids }),
+            meta?.day_episodes && meta?.mission_entry_id
+              ? fetchEntryPhotos(meta.mission_entry_id)
+              : Promise.resolve([]),
+          ])
+          if (cancelled) return
 
-          // Fetch photos for mission stories with day episodes
-          const meta = (s.metadata ?? {}) as { day_episodes?: StoryDayEpisode[]; mission_entry_id?: string }
-          if (meta.day_episodes && meta.mission_entry_id) {
-            const photos = await fetchEntryPhotos(meta.mission_entry_id)
-            if (!cancelled) {
-              const map: Record<string, { id: string; url: string }> = {}
-              for (const p of photos) map[p.id] = { id: p.id, url: p.url }
-              setPhotoMap(map)
-            }
+          setLinkedEntries([...all].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()))
+
+          if (photos.length > 0) {
+            const map: Record<string, { id: string; url: string }> = {}
+            for (const p of photos) map[p.id] = { id: p.id, url: p.url }
+            setPhotoMap(map)
           }
         }
       } catch {
@@ -143,6 +144,8 @@ export default function StoryDetail() {
       </div>
     )
   }
+
+  const dayEpisodes = story.metadata?.day_episodes ?? []
 
   return (
     <div className="flex flex-col h-full">
@@ -274,8 +277,7 @@ export default function StoryDetail() {
           </div>
 
           {/* ── Day Episodes (mission stories) ── */}
-          {(story.metadata as { day_episodes?: StoryDayEpisode[] })?.day_episodes &&
-           (story.metadata as { day_episodes: StoryDayEpisode[] }).day_episodes.length > 0 && (
+          {dayEpisodes.length > 0 && (
             <>
               <SectionLabel label="The Days" />
               <motion.div
@@ -284,7 +286,7 @@ export default function StoryDetail() {
                 animate="animate"
                 className="flex flex-col gap-4"
               >
-                {(story.metadata as { day_episodes: StoryDayEpisode[] }).day_episodes.map((episode) => (
+                {dayEpisodes.map((episode) => (
                   <motion.div
                     key={episode.day}
                     variants={staggerItem}
