@@ -239,11 +239,11 @@ export default function PersonDetail() {
           <div className="relative mt-1">
             {person.portrait_url ? (
               <div className="flex items-end gap-3">
-                <div className="relative group">
+                <div className="relative group w-20 h-20 overflow-hidden rounded-2xl border border-gold/30">
                   <img
                     src={person.portrait_url}
                     alt={`${person.name} portrait`}
-                    className={cn('w-20 h-20 rounded-2xl object-cover border border-gold/30', regeneratingPortrait && 'opacity-40')}
+                    className={cn('w-full h-full object-cover', regeneratingPortrait && 'opacity-40')}
                   />
                   {regeneratingPortrait && (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -254,7 +254,7 @@ export default function PersonDetail() {
                     <button
                       type="button"
                       onClick={handleRegeneratePortrait}
-                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                       aria-label="Regenerate portrait"
                     >
                       <RefreshCw size={16} className="text-gold" />
