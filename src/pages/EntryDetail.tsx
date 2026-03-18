@@ -28,6 +28,12 @@ import type { EntryWithParticipants } from '@/types/app'
 
 // ── Options menu ────────────────────────────────────────────────────────────
 
+// Flavour options per entry type
+const FLAVOUR_OPTIONS: Record<string, Array<{ value: string | undefined; label: string }>> = {
+  steak: [{ value: undefined, label: 'Regular' }, { value: 'iftar', label: 'Iftar' }],
+  night_out: [{ value: undefined, label: 'Regular' }, { value: 'live_music', label: 'Live Music' }, { value: 'movie_night', label: 'Movie Night' }],
+}
+
 interface OptionsMenuProps {
   isOpen: boolean
   onClose: () => void
@@ -37,10 +43,13 @@ interface OptionsMenuProps {
   generatingScene: boolean
   regeneratingLore: boolean
   isPinned: boolean
+  entryType?: string
+  currentFlavour?: string
   onTogglePin: () => void
   onGenerateLore: () => void
   onRegenerateLore: () => void
   onGenerateScene: () => void
+  onSetFlavour?: (flavour: string | undefined) => void
   onEdit: () => void
   onExport: () => void
   onDelete: () => void
@@ -48,12 +57,35 @@ interface OptionsMenuProps {
 
 function OptionsMenu({
   isOpen, onClose, isCreator, hasLore, canGenerateScene, generatingScene, regeneratingLore,
-  isPinned, onTogglePin,
-  onGenerateLore, onRegenerateLore, onGenerateScene, onEdit, onExport, onDelete,
+  isPinned, entryType, currentFlavour, onTogglePin,
+  onGenerateLore, onRegenerateLore, onGenerateScene, onSetFlavour, onEdit, onExport, onDelete,
 }: OptionsMenuProps) {
+  const flavourOptions = entryType ? FLAVOUR_OPTIONS[entryType] : undefined
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Entry Options">
       <div className="flex flex-col gap-1 pb-2">
+        {/* Flavour picker */}
+        {isCreator && flavourOptions && flavourOptions.length > 1 && (
+          <div className="px-3 py-2">
+            <p className="text-[10px] text-ivory-dim tracking-[0.15em] uppercase font-body mb-2">Style</p>
+            <div className="flex gap-2">
+              {flavourOptions.map(f => (
+                <button
+                  key={f.label}
+                  type="button"
+                  onClick={() => { onSetFlavour?.(f.value); onClose() }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-body tracking-wide border transition-all ${
+                    currentFlavour === f.value || (!currentFlavour && !f.value)
+                      ? 'border-gold/50 bg-gold/10 text-gold'
+                      : 'border-white/10 bg-white/5 text-ivory-dim hover:border-white/25'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {isCreator && !hasLore && (
           <button
             type="button"
@@ -769,10 +801,18 @@ export default function EntryDetail() {
         generatingScene={generatingScene}
         regeneratingLore={regeneratingLore}
         isPinned={!!entry.pinned}
+        entryType={entry.type}
+        currentFlavour={(entry.metadata as Record<string, unknown>)?.flavour as string | undefined}
         onTogglePin={handleTogglePin}
         onGenerateLore={handleGenerateLoreFromMenu}
         onRegenerateLore={handleRegenerateLore}
         onGenerateScene={handleGenerateScene}
+        onSetFlavour={async (flavour) => {
+          const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), flavour: flavour ?? null }
+          await updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})
+          setEntry({ ...entry, metadata: meta })
+          addToast(flavour ? `Style set to ${flavour}.` : 'Style cleared.', 'success')
+        }}
         onEdit={() => navigate(`/chronicle/${entry.id}/edit`)}
         onExport={handleExportToStudio}
         onDelete={() => setDeleteOpen(true)}
