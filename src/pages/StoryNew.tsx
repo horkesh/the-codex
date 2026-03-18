@@ -352,6 +352,7 @@ export default function StoryNew() {
         cover_url: null,
         stamp_url: null,
         status: 'draft',
+        metadata: {},
       })
       addToast('Story created', 'success')
       navigate(`/passport/stories/${story.id}`)

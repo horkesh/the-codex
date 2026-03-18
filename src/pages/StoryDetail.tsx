@@ -11,7 +11,7 @@ import { generateStoryArc } from '@/ai/storyArc'
 import { useUIStore } from '@/store/ui'
 import { cn, formatDate } from '@/lib/utils'
 import { STORY_TYPE_COLORS as TYPE_COLORS, STORY_TYPE_LABELS as TYPE_LABELS } from '@/lib/entryTypes'
-import type { Story, Entry, StoryDayEpisode } from '@/types/app'
+import type { Story, Entry } from '@/types/app'
 
 // ─── Section divider ──────────────────────────────────────────────────────────
 

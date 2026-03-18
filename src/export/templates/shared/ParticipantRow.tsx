@@ -1,4 +1,3 @@
-import React from 'react'
 import type { Gent } from '@/types/app'
 import { FONT, COLOR, aliasDisplay } from './utils'
 
