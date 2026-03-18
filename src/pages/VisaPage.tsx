@@ -10,7 +10,7 @@ import { fadeUp } from '@/lib/animations'
 import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw } from 'lucide-react'
 import { useUIStore } from '@/store/ui'
-import { getOneliner, visaWord, aliasDisplay } from '@/export/templates/shared/utils'
+import { getOneliner, visaWord, aliasDisplay, getCountryVisaInfo, visaNumber } from '@/export/templates/shared/utils'
 import type { PassportStamp, EntryWithParticipants } from '@/types/app'
 
 interface EntryPhoto {
@@ -164,6 +164,8 @@ export default function VisaPage() {
   const oneliner = getOneliner(entry)
   const coverPhoto = entry.cover_image_url ?? photos[0]?.url ?? null
   const coverCrop = getCoverCrop(entry)
+  const countryInfo = getCountryVisaInfo(cc)
+  const visaNo = visaNumber(entry.id, cc)
 
   const meta = entry.metadata as Record<string, unknown> | undefined
   const missionDebrief = meta?.mission_debrief as string | undefined
@@ -205,31 +207,63 @@ export default function VisaPage() {
               className="absolute inset-0 pointer-events-none z-10"
               style={{
                 border: '8px solid transparent',
-                borderImage: 'repeating-linear-gradient(45deg, rgba(27,58,92,0.06) 0px, rgba(27,58,92,0.03) 2px, transparent 2px, transparent 6px) 8',
+                borderImage: `repeating-linear-gradient(45deg, ${countryInfo.accent}10 0px, ${countryInfo.accent}08 2px, transparent 2px, transparent 6px) 8`,
               }}
             />
 
-            {/* Europe map watermark */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] z-[1]">
-              <svg viewBox="0 0 400 300" className="w-56" fill="none" stroke="#1B3A5C" strokeWidth="0.8">
-                <path d="M180 40 C200 35 220 38 235 45 L250 42 C260 48 265 55 260 65 L270 75 C280 70 290 78 285 88 L290 100 C285 110 275 115 265 110 L255 120 C260 130 255 140 245 145 L235 155 C230 165 220 170 210 168 L200 175 C195 185 185 190 175 185 L165 180 C155 185 145 180 140 170 L130 165 C120 168 110 160 115 150 L108 140 C100 135 98 125 105 118 L110 108 C105 98 110 88 120 85 L125 75 C120 65 128 55 138 52 L145 45 C150 38 160 35 170 40 Z" />
+            {/* National emblem watermark */}
+            <div className="absolute top-12 right-4 pointer-events-none opacity-[0.04] z-[1]">
+              <svg viewBox="0 0 40 32" className="w-28" fill="none" stroke={countryInfo.accent} strokeWidth="0.6">
+                <path d={countryInfo.emblemPath} />
               </svg>
             </div>
 
-            {/* Header */}
-            <div className="relative z-[2] pt-2.5 pb-1 text-center" style={{ background: 'linear-gradient(180deg, rgba(27,58,92,0.06) 0%, transparent 100%)' }}>
+            {/* Header — country-specific multi-language */}
+            <div className="relative z-[2] pt-3 pb-1.5 text-center" style={{ background: `linear-gradient(180deg, ${countryInfo.accent}0A 0%, transparent 100%)` }}>
+              {/* Flag + Country name row */}
+              <div className="flex items-center justify-center gap-2 mb-1">
+                {cc && <span className="text-[20px] leading-none">{flagEmoji(cc)}</span>}
+                {countryInfo.motto && (
+                  <span
+                    style={{
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      letterSpacing: '0.12em',
+                      color: countryInfo.accent,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {countryInfo.motto}
+                  </span>
+                )}
+              </div>
+              {/* Multi-language visa label */}
               <span
                 style={{
                   fontFamily: "'Instrument Sans', sans-serif",
-                  fontSize: '10px',
+                  fontSize: '9px',
                   fontWeight: 600,
                   letterSpacing: '0.25em',
-                  color: '#1B3A5C',
+                  color: '#5A6B7A',
                   textTransform: 'uppercase',
                 }}
               >
-                Vize &middot; {'\u0412\u0438\u0437\u0435'} &middot; Visas
+                {countryInfo.header}
               </span>
+              {/* Visa number */}
+              <div className="mt-0.5">
+                <span
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: '8px',
+                    letterSpacing: '0.15em',
+                    color: '#8B7355',
+                  }}
+                >
+                  No. {visaNo}
+                </span>
+              </div>
             </div>
 
             {/* ── Photo band ── */}
@@ -275,7 +309,7 @@ export default function VisaPage() {
             {/* ── Card body ── */}
             <div className="relative z-[2] px-5 pb-5 pt-3">
 
-              {/* Destination — no labels */}
+              {/* Destination */}
               <div className="mb-3">
                 <p
                   style={{
@@ -321,9 +355,43 @@ export default function VisaPage() {
                 </div>
               </div>
 
+              {/* Entry/Exit data row — official stamp style */}
+              <div
+                className="grid grid-cols-3 gap-0 mb-3 py-2"
+                style={{ borderTop: `1px solid ${countryInfo.accent}12`, borderBottom: `1px solid ${countryInfo.accent}12` }}
+              >
+                <div>
+                  <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '7px', fontWeight: 600, letterSpacing: '0.15em', color: '#8B7355', textTransform: 'uppercase', display: 'block' }}>
+                    Entry
+                  </span>
+                  <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#2C2C2C', fontWeight: 600 }}>
+                    {new Date(entry.date + 'T12:00:00Z').toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })}
+                  </span>
+                </div>
+                <div>
+                  <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '7px', fontWeight: 600, letterSpacing: '0.15em', color: '#8B7355', textTransform: 'uppercase', display: 'block' }}>
+                    {dateEnd ? 'Exit' : countryInfo.portLabel}
+                  </span>
+                  <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#2C2C2C', fontWeight: 600 }}>
+                    {dateEnd
+                      ? new Date(dateEnd + 'T12:00:00Z').toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })
+                      : entry.city ?? '\u2014'
+                    }
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '7px', fontWeight: 600, letterSpacing: '0.15em', color: '#8B7355', textTransform: 'uppercase', display: 'block' }}>
+                    Type
+                  </span>
+                  <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#2C2C2C', fontWeight: 600 }}>
+                    {duration ?? 'TRANSIT'}
+                  </span>
+                </div>
+              </div>
+
               {/* Bearer row */}
               {entry.participants.length > 0 && (
-                <div className="flex items-center gap-3 py-3" style={{ borderTop: '1px solid rgba(27,58,92,0.08)', borderBottom: '1px solid rgba(27,58,92,0.08)' }}>
+                <div className="flex items-center gap-3 py-3" style={{ borderBottom: '1px solid rgba(27,58,92,0.08)' }}>
                   <span
                     style={{
                       fontFamily: "'Instrument Sans', sans-serif",
@@ -395,7 +463,7 @@ export default function VisaPage() {
                     style={{
                       width: '64px',
                       height: '64px',
-                      border: '2.5px solid #8B4513',
+                      border: `2.5px solid ${countryInfo.accent}`,
                       borderRadius: '50%',
                       transform: 'rotate(-12deg)',
                       display: 'flex',
@@ -408,10 +476,10 @@ export default function VisaPage() {
                       flexShrink: 0,
                     }}
                   >
-                    <span style={{ fontFamily: 'Georgia, serif', fontSize: '7px', fontWeight: 700, color: '#8B4513', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.15 }}>
+                    <span style={{ fontFamily: 'Georgia, serif', fontSize: '7px', fontWeight: 700, color: countryInfo.accent, textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.15 }}>
                       {entry.city ?? entry.title}
                     </span>
-                    <span style={{ fontFamily: 'Georgia, serif', fontSize: '6px', color: '#8B4513', marginTop: '2px' }}>
+                    <span style={{ fontFamily: 'Georgia, serif', fontSize: '6px', color: countryInfo.accent, marginTop: '2px' }}>
                       {monthYear(entry.date)}
                     </span>
                   </div>
