@@ -21,6 +21,17 @@ export async function fetchStory(id: string): Promise<Story | null> {
   return data as unknown as Story
 }
 
+export async function fetchStoryByEntryId(entryId: string): Promise<Story | null> {
+  const { data, error } = await supabase
+    .from('stories')
+    .select('*')
+    .contains('metadata', { mission_entry_id: entryId })
+    .limit(1)
+    .maybeSingle()
+  if (error) return null
+  return data as unknown as Story | null
+}
+
 export async function createStory(fields: Omit<Story, 'id' | 'created_at' | 'updated_at'>): Promise<Story> {
   const { data, error } = await supabase
     .from('stories')

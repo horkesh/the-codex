@@ -7,7 +7,7 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 - **Frontend**: React 19 + TypeScript + Vite 6 + Tailwind v4 + Framer Motion + Zustand 5
 - **Backend**: Supabase (Auth + Postgres + Storage + Edge Functions on Deno)
 - **AI**: Anthropic Claude (`claude-haiku-4-5-20251001` for Instagram analysis, `claude-sonnet-4-6` for lore/narrative) + Google Gemini (`gemini-2.5-flash` for photo vision, `imagen-4.0-generate-001` for image generation)
-- **Deploy**: `git push` to `main` — GitHub Actions (`.github/workflows/deploy.yml`) auto-deploys Vercel + all Supabase Edge Functions. See `docs/05-dev-ops/runbook.md`.
+- **Deploy**: `git push` to `main` — GitHub Actions (`.github/workflows/deploy.yml`) auto-deploys Vercel + Supabase DB migrations (`supabase db push`) + all Edge Functions. See `docs/05-dev-ops/runbook.md`. Requires `SUPABASE_DB_PASSWORD` secret in GitHub repo settings.
 
 ## Key architecture decisions
 - **No service worker** — VitePWA is set to `selfDestroying: true`. The SW caused persistent deadlocks by caching Supabase calls. Do not re-enable runtime caching.
@@ -98,6 +98,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - Mission: 20 photos, Night Out: 15, all others: 10
 - `PhotoUpload` accepts `maxPhotos` prop; `usePendingPhotos(maxPhotos)` enforces the cap
 - Limits set in `EntryNew.tsx` based on `selectedType`
+- **Picker loading state**: `picking` state shows spinning gents logo (`logo-gold.webp`) + "Processing photos..." while the native gallery processes selected files. Clears on file arrival or picker cancel (via `window.focus` listener with 500ms debounce).
 
 ## Lore generation (`supabase/functions/generate-lore/`)
 - Uses `claude-sonnet-4-6` with vision. Photo limits per type: mission up to 20, night_out up to 15, others up to 4.
@@ -133,7 +134,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 
 ## Passport pages & templates
 - **Cover**: uses real Pasoš cover image (`public/passport-cover.png`) with gent personalization overlay (avatar, name, alias, stats, travel intel).
-- **Visa page (in-app)**: `/passport/visa/{stampId}` — cream passport aesthetic (`#F5F0E1`), navy text, "VIZE-ВИЗЕ-VISAS" header, stamp, polaroid photo, data fields, debrief section.
+- **Mission layout (in-app)**: Mission entries render `MissionLayout` component inside `EntryDetail` instead of the generic layout. Shows visa card artifact (cream passport aesthetic), magazine-style lore with drop-caps + interspersed photos, intelligence report with debrief, and expandable "More" section for reactions/comments/actions. `/passport/visa/:stampId` redirects to `/chronicle/:entryId`. Passport stamp grid navigates directly to entry detail.
 - **AI Mission Debrief**: "Generate Mission Debrief" button calls `generate-mission-debrief` edge function (`claude-sonnet-4-6`). Retries text-only if photo URLs fail (400). Returns classified narrative, landmarks, highlights, risk assessment. Stored in `entry.metadata`. `verify_jwt = false` in config.toml.
 - **Visa carousel export** (`src/export/templates/visa-carousel/`): dynamic Instagram carousel (2–7 slides, all 1080×1350):
   - `VisaCardSlide` — photo band (480px, uses `getCoverCrop`), flag+VIZA, destination (48px), bearer row (56px avatars), one-liner + stamp in flex row (not absolute)
@@ -210,7 +211,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - MissionForm has Start Date and End Date (optional) inputs.
 - `date_end` stored in `entry.metadata.date_end` (not a DB column — avoids migration).
 - Display format: "Budapest, Hungary · 05/03 – 12/03/2026" when range, single date otherwise.
-- **Auto-fill**: when EXIF sets the start date and end date is empty, end date defaults to today.
+- **Auto-fill**: when EXIF sets the start date and end date is empty, end date defaults to the last photo's EXIF date (via `lastPhotoDate` on `LocationFill`). Falls back to start date if only one photo.
 
 ## Pitch form
 - `PlaystationForm` has Title, Date, Location, and Matches fields.
@@ -318,8 +319,9 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 ## Deployment workflow
 ```bash
 git add <files> && git commit -m "..." && git push
-# GitHub Actions deploys Vercel + all Supabase Edge Functions automatically
+# GitHub Actions: Vercel → supabase db push (migrations) → Edge Functions
 # See .github/workflows/deploy.yml
+# Secrets required: VERCEL_TOKEN, SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD
 ```
 
 ## Related projects (for reference)
