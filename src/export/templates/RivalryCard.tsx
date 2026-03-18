@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrandMark, GoldRule, BackgroundLayer } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, FONT } from '@/export/templates/shared'
 import { GENT_LABELS } from '@/lib/gents'
 import { COMPARISON_STAT_ROWS, computeLeaderSummary } from '@/data/stats'
 import type { GentStats } from '@/types/app'
@@ -21,7 +21,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
           width: '1080px',
           height: '1350px',
           backgroundColor: '#0D0B0F',
-          fontFamily: 'var(--font-body)',
+          fontFamily: FONT.body,
           overflow: 'hidden',
           position: 'relative',
           display: 'flex',
@@ -36,7 +36,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
         <div style={{ position: 'relative', zIndex: 2, marginBottom: '48px' }}>
           <p
             style={{
-              fontFamily: 'var(--font-body)',
+              fontFamily: FONT.body,
               fontSize: '13px',
               color: '#C9A84C',
               letterSpacing: '0.4em',
@@ -65,7 +65,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
         >
           <span
             style={{
-              fontFamily: 'var(--font-display)',
+              fontFamily: FONT.display,
               fontSize: '72px',
               fontWeight: '700',
               color: '#F0EDE8',
@@ -77,7 +77,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
           </span>
           <span
             style={{
-              fontFamily: 'var(--font-body)',
+              fontFamily: FONT.body,
               fontSize: '14px',
               color: '#8C8680',
               letterSpacing: '0.3em',
@@ -89,7 +89,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
           </span>
           <span
             style={{
-              fontFamily: 'var(--font-display)',
+              fontFamily: FONT.display,
               fontSize: '72px',
               fontWeight: '700',
               color: '#F0EDE8',
@@ -125,7 +125,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
                 >
                   <span
                     style={{
-                      fontFamily: 'var(--font-body)',
+                      fontFamily: FONT.body,
                       fontSize: '28px',
                       fontWeight: '700',
                       color: !tied && leaderIsA ? gold : '#F0EDE8',
@@ -136,7 +136,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
                   </span>
                   <span
                     style={{
-                      fontFamily: 'var(--font-body)',
+                      fontFamily: FONT.body,
                       fontSize: '11px',
                       color: '#8C8680',
                       letterSpacing: '0.25em',
@@ -147,7 +147,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
                   </span>
                   <span
                     style={{
-                      fontFamily: 'var(--font-body)',
+                      fontFamily: FONT.body,
                       fontSize: '28px',
                       fontWeight: '700',
                       color: !tied && !leaderIsA ? gold : '#F0EDE8',
@@ -195,7 +195,7 @@ export const RivalryCard = React.forwardRef<HTMLDivElement, RivalryCardProps>(
           style={{
             position: 'relative',
             zIndex: 2,
-            fontFamily: 'var(--font-body)',
+            fontFamily: FONT.body,
             fontSize: '14px',
             color: '#8C8680',
             textAlign: 'center',

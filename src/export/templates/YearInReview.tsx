@@ -1,6 +1,6 @@
 import React from 'react'
 import { flagEmoji } from '@/lib/utils'
-import { BrandMark, GoldRule, InsetFrame } from './shared'
+import { BrandMark, GoldRule, InsetFrame, FONT } from './shared'
 
 interface CityEntry {
   city: string
@@ -26,7 +26,7 @@ const ROOT: React.CSSProperties = {
   width: '1080px',
   height: '1350px',
   backgroundColor: '#0d0b0f',
-  fontFamily: 'var(--font-body)',
+  fontFamily: FONT.body,
   overflow: 'hidden',
   position: 'relative',
   display: 'flex',
@@ -52,14 +52,14 @@ export const YearInReview = React.forwardRef<HTMLDivElement, YearInReviewProps>(
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <BrandMark size="sm" />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>
+            <span style={{ fontFamily: FONT.body, fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>
               Year in Review
             </span>
           </div>
 
           {/* Year hero */}
           <div style={{ marginTop: '32px' }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '160px', fontWeight: 700, color: '#F0EDE8', lineHeight: 0.85, letterSpacing: '-0.04em' }}>
+            <div style={{ fontFamily: FONT.display, fontSize: '160px', fontWeight: 700, color: '#F0EDE8', lineHeight: 0.85, letterSpacing: '-0.04em' }}>
               {year}
             </div>
             <div style={{ height: '2px', width: '80px', backgroundColor: '#C9A84C', marginTop: '16px', opacity: 0.6 }} />
@@ -76,10 +76,10 @@ export const YearInReview = React.forwardRef<HTMLDivElement, YearInReviewProps>(
               { label: 'Toasts', value: totalToasts },
             ].map(({ label, value }) => (
               <div key={label}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '56px', fontWeight: 700, color: '#C9A84C', lineHeight: 1 }}>
+                <div style={{ fontFamily: FONT.display, fontSize: '56px', fontWeight: 700, color: '#C9A84C', lineHeight: 1 }}>
                   {value}
                 </div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#7a7268', marginTop: '4px' }}>
+                <div style={{ fontFamily: FONT.body, fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#7a7268', marginTop: '4px' }}>
                   {label}
                 </div>
               </div>
@@ -88,8 +88,8 @@ export const YearInReview = React.forwardRef<HTMLDivElement, YearInReviewProps>(
 
           {/* Total entries badge */}
           <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: 700, color: '#F0EDE8' }}>{totalEntries}</span>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#7a7268' }}>total chronicles</span>
+            <span style={{ fontFamily: FONT.display, fontSize: '32px', fontWeight: 700, color: '#F0EDE8' }}>{totalEntries}</span>
+            <span style={{ fontFamily: FONT.body, fontSize: '13px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#7a7268' }}>total chronicles</span>
           </div>
 
           <div style={{ marginTop: '24px' }}><GoldRule /></div>
@@ -100,17 +100,17 @@ export const YearInReview = React.forwardRef<HTMLDivElement, YearInReviewProps>(
             <div style={{ flex: 1 }}>
               {topCity && (
                 <div style={{ marginBottom: '20px' }}>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#7a7268' }}>Top Destination</span>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 700, color: '#C9A84C', lineHeight: 1.1, marginTop: '4px' }}>{topCity}</div>
+                  <span style={{ fontFamily: FONT.body, fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#7a7268' }}>Top Destination</span>
+                  <div style={{ fontFamily: FONT.display, fontSize: '36px', fontWeight: 700, color: '#C9A84C', lineHeight: 1.1, marginTop: '4px' }}>{topCity}</div>
                 </div>
               )}
               {topCities.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {topCities.map((c, i) => (
                     <div key={c.city} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, color: 'rgba(201,168,76,0.4)', width: '24px' }}>{i + 1}</span>
+                      <span style={{ fontFamily: FONT.display, fontSize: '16px', fontWeight: 700, color: 'rgba(201,168,76,0.4)', width: '24px' }}>{i + 1}</span>
                       {c.countryCode && <span style={{ fontSize: '16px' }}>{flagEmoji(c.countryCode)}</span>}
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#F0EDE8', fontWeight: 500 }}>{c.city}</span>
+                      <span style={{ fontFamily: FONT.body, fontSize: '15px', color: '#F0EDE8', fontWeight: 500 }}>{c.city}</span>
                       <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#7a7268' }}>x{c.count}</span>
                     </div>
                   ))}
@@ -136,7 +136,7 @@ export const YearInReview = React.forwardRef<HTMLDivElement, YearInReviewProps>(
           {/* Footer */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingTop: '16px' }}>
             <GoldRule />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '10px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#7a7268' }}>The Chronicle Continues</span>
+            <span style={{ fontFamily: FONT.body, fontSize: '10px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#7a7268' }}>The Chronicle Continues</span>
           </div>
         </div>
       </div>

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
-import { fetchEntries, ENTRY_COLUMNS } from '@/data/entries'
+import { fetchEntries, fetchParticipantsMap, ENTRY_COLUMNS } from '@/data/entries'
 import { useAuthStore } from '@/store/auth'
-import type { EntryWithParticipants, EntryType, Gent } from '@/types/app'
+import type { EntryWithParticipants, EntryType } from '@/types/app'
 
 export interface ChronicleFilters {
   type?: EntryType
@@ -114,22 +114,7 @@ export function useUpcomingGatherings(): { upcoming: EntryWithParticipants[]; lo
       }
 
       const entryIds = filtered.map((e) => e.id)
-
-      // Fetch participants
-      const { data: participantRows, error: pErr } = await supabase
-        .from('entry_participants')
-        .select('gent_id, entry_id, gents:gent_id (id, alias, display_name, full_alias, avatar_url, bio, portrait_url, status, status_expires_at)')
-        .in('entry_id', entryIds)
-
-      if (pErr) throw pErr
-
-      type ParticipantRow = { entry_id: string; gents: Gent | null }
-      const participantMap: Record<string, Gent[]> = {}
-      for (const row of participantRows ?? []) {
-        const r = row as ParticipantRow
-        if (!participantMap[r.entry_id]) participantMap[r.entry_id] = []
-        if (r.gents) participantMap[r.entry_id].push(r.gents)
-      }
+      const participantMap = await fetchParticipantsMap(entryIds)
 
       const result: EntryWithParticipants[] = filtered.map((entry) => ({
         ...entry,

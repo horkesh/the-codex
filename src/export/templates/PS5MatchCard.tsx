@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry, PS5Match } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER, FONT } from '@/export/templates/shared'
 
 interface PS5MatchCardProps {
   entry: Entry
@@ -13,7 +13,7 @@ const ROOT: React.CSSProperties = {
   width: '1080px',
   height: '1350px',
   backgroundColor: '#0D0B0F',
-  fontFamily: 'var(--font-body)',
+  fontFamily: FONT.body,
   overflow: 'hidden',
   position: 'relative',
   display: 'flex',
@@ -68,9 +68,9 @@ function V1({ entry, backgroundUrl }: PS5MatchCardProps) {
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GridTexture backgroundUrl={backgroundUrl} />
       <div style={{ paddingTop: '64px', width: '100%', ...Z2 }}>
-        <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>PS5 SESSION</span>
+        <span style={{ fontFamily: FONT.body, fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>PS5 SESSION</span>
       </div>
-      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '52px', fontWeight: '700', color: '#F0EDE8', lineHeight: '1.1', margin: '20px 0 0', alignSelf: 'flex-start', ...Z2 }}>{entry.title}</h1>
+      <h1 style={{ fontFamily: FONT.display, fontSize: '52px', fontWeight: '700', color: '#F0EDE8', lineHeight: '1.1', margin: '20px 0 0', alignSelf: 'flex-start', ...Z2 }}>{entry.title}</h1>
       <div style={{ display: 'flex', alignItems: 'center', gap: '32px', alignSelf: 'flex-start', marginTop: '16px', marginBottom: '48px', ...Z2 }}>
         <span style={{ fontSize: '15px', color: backgroundUrl ? '#A09890' : '#8C8680', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{formatDate(entry.date)}</span>
         <span style={{ fontSize: '15px', color: '#C9A84C', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{totalMatches} Battles</span>
@@ -78,9 +78,9 @@ function V1({ entry, backgroundUrl }: PS5MatchCardProps) {
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '40px', ...Z2 }}>
         {pairings.map(({ p1, p2, p1wins, p2wins }) => (
           <div key={`${p1}|${p2}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(201,168,76,0.15)', paddingTop: '16px' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '26px', color: '#F0EDE8', textTransform: 'capitalize' }}>{p1}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '32px', color: '#C9A84C', fontWeight: '700' }}>{p1wins} — {p2wins}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '26px', color: '#F0EDE8', textTransform: 'capitalize' }}>{p2}</span>
+            <span style={{ fontFamily: FONT.mono, fontSize: '26px', color: '#F0EDE8', textTransform: 'capitalize' }}>{p1}</span>
+            <span style={{ fontFamily: FONT.mono, fontSize: '32px', color: '#C9A84C', fontWeight: '700' }}>{p1wins} — {p2wins}</span>
+            <span style={{ fontFamily: FONT.mono, fontSize: '26px', color: '#F0EDE8', textTransform: 'capitalize' }}>{p2}</span>
           </div>
         ))}
       </div>
@@ -88,7 +88,7 @@ function V1({ entry, backgroundUrl }: PS5MatchCardProps) {
         <div style={{ width: '100%', display: 'flex', gap: '24px', marginBottom: '40px', ...Z2 }}>
           {Object.entries(wc).map(([gent, wins]) => (
             <div key={gent} style={{ flex: 1, backgroundColor: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '4px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '40px', fontWeight: '700', color: '#C9A84C', lineHeight: '1' }}>{wins}</span>
+              <span style={{ fontFamily: FONT.mono, fontSize: '40px', fontWeight: '700', color: '#C9A84C', lineHeight: '1' }}>{wins}</span>
               <span style={{ fontSize: '13px', color: '#8C8680', letterSpacing: '0.15em', textTransform: 'uppercase', textAlign: 'center' }}>{gent}</span>
             </div>
           ))}
@@ -114,18 +114,18 @@ function V2({ entry, backgroundUrl }: PS5MatchCardProps) {
       <GridTexture backgroundUrl={backgroundUrl} />
       {/* Top label */}
       <div style={{ padding: '72px 80px 0', ...Z2 }}>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>THE PITCH</p>
+        <p style={{ fontFamily: FONT.body, fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>THE PITCH</p>
       </div>
       {/* Bottom content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '80px', fontWeight: '700', color: '#F0EDE8', lineHeight: '0.95', margin: '0 0 24px' }}>{entry.title}</h1>
+        <h1 style={{ fontFamily: FONT.display, fontSize: '80px', fontWeight: '700', color: '#F0EDE8', lineHeight: '0.95', margin: '0 0 24px' }}>{entry.title}</h1>
         {winner && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '24px' }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '64px', fontWeight: '700', color: '#C9A84C', lineHeight: '1', textTransform: 'capitalize' }}>{winner[0]}</span>
+            <span style={{ fontFamily: FONT.display, fontSize: '64px', fontWeight: '700', color: '#C9A84C', lineHeight: '1', textTransform: 'capitalize' }}>{winner[0]}</span>
             <span style={{ fontSize: '20px', color: '#8C8680' }}>wins with {winner[1]} victories</span>
           </div>
         )}
-        {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '24px' }}>{oneliner}</p>}
+        {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '24px' }}>{oneliner}</p>}
         <p style={{ fontSize: '15px', color: '#8C8680', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{formatDate(entry.date)} · {totalMatches} battles</p>
       </div>
       <div style={{ padding: '0 80px 64px', ...Z2 }}><BrandMark size="md" /></div>
@@ -145,13 +145,13 @@ function V3({ entry, backgroundUrl }: PS5MatchCardProps) {
       {/* Top badge */}
       <div style={{ paddingTop: '80px', ...Z2 }}>
         <div style={{ border: '1px solid rgba(201,168,76,0.4)', borderRadius: '4px', padding: '6px 16px' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>THE PITCH</span>
+          <span style={{ fontFamily: FONT.body, fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>THE PITCH</span>
         </div>
       </div>
       {/* Bottom content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: '40px', padding: '0 80px 80px', ...Z2 }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '64px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', margin: '0' }}>{entry.title}</h1>
-        {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '28px', color: '#C8C0B0', textAlign: 'center', lineHeight: '1.45', maxWidth: '780px' }}>"{oneliner}"</p>}
+        <h1 style={{ fontFamily: FONT.display, fontSize: '64px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', margin: '0' }}>{entry.title}</h1>
+        {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '28px', color: '#C8C0B0', textAlign: 'center', lineHeight: '1.45', maxWidth: '780px' }}>"{oneliner}"</p>}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <span style={{ fontSize: '14px', color: '#C9A84C', letterSpacing: '0.15em' }}>{totalMatches} BATTLES</span>
           <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#C9A84C', opacity: 0.5 }} />
@@ -174,19 +174,19 @@ function V4({ entry, backgroundUrl }: PS5MatchCardProps) {
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GridTexture backgroundUrl={backgroundUrl} />
       <div style={{ paddingTop: '72px', ...Z2 }}>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>PS5 SESSION · {totalMatches} BATTLES</p>
+        <p style={{ fontFamily: FONT.body, fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600' }}>PS5 SESSION · {totalMatches} BATTLES</p>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '0 80px', gap: '40px', ...Z2 }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '64px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', margin: '0' }}>{entry.title}</h1>
+        <h1 style={{ fontFamily: FONT.display, fontSize: '64px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', margin: '0' }}>{entry.title}</h1>
         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {pairings.map(({ p1, p2, p1wins, p2wins }) => (
             <div key={`${p1}|${p2}`} style={{ backgroundColor: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '8px', padding: '24px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', minWidth: '200px' }}>
               <span style={{ fontSize: '13px', color: '#8C8680', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{p1} vs {p2}</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '40px', fontWeight: '700', color: '#C9A84C' }}>{p1wins} — {p2wins}</span>
+              <span style={{ fontFamily: FONT.mono, fontSize: '40px', fontWeight: '700', color: '#C9A84C' }}>{p1wins} — {p2wins}</span>
             </div>
           ))}
         </div>
-        {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', textAlign: 'center', lineHeight: '1.5', maxWidth: '780px' }}>{oneliner}</p>}
+        {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', textAlign: 'center', lineHeight: '1.5', maxWidth: '780px' }}>{oneliner}</p>}
         <p style={{ fontSize: '14px', color: '#8C8680', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{formatDate(entry.date)}</p>
       </div>
       <div style={{ paddingBottom: '56px', ...Z2 }}><BrandMark size="md" /></div>

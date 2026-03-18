@@ -1,6 +1,29 @@
 import type React from 'react'
 import type { Entry } from '@/types/app'
 
+/* ── Export constants ── */
+
+/** Hardcoded font stacks for html2canvas (CSS vars don't resolve in export context) */
+export const FONT = {
+  display: "'Playfair Display', Georgia, serif",
+  body: "'Instrument Sans', 'Helvetica Neue', Arial, sans-serif",
+  mono: "'JetBrains Mono', 'Courier New', monospace",
+} as const
+
+/** Canonical color palette for export templates */
+export const COLOR = {
+  obsidian: '#0D0B0F',
+  gold: '#C9A84C',
+  goldDim: 'rgba(201,168,76,0.5)',
+  goldFaint: 'rgba(201,168,76,0.25)',
+  ivory: '#F0EDE8',
+  ivoryDim: 'rgba(240,237,232,0.7)',
+  ivoryFaint: 'rgba(240,237,232,0.45)',
+  white: '#FFFFFF',
+  muted: 'rgba(255,255,255,0.5)',
+  mutedLight: 'rgba(255,255,255,0.35)',
+} as const
+
 /** Extract lore one-liner from metadata, falling back to first sentence of lore */
 export function getOneliner(entry: Entry): string | null {
   const meta = entry.metadata as Record<string, unknown> | undefined

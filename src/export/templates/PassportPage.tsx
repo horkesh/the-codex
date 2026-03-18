@@ -1,7 +1,7 @@
 import React from 'react'
 import { PassportStamp } from '@/types/app'
 import { flagEmoji } from '@/lib/utils'
-import { BrandMark, GoldRule } from '@/export/templates/shared'
+import { BrandMark, GoldRule, FONT } from '@/export/templates/shared'
 
 interface PassportPageProps {
   stamps: PassportStamp[]
@@ -24,7 +24,7 @@ export const PassportPage = React.forwardRef<HTMLDivElement, PassportPageProps>(
           width: '1080px',
           height: '1920px',
           backgroundColor: '#0D0D0D',
-          fontFamily: 'var(--font-body)',
+          fontFamily: FONT.body,
           overflow: 'hidden',
           position: 'relative',
           display: 'flex',
@@ -48,7 +48,7 @@ export const PassportPage = React.forwardRef<HTMLDivElement, PassportPageProps>(
         >
           <span
             style={{
-              fontFamily: 'var(--font-body)',
+              fontFamily: FONT.body,
               fontSize: '13px',
               color: '#C9A84C',
               letterSpacing: '0.5em',
@@ -62,7 +62,7 @@ export const PassportPage = React.forwardRef<HTMLDivElement, PassportPageProps>(
 
           <h1
             style={{
-              fontFamily: 'var(--font-display)',
+              fontFamily: FONT.display,
               fontSize: '68px',
               fontWeight: '700',
               color: '#F0EDE8',
@@ -77,7 +77,7 @@ export const PassportPage = React.forwardRef<HTMLDivElement, PassportPageProps>(
 
           <p
             style={{
-              fontFamily: 'var(--font-body)',
+              fontFamily: FONT.body,
               fontSize: '20px',
               color: '#C9A84C',
               letterSpacing: '0.25em',
@@ -98,7 +98,7 @@ export const PassportPage = React.forwardRef<HTMLDivElement, PassportPageProps>(
           >
             <span
               style={{
-                fontFamily: 'var(--font-body)',
+                fontFamily: FONT.body,
                 fontSize: '17px',
                 color: '#8C8680',
                 letterSpacing: '0.08em',
@@ -117,7 +117,7 @@ export const PassportPage = React.forwardRef<HTMLDivElement, PassportPageProps>(
             />
             <span
               style={{
-                fontFamily: 'var(--font-body)',
+                fontFamily: FONT.body,
                 fontSize: '17px',
                 color: '#8C8680',
                 letterSpacing: '0.08em',
@@ -182,7 +182,7 @@ export const PassportPage = React.forwardRef<HTMLDivElement, PassportPageProps>(
                 ) : (
                   <span
                     style={{
-                      fontFamily: 'var(--font-display)',
+                      fontFamily: FONT.display,
                       fontSize: '28px',
                       color: '#C9A84C',
                       fontWeight: '700',
@@ -196,7 +196,7 @@ export const PassportPage = React.forwardRef<HTMLDivElement, PassportPageProps>(
               {/* Stamp name */}
               <p
                 style={{
-                  fontFamily: 'var(--font-body)',
+                  fontFamily: FONT.body,
                   fontSize: '14px',
                   color: '#F0EDE8',
                   textAlign: 'center',
@@ -214,7 +214,7 @@ export const PassportPage = React.forwardRef<HTMLDivElement, PassportPageProps>(
               {stamp.city && (
                 <p
                   style={{
-                    fontFamily: 'var(--font-body)',
+                    fontFamily: FONT.body,
                     fontSize: '12px',
                     color: '#8C8680',
                     textAlign: 'center',

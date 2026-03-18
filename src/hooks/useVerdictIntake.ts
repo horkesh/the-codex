@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useAuthStore } from '@/store/auth'
 import { scanPersonVerdict } from '@/ai/personVerdict'
 import { generatePersonPortrait } from '@/ai/personPortrait'
@@ -44,8 +44,10 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
   const [portraitLoading, setPortraitLoading] = useState(false)
   const [dossier, setDossier] = useState<DossierDraft>(createEmptyDossier)
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
+  const cancelledRef = useRef(false)
 
   const reset = useCallback(() => {
+    cancelledRef.current = true
     setStep('input')
     setMode('research')
     setAnalyzeError('')
@@ -106,14 +108,16 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     setVerdictResult({ verdict, portraitUrl: null, sourcePhotoUrl, scanId: scan.id })
     setPortraitLoading(true)
     setStep('review')
+    cancelledRef.current = false
 
     generatePersonPortrait({ appearance: verdict.appearance, traits: verdict.trait_words, scan_id: scan.id })
       .then((result) => {
+        if (cancelledRef.current) return
         setVerdictResult((prev) => prev ? { ...prev, portraitUrl: result.portrait_url } : prev)
         updatePersonScan(scan.id, { generated_avatar_url: result.portrait_url }).catch(() => {})
       })
       .catch(() => {})
-      .finally(() => setPortraitLoading(false))
+      .finally(() => { if (!cancelledRef.current) setPortraitLoading(false) })
   }, [gent])
 
   // File upload (screenshot or photo)

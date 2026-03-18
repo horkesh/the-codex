@@ -1,7 +1,7 @@
 import React from 'react'
 import { Entry } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER, FONT } from '@/export/templates/shared'
 
 interface ToastCardProps {
   entry: Entry
@@ -13,7 +13,7 @@ const ROOT: React.CSSProperties = {
   width: '1080px',
   height: '1350px',
   backgroundColor: '#0D0B0F',
-  fontFamily: 'var(--font-body)',
+  fontFamily: FONT.body,
   overflow: 'hidden',
   position: 'relative',
   display: 'flex',
@@ -39,16 +39,16 @@ function V1({ entry, backgroundUrl }: ToastCardProps) {
         <GoldRule thick />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '16px', paddingLeft: '80px', paddingRight: '80px', ...Z2 }}>
-        <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600', marginBottom: '48px' }}>
+        <span style={{ fontFamily: FONT.body, fontSize: '13px', color: '#C9A84C', letterSpacing: '0.4em', textTransform: 'uppercase', fontWeight: '600', marginBottom: '48px' }}>
           {occasion ?? 'The Toast'}
         </span>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '76px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', letterSpacing: '-0.02em', margin: '0 0 40px 0' }}>
+        <h1 style={{ fontFamily: FONT.display, fontSize: '76px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', letterSpacing: '-0.02em', margin: '0 0 40px 0' }}>
           {entry.title}
         </h1>
         {(spirit || dram) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '32px', height: '1px', backgroundColor: '#C9A84C', opacity: 0.5 }} />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '20px', color: '#C9A84C', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            <span style={{ fontFamily: FONT.body, fontSize: '20px', color: '#C9A84C', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               {[spirit, dram].filter(Boolean).join(' · ')}
             </span>
             <div style={{ width: '32px', height: '1px', backgroundColor: '#C9A84C', opacity: 0.5 }} />
@@ -56,8 +56,8 @@ function V1({ entry, backgroundUrl }: ToastCardProps) {
         )}
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingLeft: '80px', paddingRight: '80px', ...Z2 }}>
-        {entry.location && <p style={{ fontFamily: 'var(--font-body)', fontSize: '20px', color: backgroundUrl ? '#A09890' : '#8C8680', letterSpacing: '0.06em', marginBottom: '8px' }}>{entry.location}</p>}
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: backgroundUrl ? '#A09890' : '#8C8680', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: '64px' }}>{formatDate(entry.date)}</p>
+        {entry.location && <p style={{ fontFamily: FONT.body, fontSize: '20px', color: backgroundUrl ? '#A09890' : '#8C8680', letterSpacing: '0.06em', marginBottom: '8px' }}>{entry.location}</p>}
+        <p style={{ fontFamily: FONT.body, fontSize: '15px', color: backgroundUrl ? '#A09890' : '#8C8680', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: '64px' }}>{formatDate(entry.date)}</p>
         {oneliner && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '32px' }}>
@@ -65,7 +65,7 @@ function V1({ entry, backgroundUrl }: ToastCardProps) {
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', border: '1px solid rgba(201,168,76,0.7)' }} />
               <div style={{ height: '1px', width: '80px', backgroundColor: '#C9A84C', opacity: 0.35 }} />
             </div>
-            <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '24px', color: backgroundUrl ? '#C8C0B0' : '#8C8680', textAlign: 'center', lineHeight: '1.7', maxWidth: '860px', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '24px', color: backgroundUrl ? '#C8C0B0' : '#8C8680', textAlign: 'center', lineHeight: '1.7', maxWidth: '860px', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {oneliner}
             </p>
           </>
@@ -88,7 +88,7 @@ function V2({ entry, backgroundUrl }: ToastCardProps) {
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <div style={{ padding: '72px 80px 0', ...Z2 }}>
         <div style={{ border: '1px solid rgba(201,168,76,0.4)', borderRadius: '4px', padding: '6px 16px', display: 'inline-block' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>
+          <span style={{ fontFamily: FONT.body, fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>
             {occasion ?? 'The Toast'}
           </span>
         </div>
@@ -96,14 +96,14 @@ function V2({ entry, backgroundUrl }: ToastCardProps) {
       {/* Ghost spirit watermark */}
       {spirit && (
         <div style={{ padding: '24px 80px 0', ...Z2 }}>
-          <p style={{ fontFamily: 'var(--font-display)', fontSize: '140px', fontWeight: '700', color: 'rgba(201,168,76,0.08)', lineHeight: '0.9', margin: 0, textTransform: 'uppercase' }}>{spirit}</p>
+          <p style={{ fontFamily: FONT.display, fontSize: '140px', fontWeight: '700', color: 'rgba(201,168,76,0.08)', lineHeight: '0.9', margin: 0, textTransform: 'uppercase' }}>{spirit}</p>
         </div>
       )}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '72px', fontWeight: '700', color: '#F0EDE8', lineHeight: '1', margin: '0 0 16px 0' }}>{entry.title}</h1>
-        {dram && <p style={{ fontFamily: 'var(--font-body)', fontSize: '18px', color: '#C9A84C', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '24px' }}>{dram}</p>}
-        {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '24px' }}>{oneliner}</p>}
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{[entry.location, formatDate(entry.date)].filter(Boolean).join(' · ')}</p>
+        <h1 style={{ fontFamily: FONT.display, fontSize: '72px', fontWeight: '700', color: '#F0EDE8', lineHeight: '1', margin: '0 0 16px 0' }}>{entry.title}</h1>
+        {dram && <p style={{ fontFamily: FONT.body, fontSize: '18px', color: '#C9A84C', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '24px' }}>{dram}</p>}
+        {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '24px' }}>{oneliner}</p>}
+        <p style={{ fontFamily: FONT.body, fontSize: '15px', color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{[entry.location, formatDate(entry.date)].filter(Boolean).join(' · ')}</p>
       </div>
       <div style={{ padding: '0 80px 64px', ...Z2 }}><BrandMark size="md" /></div>
     </div>
@@ -120,26 +120,26 @@ function V3({ entry, backgroundUrl }: ToastCardProps) {
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       {/* Large quote marks */}
       <div style={{ paddingTop: '120px', ...Z2 }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontSize: '200px', color: 'rgba(201,168,76,0.12)', lineHeight: '0.5' }}>&ldquo;</span>
+        <span style={{ fontFamily: FONT.display, fontSize: '200px', color: 'rgba(201,168,76,0.12)', lineHeight: '0.5' }}>&ldquo;</span>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 100px', gap: '40px', ...Z2 }}>
         {oneliner ? (
-          <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '36px', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.5', maxWidth: '800px' }}>
+          <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '36px', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.5', maxWidth: '800px' }}>
             {oneliner}
           </p>
         ) : entry.lore ? (
-          <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '28px', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.5', maxWidth: '800px', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '28px', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.5', maxWidth: '800px', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {entry.lore}
           </p>
         ) : null}
         <GoldRule />
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '42px', fontWeight: '700', color: '#C9A84C', textAlign: 'center', lineHeight: '1.1', margin: 0 }}>{entry.title}</h1>
+        <h1 style={{ fontFamily: FONT.display, fontSize: '42px', fontWeight: '700', color: '#C9A84C', textAlign: 'center', lineHeight: '1.1', margin: 0 }}>{entry.title}</h1>
         {(spirit || dram) && (
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '16px', color: '#8C8680', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+          <p style={{ fontFamily: FONT.body, fontSize: '16px', color: '#8C8680', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
             {[spirit, dram].filter(Boolean).join(' · ')}
           </p>
         )}
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: '#8C8680', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{[entry.location, formatDate(entry.date)].filter(Boolean).join(' · ')}</p>
+        <p style={{ fontFamily: FONT.body, fontSize: '13px', color: '#8C8680', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{[entry.location, formatDate(entry.date)].filter(Boolean).join(' · ')}</p>
       </div>
       <div style={{ paddingBottom: '64px', ...Z2 }}><BrandMark size="sm" /></div>
     </div>
@@ -161,22 +161,22 @@ function V4({ entry, backgroundUrl }: ToastCardProps) {
       {/* Top-left date block */}
       <div style={{ padding: '72px 80px 0', display: 'flex', alignItems: 'flex-start', gap: '24px', ...Z2 }}>
         <div style={{ borderRight: '2px solid rgba(201,168,76,0.4)', paddingRight: '24px' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '80px', fontWeight: '700', color: '#C9A84C', lineHeight: '0.9' }}>{day}</div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: '#8C8680', letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: '4px' }}>{month} {year}</div>
+          <div style={{ fontFamily: FONT.display, fontSize: '80px', fontWeight: '700', color: '#C9A84C', lineHeight: '0.9' }}>{day}</div>
+          <div style={{ fontFamily: FONT.body, fontSize: '14px', color: '#8C8680', letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: '4px' }}>{month} {year}</div>
         </div>
         <div style={{ paddingTop: '8px' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>{occasion ?? 'The Toast'}</span>
+          <span style={{ fontFamily: FONT.body, fontSize: '11px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#C9A84C', fontWeight: '600' }}>{occasion ?? 'The Toast'}</span>
         </div>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '0 80px', ...Z2 }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '64px', fontWeight: '700', color: '#F0EDE8', lineHeight: '1.05', margin: '0 0 20px 0' }}>{entry.title}</h1>
+        <h1 style={{ fontFamily: FONT.display, fontSize: '64px', fontWeight: '700', color: '#F0EDE8', lineHeight: '1.05', margin: '0 0 20px 0' }}>{entry.title}</h1>
         {(spirit || dram) && (
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '18px', color: '#C9A84C', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '20px' }}>
+          <p style={{ fontFamily: FONT.body, fontSize: '18px', color: '#C9A84C', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '20px' }}>
             {[spirit, dram].filter(Boolean).join(' · ')}
           </p>
         )}
-        {oneliner && <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '780px', marginBottom: '24px' }}>{oneliner}</p>}
-        {entry.location && <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#8C8680', letterSpacing: '0.1em' }}>{entry.location}</p>}
+        {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '780px', marginBottom: '24px' }}>{oneliner}</p>}
+        {entry.location && <p style={{ fontFamily: FONT.body, fontSize: '15px', color: '#8C8680', letterSpacing: '0.1em' }}>{entry.location}</p>}
       </div>
       <div style={{ padding: '32px 80px 64px', display: 'flex', justifyContent: 'center', ...Z2 }}><BrandMark size="md" /></div>
     </div>

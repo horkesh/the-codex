@@ -29,8 +29,8 @@ export async function updateGent(id: string, updates: Partial<Omit<Gent, 'id' | 
     .eq('id', id)
     .select(GENT_COLUMNS)
     .single()
-  if (error || !data) return null
-  return data as Gent
+  if (error) throw error
+  return (data as Gent) ?? null
 }
 
 export async function updateGentStatus(id: string, status: string | null, expiresAt: string | null): Promise<void> {

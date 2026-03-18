@@ -78,6 +78,9 @@ export async function fetchProspectById(id: string): Promise<Prospect | null> {
     .select('*')
     .eq('id', id)
     .single()
-  if (error) return null
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
   return data as unknown as Prospect
 }

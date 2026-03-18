@@ -7,6 +7,23 @@ import { imageToWebpBlob } from '@/lib/image'
 export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, scene_url, status, pinned, visibility, metadata, created_by, created_at, updated_at'
 const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio'
 
+/** Build a map of entryId → Gent[] from entry_participants rows */
+export async function fetchParticipantsMap(entryIds: string[]): Promise<Record<string, Gent[]>> {
+  if (entryIds.length === 0) return {}
+  const { data, error } = await supabase
+    .from('entry_participants')
+    .select(`gent_id, entry_id, gents:gent_id (${GENT_COLUMNS})`)
+    .in('entry_id', entryIds)
+  if (error) throw error
+  const map: Record<string, Gent[]> = {}
+  for (const row of data ?? []) {
+    const r = row as unknown as { entry_id: string; gents: Gent | null }
+    if (!map[r.entry_id]) map[r.entry_id] = []
+    if (r.gents) map[r.entry_id].push(r.gents)
+  }
+  return map
+}
+
 export async function fetchEntries(filters?: {
   type?: string
   gentId?: string
@@ -60,23 +77,7 @@ export async function fetchEntries(filters?: {
   if (!rawEntries || rawEntries.length === 0) return []
 
   const entries = rawEntries as unknown as Entry[]
-  const entryIds = entries.map((e) => e.id)
-
-  // Fetch all participants for those entries in one query
-  const { data: participantRows, error: pErr } = await supabase
-    .from('entry_participants')
-    .select(`gent_id, entry_id, gents:gent_id (${GENT_COLUMNS})`)
-    .in('entry_id', entryIds)
-
-  if (pErr) throw pErr
-
-  // Build a map of entryId -> Gent[]
-  const participantMap: Record<string, Gent[]> = {}
-  for (const row of participantRows ?? []) {
-    const r = row as unknown as { entry_id: string; gents: Gent | null }
-    if (!participantMap[r.entry_id]) participantMap[r.entry_id] = []
-    if (r.gents) participantMap[r.entry_id].push(r.gents)
-  }
+  const participantMap = await fetchParticipantsMap(entries.map((e) => e.id))
 
   return entries.map((entry) => ({
     ...entry,
@@ -98,19 +99,9 @@ export async function fetchEntry(id: string): Promise<EntryWithParticipants | nu
   if (!rawEntry) return null
 
   const entry = rawEntry as unknown as Entry
+  const participantMap = await fetchParticipantsMap([id])
 
-  const { data: participantRows, error: pErr } = await supabase
-    .from('entry_participants')
-    .select(`gent_id, entry_id, gents:gent_id (${GENT_COLUMNS})`)
-    .eq('entry_id', id)
-
-  if (pErr) throw pErr
-
-  const participants: Gent[] = (participantRows ?? [])
-    .map((r) => (r as unknown as { gents: Gent | null }).gents)
-    .filter((g): g is Gent => g !== null)
-
-  return { ...entry, participants }
+  return { ...entry, participants: participantMap[id] ?? [] }
 }
 
 export async function createEntry(data: {
