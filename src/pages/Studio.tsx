@@ -17,7 +17,7 @@ import { formatDate } from '@/lib/utils'
 import { staggerContainer, staggerItem, fadeUp } from '@/lib/animations'
 import { exportAndShare } from '@/export/exporter'
 import { generateTemplateBg } from '@/ai/templateBg'
-import type { Entry } from '@/types/app'
+import type { Entry, EntryWithParticipants } from '@/types/app'
 
 // Template imports
 import { NightOutCard } from '@/export/templates/NightOutCard'
@@ -271,7 +271,7 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onS
 
 interface TemplateRendererProps {
   templateId: TemplateId
-  entry: Entry
+  entry: EntryWithParticipants
   innerRef: React.Ref<HTMLDivElement>
   backgroundUrl?: string
   rewardKeys?: Set<string>
@@ -527,7 +527,7 @@ export default function Studio() {
   const { gent } = useAuthStore()
 
   const [entries, setEntries] = useState<Entry[]>([])
-  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
+  const [selectedEntry, setSelectedEntry] = useState<EntryWithParticipants | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId | null>(null)
   const [exporting, setExporting] = useState(false)
   const addToast = useUIStore(s => s.addToast)
@@ -593,13 +593,15 @@ export default function Studio() {
         if (preselectedEntryId) {
           const match = fetched.find((x) => x.id === preselectedEntryId)
           if (match) {
-            setSelectedEntry(match)
+            setSelectedEntry({ ...match, participants: [] })
             if (match.cover_image_url) {
               setBgUrl(match.cover_image_url)
             }
             // Auto-select first template for that type if available
             const templates = TEMPLATES_BY_TYPE[match.type] ?? []
             if (templates.length > 0) setSelectedTemplate(templates[0].id)
+            // Fetch full entry with participants
+            fetchEntryFull(match.id).then(full => { if (full && !cancelled) setSelectedEntry(full) }).catch(() => {})
           }
         }
         setLoading(false)
@@ -611,10 +613,12 @@ export default function Studio() {
   // When entry changes, reset template selection and use cover image as default background
   function handleSelectEntry(entry: Entry) {
     if (selectedEntry?.id === entry.id) return
-    setSelectedEntry(entry)
+    // Immediately set with empty participants, then fetch full entry
+    setSelectedEntry({ ...entry, participants: [] })
     setBgUrl(entry.cover_image_url ?? null)
     const templates = TEMPLATES_BY_TYPE[entry.type] ?? []
     setSelectedTemplate(templates.length > 0 ? templates[0].id : null)
+    fetchEntryFull(entry.id).then(full => { if (full) setSelectedEntry(full) }).catch(() => {})
   }
 
   // When template changes, keep the current background (cover or AI)
@@ -955,7 +959,7 @@ export default function Studio() {
                   <PhotoFilterContext.Provider value={filterContextValue}>
                     <TemplateRenderer
                       templateId={selectedTemplate}
-                      entry={selectedEntry ?? ({} as Entry)}
+                      entry={selectedEntry ?? ({ participants: [] } as unknown as EntryWithParticipants)}
                       innerRef={templateRef}
                       backgroundUrl={bgUrl ?? undefined}
                       rewardKeys={rewardKeys}
@@ -975,7 +979,7 @@ export default function Studio() {
                 <PhotoFilterContext.Provider value={filterContextValue}>
                   <TemplateRenderer
                     templateId={selectedTemplate}
-                    entry={selectedEntry ?? ({} as Entry)}
+                    entry={selectedEntry ?? ({ participants: [] } as unknown as EntryWithParticipants)}
                     innerRef={exportRef}
                     backgroundUrl={bgUrl ?? undefined}
                     rewardKeys={rewardKeys}

@@ -1,10 +1,10 @@
 import React from 'react'
-import { Entry, PS5Match } from '@/types/app'
+import type { PS5Match, Gent } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER, FONT } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer, InsetFrame, ParticipantRow, getOneliner, VARIANT_INNER, FONT } from '@/export/templates/shared'
 
 interface PS5MatchCardProps {
-  entry: Entry
+  entry: { title: string; date: string; location: string | null; lore: string | null; metadata: Record<string, unknown>; participants?: Gent[] }
   backgroundUrl?: string
   variant?: 1 | 2 | 3 | 4
 }
@@ -127,6 +127,11 @@ function V2({ entry, backgroundUrl }: PS5MatchCardProps) {
         )}
         {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '24px' }}>{oneliner}</p>}
         <p style={{ fontSize: '15px', color: '#8C8680', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{formatDate(entry.date)} · {totalMatches} battles</p>
+        {entry.participants && entry.participants.length > 0 && (
+          <div style={{ marginTop: '32px' }}>
+            <ParticipantRow participants={entry.participants} />
+          </div>
+        )}
       </div>
       <div style={{ padding: '0 80px 64px', ...Z2 }}><BrandMark size="md" /></div>
     </div>

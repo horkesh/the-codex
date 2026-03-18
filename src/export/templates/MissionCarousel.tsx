@@ -1,10 +1,10 @@
 import React from 'react'
-import { Entry } from '@/types/app'
+import type { Gent } from '@/types/app'
 import { formatDate } from '@/lib/utils'
-import { BrandMark, BackgroundLayer, InsetFrame, getOneliner, VARIANT_INNER, FONT } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer, InsetFrame, ParticipantRow, getOneliner, calcDuration, VARIANT_INNER, FONT } from '@/export/templates/shared'
 
 interface MissionCarouselProps {
-  entry: Entry
+  entry: { id: string; title: string; date: string; location: string | null; city: string | null; country: string | null; country_code: string | null; lore: string | null; metadata: Record<string, unknown>; participants?: Gent[] }
   backgroundUrl?: string
   rewardKeys?: Set<string>
   variant?: 1 | 2 | 3 | 4
@@ -36,6 +36,11 @@ function VeteranBadge({ rewardKeys, style }: { rewardKeys?: Set<string>; style?:
 
 function V1({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
+  const dateEnd = entry.metadata?.date_end as string | undefined
+  const duration = calcDuration(entry.date, dateEnd)
+  const dateLabel = dateEnd
+    ? `${formatDate(entry.date)} – ${formatDate(dateEnd)}`
+    : formatDate(entry.date)
   return (
     <div style={{ ...VARIANT_INNER, alignItems: 'center', justifyContent: 'space-between' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
@@ -48,8 +53,16 @@ function V1({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'flex-end', ...Z2 }}>
         {entry.city && <h1 style={{ fontFamily: FONT.display, fontSize: '72px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', letterSpacing: '-0.02em', margin: '0 0 16px 0', paddingLeft: '60px', paddingRight: '60px' }}>{entry.city}</h1>}
         {entry.country && <p style={{ fontFamily: FONT.body, fontSize: '26px', color: backgroundUrl ? '#A09890' : '#8C8680', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '40px' }}>{entry.country}</p>}
-        <p style={{ fontFamily: FONT.body, fontSize: '16px', color: '#C9A84C', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '48px' }}>{formatDate(entry.date)}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '48px' }}>
+          <p style={{ fontFamily: FONT.body, fontSize: '16px', color: '#C9A84C', letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0 }}>{dateLabel}</p>
+          {duration && <span style={{ fontFamily: FONT.body, fontSize: '12px', color: '#8C8680', letterSpacing: '0.15em', border: '1px solid rgba(140,134,128,0.3)', borderRadius: '3px', padding: '2px 8px' }}>{duration}</span>}
+        </div>
         {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '22px', color: backgroundUrl ? '#C8C0B0' : '#8C8680', textAlign: 'center', lineHeight: '1.6', maxWidth: '800px', paddingLeft: '80px', paddingRight: '80px' }}>{oneliner}</p>}
+        {entry.participants && entry.participants.length > 0 && (
+          <div style={{ marginTop: '40px' }}>
+            <ParticipantRow participants={entry.participants} />
+          </div>
+        )}
       </div>
       <div style={{ paddingBottom: '64px', display: 'flex', flexDirection: 'column', alignItems: 'center', ...Z2 }}><BrandMark size="md" /></div>
     </div>
@@ -60,6 +73,11 @@ function V1({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
 
 function V2({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
+  const dateEnd = entry.metadata?.date_end as string | undefined
+  const duration = calcDuration(entry.date, dateEnd)
+  const dateLabel = dateEnd
+    ? `${formatDate(entry.date)} – ${formatDate(dateEnd)}`
+    : formatDate(entry.date)
   return (
     <div style={{ ...VARIANT_INNER }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
@@ -73,7 +91,15 @@ function V2({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
         {entry.city && <h1 style={{ fontFamily: FONT.display, fontSize: '110px', fontWeight: '700', color: '#F0EDE8', lineHeight: '0.9', letterSpacing: '-0.04em', margin: '0 0 16px 0' }}>{entry.city}</h1>}
         {entry.country && <p style={{ fontFamily: FONT.body, fontSize: '22px', color: '#C9A84C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '32px' }}>{entry.country}</p>}
         {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', lineHeight: '1.5', maxWidth: '800px', marginBottom: '24px' }}>{oneliner}</p>}
-        <p style={{ fontFamily: FONT.body, fontSize: '15px', color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{formatDate(entry.date)}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <p style={{ fontFamily: FONT.body, fontSize: '15px', color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>{dateLabel}</p>
+          {duration && <span style={{ fontFamily: FONT.body, fontSize: '11px', color: '#8C8680', letterSpacing: '0.15em', border: '1px solid rgba(140,134,128,0.3)', borderRadius: '3px', padding: '2px 8px' }}>{duration}</span>}
+        </div>
+        {entry.participants && entry.participants.length > 0 && (
+          <div style={{ marginTop: '32px' }}>
+            <ParticipantRow participants={entry.participants} />
+          </div>
+        )}
       </div>
       <div style={{ padding: '0 80px 64px', ...Z2 }}><BrandMark size="md" /></div>
     </div>
@@ -84,6 +110,10 @@ function V2({ entry, backgroundUrl, rewardKeys }: MissionCarouselProps) {
 
 function V3({ entry, backgroundUrl }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
+  const dateEnd = entry.metadata?.date_end as string | undefined
+  const dateLabel = dateEnd
+    ? `${formatDate(entry.date)} – ${formatDate(dateEnd)}`
+    : formatDate(entry.date)
   return (
     <div style={{ ...VARIANT_INNER, alignItems: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
@@ -99,7 +129,7 @@ function V3({ entry, backgroundUrl }: MissionCarouselProps) {
         <h1 style={{ fontFamily: FONT.display, fontSize: '56px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.1', margin: '0' }}>{entry.city}</h1>
         <p style={{ fontFamily: FONT.body, fontSize: '20px', color: '#C9A84C', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{entry.country}</p>
         {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '22px', color: '#C8C0B0', textAlign: 'center', lineHeight: '1.55', maxWidth: '700px' }}>{oneliner}</p>}
-        <p style={{ fontFamily: FONT.body, fontSize: '14px', color: '#8C8680', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{formatDate(entry.date)}</p>
+        <p style={{ fontFamily: FONT.body, fontSize: '14px', color: '#8C8680', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{dateLabel}</p>
         <BrandMark size="sm" />
       </div>
     </div>
@@ -110,6 +140,10 @@ function V3({ entry, backgroundUrl }: MissionCarouselProps) {
 
 function V4({ entry, backgroundUrl }: MissionCarouselProps) {
   const oneliner = getOneliner(entry)
+  const dateEnd = entry.metadata?.date_end as string | undefined
+  const dateLabel = dateEnd
+    ? `${formatDate(entry.date)} – ${formatDate(dateEnd)}`
+    : formatDate(entry.date)
   return (
     <div style={{ ...VARIANT_INNER, alignItems: 'center' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
@@ -123,7 +157,7 @@ function V4({ entry, backgroundUrl }: MissionCarouselProps) {
         <h1 style={{ fontFamily: FONT.display, fontSize: '72px', fontWeight: '700', color: '#F0EDE8', textAlign: 'center', lineHeight: '1.05', margin: '0' }}>{entry.city}</h1>
         <p style={{ fontFamily: FONT.body, fontSize: '22px', color: '#C9A84C', letterSpacing: '0.1em' }}>{entry.country}</p>
         {oneliner && <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '24px', color: '#C8C0B0', textAlign: 'center', lineHeight: '1.5', maxWidth: '780px', marginTop: '16px' }}>"{oneliner}"</p>}
-        <p style={{ fontFamily: FONT.body, fontSize: '14px', color: '#8C8680', letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: '16px' }}>{formatDate(entry.date)}</p>
+        <p style={{ fontFamily: FONT.body, fontSize: '14px', color: '#8C8680', letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: '16px' }}>{dateLabel}</p>
       </div>
       <div style={{ paddingBottom: '64px', ...Z2 }}><BrandMark size="md" /></div>
     </div>

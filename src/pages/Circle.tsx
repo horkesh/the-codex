@@ -256,13 +256,13 @@ export default function Circle() {
                           <img
                             src={person.portrait_url ?? person.photo_url!}
                             alt={person.name}
-                            className="w-10 h-10 rounded-full object-cover shrink-0 mt-0.5"
+                            className="w-10 h-10 rounded-full overflow-hidden object-cover shrink-0 mt-0.5"
                           />
                         ) : person.instagram ? (
                           <img
                             src={`https://unavatar.io/instagram/${person.instagram.replace(/^@/, '')}`}
                             alt={person.name}
-                            className="w-10 h-10 rounded-full object-cover shrink-0 mt-0.5"
+                            className="w-10 h-10 rounded-full overflow-hidden object-cover shrink-0 mt-0.5"
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-slate-light flex items-center justify-center shrink-0 mt-0.5">
