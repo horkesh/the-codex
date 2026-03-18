@@ -27,27 +27,27 @@ Fallback: `claude-sonnet-4-6` (faster, cheaper if needed)
 ### Edge Functions using Claude
 
 #### `generate-lore`
-Generates "The Lore" — a cinematic 2–4 paragraph narrative for an entry.
+Generates "The Lore" — narrative prose for an entry. Default: 2-3 sentences. Full Chronicle mode: 4-6 dense, meaningful sentences.
 
-Input:
-```json
-{
-  "entry_type": "mission",
-  "title": "Budapest Protocol",
-  "date": "2023-10-15",
-  "location": "Budapest, Hungary",
-  "description": "Four days in Budapest. Thermal baths, ruin bars, and a goulash incident.",
-  "participants": ["Keys & Cocktails", "Beard & Bass", "Lorekeeper"],
-  "metadata": { "duration_days": 4, "highlights": ["Thermal baths", "Ruin bars"] }
-}
-```
+Input: Full entry object with participants, photoUrls array, and metadata (including `mood_tags`, `full_chronicle`, `lore_hints`, `time_of_day`).
 
-System prompt tone: The Lorekeeper's voice. Cinematic, dry wit, masculine warmth. Like a dispatch from a secret society's archivist. Never corny. Always specific.
+**Prompt enrichment pipeline:**
+1. **Time context** — EXIF time → 12h display + period (morning/evening/night) + situational hint (weekday lunch window, weekend afternoon, etc.)
+2. **Type directive** — entry-type-specific narrative focus (food for Table, competition for Pitch, etc.)
+3. **Mood tags** — from `metadata.mood_tags` array; Claude embodies the mood without naming it
+4. **Weather** — auto-fetched from Open-Meteo archive API (geocode city → lat/lng → daily weather). Non-critical, 5s timeout per call, silently skipped on failure. Returns e.g. "overcast, 8-14°C"
+5. **Director's Notes** — combined from all gents' per-gent hints (`lore_hints_{gentId}`) + legacy `lore_hints`
+6. **Gent visual ID** — physical descriptions for photo identification (only when photos present)
+7. **Photos** — sent as URLs before the text prompt; Claude uses vision to observe atmosphere and identify gents
+
+**Full Chronicle mode** (`metadata.full_chronicle`): 4-6 sentences, every sentence must earn its place with a specific detail, name, sensory moment, or observation. Not longer for length's sake. `max_tokens`: 600 (vs 400 default).
 
 Output:
 ```json
 {
-  "lore": "Budapest received them the way she receives all visitors who arrive with no agenda..."
+  "lore": "Budapest received them the way she receives all visitors who arrive with no agenda...",
+  "oneliner": "Three men, one thermal bath, and a goulash incident that may never be spoken of again.",
+  "suggested_title": "The Budapest Protocol"
 }
 ```
 

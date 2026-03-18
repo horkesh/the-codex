@@ -143,17 +143,29 @@ Generated from a Gathering entry in `gathering_pre` state (before the event).
 - BrandMark (absolute bottom)
 - Background: `#0D0B0F` or AI-generated scene
 
-### Toast Card _(new)_
+### Toast Card (4 variants)
+**Format**: Post (portrait) — 1080×1350
+**Variants**:
+- **V1 Classic**: Centred occasion label + title + spirit, ornamental divider, lore at bottom
+- **V2 Cocktail Menu**: Ghost spirit watermark (140px, 8% opacity), bottom-aligned title/dram/oneliner
+- **V3 Quote**: Large decorative quote mark, lore-forward centre layout, title below gold rule
+- **V4 Date Stamp**: Bold day/month block (left-aligned), occasion badge, bottom-aligned content
+All variants use `getMeta(entry)` to extract spirit/dram/occasion from metadata.
+Background: `#0D0B0F` or AI-generated whisky glass scene
+
+### Year in Review
 **Format**: Post (portrait) — 1080×1350
 **Content**:
-- `The Toast` / occasion label (gold, spaced)
-- Session title (76px Playfair Display)
-- Spirit + dram detail with inline dash dividers
-- Location + date
-- Ornamental dot divider
-- Lore (italic, clamp 4 lines)
-- Top + bottom GoldRule + BrandMark
-- Background: `#0D0B0F` or AI-generated whisky glass scene
+- Header: BrandMark (sm) + "Year in Review" label
+- Year hero (160px Playfair Display)
+- Stats grid (2×3): Missions, Countries, Cities, Nights Out, Steaks, Toasts
+- Total chronicles count
+- Top destination city (large, gold)
+- Top 5 cities with flag emojis and visit counts
+- Stamp grid (3×3, up to 9 stamps, sepia tinted)
+- Footer: GoldRule + "The Chronicle Continues"
+- Background: `#0d0b0f` with radial gold glow
+Registered in `annual` type alongside WrappedCard.
 
 ### Interlude Card _(new)_
 **Format**: Post (square) — 1080×1080
