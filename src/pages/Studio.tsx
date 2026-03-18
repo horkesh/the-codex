@@ -23,6 +23,7 @@ import type { Entry, EntryWithParticipants } from '@/types/app'
 import { NightOutCard } from '@/export/templates/NightOutCard'
 import { MissionCarousel } from '@/export/templates/MissionCarousel'
 import { SteakVerdict } from '@/export/templates/SteakVerdict'
+import { IftarCard } from '@/export/templates/IftarCard'
 import { PS5MatchCard } from '@/export/templates/PS5MatchCard'
 import { GatheringInviteCard } from '@/export/templates/GatheringInviteCard'
 import { CountdownCard } from '@/export/templates/CountdownCard'
@@ -52,6 +53,7 @@ type TemplateId =
   | 'live_music_v1' | 'live_music_v2' | 'live_music_v3' | 'live_music_v4'
   | 'mission_carousel' | 'mission_carousel_v2' | 'mission_carousel_v3' | 'mission_carousel_v4'
   | 'steak_verdict' | 'steak_verdict_v2' | 'steak_verdict_v3' | 'steak_verdict_v4'
+  | 'iftar_card' | 'iftar_card_v2' | 'iftar_card_v3' | 'iftar_card_v4'
   | 'ps5_match_card' | 'ps5_match_card_v2' | 'ps5_match_card_v3' | 'ps5_match_card_v4'
   | 'gathering_invite'
   | 'countdown'
@@ -104,6 +106,10 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
     { id: 'steak_verdict_v2', label: 'Score Hero',     dims: '1080×1350', bgAspect: '3:4' },
     { id: 'steak_verdict_v3', label: 'Minimal',        dims: '1080×1350', bgAspect: '3:4' },
     { id: 'steak_verdict_v4', label: 'Cut Forward',    dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'iftar_card',       label: 'Crescent',       dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'iftar' },
+    { id: 'iftar_card_v2',    label: 'Spread',         dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'iftar' },
+    { id: 'iftar_card_v3',    label: 'Contemplative',  dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'iftar' },
+    { id: 'iftar_card_v4',    label: 'Gathering',      dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'iftar' },
   ],
   playstation: [
     { id: 'ps5_match_card',    label: 'Scoreboard',    dims: '1080×1350', bgAspect: '3:4' },
@@ -346,6 +352,14 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
       return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={3} />
     case 'steak_verdict_v4':
       return <SteakVerdict ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} rewardKeys={rewardKeys} variant={4} />
+    case 'iftar_card':
+      return <IftarCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
+    case 'iftar_card_v2':
+      return <IftarCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={2} />
+    case 'iftar_card_v3':
+      return <IftarCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
+    case 'iftar_card_v4':
+      return <IftarCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
     case 'ps5_match_card':
       return <PS5MatchCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
     case 'ps5_match_card_v2':
