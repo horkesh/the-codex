@@ -33,15 +33,18 @@ const DEFAULT_MAX_PHOTOS = 10
 export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload, onGeoDetected, onFilesAdded, onFileRemoved, className }: PhotoUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PendingPhoto[]>([])
+  const [picking, setPicking] = useState(false)
   const geoFiredRef = useRef(false)
 
   const openPicker = () => {
+    setPicking(true)
     fileInputRef.current?.click()
   }
 
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files ?? [])
+      setPicking(false)
       if (!files.length) return
 
       const remaining = maxPhotos - photos.length
@@ -171,6 +174,17 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
     })
   }, [entryId, onFileRemoved])
 
+  // Clear picking state if user cancels the native picker (regains focus without onChange)
+  useEffect(() => {
+    if (!picking) return
+    const handleFocus = () => {
+      // Small delay — onChange fires before focus on some browsers
+      setTimeout(() => setPicking((v) => v ? false : v), 500)
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [picking])
+
   // Revoke all blob URLs on unmount
   useEffect(() => {
     return () => {
@@ -266,8 +280,27 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
         </motion.div>
       )}
 
+      {/* Processing indicator — visible while native gallery is open */}
+      {picking && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center justify-center gap-3 py-6"
+        >
+          <img
+            src="/logo-gold.webp"
+            alt=""
+            className="w-12 h-12 animate-spin"
+            style={{ animationDuration: '2.5s' }}
+          />
+          <span className="text-ivory-dim text-xs font-body tracking-wide">
+            Processing photos...
+          </span>
+        </motion.div>
+      )}
+
       {/* Add photos button */}
-      {canAddMore && (
+      {canAddMore && !picking && (
         <button
           type="button"
           onClick={openPicker}
