@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LocateFixed, X as XIcon, Lock, Unlock } from 'lucide-react'
+import { LocateFixed, X as XIcon, Lock, Unlock, BookOpen } from 'lucide-react'
 import { TopBar } from '@/components/layout'
 import { PageWrapper } from '@/components/layout'
 import { EntryTypeSelector } from '@/components/chronicle/EntryTypeSelector'
@@ -40,6 +40,21 @@ import type { InterludeFormData } from '@/components/chronicle/forms/InterludeFo
 
 type Step = 'select' | 'form'
 
+// Generic + type-specific mood pills
+const GENERIC_MOODS = ['Chaotic', 'Elegant', 'Spontaneous', 'Mellow', 'Nostalgic', 'Euphoric']
+const TYPE_MOODS: Partial<Record<EntryType, string[]>> = {
+  mission:     ['Adventurous', 'Cultural', 'Hedonistic', 'Exhausting'],
+  night_out:   ['Rowdy', 'Sophisticated', 'Late Night', 'Dance Floor'],
+  steak:       ['Indulgent', 'Refined', 'Experimental', 'Carnivorous'],
+  playstation: ['Competitive', 'Grudge Match', 'Casual', 'Heated'],
+  toast:       ['Ceremonial', 'Liquid Courage', 'Bittersweet', 'Celebratory'],
+  gathering:   ['Intimate', 'Grand', 'Impromptu', 'Festive'],
+  interlude:   ['Reflective', 'Serendipitous', 'Fleeting', 'Quiet'],
+}
+function getMoodOptions(type: EntryType | null): string[] {
+  return [...GENERIC_MOODS, ...(type ? TYPE_MOODS[type] ?? [] : [])]
+}
+
 // Compute a head-to-head snapshot from match list
 function buildH2HSnapshot(matches: PS5Match[]): Record<string, Record<string, number>> {
   const snapshot: Record<string, Record<string, number>> = {}
@@ -74,6 +89,8 @@ export default function EntryNew() {
   } | null>(null)
   const [visibility, setVisibility] = useState<'shared' | 'private'>('shared')
   const [taggedPeople, setTaggedPeople] = useState<string[]>([])
+  const [moodTags, setMoodTags] = useState<string[]>([])
+  const [fullChronicle, setFullChronicle] = useState(false)
   const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
   const titleGenFired = useRef(false)
   const firstPhotoRef = useRef<File | null>(null)
@@ -199,6 +216,8 @@ export default function EntryNew() {
         metadata: {
           ...(formData.metadata ?? {}),
           ...(locationFill?.time ? { time_of_day: locationFill.time } : {}),
+          ...(moodTags.length > 0 ? { mood_tags: moodTags } : {}),
+          ...(fullChronicle ? { full_chronicle: true } : {}),
         },
         created_by: gent.id,
         visibility,
@@ -492,6 +511,55 @@ export default function EntryNew() {
           selectedIds={taggedPeople}
           onChange={setTaggedPeople}
         />
+
+        {/* Mood / energy tags */}
+        <div className="border-t border-white/8 pt-4">
+          <p className="text-xs tracking-widest text-ivory-dim uppercase font-body mb-2.5">Mood</p>
+          <div className="flex flex-wrap gap-2">
+            {getMoodOptions(selectedType).map(tag => {
+              const active = moodTags.includes(tag)
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setMoodTags(prev => active ? prev.filter(t => t !== tag) : [...prev, tag])}
+                  className={`px-3 py-1 rounded-full text-xs font-body transition-all ${
+                    active
+                      ? 'bg-gold/20 text-gold border border-gold/40'
+                      : 'bg-white/5 text-ivory-dim border border-white/8 hover:border-white/20'
+                  }`}
+                >
+                  {tag}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Full Chronicle toggle (mission / night_out) */}
+        {(selectedType === 'mission' || selectedType === 'night_out') && (
+          <div className="border-t border-white/8 pt-4">
+            <button
+              type="button"
+              onClick={() => setFullChronicle(v => !v)}
+              className="flex items-center gap-3 w-full py-2 group"
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                fullChronicle ? 'bg-gold/15' : 'bg-white/5'
+              }`}>
+                <BookOpen size={14} className={fullChronicle ? 'text-gold' : 'text-ivory-dim'} />
+              </div>
+              <div className="text-left">
+                <p className={`text-sm font-body ${fullChronicle ? 'text-gold' : 'text-ivory'}`}>
+                  Full Chronicle
+                </p>
+                <p className="text-[11px] text-ivory-dim font-body">
+                  Extended 2-3 paragraph narrative instead of 2-3 sentences
+                </p>
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* Visibility toggle */}
         <div className="border-t border-white/8 pt-4">

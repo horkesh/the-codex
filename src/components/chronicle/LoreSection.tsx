@@ -12,20 +12,46 @@ interface LoreSectionProps {
   entry: EntryWithParticipants
   photoUrls?: string[]
   readOnly?: boolean
+  /** Current gent ID — used for per-gent Director's Notes */
+  gentId?: string
   onLoreGenerated?: (lore: string, oneliner?: string | null, suggestedTitle?: string | null) => void
 }
 
-export function LoreSection({ entry, photoUrls, readOnly, onLoreGenerated }: LoreSectionProps) {
+/** Collect all lore hints (legacy single + per-gent) into one combined string for the prompt. */
+function collectAllHints(meta: Record<string, unknown>): string {
+  const parts: string[] = []
+  // Legacy single-field hints
+  if (typeof meta.lore_hints === 'string' && meta.lore_hints.trim()) {
+    parts.push(meta.lore_hints.trim())
+  }
+  // Per-gent hints
+  for (const [key, val] of Object.entries(meta)) {
+    if (key.startsWith('lore_hints_') && typeof val === 'string' && val.trim()) {
+      parts.push(val.trim())
+    }
+  }
+  return parts.join('\n')
+}
+
+export function LoreSection({ entry, photoUrls, readOnly, gentId, onLoreGenerated }: LoreSectionProps) {
   const [generating, setGenerating] = useState(false)
   const [localLore, setLocalLore] = useState<string | null>(entry.lore)
   const [localLoreDate, setLocalLoreDate] = useState<string | null>(entry.lore_generated_at)
   const [error, setError] = useState<string | null>(null)
 
-  // Director's notes (lore hints)
-  const savedHints = (entry.metadata as Record<string, unknown>)?.lore_hints as string | undefined
-  const [hints, setHints] = useState(savedHints ?? '')
+  const meta = (entry.metadata as Record<string, unknown>) ?? {}
+
+  // Per-gent Director's Notes — each gent edits their own field
+  const hintsKey = gentId ? `lore_hints_${gentId}` : 'lore_hints'
+  const savedHints = (meta[hintsKey] as string | undefined) ?? ''
+  const [hints, setHints] = useState(savedHints)
   const [hintsOpen, setHintsOpen] = useState(!!savedHints)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Count other gents' notes (so we can show "2 others have notes")
+  const otherHintsCount = Object.keys(meta).filter(
+    k => k.startsWith('lore_hints_') && k !== hintsKey && typeof meta[k] === 'string' && (meta[k] as string).trim()
+  ).length
 
   // Auto-save hints to entry metadata after 1s of inactivity
   const unmounted = useRef(false)
@@ -41,8 +67,8 @@ export function LoreSection({ entry, photoUrls, readOnly, onLoreGenerated }: Lor
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
       if (unmounted.current) return
-      const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_hints: value || null }
-      updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})
+      const updated = { ...meta, [hintsKey]: value || null }
+      updateEntry(entry.id, { metadata: updated } as Partial<EntryWithParticipants>).catch(() => {})
     }, 1000)
   }
 
@@ -50,16 +76,18 @@ export function LoreSection({ entry, photoUrls, readOnly, onLoreGenerated }: Lor
     setGenerating(true)
     setError(null)
     try {
-      // Pass hints via entry metadata so the edge function can read them
-      const entryWithHints = hints.trim()
-        ? { ...entry, metadata: { ...(entry.metadata as Record<string, unknown> ?? {}), lore_hints: hints.trim() } }
-        : entry
-      const result = await generateLoreFull(entryWithHints, photoUrls)
+      // Combine all gents' hints + current textarea value into a single lore_hints for the prompt
+      const currentMeta = { ...meta, [hintsKey]: hints.trim() || null }
+      const combined = collectAllHints(currentMeta)
+      const entryForPrompt = combined
+        ? { ...entry, metadata: { ...currentMeta, lore_hints: combined } }
+        : { ...entry, metadata: currentMeta }
+      const result = await generateLoreFull(entryForPrompt, photoUrls)
       if (result) {
-        const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
+        const saveMeta = { ...currentMeta, lore_oneliner: result.oneliner }
         await Promise.all([
           updateEntryLore(entry.id, result.lore),
-          updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {}),
+          updateEntry(entry.id, { metadata: saveMeta } as Partial<EntryWithParticipants>).catch(() => {}),
         ])
         const now = new Date().toISOString()
         setLocalLore(result.lore)
@@ -75,6 +103,10 @@ export function LoreSection({ entry, photoUrls, readOnly, onLoreGenerated }: Lor
     }
   }
 
+  // All gents can add notes; only creator can generate
+  const canAddNotes = !!gentId
+  const canGenerate = !readOnly
+
   return (
     <div className="space-y-3">
       {/* Section header */}
@@ -86,8 +118,8 @@ export function LoreSection({ entry, photoUrls, readOnly, onLoreGenerated }: Lor
         <div className="h-px flex-1 bg-gold/20" />
       </div>
 
-      {/* Director's Notes toggle — creator only */}
-      {!readOnly && (
+      {/* Director's Notes — any gent can add their own */}
+      {canAddNotes && (
         <>
           <button
             type="button"
@@ -101,6 +133,11 @@ export function LoreSection({ entry, photoUrls, readOnly, onLoreGenerated }: Lor
             Director's Notes
             {hints.trim() && !hintsOpen && (
               <span className="text-gold/60 ml-1">*</span>
+            )}
+            {otherHintsCount > 0 && (
+              <span className="text-ivory-dim/40 ml-1">
+                +{otherHintsCount} other{otherHintsCount > 1 ? 's' : ''}
+              </span>
             )}
           </button>
 
@@ -121,7 +158,7 @@ export function LoreSection({ entry, photoUrls, readOnly, onLoreGenerated }: Lor
                   className="w-full bg-slate-mid border border-white/8 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim/50 focus:outline-none focus:border-gold/30 resize-none"
                 />
                 <p className="text-[10px] text-ivory-dim/50 font-body mt-1">
-                  These hints guide lore generation. Auto-saved.
+                  Your notes guide lore generation. All Gents' notes are combined. Auto-saved.
                 </p>
               </motion.div>
             )}
@@ -180,7 +217,7 @@ export function LoreSection({ entry, photoUrls, readOnly, onLoreGenerated }: Lor
             <p className="text-sm text-ivory-dim text-center font-body">
               No lore has been written for this entry yet.
             </p>
-            {!readOnly && (
+            {canGenerate && (
               <Button
                 variant="outline"
                 size="sm"
