@@ -1,12 +1,15 @@
 import React from 'react'
 import type { EntryWithParticipants, PassportStamp } from '@/types/app'
+import type { CityVisit } from '@/data/entries'
 import { flagEmoji, getCoverCrop } from '@/lib/utils'
-import { getOneliner, monthYear, calcDuration, visaWord, aliasDisplay } from '@/export/templates/shared/utils'
+import { getOneliner, monthYear, calcDuration, visaWord, aliasDisplay, getCityInfo, getCountryVisaInfo, getSeason, SEASON_FILTER, toRoman } from '@/export/templates/shared/utils'
 import { BrandMark } from '@/export/templates/shared'
 
 interface VisaCardSlideProps {
   entry: EntryWithParticipants
   stamp: PassportStamp | null
+  /** City visit data for companion timeline — optional, provided by Studio */
+  cityVisit?: CityVisit | null
 }
 
 /* Guilloche wave pattern for border — inlined for html2canvas compat */
@@ -29,13 +32,17 @@ function GuillocheFrame() {
 }
 
 export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps>(
-  ({ entry, stamp }, ref) => {
+  ({ entry, stamp, cityVisit }, ref) => {
     const cc = entry.country_code?.toUpperCase() ?? null
     const oneliner = getOneliner(entry)
     const dateEnd = (entry.metadata as Record<string, unknown>)?.date_end as string | undefined
     const duration = calcDuration(entry.date, dateEnd)
     const coverPhoto = entry.cover_image_url
     const crop = getCoverCrop(entry)
+    const cityInfo = getCityInfo(entry.city, entry.id)
+    const countryInfo = getCountryVisaInfo(cc)
+    const seasonFilter = SEASON_FILTER[getSeason(entry.date)]
+    const isReturn = (cityVisit?.visitNumber ?? 1) > 1
 
     return (
       <div ref={ref} style={{ width: 1080, height: 1350, backgroundColor: '#F5F0E1', position: 'relative', overflow: 'hidden', fontFamily: "Georgia, 'Times New Roman', serif" }}>
@@ -52,6 +59,7 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
                 objectPosition: `${crop.x}% ${crop.y}%`,
                 transform: crop.scale !== 1 ? `scale(${crop.scale})` : undefined,
                 display: 'block',
+                filter: seasonFilter,
               }}
             />
           ) : (
@@ -59,7 +67,7 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
           )}
           {/* Bottom gradient fade to cream */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 160, background: 'linear-gradient(to top, #F5F0E1, transparent)' }} />
-          {/* Flag + VIZA overlay on photo */}
+          {/* Flag + VIZA/RETURN overlay on photo */}
           <div style={{ position: 'absolute', bottom: 24, left: 55, display: 'flex', alignItems: 'center', gap: 14, zIndex: 2 }}>
             {cc && <span style={{ fontSize: 36, lineHeight: 1, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.3))' }}>{flagEmoji(cc)}</span>}
             <span style={{
@@ -68,12 +76,34 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
               letterSpacing: '0.12em', textTransform: 'uppercase' as const,
               textShadow: '0 2px 8px rgba(0,0,0,0.4)',
             }}>
-              {visaWord(cc)}
+              {isReturn ? 'RETURN' : visaWord(cc)}
             </span>
+            {isReturn && cityVisit && (
+              <span style={{
+                fontFamily: "'Instrument Sans', sans-serif",
+                fontSize: 14, fontWeight: 600, color: '#fff',
+                letterSpacing: '0.15em', textTransform: 'uppercase' as const,
+                background: 'rgba(0,0,0,0.3)', padding: '4px 12px', borderRadius: 4,
+                textShadow: '0 1px 3px rgba(0,0,0,0.4)',
+              }}>
+                Mission {toRoman(cityVisit.visitNumber)}
+              </span>
+            )}
           </div>
           {/* Multi-language header in top-right */}
-          <div style={{ position: 'absolute', top: 20, right: 55, zIndex: 2, fontSize: 10, fontWeight: 600, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.6)', fontVariant: 'small-caps' as const, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
-            VIZE-\u0412\u0418\u0417\u0415-VISAS
+          <div style={{ position: 'absolute', top: 20, right: 55, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.6)', fontVariant: 'small-caps' as const, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+              VIZE-{'\u0412\u0418\u0417\u0415'}-VISAS
+            </span>
+            {cityInfo && (
+              <span style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontStyle: 'italic', fontSize: 12, color: 'rgba(255,255,255,0.45)',
+                letterSpacing: '0.04em', textShadow: '0 1px 4px rgba(0,0,0,0.3)',
+              }}>
+                {cityInfo.greeting}
+              </span>
+            )}
           </div>
         </div>
 
@@ -91,6 +121,15 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
                 ? `${entry.city.toUpperCase()}, ${entry.country.toUpperCase()}`
                 : entry.city?.toUpperCase() ?? '\u2014'}
             </div>
+            {cityInfo && (
+              <div style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontStyle: 'italic', fontSize: 20, color: countryInfo.accent,
+                letterSpacing: '0.06em', opacity: 0.6, marginTop: 4,
+              }}>
+                {cityInfo.epithet}
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 14 }}>
               <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: 20, color: '#5A6B7A', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
                 {monthYear(entry.date)}
@@ -106,6 +145,28 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
               )}
             </div>
           </div>
+
+          {/* Companion timeline strip */}
+          {cityVisit && cityVisit.totalVisits > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
+              <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: 9, fontWeight: 600, letterSpacing: '0.2em', color: '#8B7355', textTransform: 'uppercase' as const, marginRight: 8 }}>
+                {entry.city} Timeline
+              </span>
+              {[...cityVisit.companions, { id: entry.id, date: entry.date }]
+                .sort((a, b) => a.date.localeCompare(b.date))
+                .map(v => {
+                  const isCurrent = v.id === entry.id
+                  return (
+                    <div key={v.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1 }}>
+                      <div style={{ width: '100%', height: 4, borderRadius: 2, background: isCurrent ? countryInfo.accent : `${countryInfo.accent}30` }} />
+                      <span style={{ fontFamily: 'monospace', fontSize: 8, color: isCurrent ? '#2C2C2C' : '#8B7355', fontWeight: isCurrent ? 700 : 400 }}>
+                        {new Date(v.date + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: '2-digit', timeZone: 'UTC' })}
+                      </span>
+                    </div>
+                  )
+                })}
+            </div>
+          )}
 
           {/* Thin rule */}
           <div style={{ height: 1, background: 'rgba(27,58,92,0.1)', marginBottom: 24 }} />
