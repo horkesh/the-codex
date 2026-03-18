@@ -101,7 +101,7 @@ export function TravelMap({ cities }: TravelMapProps) {
                 textAnchor="middle"
                 fill="rgba(201,168,76,0.6)"
                 fontSize={9}
-                fontFamily="var(--font-body)"
+                fontFamily="'Instrument Sans', 'Helvetica Neue', Arial, sans-serif"
                 letterSpacing="0.08em"
               >
                 {pin.city.toUpperCase()}

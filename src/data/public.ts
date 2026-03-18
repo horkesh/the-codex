@@ -79,3 +79,27 @@ export function extractMissionCities(entries: EntryWithParticipants[]): Array<{ 
   }
   return cities
 }
+
+/** Fetch ALL mission cities (not just pinned) for the travel map */
+export async function fetchPublicMissionCities(): Promise<Array<{ city: string; country: string; countryCode: string }>> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('city, country, country_code')
+    .eq('type', 'mission')
+    .eq('visibility', 'shared')
+    .in('status', ['published', 'gathering_post'])
+    .not('city', 'is', null)
+
+  if (error || !data?.length) return []
+
+  const seen = new Set<string>()
+  const cities: Array<{ city: string; country: string; countryCode: string }> = []
+  for (const row of data as Array<{ city: string; country: string; country_code: string }>) {
+    if (!row.city || !row.country) continue
+    const key = `${row.city}|${row.country}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    cities.push({ city: row.city, country: row.country, countryCode: row.country_code ?? '' })
+  }
+  return cities
+}
