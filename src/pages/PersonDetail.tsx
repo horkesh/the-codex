@@ -462,6 +462,37 @@ export default function PersonDetail() {
               )
             })()}
 
+            {/* Toast Honours */}
+            {(() => {
+              const meta = (person as unknown as { metadata?: Record<string, unknown> }).metadata
+              const toastAlias = meta?.toast_alias as string | undefined
+              const toastWrappedTitle = meta?.toast_wrapped_title as string | undefined
+              const toastSignatureDrink = meta?.toast_signature_drink as string | undefined
+              if (!toastAlias && !toastWrappedTitle && !toastSignatureDrink) return null
+              return (
+                <div className="mt-4 pt-4 border-t border-white/5">
+                  <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold mb-2">
+                    Toast Honours
+                  </p>
+                  {toastAlias && (
+                    <p className="text-ivory-dim text-sm font-body">
+                      Alias: <span className="text-ivory">{toastAlias}</span>
+                    </p>
+                  )}
+                  {toastWrappedTitle && (
+                    <p className="text-ivory-dim text-sm font-body">
+                      Title: <span className="text-gold font-semibold">{toastWrappedTitle}</span>
+                    </p>
+                  )}
+                  {toastSignatureDrink && (
+                    <p className="text-ivory-dim text-sm font-body">
+                      Signature Drink: <span className="text-ivory">{toastSignatureDrink}</span>
+                    </p>
+                  )}
+                </div>
+              )
+            })()}
+
             {/* Labels */}
             {person.labels.length > 0 && (
               <div className="flex flex-wrap justify-center gap-1.5 mt-3">
