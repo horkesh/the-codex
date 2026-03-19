@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LocateFixed, X as XIcon, Lock, Unlock, BookOpen } from 'lucide-react'
+import { X as XIcon, Lock, Unlock, BookOpen, MapPin, ChevronRight } from 'lucide-react'
 import { TopBar } from '@/components/layout'
 import { PageWrapper } from '@/components/layout'
 import { EntryTypeSelector } from '@/components/chronicle/EntryTypeSelector'
 import { ParticipantSelector } from '@/components/chronicle/ParticipantSelector'
 import { PhotoUpload, usePendingPhotos } from '@/components/chronicle/PhotoUpload'
-import { SavedPlacesBar } from '@/components/chronicle/SavedPlacesBar'
+import { LocationSearchModal } from '@/components/places/LocationSearchModal'
 import { fetchLocations } from '@/data/locations'
 import { MissionForm } from '@/components/chronicle/forms/MissionForm'
 import { NightOutForm } from '@/components/chronicle/forms/NightOutForm'
@@ -94,6 +94,7 @@ export default function EntryNew() {
   const [moodTags, setMoodTags] = useState<string[]>([])
   const [fullChronicle, setFullChronicle] = useState(false)
   const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
+  const [showLocationSearch, setShowLocationSearch] = useState(false)
   const titleGenFired = useRef(false)
   const firstPhotoRef = useRef<File | null>(null)
   const prospectHandled = useRef(false)
@@ -473,26 +474,40 @@ export default function EntryNew() {
           className="w-full"
         />
 
-        {/* Saved places — shown for location-aware entry types */}
-        {selectedType !== 'playstation' && selectedType !== 'interlude' && (
-          <SavedPlacesBar places={savedPlaces} onSelect={setLocationFill} />
-        )}
-
-        {/* Place detected from photo */}
-        {locationFill?.matchedPlaceName && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gold/8 border border-gold/20">
-            <LocateFixed size={13} className="text-gold shrink-0" />
-            <span className="text-gold text-xs font-body flex-1">
-              Photo taken at: <span className="font-semibold">{locationFill.matchedPlaceName}</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setLocationFill(undefined)}
-              className="text-gold/50 hover:text-gold transition-colors"
-            >
-              <XIcon size={13} />
-            </button>
-          </div>
+        {/* Location bar — tappable to open search, like Instagram */}
+        {selectedType !== 'interlude' && (
+          <>
+            {locationFill?.city || locationFill?.location || locationFill?.matchedPlaceName ? (
+              <button
+                type="button"
+                onClick={() => setShowLocationSearch(true)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-gold/8 border border-gold/20 w-full text-left group"
+              >
+                <MapPin size={14} className="text-gold shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-gold text-xs font-body truncate">
+                    {locationFill.matchedPlaceName || locationFill.location || locationFill.city}
+                  </p>
+                  {locationFill.city && (locationFill.matchedPlaceName || locationFill.location) && (
+                    <p className="text-gold/60 text-[10px] font-body truncate">
+                      {locationFill.city}{locationFill.country ? `, ${locationFill.country}` : ''}
+                    </p>
+                  )}
+                </div>
+                <ChevronRight size={14} className="text-gold/40 group-hover:text-gold/60 shrink-0 transition-colors" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowLocationSearch(true)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-dashed border-white/15 w-full text-left group hover:border-white/25 transition-colors"
+              >
+                <MapPin size={14} className="text-ivory-dim shrink-0" />
+                <span className="text-ivory-dim text-xs font-body flex-1">Add Location</span>
+                <ChevronRight size={14} className="text-ivory-dim/40 group-hover:text-ivory-dim/60 shrink-0 transition-colors" />
+              </button>
+            )}
+          </>
         )}
 
         {/* The form */}
@@ -659,6 +674,15 @@ export default function EntryNew() {
           )}
           <p className="text-ivory-dim/50 text-xs font-body mt-3">This may take a moment</p>
         </div>
+      )}
+
+      {/* Location search modal */}
+      {showLocationSearch && (
+        <LocationSearchModal
+          onSelect={(fill) => setLocationFill(fill)}
+          onClose={() => setShowLocationSearch(false)}
+          savedPlaces={savedPlaces}
+        />
       )}
 
       <TopBar
