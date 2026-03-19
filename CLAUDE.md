@@ -4,7 +4,7 @@
 Private lifestyle chronicle app for three friends (The Gents). Deployed at https://the-codex-sepia.vercel.app. Three fixed users, invite-only Supabase Auth (magic link). Not commercial.
 
 ## Stack
-- **Frontend**: React 19 + TypeScript + Vite 6 + Tailwind v4 + Framer Motion + Zustand 5
+- **Frontend**: React 19 + TypeScript + Vite 6 + Tailwind v4 + Framer Motion + Zustand 5 + Google Maps JS API
 - **Backend**: Supabase (Auth + Postgres + Storage + Edge Functions on Deno)
 - **AI**: Anthropic Claude (`claude-haiku-4-5-20251001` for Instagram analysis, `claude-sonnet-4-6` for lore/narrative) + Google Gemini (`gemini-2.5-flash` for photo vision, `imagen-4.0-generate-001` for image generation)
 - **Deploy**: `git push` to `main` — GitHub Actions (`.github/workflows/deploy.yml`) auto-deploys Vercel + Supabase DB migrations (`supabase db push`) + all Edge Functions. See `docs/05-dev-ops/runbook.md`. Requires `SUPABASE_DB_PASSWORD` secret in GitHub repo settings.
@@ -16,6 +16,14 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 - **Zustand persist** — Auth store (`codex-auth`) persists `gent` to localStorage (not `initialized`). Pages render immediately with persisted data while the auth listener re-validates in background.
 - **No grain overlay** — `body::after` grain CSS animation was removed permanently. It ran a feTurbulence SVG at 10 steps/8s and caused visible performance degradation.
 - **Stagger animations on Home** — Do NOT use `staggerContainer`/`staggerItem` variants on the section cards in `Home.tsx`. The stagger container mounts after Zustand persist hydration fires, which happens after `AnimatePresence`'s initial render — so `initial={false}` on `AnimatePresence` no longer suppresses the `opacity:0` initial state, leaving cards invisible. Section cards render without an initial variant; `PageWrapper`'s `fadeUp` provides the page entrance animation.
+- **Code splitting** — All pages are lazy-loaded via `React.lazy()` in `App.tsx` with a `Suspense` fallback. Vite config splits vendor chunks (`framer-motion`, `zustand`, `react-dom`) to improve caching and initial load.
+
+## Maps (Google Maps API)
+- **Library**: Google Maps JavaScript API via `@googlemaps/js-api-loader`. Leaflet/OpenStreetMap was removed.
+- **Env var**: `VITE_GOOGLE_MAPS_API_KEY` — required in `.env` (see `.env.example`).
+- **Loader**: `src/lib/geo.ts` exports `getGoogleMaps()` which lazy-loads the API once and caches the instance. All map consumers call this instead of importing Google Maps directly.
+- **Components**: `DossierMap` (full-screen dark-styled map with entry markers), `MapPicker` (location selector in forms), `Places` page (saved places map).
+- **Dark style**: custom `styles` array in `geo.ts` — dark grey land, darker water, gold labels, no POI icons. Consistent across all map views.
 
 ## AI routing by feature
 | Feature | Model | Why |
@@ -49,13 +57,14 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 - **Date format**: DD/MM/YYYY everywhere (European). `formatDate()` in `src/lib/utils.ts` outputs `05/03/2026`. Month+year labels (e.g. photo timeline, visa pages) use `en-GB` long month format ("March 2026").
 
 ## Portrait generation (`supabase/functions/generate-portrait/`)
-Two-step pipeline:
-1. **Analysis** — `gemini-2.5-flash` with vision: extracts structured `appearance` and `traits`
+Two-step pipeline (with photo-less fallback):
+1. **Analysis** — `gemini-2.5-flash` with vision: extracts structured `appearance` and `traits`. **Skipped when no photo is provided** — falls back to stored descriptions from `_shared/gent-identities.ts` (`GENT_APPEARANCES`).
 2. **Generation** — `imagen-4.0-generate-001` via `:predict` endpoint:
    - Request: `{ instances: [{ prompt }], parameters: { sampleCount: 1, aspectRatio: "1:1", safetyFilterLevel: "block_only_high" } }`
    - Response: `predictions[0].bytesBase64Encoded`
    - Prompt style: abstract geometric noir — minimalist geometric forms, cinematic noir lighting, moody desaturated palette, while faithfully preserving the subject's exact skin tone, hair, and facial features.
    - Same style used for Circle contacts (`generate-person-portrait`).
+- Client (`src/ai/portrait.ts`): `photo_url` param is optional. When omitted, edge function uses stored identity for prompt construction.
 - Portrait uploaded to `portraits` bucket in Supabase Storage
 
 ## POI Scanner (`scan-person-verdict` edge function)
