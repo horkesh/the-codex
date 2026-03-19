@@ -28,6 +28,7 @@ import { PS5MatchCard } from '@/export/templates/PS5MatchCard'
 import { GatheringInviteCard } from '@/export/templates/GatheringInviteCard'
 import { CountdownCard } from '@/export/templates/CountdownCard'
 import { ToastCard } from '@/export/templates/ToastCard'
+import { ToastSessionCard } from '@/export/templates/ToastSessionCard'
 import { InterludeCard } from '@/export/templates/InterludeCard'
 import { LiveMusicCard } from '@/export/templates/LiveMusicCard'
 import { DebriefPage } from '@/export/templates/DebriefPage'
@@ -58,6 +59,7 @@ type TemplateId =
   | 'gathering_invite'
   | 'countdown'
   | 'toast_card' | 'toast_card_v2' | 'toast_card_v3' | 'toast_card_v4'
+  | 'toast_session_v1' | 'toast_session_v2' | 'toast_session_v3' | 'toast_session_v4'
   | 'interlude_card'
   | 'debrief_page'
   | 'passport_id_page'
@@ -127,6 +129,10 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
     { id: 'toast_card_v2',    label: 'Cocktail Menu',  dims: '1080×1350', bgAspect: '3:4' },
     { id: 'toast_card_v3',    label: 'Quote',          dims: '1080×1350', bgAspect: '3:4' },
     { id: 'toast_card_v4',    label: 'Date Stamp',     dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'toast_session_v1', label: 'Session Classic', dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'toast_session_v2', label: 'Session Centered', dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'toast_session_v3', label: 'Session Quote',   dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'toast_session_v4', label: 'Session Code',    dims: '1080×1350', bgAspect: '3:4' },
   ],
   interlude:   [{ id: 'interlude_card',   label: 'Interlude Card',  dims: '1080×1350', bgAspect: '3:4' }],
   annual: [
@@ -380,6 +386,14 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
       return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
     case 'toast_card_v4':
       return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
+    case 'toast_session_v1':
+      return <ToastSessionCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
+    case 'toast_session_v2':
+      return <ToastSessionCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={2} />
+    case 'toast_session_v3':
+      return <ToastSessionCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
+    case 'toast_session_v4':
+      return <ToastSessionCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
     case 'interlude_card':
       return <InterludeCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'visa_carousel':
