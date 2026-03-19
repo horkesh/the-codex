@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Clock, Users, Zap, Wine, MessageCircle } from 'lucide-react'
+import { Clock, Users, Zap, Wine, MessageCircle, Music, Star, ExternalLink } from 'lucide-react'
 import { fadeIn, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatDate } from '@/lib/utils'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
@@ -253,6 +253,58 @@ export function ToastLayout({ entry, session, people, photos, isCreator: _isCrea
           </motion.div>
         </section>
       )}
+
+      {/* Setlist */}
+      {session.tracks.length > 0 && (() => {
+        const sorted = [...session.tracks].sort((a, b) => {
+          if (a.is_track_of_night !== b.is_track_of_night) return a.is_track_of_night ? -1 : 1
+          return a.play_order - b.play_order
+        })
+        return (
+          <section>
+            <p className="text-xs tracking-widest text-gold uppercase font-body font-semibold mb-3 flex items-center gap-2">
+              <Music size={14} /> Setlist
+            </p>
+            <motion.div variants={staggerContainer} initial="initial" animate="animate" className="space-y-2">
+              {sorted.map((t) => (
+                <motion.div
+                  key={t.id}
+                  variants={staggerItem}
+                  className={[
+                    'flex items-center gap-3 rounded-xl p-3 border',
+                    t.is_track_of_night ? 'bg-slate-dark border-gold/30' : 'bg-slate-dark border-white/5',
+                  ].join(' ')}
+                >
+                  {t.album_art_url ? (
+                    <img src={t.album_art_url} alt={t.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                      <Music size={16} className="text-ivory-dim" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-ivory font-display text-sm font-bold truncate flex items-center gap-1.5">
+                      {t.is_track_of_night && <Star size={12} className="text-gold shrink-0" fill="#c9a84c" />}
+                      {t.name}
+                    </p>
+                    <p className="text-ivory-dim text-xs font-body truncate">{t.artist}</p>
+                  </div>
+                  {t.act != null && (
+                    <span className="text-[10px] font-body px-2 py-0.5 rounded-full bg-white/5 text-ivory-dim shrink-0">
+                      Act {t.act}
+                    </span>
+                  )}
+                  {t.spotify_url && (
+                    <a href={t.spotify_url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-ivory-dim hover:text-gold transition-colors">
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+          </section>
+        )
+      })()}
 
       {/* Group Snaps */}
       {gridPhotos.length > 0 && (
