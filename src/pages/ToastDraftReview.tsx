@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { Wine, Trash2, Check } from 'lucide-react'
 import { TopBar, PageWrapper } from '@/components/layout'
@@ -8,6 +8,10 @@ import { useEntry } from '@/hooks/useEntry'
 import { useToastSession } from '@/hooks/useToastSession'
 import { publishToastDraft, deleteToastDraft } from '@/data/toast'
 import { checkToastAchievements } from '@/data/achievements'
+import { fetchAppearancesByEntry } from '@/data/personAppearances'
+import { fetchPeopleByIds } from '@/data/people'
+import { notifyOthers } from '@/hooks/usePushNotifications'
+import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { supabase } from '@/lib/supabase'
@@ -20,6 +24,19 @@ export default function ToastDraftReview() {
 
   const { entry, photos, loading, notFound } = useEntry(id)
   const { session, loading: sessionLoading } = useToastSession(id)
+  const [toastPeople, setToastPeople] = useState<Array<{ id: string; name: string; photo_url: string | null }>>([])
+
+  useEffect(() => {
+    if (!id) return
+    fetchAppearancesByEntry(id)
+      .then(async (appearances) => {
+        if (appearances.length === 0) { setToastPeople([]); return }
+        const personIds = appearances.map(a => a.person_id)
+        const people = await fetchPeopleByIds(personIds)
+        setToastPeople(people.map(p => ({ id: p.id, name: p.name, photo_url: p.photo_url })))
+      })
+      .catch(() => setToastPeople([]))
+  }, [id])
 
   const [publishing, setPublishing] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -75,6 +92,16 @@ export default function ToastDraftReview() {
       // Fire-and-forget toast achievement check
       if (gent?.id) {
         checkToastAchievements(gent.id).catch(() => {})
+      }
+      // Notify other gents (fire-and-forget)
+      if (gent?.id) {
+        notifyOthers({
+          title: `New ${ENTRY_TYPE_META.toast.label} logged`,
+          body: entry.title,
+          url: `/chronicle/${entry.id}`,
+          tag: `entry-${entry.id}`,
+          senderGentId: gent.id,
+        })
       }
       addToast('Toast published to Chronicle.', 'success')
       navigate(`/chronicle/${entry.id}`, { replace: true })
@@ -160,7 +187,7 @@ export default function ToastDraftReview() {
         <ToastLayout
           entry={entry}
           session={filteredSession}
-          people={[]}
+          people={toastPeople}
           photos={photos}
           isCreator={isCreator}
           controlsSlot={controlsSlot}

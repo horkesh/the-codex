@@ -242,7 +242,7 @@ export function ToastLayout({ entry, session, people, photos, isCreator: _isCrea
                   <p className="text-ivory-dim text-xs font-body mt-2 line-clamp-3">{w.ai_note}</p>
                 )}
                 <div className="mt-2 text-ivory text-xs font-body">
-                  {Object.entries(w.stats).slice(0, 2).map(([k, v]) => (
+                  {Object.entries(w.stats || {}).slice(0, 2).map(([k, v]) => (
                     <p key={k} className="text-ivory-dim">
                       {k.replace(/_/g, ' ')}: <span className="text-ivory">{String(v)}</span>
                     </p>

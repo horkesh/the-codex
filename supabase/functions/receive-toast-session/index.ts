@@ -139,7 +139,7 @@ Deno.serve(async (req: Request) => {
         if (matched) {
           // Create appearance for matched contact
           await db.from('person_appearances').upsert(
-            { person_id: matched.id, entry_id: entryId, tagged_by: auth.gent_id },
+            { person_id: matched.id, entry_id: entryId, noted_by: auth.gent_id },
             { onConflict: 'person_id,entry_id' },
           )
           return { toast_name: guest.name, person_id: matched.id, status: 'matched' }
@@ -185,7 +185,7 @@ Deno.serve(async (req: Request) => {
             { onConflict: 'person_id,gent_id' },
           ),
           db.from('person_appearances').upsert(
-            { person_id: personId, entry_id: entryId, tagged_by: auth.gent_id },
+            { person_id: personId, entry_id: entryId, noted_by: auth.gent_id },
             { onConflict: 'person_id,entry_id' },
           ),
         ])

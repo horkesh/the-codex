@@ -104,18 +104,6 @@ export async function fetchEntry(id: string): Promise<EntryWithParticipants | nu
   return { ...entry, participants: participantMap[id] ?? [] }
 }
 
-export async function fetchDraftEntry(id: string): Promise<EntryWithParticipants | null> {
-  const { data, error } = await supabase
-    .from('entries')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error || !data) return null
-
-  const participantsMap = await fetchParticipantsMap([id])
-  return { ...data, participants: participantsMap[id] || [] } as EntryWithParticipants
-}
 
 export async function createEntry(data: {
   type: string
