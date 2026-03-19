@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
 import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, ImagePlay, Edit2, Pin, X as XIcon, Type } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -18,6 +18,10 @@ import { PS5Scoreboard } from '@/components/chronicle/PS5Scoreboard'
 import { PeoplePresent } from '@/components/chronicle/PeoplePresent'
 import { CommentsSection } from '@/components/chronicle/CommentsSection'
 import { MissionLayout } from '@/components/chronicle/MissionLayout'
+import { ToastLayout } from '@/components/chronicle/ToastLayout'
+import { useToastSession } from '@/hooks/useToastSession'
+import { fetchAppearancesByEntry } from '@/data/personAppearances'
+import { fetchPeopleByIds } from '@/data/people'
 import { useEntry } from '@/hooks/useEntry'
 import { useEntryFilter } from '@/hooks/useEntryFilter'
 import { fetchEntry, deleteEntry, updateEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
@@ -261,6 +265,23 @@ export default function EntryDetail() {
   const { filterId, setFilter } = useEntryFilter(id ?? '')
   const photoUrls = useMemo(() => photos.map((p) => p.url), [photos])
   const isCreator = !!entry && gent?.id === entry.created_by
+
+  // Toast session data
+  const isToast = entry?.type === 'toast'
+  const { session: toastSession } = useToastSession(isToast ? entry?.id : undefined)
+  const [toastPeople, setToastPeople] = useState<Array<{ id: string; name: string; photo_url: string | null }>>([])
+
+  useEffect(() => {
+    if (!isToast || !entry) return
+    fetchAppearancesByEntry(entry.id)
+      .then(async (appearances) => {
+        if (appearances.length === 0) { setToastPeople([]); return }
+        const personIds = appearances.map(a => a.person_id)
+        const people = await fetchPeopleByIds(personIds)
+        setToastPeople(people.map(p => ({ id: p.id, name: p.name, photo_url: p.photo_url })))
+      })
+      .catch(() => setToastPeople([]))
+  }, [isToast, entry?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -645,6 +666,20 @@ export default function EntryDetail() {
             photos={photos}
             isCreator={isCreator}
             onEntryUpdate={setEntry}
+            loreSlot={loreSection}
+            controlsSlot={controlsContent}
+          />
+        </PageWrapper>
+      ) : isToast ? (
+        /* ── Toast: session header + acts + cocktails + confessions + wrapped ── */
+        <PageWrapper scrollable padded>
+          {titleSuggestionBanner && <div className="pt-4">{titleSuggestionBanner}</div>}
+          <ToastLayout
+            entry={entry}
+            session={toastSession}
+            people={toastPeople}
+            photos={photos}
+            isCreator={isCreator}
             loreSlot={loreSection}
             controlsSlot={controlsContent}
           />
