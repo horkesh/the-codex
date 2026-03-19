@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Wine, Camera, MessageCircle } from 'lucide-react'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import { fetchAllToastStats } from '@/data/toast'
+import { supabase } from '@/lib/supabase'
 import type { ToastGentStats } from '@/types/app'
 
 const ROLE_LABELS: Record<string, { label: string; icon: typeof Wine }> = {
@@ -14,6 +15,7 @@ const ROLE_LABELS: Record<string, { label: string; icon: typeof Wine }> = {
 export function ToastStatsSection() {
   const [stats, setStats] = useState<ToastGentStats[]>([])
   const [loading, setLoading] = useState(true)
+  const [topGuests, setTopGuests] = useState<Array<{ id: string; name: string; photo_url: string | null }>>([])
 
   useEffect(() => {
     fetchAllToastStats()
@@ -21,6 +23,17 @@ export function ToastStatsSection() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const guestIds = stats.map(s => (s as any).top_guest_id).filter(Boolean) as string[]
+    if (guestIds.length === 0) return
+    const unique = [...new Set(guestIds)]
+    supabase
+      .from('people')
+      .select('id, name, photo_url')
+      .in('id', unique)
+      .then(({ data }) => { if (data) setTopGuests(data) })
+  }, [stats])
 
   if (loading || stats.length === 0) return null
 
@@ -84,6 +97,26 @@ export function ToastStatsSection() {
             </motion.div>
           )
         })}
+
+        {topGuests.length > 0 && (
+          <motion.div variants={staggerItem} className="bg-slate-mid rounded-xl p-4 shadow-card">
+            <p className="text-ivory font-body text-sm font-semibold mb-2">Frequent Guests</p>
+            <div className="flex gap-3">
+              {topGuests.map(g => (
+                <div key={g.id} className="flex flex-col items-center gap-1">
+                  {g.photo_url ? (
+                    <img src={g.photo_url} alt={g.name} className="w-10 h-10 rounded-full object-cover border border-gold/30" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center text-gold text-xs font-bold">
+                      {g.name.charAt(0)}
+                    </div>
+                  )}
+                  <p className="text-ivory-dim text-xs font-body text-center line-clamp-1 w-16">{g.name}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </section>
   )
