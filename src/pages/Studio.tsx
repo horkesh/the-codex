@@ -41,6 +41,7 @@ import { YearInReview } from '@/export/templates/YearInReview'
 import { fetchEarnedAchievements } from '@/data/achievements'
 import type { EarnedAchievement } from '@/data/achievements'
 import { VisaCardSlide, HeroLoreSlide, PhotoGridSlide, DebriefSlide, StampSlide, buildVisaCarouselManifest } from '@/export/templates/visa-carousel'
+import { ToastCarouselPreview } from '@/export/templates/toast-carousel'
 import { fetchStampByEntryId } from '@/data/stamps'
 import { exportMultipleToPng, shareMultipleImages } from '@/export/exporter'
 import { useAuthStore } from '@/store/auth'
@@ -60,6 +61,7 @@ type TemplateId =
   | 'countdown'
   | 'toast_card' | 'toast_card_v2' | 'toast_card_v3' | 'toast_card_v4'
   | 'toast_session_v1' | 'toast_session_v2' | 'toast_session_v3' | 'toast_session_v4'
+  | 'toast_carousel'
   | 'interlude_card'
   | 'debrief_page'
   | 'passport_id_page'
@@ -133,6 +135,7 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
     { id: 'toast_session_v2', label: 'Session Centered', dims: '1080×1350', bgAspect: '3:4' },
     { id: 'toast_session_v3', label: 'Session Quote',   dims: '1080×1350', bgAspect: '3:4' },
     { id: 'toast_session_v4', label: 'Session Code',    dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'toast_carousel',   label: 'Carousel',         dims: '1080×1350', bgAspect: '3:4' },
   ],
   interlude:   [{ id: 'interlude_card',   label: 'Interlude Card',  dims: '1080×1350', bgAspect: '3:4' }],
   annual: [
@@ -394,6 +397,8 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
       return <ToastSessionCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
     case 'toast_session_v4':
       return <ToastSessionCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
+    case 'toast_carousel':
+      return <ToastCarouselPreview ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'interlude_card':
       return <InterludeCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'visa_carousel':
