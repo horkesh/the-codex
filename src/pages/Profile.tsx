@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { HelpCircle, ChevronRight, MapPin, Bell, BellOff } from 'lucide-react'
+import { HelpCircle, ChevronRight, MapPin, Bell, BellOff, Check } from 'lucide-react'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
@@ -28,6 +28,7 @@ function SectionDivider({ label }: { label: string }) {
   )
 }
 
+const VARIANT_LABELS = ['Chiaroscuro', 'Gilded', 'Frost']
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -39,7 +40,6 @@ export default function Profile() {
   const [bio, setBio] = useState(gent?.bio ?? '')
   const [saving, setSaving] = useState(false)
   const [generatingPortrait, setGeneratingPortrait] = useState(false)
-  const [, setPortraitSeconds] = useState(0)
   const [showStatusInput, setShowStatusInput] = useState(false)
   const [statusInput, setStatusInput] = useState('')
   const { supported: pushSupported, subscribed: pushSubscribed, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications()
@@ -50,6 +50,11 @@ export default function Profile() {
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  // Portrait selection state
+  const [portraitOptions, setPortraitOptions] = useState<string[]>([])
+  const [selectedPortrait, setSelectedPortrait] = useState<string | null>(null)
+  const [settingAvatar, setSettingAvatar] = useState(false)
 
   useEffect(() => {
     if (!gent?.id) return
@@ -90,37 +95,60 @@ export default function Profile() {
   }
 
   useEffect(() => {
-    if (!generatingPortrait) { setPortraitSeconds(0); return }
-    const t = setInterval(() => setPortraitSeconds((s) => s + 1), 1000)
+    if (!generatingPortrait) return
+    const t = setInterval(() => {}, 1000)
     return () => clearInterval(t)
   }, [generatingPortrait])
 
-  async function handlePortraitPhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleGeneratePortraits(photoFile?: File) {
     if (!gent) return
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (photoInputRef.current) photoInputRef.current.value = ''
-
     setGeneratingPortrait(true)
+    setPortraitOptions([])
+    setSelectedPortrait(null)
     try {
-      const photo_base64 = await imageToJpegBase64(file, { maxPx: 400, quality: 0.5 })
-
-      const { data, error } = await supabase.functions.invoke('generate-portrait', {
-        body: { gent_id: gent.id, photo_base64 },
-      })
-
-      if (error || !data?.portrait_url) throw new Error(error?.message ?? 'No portrait returned')
-
-      // Edge function already updates portrait_url in DB; also set avatar_url to the new portrait
-      const updated = await updateGent(gent.id, { avatar_url: data.portrait_url })
-      if (updated) {
-        setGent({ ...gent, avatar_url: data.portrait_url, portrait_url: data.portrait_url })
-        addToast('Portrait generated.', 'success')
+      const body: Record<string, string> = { gent_id: gent.id }
+      if (photoFile) {
+        body.photo_base64 = await imageToJpegBase64(photoFile, { maxPx: 400, quality: 0.5 })
       }
+
+      const { data, error } = await supabase.functions.invoke('generate-portrait', { body })
+      if (error || data?.error) throw new Error(error?.message ?? data?.error ?? 'Portrait generation failed')
+
+      const urls: string[] = data?.portrait_urls ?? []
+      if (urls.length === 0) throw new Error('No portraits returned')
+
+      setPortraitOptions(urls)
+      // Update portrait_url in store (edge fn already saved first to DB)
+      setGent({ ...gent, portrait_url: urls[0] })
+      addToast('Choose your portrait.', 'success')
     } catch {
       addToast('Portrait generation failed. Try again.', 'error')
     } finally {
       setGeneratingPortrait(false)
+    }
+  }
+
+  async function handlePortraitPhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (photoInputRef.current) photoInputRef.current.value = ''
+    await handleGeneratePortraits(file)
+  }
+
+  async function handleSelectPortrait(url: string) {
+    if (!gent || settingAvatar) return
+    setSettingAvatar(true)
+    try {
+      const updated = await updateGent(gent.id, { avatar_url: url, portrait_url: url })
+      if (updated) {
+        setGent({ ...gent, avatar_url: url, portrait_url: url })
+        setSelectedPortrait(url)
+        addToast('Portrait set as profile picture.', 'success')
+      }
+    } catch {
+      addToast('Failed to set portrait.', 'error')
+    } finally {
+      setSettingAvatar(false)
     }
   }
 
@@ -152,25 +180,6 @@ export default function Profile() {
       addToast('Failed to upload photo.', 'error')
     } finally {
       setUploadingPhoto(false)
-    }
-  }
-
-  async function handleGeneratePortrait() {
-    if (!gent) return
-    setGeneratingPortrait(true)
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-portrait', {
-        body: { gent_id: gent.id },
-      })
-      if (error || data?.error) throw new Error(error?.message ?? data?.error ?? 'Portrait generation failed')
-      if (data?.portrait_url) {
-        setGent({ ...gent, portrait_url: data.portrait_url })
-        addToast('Portrait generated.', 'success')
-      }
-    } catch {
-      addToast('Portrait generation failed.', 'error')
-    } finally {
-      setGeneratingPortrait(false)
     }
   }
 
@@ -260,7 +269,7 @@ export default function Profile() {
               disabled={busy}
               className="text-xs text-gold font-body border border-gold/30 rounded-full px-4 py-1.5 hover:border-gold/60 transition-colors disabled:opacity-40"
             >
-              {uploadingPhoto ? 'Uploading…' : 'Change photo'}
+              {uploadingPhoto ? 'Uploading...' : 'Change photo'}
             </button>
           </motion.div>
 
@@ -269,21 +278,82 @@ export default function Profile() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs tracking-[0.25em] uppercase text-ivory-dim font-body">Portrait</h2>
             </div>
-            {gent.portrait_url ? (
-              <div className="flex items-center gap-4">
-                <img
-                  src={gent.portrait_url}
-                  alt="Portrait"
-                  className="w-24 h-24 rounded-full overflow-hidden border border-gold/30 object-cover"
-                />
-                <div>
-                  <p className="text-xs text-ivory-muted font-body">AI-generated character portrait</p>
-                  <div className="flex gap-2 mt-2">
+
+            {/* Portrait options grid */}
+            <AnimatePresence mode="wait">
+              {generatingPortrait ? (
+                <motion.div
+                  key="generating"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-slate-dark border border-white/5 rounded-xl p-6 flex flex-col items-center gap-3"
+                >
+                  <div className="flex gap-4">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="w-20 h-20 rounded-full bg-white/5 animate-pulse"
+                        style={{ animationDelay: `${i * 200}ms` }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-ivory-dim font-body mt-2">Generating three portraits...</p>
+                </motion.div>
+              ) : portraitOptions.length > 0 ? (
+                <motion.div
+                  key="options"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-slate-dark border border-white/5 rounded-xl p-5"
+                >
+                  <p className="text-xs text-ivory-muted font-body text-center mb-4">
+                    Tap a portrait to set it as your profile picture
+                  </p>
+                  <div className="flex justify-center gap-4 mb-4">
+                    {portraitOptions.map((url, idx) => {
+                      const isSelected = selectedPortrait === url || (!selectedPortrait && gent.avatar_url === url)
+                      return (
+                        <button
+                          key={url}
+                          type="button"
+                          onClick={() => handleSelectPortrait(url)}
+                          disabled={settingAvatar}
+                          className="flex flex-col items-center gap-2 group"
+                        >
+                          <div className={cn(
+                            'relative w-22 h-22 rounded-full overflow-hidden border-2 transition-all duration-300',
+                            isSelected
+                              ? 'border-gold shadow-[0_0_12px_rgba(201,168,76,0.4)] scale-105'
+                              : 'border-white/10 group-hover:border-gold/50'
+                          )}>
+                            <img
+                              src={url}
+                              alt={`Portrait ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-gold/15 flex items-center justify-center">
+                                <div className="w-6 h-6 rounded-full bg-gold flex items-center justify-center">
+                                  <Check size={14} className="text-obsidian" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-ivory-dim font-body uppercase tracking-wider">
+                            {VARIANT_LABELS[idx]}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div className="flex justify-center gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={handleGeneratePortrait}
-                      loading={generatingPortrait}
+                      onClick={() => handleGeneratePortraits()}
+                      disabled={busy}
                       className="text-xs"
                     >
                       Regenerate
@@ -298,23 +368,58 @@ export default function Profile() {
                       From photo
                     </Button>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-slate-dark border border-white/5 rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-                <p className="text-xs text-ivory-dim font-body leading-relaxed">
-                  Generate an AI portrait — a stylised character illustration used on your Calling Card export.
-                </p>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleGeneratePortrait}
-                  loading={generatingPortrait}
-                >
-                  Generate Portrait
-                </Button>
-              </div>
-            )}
+                </motion.div>
+              ) : gent.portrait_url ? (
+                <motion.div key="existing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={gent.portrait_url}
+                      alt="Portrait"
+                      className="w-24 h-24 rounded-full overflow-hidden border border-gold/30 object-cover"
+                    />
+                    <div>
+                      <p className="text-xs text-ivory-muted font-body">AI-generated character portrait</p>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleGeneratePortraits()}
+                          loading={generatingPortrait}
+                          className="text-xs"
+                        >
+                          Regenerate
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => photoInputRef.current?.click()}
+                          disabled={busy}
+                          className="text-xs"
+                        >
+                          From photo
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <div className="bg-slate-dark border border-white/5 rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+                    <p className="text-xs text-ivory-dim font-body leading-relaxed">
+                      Generate an AI portrait — a stylised character illustration used on your Calling Card export.
+                    </p>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleGeneratePortraits()}
+                      loading={generatingPortrait}
+                    >
+                      Generate Portrait
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Identity */}
@@ -357,7 +462,7 @@ export default function Profile() {
                 label="Bio"
                 value={bio}
                 onChange={(e) => setBio((e.target as HTMLTextAreaElement).value)}
-                placeholder="A few words about yourself…"
+                placeholder="A few words about yourself..."
                 maxLength={280}
               />
               <Button

@@ -3,6 +3,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const STYLE_VARIANTS = [
+  {
+    label: 'chiaroscuro',
+    style: 'Deep chiaroscuro lighting inspired by Caravaggio — intense directional light carving the face from near-total darkness, dramatic shadow play, rich warm undertones in the highlights, oil-painting texture with visible brushwork energy.',
+  },
+  {
+    label: 'gilded',
+    style: 'Gilded art-deco aesthetic — warm amber and burnished gold tones, geometric patterns framing the subject, ornamental symmetry, gatsby-era opulence, soft diffused lighting with a luxurious golden hour glow.',
+  },
+  {
+    label: 'frost',
+    style: 'Cold modernist composition — steel-blue and silver palette, sharp angular geometric forms, brutalist minimalism, crisp clinical lighting with subtle lens flare, desaturated skin tones against icy architectural elements.',
+  },
+]
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -94,56 +109,62 @@ Output PURE JSON only, no markdown, no explanation.`,
       throw new Error('No appearance description available. Upload a photo first to generate an initial portrait.')
     }
 
-    // Step 2: Generate portrait with Imagen
+    // Step 2: Generate 3 portrait variants in parallel with different artistic styles
     const traitList = traits.join(', ')
-    const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, high-end digital art, dramatic shadows and highlights, sophisticated composition — while faithfully preserving the subject's exact skin tone, hair colour, facial structure, and distinguishing features. The person must be clearly recognisable. No text or words.`
+    const timestamp = Date.now()
 
-    const imageController = new AbortController()
-    const imageTimeout = setTimeout(() => imageController.abort(), 20_000)
-    let imageResult
-    try {
-      const imageResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: imageController.signal,
-          body: JSON.stringify({
-            instances: [{ prompt: imagePrompt }],
-            parameters: { sampleCount: 1, aspectRatio: '1:1', safetyFilterLevel: 'block_only_high' },
-          }),
+    const variantPromises = STYLE_VARIANTS.map(async (variant, idx) => {
+      const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: ${variant.style} — while faithfully preserving the subject's exact skin tone, hair colour, facial structure, and distinguishing features. The person must be clearly recognisable. No text or words.`
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 20_000)
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+              instances: [{ prompt: imagePrompt }],
+              parameters: { sampleCount: 1, aspectRatio: '1:1', safetyFilterLevel: 'block_only_high' },
+            }),
+          }
+        )
+        clearTimeout(timeout)
+
+        if (!response.ok) {
+          throw new Error(`Image generation error (${variant.label}): ${response.status} ${await response.text()}`)
         }
-      )
-      clearTimeout(imageTimeout)
 
-      if (!imageResponse.ok) {
-        throw new Error(`Image generation error: ${imageResponse.status} ${await imageResponse.text()}`)
+        const result = await response.json()
+        const base64Image: string | null = result.predictions?.[0]?.bytesBase64Encoded ?? null
+        if (!base64Image) throw new Error(`No image returned for variant ${variant.label}`)
+
+        // Upload to storage
+        const imageBytes = Uint8Array.from(atob(base64Image), (c) => c.charCodeAt(0))
+        const fileName = `${gent_id}/portrait-${variant.label}-${timestamp}-${idx}.webp`
+
+        const { error: uploadError } = await db.storage
+          .from('portraits')
+          .upload(fileName, imageBytes, { contentType: 'image/webp', upsert: true })
+
+        if (uploadError) throw new Error(`Storage upload error: ${uploadError.message}`)
+
+        const { data: { publicUrl } } = db.storage.from('portraits').getPublicUrl(fileName)
+        return publicUrl
+      } catch (e) {
+        clearTimeout(timeout)
+        throw e
       }
-      imageResult = await imageResponse.json()
-    } catch (e) {
-      clearTimeout(imageTimeout)
-      throw e
-    }
+    })
 
-    const base64Image: string | null = imageResult.predictions?.[0]?.bytesBase64Encoded ?? null
-    if (!base64Image) throw new Error('No image returned from Imagen')
+    const portraitUrls = await Promise.all(variantPromises)
 
-    // Step 3: Upload to Supabase Storage
-    const imageBytes = Uint8Array.from(atob(base64Image), (c) => c.charCodeAt(0))
-    const fileName = `${gent_id}/portrait-${Date.now()}.webp`
+    // Update portrait_url to the first variant as default
+    await db.from('gents').update({ portrait_url: portraitUrls[0] }).eq('id', gent_id)
 
-    const { error: uploadError } = await db.storage
-      .from('portraits')
-      .upload(fileName, imageBytes, { contentType: 'image/webp', upsert: true })
-
-    if (uploadError) throw new Error(`Storage upload error: ${uploadError.message}`)
-
-    const { data: { publicUrl } } = db.storage.from('portraits').getPublicUrl(fileName)
-
-    // Update portrait_url in the database
-    await db.from('gents').update({ portrait_url: publicUrl }).eq('id', gent_id)
-
-    return new Response(JSON.stringify({ portrait_url: publicUrl, appearance }), {
+    return new Response(JSON.stringify({ portrait_urls: portraitUrls, appearance }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
