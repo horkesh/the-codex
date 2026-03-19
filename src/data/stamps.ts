@@ -47,7 +47,7 @@ export async function createMissionStamp(entry: {
 }): Promise<PassportStamp> {
   const { data, error } = await supabase
     .from('passport_stamps')
-    .insert({
+    .upsert({
       entry_id: entry.id,
       type: 'mission',
       name: `${entry.city}, ${entry.country}`,
@@ -55,7 +55,7 @@ export async function createMissionStamp(entry: {
       country: entry.country,
       country_code: entry.country_code,
       date_earned: entry.date,
-    })
+    }, { onConflict: 'entry_id,type', ignoreDuplicates: true })
     .select()
     .single()
 
