@@ -87,6 +87,36 @@ export async function createAchievementStamp(data: {
   return stamp as PassportStamp
 }
 
+export async function deleteStampsByEntryId(entryId: string): Promise<void> {
+  // Fetch stamps to clean up storage SVGs
+  const { data: stamps } = await supabase
+    .from('passport_stamps')
+    .select('id, image_url')
+    .eq('entry_id', entryId)
+
+  if (stamps && stamps.length > 0) {
+    // Remove SVG files from storage
+    const paths = stamps
+      .map(s => s.image_url)
+      .filter(Boolean)
+      .map(url => {
+        const match = url!.match(/stamps\/(.+)$/)
+        return match ? match[1] : null
+      })
+      .filter(Boolean) as string[]
+
+    if (paths.length > 0) {
+      await supabase.storage.from('stamps').remove(paths)
+    }
+
+    // Delete stamp rows (belt-and-suspenders with CASCADE)
+    await supabase
+      .from('passport_stamps')
+      .delete()
+      .eq('entry_id', entryId)
+  }
+}
+
 export async function updateStampImage(stampId: string, imageUrl: string): Promise<void> {
   const { error } = await supabase
     .from('passport_stamps')
