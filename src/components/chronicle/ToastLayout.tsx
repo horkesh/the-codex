@@ -47,7 +47,7 @@ function VibeTimeline({ timeline }: { timeline: Array<{ act: number; vibe: strin
   )
 }
 
-export function ToastLayout({ entry, session, people, photos, isCreator, loreSlot, controlsSlot }: ToastLayoutProps) {
+export function ToastLayout({ entry, session, people, photos, isCreator: _isCreator, loreSlot, controlsSlot }: ToastLayoutProps) {
   if (!session) return null
 
   const { cocktails, confessions, wrapped } = session
@@ -109,11 +109,11 @@ export function ToastLayout({ entry, session, people, photos, isCreator, loreSlo
         {/* Vibe timeline */}
         <div className="mt-4">
           <VibeTimeline timeline={session.session.vibe_timeline} />
-          {meta.vibe_summary && (
+          {meta.vibe_summary ? (
             <p className="text-ivory-dim text-xs font-body mt-1.5 tracking-wide">
-              {meta.vibe_summary as string}
+              {String(meta.vibe_summary)}
             </p>
-          )}
+          ) : null}
         </div>
       </section>
 
