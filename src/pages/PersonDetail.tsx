@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye, RefreshCw } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye, RefreshCw, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Avatar, Spinner, Modal } from '@/components/ui'
 import { usePerson } from '@/hooks/usePerson'
@@ -66,6 +66,7 @@ export default function PersonDetail() {
   const [gentSaving, setGentSaving] = useState(false)
   const [knownByGentIds, setKnownByGentIds] = useState<string[]>([])
   const [promoting, setPromoting] = useState(false)
+  const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; entryId: string } | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -574,7 +575,7 @@ export default function PersonDetail() {
                     <button
                       key={`${photo.entryId}-${i}`}
                       type="button"
-                      onClick={() => navigate(`/chronicle/${photo.entryId}`)}
+                      onClick={() => setLightboxPhoto({ url: photo.url, entryId: photo.entryId })}
                       className="aspect-square rounded-lg overflow-hidden border border-white/5 hover:border-gold/30 transition-colors"
                     >
                       <img
@@ -807,6 +808,44 @@ export default function PersonDetail() {
           </div>
         </div>
       </Modal>
+
+      {/* Photo lightbox */}
+      <AnimatePresence>
+        {lightboxPhoto && (
+          <motion.div
+            key="photo-lightbox"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxPhoto(null)}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxPhoto(null)}
+              className="absolute top-4 right-4 p-2 text-ivory/70 hover:text-ivory transition-colors z-10"
+              aria-label="Close"
+            >
+              <X size={24} />
+            </button>
+
+            <img
+              src={lightboxPhoto.url}
+              alt=""
+              className="max-w-[92vw] max-h-[80vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setLightboxPhoto(null); navigate(`/chronicle/${lightboxPhoto.entryId}`) }}
+              className="mt-4 px-4 py-2 text-xs font-body text-gold border border-gold/30 rounded-lg hover:bg-gold/10 transition-colors"
+            >
+              View Entry
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
