@@ -430,7 +430,7 @@ export default function StoryDetail() {
       </PageWrapper>
 
       {/* Delete confirmation modal */}
-      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Story">
+      <Modal isOpen={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Story">
         <p className="text-sm text-ivory-dim font-body mb-5">
           Are you sure you want to delete this story? This cannot be undone.
         </p>
