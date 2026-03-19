@@ -1,0 +1,18 @@
+name: Cleanup Toast Drafts
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger cleanup
+        run: |
+          curl -s -w "\nHTTP %{http_code}" -X POST \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/cleanup-toast-drafts" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}'
