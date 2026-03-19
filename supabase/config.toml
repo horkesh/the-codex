@@ -403,6 +403,15 @@ verify_jwt = false
 [functions.analyze-instagram]
 verify_jwt = false
 
+[functions.generate-toast-token]
+verify_jwt = false
+
+[functions.receive-toast-session]
+verify_jwt = false
+
+[functions.cleanup-toast-drafts]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

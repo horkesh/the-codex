@@ -32,6 +32,13 @@ export const ACHIEVEMENT_ICONS: Record<string, string> = {
   threshold_explorer: '🧭',
   threshold_connoisseur: '🍷',
   threshold_host: '🥂',
+  first_pour: '🍸',
+  bartender: '🍹',
+  confessor: '🗣️',
+  chronicler_toast: '📸',
+  regular: '🥃',
+  legendary_host: '👑',
+  fifty_cocktails: '🍸',
 }
 
 // Seed achievement definitions (call once)
@@ -44,6 +51,14 @@ export const ACHIEVEMENT_DEFINITIONS = [
   { type: 'five_countries', name: 'Passport Full', description: 'Visited 5 countries.', criteria: { countries: 5 } },
   { type: 'ten_steaks', name: 'The Carnivore', description: '10 tables visited.', criteria: { steaks: 10 } },
   { type: 'ps5_100', name: 'Century Club', description: '100 PS5 matches played.', criteria: { ps5_matches: 100 } },
+  // Toast achievements
+  { type: 'first_pour', name: 'First Pour', description: 'Host your first Toast session.', criteria: { toast_sessions: 1 } },
+  { type: 'bartender', name: 'Bartender', description: 'Craft 10 cocktails as Keys & Cocktails.', criteria: { toast_cocktails: 10 } },
+  { type: 'confessor', name: 'Confessor', description: 'Draw 10 confessions as Beard & Bass.', criteria: { toast_confessions: 10 } },
+  { type: 'chronicler_toast', name: 'Chronicler', description: 'Take 20 group snaps as Lorekeeper.', criteria: { toast_photos: 20 } },
+  { type: 'regular', name: 'Regular', description: 'Host 10 Toast sessions.', criteria: { toast_sessions: 10 } },
+  { type: 'legendary_host', name: 'Legendary Host', description: 'Host 25 Toast sessions.', criteria: { toast_sessions: 25 } },
+  { type: 'fifty_cocktails', name: '50 Cocktails', description: 'Craft 50 cocktails across all sessions.', criteria: { toast_cocktails: 50 } },
 ]
 
 // Check if a gent has earned any new achievements based on their current stats

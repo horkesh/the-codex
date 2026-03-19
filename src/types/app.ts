@@ -367,3 +367,71 @@ export interface InstagramAnalysis {
   following_count?: string
   recent_post_themes?: string[]
 }
+
+// ─── Toast Session ──────────────────────────────────────────────────────────
+
+export interface ToastSession {
+  id: string
+  entry_id: string
+  hosted_by: string
+  session_code: string
+  duration_seconds: number
+  act_count: number
+  guest_count: number
+  vibe_timeline: Array<{ act: number; vibe: string; timestamp: string }>
+  created_at: string
+}
+
+export interface ToastCocktail {
+  id: string
+  session_id: string
+  name: string
+  story: string | null
+  image_url: string | null
+  round_number: number
+  act: number
+  crafted_for: string | null
+}
+
+export interface ToastConfession {
+  id: string
+  session_id: string
+  prompt: string
+  confessor_id: string | null
+  confessor_is_gent: boolean
+  ai_commentary: string | null
+  act: number
+  reaction_count: number
+}
+
+export interface ToastWrapped {
+  id: string
+  session_id: string
+  participant_id: string
+  is_gent: boolean
+  stats: Record<string, number>
+  ai_note: string | null
+  ai_title: string | null
+}
+
+export interface ToastGentStats {
+  id: string
+  gent_id: string
+  role: 'lorekeeper' | 'keys' | 'bass'
+  sessions_hosted: number
+  photos_taken: number
+  cocktails_crafted: number
+  confessions_drawn: number
+  spotlights_given: number
+  vibe_shifts_called: number
+  reactions_sparked: number
+  top_guest_id: string | null
+  updated_at: string
+}
+
+export interface ToastSessionFull {
+  session: ToastSession
+  cocktails: ToastCocktail[]
+  confessions: ToastConfession[]
+  wrapped: ToastWrapped[]
+}

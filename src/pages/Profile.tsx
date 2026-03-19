@@ -15,6 +15,8 @@ import { updateGent, updateGentStatus } from '@/data/gents'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { imageToJpegBase64, imageToWebpBlob } from '@/lib/image'
+import { fetchToastGentStats } from '@/data/toast'
+import type { ToastGentStats } from '@/types/app'
 
 function SectionDivider({ label }: { label: string }) {
   return (
@@ -44,6 +46,8 @@ export default function Profile() {
   const [pushLoading, setPushLoading] = useState(false)
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [toastStats, setToastStats] = useState<ToastGentStats[]>([])
+
   const photoInputRef = useRef<HTMLInputElement>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
@@ -51,6 +55,13 @@ export default function Profile() {
   const [portraitOptions, setPortraitOptions] = useState<string[]>([])
   const [selectedPortrait, setSelectedPortrait] = useState<string | null>(null)
   const [settingAvatar, setSettingAvatar] = useState(false)
+
+  useEffect(() => {
+    if (!gent?.id) return
+    fetchToastGentStats(gent.id)
+      .then(setToastStats)
+      .catch(() => {})
+  }, [gent?.id])
 
   if (!gent) {
     return (
@@ -556,6 +567,62 @@ export default function Profile() {
                     <div className={cn('absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform', pushSubscribed ? 'translate-x-5' : 'translate-x-1')} />
                   </div>
                 </button>
+              </>
+            )}
+
+            {/* Toast Service Record */}
+            {toastStats.length > 0 && (
+              <>
+                <SectionDivider label="Toast Service Record" />
+                {toastStats.map((s) => (
+                  <div key={s.id} className="bg-slate-dark rounded-xl p-4 border border-white/5 mb-2">
+                    <p className="text-ivory font-body text-sm font-semibold capitalize">
+                      {s.role === 'keys' ? 'Keys & Cocktails' : s.role === 'bass' ? 'Beard & Bass' : 'Lorekeeper'}
+                    </p>
+                    <div className="grid grid-cols-3 gap-2 mt-2 text-center">
+                      <div>
+                        <p className="text-gold font-display text-lg font-bold">{s.sessions_hosted}</p>
+                        <p className="text-ivory-dim text-xs">Sessions</p>
+                      </div>
+                      {s.role === 'keys' && (
+                        <>
+                          <div>
+                            <p className="text-gold font-display text-lg font-bold">{s.cocktails_crafted}</p>
+                            <p className="text-ivory-dim text-xs">Cocktails</p>
+                          </div>
+                          <div>
+                            <p className="text-gold font-display text-lg font-bold">{s.vibe_shifts_called}</p>
+                            <p className="text-ivory-dim text-xs">Vibe Shifts</p>
+                          </div>
+                        </>
+                      )}
+                      {s.role === 'bass' && (
+                        <>
+                          <div>
+                            <p className="text-gold font-display text-lg font-bold">{s.confessions_drawn}</p>
+                            <p className="text-ivory-dim text-xs">Confessions</p>
+                          </div>
+                          <div>
+                            <p className="text-gold font-display text-lg font-bold">{s.spotlights_given}</p>
+                            <p className="text-ivory-dim text-xs">Spotlights</p>
+                          </div>
+                        </>
+                      )}
+                      {s.role === 'lorekeeper' && (
+                        <>
+                          <div>
+                            <p className="text-gold font-display text-lg font-bold">{s.photos_taken}</p>
+                            <p className="text-ivory-dim text-xs">Photos</p>
+                          </div>
+                          <div>
+                            <p className="text-gold font-display text-lg font-bold">{s.reactions_sparked}</p>
+                            <p className="text-ivory-dim text-xs">Reactions</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </>
             )}
 
