@@ -7,10 +7,10 @@ import { PassportCover } from '@/components/passport/PassportCover'
 import { StampGrid } from '@/components/passport/StampGrid'
 import { StampDetail } from '@/components/passport/StampDetail'
 import { StoryCard } from '@/components/passport/StoryCard'
-import { Spinner, OnboardingTip } from '@/components/ui'
+import { Spinner, OnboardingTip, Modal, Button } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
 import { fadeUp } from '@/lib/animations'
-import { fetchStories } from '@/data/stories'
+import { fetchStories, deleteStory } from '@/data/stories'
 import { generateStamp } from '@/ai/stamp'
 import { updateStampImage } from '@/data/stamps'
 import { useUIStore } from '@/store/ui'
@@ -31,6 +31,8 @@ export default function Passport() {
   const [stories, setStories] = useState<Story[]>([])
   const [storiesLoading, setStoriesLoading] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+  const [storyToDelete, setStoryToDelete] = useState<Story | null>(null)
+  const [deletingStory, setDeletingStory] = useState(false)
   const addToast = useUIStore(s => s.addToast)
 
   // Raw (non-deduplicated) city list for frequency analysis in travel intel
@@ -64,6 +66,21 @@ export default function Passport() {
     }
     addToast(`${done}/${missionStamps.length} stamps regenerated. Reload to see them.`, 'success')
     setRegenerating(false)
+  }
+
+  async function handleDeleteStoryConfirm() {
+    if (!storyToDelete) return
+    setDeletingStory(true)
+    try {
+      await deleteStory(storyToDelete.id)
+      setStories(prev => prev.filter(s => s.id !== storyToDelete.id))
+      addToast('Story deleted.', 'success')
+    } catch {
+      addToast('Could not delete story.', 'error')
+    } finally {
+      setDeletingStory(false)
+      setStoryToDelete(null)
+    }
   }
 
   // Loading state
@@ -205,6 +222,7 @@ export default function Passport() {
                             key={story.id}
                             story={story}
                             onClick={() => navigate(`/passport/stories/${story.id}`)}
+                            onDelete={() => setStoryToDelete(story)}
                           />
                         ))}
                       </div>
@@ -226,6 +244,21 @@ export default function Passport() {
 
       {/* Stamp detail modal — rendered outside AnimatePresence so it doesn't unmount on view switch */}
       <StampDetail stamp={selectedStamp} onClose={() => setSelectedStamp(null)} />
+
+      {/* Delete story confirmation */}
+      <Modal open={!!storyToDelete} onClose={() => setStoryToDelete(null)} title="Delete Story">
+        <p className="text-sm text-ivory-dim font-body mb-5">
+          Delete &ldquo;{storyToDelete?.title}&rdquo;? This cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setStoryToDelete(null)} className="flex-1">
+            Cancel
+          </Button>
+          <Button variant="danger" size="sm" onClick={handleDeleteStoryConfirm} loading={deletingStory} className="flex-1">
+            Delete
+          </Button>
+        </div>
+      </Modal>
     </>
   )
 }
