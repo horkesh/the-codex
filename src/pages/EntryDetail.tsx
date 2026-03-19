@@ -21,6 +21,7 @@ import { MissionLayout } from '@/components/chronicle/MissionLayout'
 import { useEntry } from '@/hooks/useEntry'
 import { useEntryFilter } from '@/hooks/useEntryFilter'
 import { fetchEntry, deleteEntry, updateEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
+import { deleteStampsByEntryId } from '@/data/stamps'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
@@ -353,6 +354,10 @@ export default function EntryDetail() {
     if (!entry) return
     setDeleting(true)
     try {
+      // Clean up stamp SVGs from storage before CASCADE deletes the rows
+      if (entry.type === 'mission') {
+        await deleteStampsByEntryId(entry.id).catch(() => {})
+      }
       await deleteEntry(entry.id)
       addToast('Entry deleted.', 'success')
       navigate('/chronicle', { replace: true })
