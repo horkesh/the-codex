@@ -13,8 +13,8 @@ const STYLE_VARIANTS = [
     style: 'Gilded art-deco aesthetic — warm amber and burnished gold tones, geometric patterns framing the subject, ornamental symmetry, gatsby-era opulence, soft diffused lighting with a luxurious golden hour glow.',
   },
   {
-    label: 'frost',
-    style: 'Cold modernist composition — steel-blue and silver palette, sharp angular geometric forms, brutalist minimalism, crisp clinical lighting with subtle lens flare, desaturated skin tones against icy architectural elements.',
+    label: 'noir',
+    style: 'Minimalist geometric noir — abstract angular forms, cinematic noir lighting with dramatic shadows and highlights, moody desaturated palette with deep blacks and subtle warm accents, sophisticated high-end digital art composition, preserving the subject\'s actual skin tone, hair colour, and facial features.',
   },
 ]
 
