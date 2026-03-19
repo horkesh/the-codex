@@ -1,3 +1,5 @@
+import { generateToken } from '../_shared/hmac-token.ts'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -26,26 +28,7 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const payload = {
-      gent_id,
-      exp: Math.floor(Date.now() / 1000) + 900,
-      iat: Math.floor(Date.now() / 1000),
-    }
-
-    const encoder = new TextEncoder()
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign'],
-    )
-
-    const payloadB64 = btoa(JSON.stringify(payload))
-    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(payloadB64))
-    const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-
-    const token = `${payloadB64}.${sigB64}`
+    const token = await generateToken(secret, gent_id)
 
     return new Response(JSON.stringify({ token }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
