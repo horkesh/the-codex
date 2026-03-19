@@ -45,6 +45,7 @@ import { ToastCarouselPreview } from '@/export/templates/toast-carousel'
 import { fetchStampByEntryId } from '@/data/stamps'
 import { exportMultipleToPng, shareMultipleImages } from '@/export/exporter'
 import { useAuthStore } from '@/store/auth'
+import { useToastSession } from '@/hooks/useToastSession'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -296,6 +297,7 @@ interface TemplateRendererProps {
   carouselActiveSlide?: number
   carouselSetActiveSlide?: (n: number) => void
   onCarouselStateReady?: (state: CarouselState | null) => void
+  trackOfNight?: { name: string; artist: string } | null
 }
 
 function RivalryCardWrapper({
@@ -327,7 +329,7 @@ function RivalryCardWrapper({
   return <RivalryCard ref={innerRef} gentA={statA} gentB={statB} backgroundUrl={backgroundUrl} />
 }
 
-function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData, gent, carouselActiveSlide, carouselSetActiveSlide, onCarouselStateReady }: TemplateRendererProps) {
+function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData, gent, carouselActiveSlide, carouselSetActiveSlide, onCarouselStateReady, trackOfNight }: TemplateRendererProps) {
   switch (templateId) {
     case 'night_out_card':
       return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
@@ -390,7 +392,7 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
     case 'toast_card_v4':
       return <ToastCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
     case 'toast_session_v1':
-      return <ToastSessionCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
+      return <ToastSessionCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} trackOfNight={trackOfNight} />
     case 'toast_session_v2':
       return <ToastSessionCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={2} />
     case 'toast_session_v3':
@@ -579,6 +581,13 @@ export default function Studio() {
   const [carouselActiveSlide, setCarouselActiveSlide] = useState(0)
   const [carouselState, setCarouselState] = useState<CarouselState | null>(null)
   const handleCarouselStateReady = useCallback((state: CarouselState | null) => setCarouselState(state), [])
+
+  // Toast session data for track of the night on export templates
+  const { session: toastSession } = useToastSession(selectedEntry?.type === 'toast' ? selectedEntry?.id : undefined)
+  const trackOfNight = useMemo(() => {
+    const t = toastSession?.tracks?.find(tr => tr.is_track_of_night)
+    return t ? { name: t.name, artist: t.artist } : null
+  }, [toastSession])
 
   // Achievement data for the template renderer
   const achievementData = useMemo(() => {
@@ -1002,6 +1011,7 @@ export default function Studio() {
                       carouselActiveSlide={carouselActiveSlide}
                       carouselSetActiveSlide={setCarouselActiveSlide}
                       onCarouselStateReady={handleCarouselStateReady}
+                      trackOfNight={trackOfNight}
                     />
                   </PhotoFilterContext.Provider>
                 </div>
@@ -1022,6 +1032,7 @@ export default function Studio() {
                     carouselActiveSlide={carouselActiveSlide}
                     carouselSetActiveSlide={setCarouselActiveSlide}
                     onCarouselStateReady={() => {}}
+                    trackOfNight={trackOfNight}
                   />
                 </PhotoFilterContext.Provider>
               </div>

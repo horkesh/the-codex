@@ -14,6 +14,7 @@ interface ToastTemplateProps {
   }
   backgroundUrl?: string
   variant?: 1 | 2 | 3 | 4
+  trackOfNight?: { name: string; artist: string } | null
 }
 
 const ROOT: React.CSSProperties = {
@@ -29,7 +30,7 @@ const ROOT: React.CSSProperties = {
 
 const Z2: React.CSSProperties = { position: 'relative', zIndex: 2 }
 
-function V1({ entry, backgroundUrl }: ToastTemplateProps) {
+function V1({ entry, backgroundUrl, trackOfNight }: ToastTemplateProps) {
   const meta = entry.metadata || {}
   const vibe = (meta.vibe_summary as string) || ''
   const guests = (meta.guest_count as number) || 0
@@ -58,6 +59,14 @@ function V1({ entry, backgroundUrl }: ToastTemplateProps) {
           {guests > 0 && <span>{guests} guests</span>}
           {mins > 0 && <span>{mins}m</span>}
         </div>
+        {trackOfNight && (
+          <>
+            <div style={{ width: '40px', height: '1px', backgroundColor: 'rgba(201,168,76,0.4)' }} />
+            <p style={{ color: COLOR.gold, fontSize: '14px', fontFamily: FONT.body, textTransform: 'uppercase', letterSpacing: '2px' }}>
+              TRACK OF THE NIGHT: {trackOfNight.name} — {trackOfNight.artist}
+            </p>
+          </>
+        )}
         <BrandMark size="sm" />
       </div>
     </div>
@@ -143,13 +152,13 @@ function V4({ entry, backgroundUrl }: ToastTemplateProps) {
 }
 
 export const ToastSessionCard = React.forwardRef<HTMLDivElement, ToastTemplateProps>(
-  ({ variant = 1, ...props }, ref) => {
+  ({ variant = 1, trackOfNight, ...props }, ref) => {
     const inner = (() => {
       switch (variant) {
         case 2: return <V2 {...props} />
         case 3: return <V3 {...props} />
         case 4: return <V4 {...props} />
-        default: return <V1 {...props} />
+        default: return <V1 {...props} trackOfNight={trackOfNight} />
       }
     })()
     return <div ref={ref} style={ROOT}><InsetFrame />{inner}</div>
