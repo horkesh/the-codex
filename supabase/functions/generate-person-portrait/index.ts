@@ -20,23 +20,32 @@ Deno.serve(async (req: Request) => {
     const traitList = (traits as string[]).join(', ')
     const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, high-end digital art, dramatic shadows and highlights, sophisticated composition — while preserving the subject's actual skin tone, hair colour, and facial features. No text or words.`
 
-    const imageResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instances: [{ prompt: imagePrompt }],
-          parameters: { sampleCount: 1, aspectRatio: '1:1', safetyFilterLevel: 'block_only_high' },
-        }),
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 20_000)
+    let imageResult
+    try {
+      const imageResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            instances: [{ prompt: imagePrompt }],
+            parameters: { sampleCount: 1, aspectRatio: '1:1', safetyFilterLevel: 'block_only_high' },
+          }),
+        }
+      )
+      clearTimeout(timeout)
+
+      if (!imageResponse.ok) {
+        throw new Error(`Image generation error: ${imageResponse.status} ${await imageResponse.text()}`)
       }
-    )
-
-    if (!imageResponse.ok) {
-      throw new Error(`Image generation error: ${imageResponse.status} ${await imageResponse.text()}`)
+      imageResult = await imageResponse.json()
+    } catch (e) {
+      clearTimeout(timeout)
+      throw e
     }
-
-    const imageResult = await imageResponse.json()
     const base64Image: string | null = imageResult.predictions?.[0]?.bytesBase64Encoded ?? null
     if (!base64Image) throw new Error('No image returned from Imagen')
 
@@ -61,7 +70,7 @@ Deno.serve(async (req: Request) => {
     console.error('generate-person-portrait error:', error)
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

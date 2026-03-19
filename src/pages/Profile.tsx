@@ -93,14 +93,15 @@ export default function Profile() {
       const photo_base64 = await imageToJpegBase64(file, { maxPx: 400, quality: 0.5 })
 
       const { data, error } = await supabase.functions.invoke('generate-portrait', {
-        body: { gent_id: gent.id, display_name: gent.display_name, photo_base64 },
+        body: { gent_id: gent.id, photo_base64 },
       })
 
       if (error || !data?.portrait_url) throw new Error(error?.message ?? 'No portrait returned')
 
+      // Edge function already updates portrait_url in DB; also set avatar_url to the new portrait
       const updated = await updateGent(gent.id, { avatar_url: data.portrait_url })
       if (updated) {
-        setGent({ ...gent, avatar_url: data.portrait_url })
+        setGent({ ...gent, avatar_url: data.portrait_url, portrait_url: data.portrait_url })
         addToast('Portrait generated.', 'success')
       }
     } catch {
@@ -115,9 +116,9 @@ export default function Profile() {
     setGeneratingPortrait(true)
     try {
       const { data, error } = await supabase.functions.invoke('generate-portrait', {
-        body: { gent_id: gent.id, display_name: gent.display_name },
+        body: { gent_id: gent.id },
       })
-      if (error) throw error
+      if (error || data?.error) throw new Error(error?.message ?? data?.error ?? 'Portrait generation failed')
       if (data?.portrait_url) {
         setGent({ ...gent, portrait_url: data.portrait_url })
         addToast('Portrait generated.', 'success')
