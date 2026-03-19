@@ -7,6 +7,7 @@ import { ToastLayout } from '@/components/chronicle/ToastLayout'
 import { useEntry } from '@/hooks/useEntry'
 import { useToastSession } from '@/hooks/useToastSession'
 import { publishToastDraft, deleteToastDraft } from '@/data/toast'
+import { checkToastAchievements } from '@/data/achievements'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { supabase } from '@/lib/supabase'
@@ -71,6 +72,10 @@ export default function ToastDraftReview() {
           .in('id', Array.from(removedConfessions))
       }
       await publishToastDraft(entry.id, {})
+      // Fire-and-forget toast achievement check
+      if (gent?.id) {
+        checkToastAchievements(gent.id).catch(() => {})
+      }
       addToast('Toast published to Chronicle.', 'success')
       navigate(`/chronicle/${entry.id}`, { replace: true })
     } catch {

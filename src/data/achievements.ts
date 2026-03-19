@@ -105,3 +105,58 @@ export async function checkAndAwardAchievements(gentId: string): Promise<void> {
     }))
   )
 }
+
+/**
+ * Check and award toast-specific achievements based on toast_gent_stats.
+ * Called after publishing a toast draft.
+ */
+export async function checkToastAchievements(gentId: string): Promise<void> {
+  const { data: stats } = await supabase
+    .from('toast_gent_stats' as any)
+    .select('*')
+    .eq('gent_id', gentId)
+
+  if (!stats || stats.length === 0) return
+
+  const totalSessions = stats.reduce((sum: number, s: any) => sum + (s.sessions_hosted || 0), 0)
+  const totalCocktails = stats.reduce((sum: number, s: any) => sum + (s.cocktails_crafted || 0), 0)
+  const totalConfessions = stats.reduce((sum: number, s: any) => sum + (s.confessions_drawn || 0), 0)
+  const totalPhotos = stats.reduce((sum: number, s: any) => sum + (s.photos_taken || 0), 0)
+
+  const candidates: Array<{ type: string; threshold: number; actual: number }> = [
+    { type: 'first_pour', threshold: 1, actual: totalSessions },
+    { type: 'regular', threshold: 10, actual: totalSessions },
+    { type: 'legendary_host', threshold: 25, actual: totalSessions },
+    { type: 'bartender', threshold: 10, actual: totalCocktails },
+    { type: 'fifty_cocktails', threshold: 50, actual: totalCocktails },
+    { type: 'confessor', threshold: 10, actual: totalConfessions },
+    { type: 'chronicler_toast', threshold: 20, actual: totalPhotos },
+  ]
+
+  const earned = candidates.filter(c => c.actual >= c.threshold).map(c => c.type)
+  if (earned.length === 0) return
+
+  // Get already earned achievements
+  const { data: existing } = await supabase
+    .from('achievements')
+    .select('type')
+    .eq('earned_by', gentId)
+    .in('type', earned)
+
+  const existingTypes = new Set(existing?.map(a => a.type) ?? [])
+  const newTypes = earned.filter(t => !existingTypes.has(t))
+  if (newTypes.length === 0) return
+
+  const defs = ACHIEVEMENT_DEFINITIONS.filter(d => newTypes.includes(d.type))
+
+  await supabase.from('achievements').insert(
+    defs.map(def => ({
+      type: def.type,
+      name: def.name,
+      description: def.description,
+      criteria: def.criteria,
+      earned_by: gentId,
+      earned_at: new Date().toISOString(),
+    }))
+  )
+}
