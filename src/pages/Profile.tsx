@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase'
 import { updateGent, updateGentStatus } from '@/data/gents'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
-import { imageToJpegBase64 } from '@/lib/image'
+import { imageToJpegBase64, imageToWebpBlob } from '@/lib/image'
 
 function SectionDivider({ label }: { label: string }) {
   return (
@@ -43,7 +43,9 @@ export default function Profile() {
   const { supported: pushSupported, subscribed: pushSubscribed, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications()
   const [pushLoading, setPushLoading] = useState(false)
 
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   if (!gent) {
     return (
@@ -111,6 +113,37 @@ export default function Profile() {
     }
   }
 
+  async function handleChangePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!gent) return
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (avatarInputRef.current) avatarInputRef.current.value = ''
+
+    setUploadingPhoto(true)
+    try {
+      const blob = await imageToWebpBlob(file, { maxPx: 512, quality: 0.85 })
+      const path = `${gent.id}/avatar-${Date.now()}.webp`
+
+      const { error: uploadError } = await supabase.storage
+        .from('portraits')
+        .upload(path, blob, { upsert: false, contentType: 'image/webp' })
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage.from('portraits').getPublicUrl(path)
+      const publicUrl = urlData.publicUrl
+
+      const updated = await updateGent(gent.id, { avatar_url: publicUrl })
+      if (updated) {
+        setGent({ ...gent, avatar_url: publicUrl })
+        addToast('Photo updated.', 'success')
+      }
+    } catch {
+      addToast('Failed to upload photo.', 'error')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
   async function handleGeneratePortrait() {
     if (!gent) return
     setGeneratingPortrait(true)
@@ -166,7 +199,7 @@ export default function Profile() {
     }
   }
 
-  const busy = generatingPortrait
+  const busy = generatingPortrait || uploadingPhoto
 
   return (
     <>
@@ -205,20 +238,18 @@ export default function Profile() {
                 </div>
               )}
             </div>
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleChangePhoto} />
             <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePortraitPhotoSelected} />
           </motion.div>
 
           {/* Avatar action */}
           <motion.div variants={staggerItem} className="mb-6">
             <button
-              onClick={() => photoInputRef.current?.click()}
+              onClick={() => avatarInputRef.current?.click()}
               disabled={busy}
               className="text-xs text-gold font-body border border-gold/30 rounded-full px-4 py-1.5 hover:border-gold/60 transition-colors disabled:opacity-40"
             >
-              {generatingPortrait
-                ? portraitSeconds < 3 ? 'Analysing…'
-                  : `Painting… ${portraitSeconds}s`
-                : 'Change photo'}
+              {uploadingPhoto ? 'Uploading…' : 'Change photo'}
             </button>
           </motion.div>
 
@@ -236,15 +267,26 @@ export default function Profile() {
                 />
                 <div>
                   <p className="text-xs text-ivory-muted font-body">AI-generated character portrait</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleGeneratePortrait}
-                    loading={generatingPortrait}
-                    className="mt-2 text-xs"
-                  >
-                    Regenerate
-                  </Button>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleGeneratePortrait}
+                      loading={generatingPortrait}
+                      className="text-xs"
+                    >
+                      Regenerate
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={busy}
+                      className="text-xs"
+                    >
+                      From photo
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
