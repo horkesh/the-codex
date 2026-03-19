@@ -305,6 +305,21 @@ Deno.serve(async (req: Request) => {
       await db.from('toast_wrapped').insert(wrappedRows)
     }
 
+    // 7b. Insert tracks (setlist)
+    const trackRows = (session.tracks || []).map((t: any, i: number) => ({
+      session_id: sessionId,
+      name: t.name,
+      artist: t.artist,
+      album_art_url: t.album_art_url || null,
+      spotify_url: t.spotify_url || null,
+      act: t.act || null,
+      play_order: t.play_order ?? i,
+      is_track_of_night: !!t.is_track_of_night,
+    }))
+    if (trackRows.length) {
+      await db.from('toast_tracks').insert(trackRows)
+    }
+
     // 8. Upload group snap photos (max 10) — Fix 3: parallelize uploads
     const photoSlice = (photos || []).slice(0, 10)
     const photoResults = await Promise.all(

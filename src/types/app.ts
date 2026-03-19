@@ -429,9 +429,22 @@ export interface ToastGentStats {
   updated_at: string
 }
 
+export interface ToastTrack {
+  id: string
+  session_id: string
+  name: string
+  artist: string
+  album_art_url: string | null
+  spotify_url: string | null
+  act: number | null
+  play_order: number
+  is_track_of_night: boolean
+}
+
 export interface ToastSessionFull {
   session: ToastSession
   cocktails: ToastCocktail[]
   confessions: ToastConfession[]
   wrapped: ToastWrapped[]
+  tracks: ToastTrack[]
 }

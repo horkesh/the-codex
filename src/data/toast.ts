@@ -4,6 +4,7 @@ import type {
   ToastCocktail,
   ToastConfession,
   ToastWrapped,
+  ToastTrack,
   ToastGentStats,
   ToastSessionFull,
 } from '@/types/app'
@@ -19,7 +20,7 @@ export async function fetchToastSession(entryId: string): Promise<ToastSessionFu
 
   const sid = (session as any).id
 
-  const [cocktailsRes, confessionsRes, wrappedRes] = await Promise.all([
+  const [cocktailsRes, confessionsRes, wrappedRes, tracksRes] = await Promise.all([
     supabase
       .from('toast_cocktails' as any)
       .select('*')
@@ -34,6 +35,11 @@ export async function fetchToastSession(entryId: string): Promise<ToastSessionFu
       .from('toast_wrapped' as any)
       .select('*')
       .eq('session_id', sid),
+    supabase
+      .from('toast_tracks' as any)
+      .select('*')
+      .eq('session_id', sid)
+      .order('play_order'),
   ])
 
   return {
@@ -41,6 +47,7 @@ export async function fetchToastSession(entryId: string): Promise<ToastSessionFu
     cocktails: (cocktailsRes.data || []) as unknown as ToastCocktail[],
     confessions: (confessionsRes.data || []) as unknown as ToastConfession[],
     wrapped: (wrappedRes.data || []) as unknown as ToastWrapped[],
+    tracks: (tracksRes.data || []) as unknown as ToastTrack[],
   }
 }
 
