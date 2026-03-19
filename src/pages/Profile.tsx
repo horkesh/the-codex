@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { HelpCircle, ChevronRight, MapPin, Bell, BellOff } from 'lucide-react'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
