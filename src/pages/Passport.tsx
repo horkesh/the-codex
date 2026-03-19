@@ -246,7 +246,7 @@ export default function Passport() {
       <StampDetail stamp={selectedStamp} onClose={() => setSelectedStamp(null)} />
 
       {/* Delete story confirmation */}
-      <Modal open={!!storyToDelete} onClose={() => setStoryToDelete(null)} title="Delete Story">
+      <Modal isOpen={!!storyToDelete} onClose={() => setStoryToDelete(null)} title="Delete Story">
         <p className="text-sm text-ivory-dim font-body mb-5">
           Delete &ldquo;{storyToDelete?.title}&rdquo;? This cannot be undone.
         </p>
