@@ -1,5 +1,7 @@
 import exifr from 'exifr'
 
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
+
 export interface LocationFill {
   city?: string
   country?: string
@@ -44,22 +46,72 @@ export function getDevicePosition(): Promise<{ lat: number; lng: number } | null
 }
 
 /**
- * Reverse geocodes a lat/lng pair via Nominatim. Returns null on failure.
+ * Reverse geocodes a lat/lng pair via Google Geocoding API. Returns null on failure.
  */
 export async function reverseGeocode(lat: number, lng: number): Promise<GeoAddress | null> {
+  if (!GOOGLE_MAPS_KEY) return reverseGeocodeNominatim(lat, lng)
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_KEY}`,
+      { signal: AbortSignal.timeout(5000) },
+    )
+    if (!res.ok) return reverseGeocodeNominatim(lat, lng)
+    const data = await res.json()
+    if (data.status !== 'OK' || !data.results?.length) return reverseGeocodeNominatim(lat, lng)
+    return parseGoogleGeoResult(data.results)
+  } catch {
+    return reverseGeocodeNominatim(lat, lng)
+  }
+}
+
+/** Parse Google Geocoding results into a GeoAddress. */
+function parseGoogleGeoResult(results: GoogleGeoResult[]): GeoAddress {
+  const addr: GeoAddress = {}
+  // Scan all results for the most specific components
+  for (const result of results) {
+    for (const comp of result.address_components) {
+      if (comp.types.includes('locality') && !addr.city) {
+        addr.city = comp.long_name
+      }
+      if (comp.types.includes('administrative_area_level_1') && !addr.city) {
+        addr.city = comp.long_name
+      }
+      if (comp.types.includes('country')) {
+        if (!addr.country) addr.country = comp.long_name
+        if (!addr.country_code) addr.country_code = comp.short_name
+      }
+      if (comp.types.includes('route') && !addr.address) {
+        const streetNum = result.address_components.find(c => c.types.includes('street_number'))
+        addr.address = streetNum
+          ? `${comp.long_name} ${streetNum.long_name}`
+          : comp.long_name
+      }
+    }
+  }
+  return addr
+}
+
+interface GoogleGeoResult {
+  address_components: Array<{ long_name: string; short_name: string; types: string[] }>
+  formatted_address: string
+  types: string[]
+}
+
+/** Fallback: Nominatim reverse geocode */
+async function reverseGeocodeNominatim(lat: number, lng: number): Promise<GeoAddress | null> {
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`,
-      { headers: { 'User-Agent': 'TheGentsChronicles/1.0' } },
+      { headers: { 'User-Agent': 'TheGentsChronicles/1.0' }, signal: AbortSignal.timeout(5000) },
     )
     if (!res.ok) return null
     const data = await res.json()
-    const addr = data.address ?? {}
+    const a = data.address ?? {}
     return {
-      city: addr.city || addr.town || addr.village || addr.municipality,
-      country: addr.country,
-      country_code: addr.country_code?.toUpperCase(),
-      address: [addr.road, addr.house_number].filter(Boolean).join(' ') || undefined,
+      city: a.city || a.town || a.village || a.municipality,
+      country: a.country,
+      country_code: a.country_code?.toUpperCase(),
+      address: [a.road, a.house_number].filter(Boolean).join(' ') || undefined,
     }
   } catch {
     return null
@@ -83,8 +135,66 @@ export function haversineMetres(
   return R * 2 * Math.asin(Math.sqrt(a))
 }
 
-/** Nominatim reverse geocode — returns city, country, and best-effort location name. */
-async function fetchNominatim(lat: number, lng: number): Promise<{
+/** Google Places Nearby Search — find the nearest named POI within 150m. */
+async function fetchNearestPOIGoogle(lat: number, lng: number): Promise<string | null> {
+  if (!GOOGLE_MAPS_KEY) return fetchNearestPOINominatim(lat, lng)
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=150&type=restaurant|bar|cafe|night_club|movie_theater|gym|hotel|museum|shopping_mall&key=${GOOGLE_MAPS_KEY}`,
+      { signal: AbortSignal.timeout(5000) },
+    )
+    if (!res.ok) return fetchNearestPOINominatim(lat, lng)
+    const data = await res.json()
+    if (data.status !== 'OK' || !data.results?.length) return fetchNearestPOINominatim(lat, lng)
+
+    // Pick the closest result
+    let best: { name: string; dist: number } | null = null
+    for (const place of data.results) {
+      if (!place.name || !place.geometry?.location) continue
+      const dist = haversineMetres(lat, lng, place.geometry.location.lat, place.geometry.location.lng)
+      if (!best || dist < best.dist) best = { name: place.name, dist }
+    }
+    return best?.name ?? null
+  } catch {
+    return fetchNearestPOINominatim(lat, lng)
+  }
+}
+
+/** Google reverse geocode — returns city, country, and best-effort location name. */
+async function fetchDetailedReverseGoogle(lat: number, lng: number): Promise<{
+  city?: string; country?: string; country_code?: string; location?: string
+} | null> {
+  if (!GOOGLE_MAPS_KEY) return fetchDetailedReverseNominatim(lat, lng)
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_KEY}`,
+      { signal: AbortSignal.timeout(5000) },
+    )
+    if (!res.ok) return fetchDetailedReverseNominatim(lat, lng)
+    const data = await res.json()
+    if (data.status !== 'OK' || !data.results?.length) return fetchDetailedReverseNominatim(lat, lng)
+
+    const addr = parseGoogleGeoResult(data.results)
+    // Try to get POI/establishment name from the first result
+    const firstResult = data.results[0]
+    const isPOI = firstResult.types?.some((t: string) =>
+      ['establishment', 'point_of_interest', 'food', 'restaurant', 'bar', 'cafe'].includes(t)
+    )
+    const location = isPOI ? firstResult.address_components?.[0]?.long_name : undefined
+
+    return {
+      city: addr.city,
+      country: addr.country,
+      country_code: addr.country_code,
+      location,
+    }
+  } catch {
+    return fetchDetailedReverseNominatim(lat, lng)
+  }
+}
+
+/** Fallback: Nominatim reverse geocode with location name. */
+async function fetchDetailedReverseNominatim(lat: number, lng: number): Promise<{
   city?: string; country?: string; country_code?: string; location?: string
 } | null> {
   try {
@@ -94,13 +204,13 @@ async function fetchNominatim(lat: number, lng: number): Promise<{
     )
     if (!res.ok) return null
     const data = await res.json()
-    const addr = data.address ?? {}
-    const poiName = addr.amenity || addr.leisure || addr.tourism || addr.shop
+    const a = data.address ?? {}
+    const poiName = a.amenity || a.leisure || a.tourism || a.shop
     const first = data.display_name?.split(',')[0]?.trim()
     return {
-      city: addr.city || addr.town || addr.village || addr.municipality,
-      country: addr.country,
-      country_code: addr.country_code?.toUpperCase(),
+      city: a.city || a.town || a.village || a.municipality,
+      country: a.country,
+      country_code: a.country_code?.toUpperCase(),
       location: poiName || first,
     }
   } catch {
@@ -108,8 +218,8 @@ async function fetchNominatim(lat: number, lng: number): Promise<{
   }
 }
 
-/** Overpass API — find the nearest named POI (bar, restaurant, hotel, etc.) within 150m. */
-async function fetchNearestPOI(lat: number, lng: number): Promise<string | null> {
+/** Fallback: Overpass API — find the nearest named POI within 150m. */
+async function fetchNearestPOINominatim(lat: number, lng: number): Promise<string | null> {
   try {
     const query = `[out:json][timeout:5];(
       node(around:150,${lat},${lng})["amenity"~"restaurant|bar|cafe|pub|nightclub|cinema|theatre|biergarten|ice_cream"];
@@ -126,7 +236,6 @@ async function fetchNearestPOI(lat: number, lng: number): Promise<string | null>
     const elements = data.elements as Array<{ tags?: Record<string, string>; lat: number; lon: number }> | undefined
     if (!elements?.length) return null
 
-    // Pick the closest named element
     let best: { name: string; dist: number } | null = null
     for (const el of elements) {
       const name = el.tags?.name
@@ -141,7 +250,82 @@ async function fetchNearestPOI(lat: number, lng: number): Promise<string | null>
 }
 
 /**
- * Reads EXIF GPS + datetime from a photo and reverse-geocodes via Nominatim + Overpass POI lookup.
+ * Forward geocode a city name to coordinates using Google Geocoding API.
+ * Falls back to Nominatim if Google key is not set.
+ */
+export async function forwardGeocode(city: string, country?: string): Promise<[number, number] | null> {
+  if (GOOGLE_MAPS_KEY) {
+    try {
+      const q = country ? `${city}, ${country}` : city
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=${GOOGLE_MAPS_KEY}`,
+        { signal: AbortSignal.timeout(5000) },
+      )
+      if (res.ok) {
+        const data = await res.json()
+        if (data.status === 'OK' && data.results?.[0]?.geometry?.location) {
+          const { lat, lng } = data.results[0].geometry.location
+          return [lat, lng]
+        }
+      }
+    } catch { /* fall through to Nominatim */ }
+  }
+  // Nominatim fallback
+  try {
+    const countryParam = country ? `&country=${encodeURIComponent(country)}` : ''
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}${countryParam}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(5000) },
+    )
+    const results = await res.json() as Array<{ lat: string; lon: string }>
+    if (results[0]) return [parseFloat(results[0].lat), parseFloat(results[0].lon)]
+  } catch { /* silent */ }
+  return null
+}
+
+/**
+ * Reverse geocode for Whereabouts — returns neighborhood + city string.
+ */
+export async function reverseGeocodeNeighborhood(lat: number, lng: number): Promise<string> {
+  if (GOOGLE_MAPS_KEY) {
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&result_type=neighborhood|sublocality|locality&key=${GOOGLE_MAPS_KEY}`,
+        { signal: AbortSignal.timeout(5000) },
+      )
+      if (res.ok) {
+        const data = await res.json()
+        if (data.status === 'OK' && data.results?.length) {
+          const parts: string[] = []
+          for (const comp of data.results[0].address_components) {
+            if (comp.types.includes('neighborhood') || comp.types.includes('sublocality')) {
+              parts.unshift(comp.long_name)
+            } else if (comp.types.includes('locality')) {
+              parts.push(comp.long_name)
+            }
+          }
+          if (parts.length) return parts.join(', ')
+        }
+      }
+    } catch { /* fall through */ }
+  }
+  // Nominatim fallback
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=12`,
+      { headers: { 'User-Agent': 'TheGentsChronicles/1.0' }, signal: AbortSignal.timeout(5000) },
+    )
+    const data = await res.json()
+    const suburb = data.address?.suburb || data.address?.neighbourhood || data.address?.quarter
+    const city = data.address?.city || data.address?.town || data.address?.village
+    return [suburb, city].filter(Boolean).join(', ') || 'Unknown location'
+  } catch {
+    return 'Unknown location'
+  }
+}
+
+/**
+ * Reads EXIF GPS + datetime from a photo and reverse-geocodes via Google (or Nominatim fallback) + POI lookup.
  * Returns null if no useful data is found.
  * Includes lat/lng so the caller can do proximity checks against saved places.
  */
@@ -159,7 +343,6 @@ export async function extractLocationFromPhoto(file: File): Promise<LocationFill
         : String(exif.DateTimeOriginal).replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3')
       const d = new Date(raw)
       if (!isNaN(d.getTime())) result.date = d.toISOString().split('T')[0]
-      // Extract local time directly from the raw string to avoid timezone conversion
       const timeMatch = raw.match(/[T ](\d{2}):(\d{2})/)
       if (timeMatch) result.time = `${timeMatch[1]}:${timeMatch[2]}`
     }
@@ -169,19 +352,17 @@ export async function extractLocationFromPhoto(file: File): Promise<LocationFill
       result.lat = exif.latitude
       result.lng = exif.longitude
 
-      // Run Nominatim (city/country) and Overpass (nearest POI) in parallel
-      const [nominatimResult, overpassResult] = await Promise.all([
-        fetchNominatim(exif.latitude, exif.longitude),
-        fetchNearestPOI(exif.latitude, exif.longitude),
+      const [geoResult, poiResult] = await Promise.all([
+        fetchDetailedReverseGoogle(exif.latitude, exif.longitude),
+        fetchNearestPOIGoogle(exif.latitude, exif.longitude),
       ])
 
-      if (nominatimResult) {
-        result.city = nominatimResult.city
-        result.country = nominatimResult.country
-        result.country_code = nominatimResult.country_code
-        // Use Overpass POI name if available (more reliable for venues), fall back to Nominatim
-        result.location = overpassResult ?? nominatimResult.location
-        console.debug('[geo] Nominatim:', nominatimResult.location, '| Overpass POI:', overpassResult, '→', result.location)
+      if (geoResult) {
+        result.city = geoResult.city
+        result.country = geoResult.country
+        result.country_code = geoResult.country_code
+        result.location = poiResult ?? geoResult.location
+        console.debug('[geo] Reverse:', geoResult.location, '| POI:', poiResult, '→', result.location)
       }
     }
 

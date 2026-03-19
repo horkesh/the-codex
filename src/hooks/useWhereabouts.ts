@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useWhereaboutsStore } from '@/store/whereabouts'
 import { useAuthStore } from '@/store/auth'
+import { reverseGeocodeNeighborhood } from '@/lib/geo'
 import type { GentWhereabouts } from '@/types/app'
 
 const CHANNEL_NAME = 'whereabouts'
@@ -41,29 +42,13 @@ export function useWhereabouts() {
     }
   }, [gent?.id])
 
-  // Reverse geocode using Nominatim
-  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=12`,
-        { headers: { 'User-Agent': 'TheGentsChronicles/1.0' } }
-      )
-      const data = await res.json()
-      const suburb = data.address?.suburb || data.address?.neighbourhood || data.address?.quarter
-      const city = data.address?.city || data.address?.town || data.address?.village
-      return [suburb, city].filter(Boolean).join(', ') || 'Unknown location'
-    } catch {
-      return 'Unknown location'
-    }
-  }
-
   const broadcastLocation = useCallback(async (expiresAt: number) => {
     if (!gent || !channelRef.current) return
     return new Promise<void>((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           const { latitude: lat, longitude: lng } = pos.coords
-          const neighborhood = await reverseGeocode(lat, lng)
+          const neighborhood = await reverseGeocodeNeighborhood(lat, lng)
           const payload: GentWhereabouts = {
             gent_id: gent.id,
             lat,

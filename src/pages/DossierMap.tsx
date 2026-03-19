@@ -1,16 +1,18 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, Building2, X, ChevronRight } from 'lucide-react'
-import L from 'leaflet'
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
 import { fetchEntries } from '@/data/entries'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Spinner } from '@/components/ui'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { flagEmoji, formatDate } from '@/lib/utils'
+import { forwardGeocode } from '@/lib/geo'
 import { fadeIn, fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import type { EntryWithParticipants, EntryType } from '@/types/app'
 
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string
 const COORDS_CACHE_KEY = 'codex_city_coords_v2'
 
 function loadCoordsCache(): Record<string, [number, number]> {
@@ -26,106 +28,79 @@ interface CityMapProps {
 }
 
 function CityMap({ cityGroups, onCitySelect }: CityMapProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef      = useRef<L.Map | null>(null)
-  const markersRef  = useRef<L.Marker[]>([])
   const [coords, setCoords] = useState<Record<string, [number, number]>>(loadCoordsCache)
 
-  // Geocode any cities not yet cached (Nominatim, 1 req/sec rate limit)
+  // Geocode any cities not yet cached
   useEffect(() => {
-    const cached  = loadCoordsCache()
+    const cached = loadCoordsCache()
     const toFetch = cityGroups.filter((cg) => !cached[`${cg.city},${cg.country}`])
     if (toFetch.length === 0) return
 
     let cancelled = false
-    let i = 0
-    // Accumulate new coords in memory so we don't re-parse localStorage on every iteration
     const accumulated = { ...cached }
 
-    const geocodeNext = async () => {
-      if (cancelled || i >= toFetch.length) return
-      const cg  = toFetch[i++]
-      const key = `${cg.city},${cg.country}`
-      try {
-        const countryParam = cg.country_code || cg.country
-        const res     = await fetch(
-          `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(cg.city)}&country=${encodeURIComponent(countryParam)}&format=json&limit=1`,
-          { headers: { 'Accept-Language': 'en' } },
-        )
-        const results = await res.json() as Array<{ lat: string; lon: string }>
-        if (results[0] && !cancelled) {
-          const coord: [number, number] = [parseFloat(results[0].lat), parseFloat(results[0].lon)]
+    async function geocodeAll() {
+      for (const cg of toFetch) {
+        if (cancelled) break
+        const key = `${cg.city},${cg.country}`
+        const coord = await forwardGeocode(cg.city, cg.country_code || cg.country)
+        if (coord && !cancelled) {
           accumulated[key] = coord
           localStorage.setItem(COORDS_CACHE_KEY, JSON.stringify(accumulated))
           setCoords((prev) => ({ ...prev, [key]: coord }))
         }
-      } catch { /* silent */ }
-      if (!cancelled) setTimeout(geocodeNext, 1100)
+      }
     }
-    geocodeNext()
+    geocodeAll()
 
     return () => { cancelled = true }
-  }, [cityGroups]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cityGroups])
 
-  // Init Leaflet map once
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return
-
-    const map = L.map(containerRef.current, { zoomControl: false, attributionControl: false })
-      .setView([20, 10], 2)
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 18,
-    }).addTo(map)
-
-    L.control.zoom({ position: 'bottomright' }).addTo(map)
-    L.control.attribution({ prefix: false })
-      .addAttribution('© <a href="https://www.openstreetmap.org/copyright" style="color:#c9a84c">OSM</a> · Carto')
-      .addTo(map)
-
-    mapRef.current = map
-    setTimeout(() => map.invalidateSize(), 50)
-
-    return () => {
-      map.remove()
-      mapRef.current = null
-    }
-  }, [])
-
-  // Sync markers whenever coords or cityGroups change
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map) return
-
-    markersRef.current.forEach((m) => m.remove())
-    markersRef.current = []
-
-    for (const cg of cityGroups) {
-      const coord = coords[`${cg.city},${cg.country}`]
-      if (!coord) continue
-
-      const count  = cg.entries.length
-      const marker = L.marker(coord, {
-        icon: L.divIcon({
-          className: '',
-          html: `<div style="width:26px;height:26px;background:#C9A84C;border-radius:50%;border:2px solid rgba(255,255,255,0.25);box-shadow:0 0 10px rgba(201,168,76,0.4);display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:10px;font-weight:700;color:#0d0b0f;cursor:pointer;">${count}</div>`,
-          iconSize: [26, 26],
-          iconAnchor: [13, 13],
-        }),
-      })
-      marker.on('click', () => onCitySelect(cg))
-      marker.bindTooltip(cg.city, { direction: 'top', offset: [0, -16] })
-      marker.addTo(map)
-      markersRef.current.push(marker)
-    }
-  }, [coords, cityGroups, onCitySelect])
+  const handleMarkerClick = useCallback((cg: CityGroup) => {
+    onCitySelect(cg)
+  }, [onCitySelect])
 
   return (
-    <div
-      ref={containerRef}
-      style={{ height: '260px' }}
-      className="w-full rounded-2xl overflow-hidden border border-white/8"
-    />
+    <div style={{ height: '260px' }} className="w-full rounded-2xl overflow-hidden border border-white/8">
+      <APIProvider apiKey={GOOGLE_MAPS_KEY}>
+        <Map
+          defaultCenter={{ lat: 20, lng: 10 }}
+          defaultZoom={2}
+          gestureHandling="greedy"
+          disableDefaultUI
+          zoomControl
+          mapId="codex-dossier-map"
+          colorScheme="DARK"
+          style={{ width: '100%', height: '100%' }}
+        >
+          {cityGroups.map((cg) => {
+            const coord = coords[`${cg.city},${cg.country}`]
+            if (!coord) return null
+            return (
+              <AdvancedMarker
+                key={`${cg.city}-${cg.country}`}
+                position={{ lat: coord[0], lng: coord[1] }}
+                title={cg.city}
+                onClick={() => handleMarkerClick(cg)}
+              >
+                <div
+                  style={{
+                    width: 26, height: 26, background: '#C9A84C', borderRadius: '50%',
+                    border: '2px solid rgba(255,255,255,0.25)',
+                    boxShadow: '0 0 10px rgba(201,168,76,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'monospace', fontSize: 10, fontWeight: 700, color: '#0d0b0f',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {cg.entries.length}
+                </div>
+              </AdvancedMarker>
+            )
+          })}
+        </Map>
+      </APIProvider>
+    </div>
   )
 }
 
