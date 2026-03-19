@@ -96,16 +96,24 @@ Output PURE JSON only, no markdown, no explanation.`,
       // Step 1b: No photo — use stored appearance_description from DB
       const { data: gentRow } = await db
         .from('gents')
-        .select('appearance_description, alias')
+        .select('appearance_description, alias, display_name')
         .eq('id', gent_id)
         .single()
 
       if (gentRow?.appearance_description) {
         appearance = gentRow.appearance_description
-      } else if (gentRow?.alias) {
+      } else {
         // Fall back to canonical gent identity descriptions
+        // GENT_APPEARANCES keys are first names, DB has aliases — need mapping
         const { GENT_APPEARANCES } = await import('../_shared/gent-identities.ts')
-        appearance = GENT_APPEARANCES[gentRow.alias] ?? ''
+        const ALIAS_TO_NAME: Record<string, string> = {
+          lorekeeper: 'haris',
+          keys: 'almedin',
+          bass: 'vedad',
+        }
+        const gentName = ALIAS_TO_NAME[gentRow?.alias || '']
+          || (gentRow?.display_name || '').toLowerCase()
+        appearance = GENT_APPEARANCES[gentName] ?? ''
       }
     }
 
