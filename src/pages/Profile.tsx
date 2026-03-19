@@ -37,7 +37,7 @@ export default function Profile() {
   const [bio, setBio] = useState(gent?.bio ?? '')
   const [saving, setSaving] = useState(false)
   const [generatingPortrait, setGeneratingPortrait] = useState(false)
-  const [portraitSeconds, setPortraitSeconds] = useState(0)
+  const [, setPortraitSeconds] = useState(0)
   const [showStatusInput, setShowStatusInput] = useState(false)
   const [statusInput, setStatusInput] = useState('')
   const { supported: pushSupported, subscribed: pushSubscribed, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications()

@@ -30,7 +30,7 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
   const [loading, setLoading] = useState(false)
   const [resolving, setResolving] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Auto-focus input
   useEffect(() => {
