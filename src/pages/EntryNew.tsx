@@ -48,7 +48,7 @@ const TYPE_MOODS: Partial<Record<EntryType, string[]>> = {
   night_out:   ['Rowdy', 'Sophisticated', 'Late Night', 'Dance Floor'],
   steak:       ['Indulgent', 'Refined', 'Experimental', 'Carnivorous'],
   playstation: ['Competitive', 'Grudge Match', 'Casual', 'Heated'],
-  toast:       ['Ceremonial', 'Liquid Courage', 'Bittersweet', 'Celebratory'],
+  toast:       ['Confessional', 'Intimate', 'Electric', 'Unhinged', 'Sophisticated', 'Late Night'],
   gathering:   ['Intimate', 'Grand', 'Impromptu', 'Festive'],
   interlude:   ['Reflective', 'Serendipitous', 'Fleeting', 'Quiet'],
 }
