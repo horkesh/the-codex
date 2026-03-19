@@ -15,5 +15,7 @@ export async function launchToastSession(gentId: string): Promise<void> {
   const callback = encodeURIComponent(`${CHRONICLES_URL}/chronicle/draft/`)
   const url = `${TOAST_APP_URL}/host?token=${data.token}&callback=${callback}`
 
-  window.open(url, '_blank')
+  // Use location.href instead of window.open — mobile browsers block
+  // popups triggered after async calls (the token fetch causes a delay)
+  window.location.href = url
 }
