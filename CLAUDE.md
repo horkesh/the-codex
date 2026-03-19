@@ -333,6 +333,53 @@ git add <files> && git commit -m "..." && git push
 # Secrets required: VERCEL_TOKEN, SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD
 ```
 
+## Toast Integration (The Toast ↔ Chronicles bridge)
+
+The Toast is a standalone real-time cocktail party app (`C:\...\The Gents`). Sessions bridge to Chronicles via shared Supabase.
+
+### Architecture
+- Toast server POSTs session data to `receive-toast-session` edge function at session end
+- Auth: HMAC-SHA256 signed token via `generate-toast-token` edge function, shared secret `TOAST_BRIDGE_SECRET` in Supabase Secrets
+- Shared module: `supabase/functions/_shared/hmac-token.ts`
+- Session creates a draft entry → Gent reviews at `/chronicle/draft/:id` → publishes
+
+### Database tables
+- `toast_sessions` — one row per session (code, duration, acts, vibe timeline)
+- `toast_cocktails` — AI cocktails (name, story, image, crafted-for)
+- `toast_confessions` — confession highlights (prompt, commentary, reactions)
+- `toast_wrapped` — per-participant wrapped stats + AI note/title
+- `toast_gent_stats` — cumulative role-specific stats (Keys/Bass/Lorekeeper)
+- `toast_tracks` — DJ setlist (name, artist, album art, Spotify URL, Track of the Night)
+
+All toast tables: RLS SELECT for authenticated, writes via service role key in edge function. Cascade delete from `entries` → `toast_sessions` → all child tables.
+
+### Edge functions
+| Function | Purpose | `verify_jwt` |
+|----------|---------|-------------|
+| `generate-toast-token` | Issues short-lived HMAC bridge JWT | `false` |
+| `receive-toast-session` | Validates token, writes all session data | `false` |
+| `cleanup-toast-drafts` | Deletes orphaned drafts older than 48h | `false` |
+
+### UI
+- **ToastLayout** (`src/components/chronicle/ToastLayout.tsx`) — card-based entry layout: session header, act carousel, cocktail gallery, confessions, wrapped strip, setlist (with Track of the Night), group snaps, optional lore
+- **ToastDraftReview** (`src/pages/ToastDraftReview.tsx`) — draft review with title edit, guest match verification, confession removal, publish/discard
+- **Home page** — "Host a Toast" button launches The Toast via token handoff
+- **EntryNew** — toast type redirects to The Toast app instead of showing a form
+
+### Profile enrichment
+- **Circle contacts**: AI portrait, alias, traits as labels, Toast Honours on dossier (wrapped title, signature drink)
+- **Gent profiles**: Toast Service Record (role-specific stats)
+- **Ledger**: ToastStatsSection (sessions, cocktails, confessions, frequent guests)
+- **Achievements**: 7 toast achievements (first_pour, bartender, confessor, chronicler_toast, regular, legendary_host, fifty_cocktails)
+
+### Studio templates
+- `toast_session_v1` through `v4` — 4 export variants (Classic with Track of the Night, Centered, Quote, Code)
+- `toast_carousel` — multi-slide carousel wrapping variants 1-3
+
+### Cron
+- `.github/workflows/cleanup-toast-drafts.yml` — daily 3am UTC, cleans up orphaned toast drafts
+
 ## Related projects (for reference)
 - `C:\...\Tonight` — Social game app. Source of avatar prompt patterns.
 - `C:\...\The Grand Tour` — Italy trip PWA.
+- `C:\...\The Gents` — The Toast real-time cocktail party app. Bridges to Chronicles via shared Supabase.
