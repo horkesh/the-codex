@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X as XIcon, Lock, Unlock, BookOpen, MapPin, ChevronRight } from 'lucide-react'
+import { Lock, Unlock, BookOpen, MapPin, ChevronRight } from 'lucide-react'
 import { TopBar } from '@/components/layout'
 import { PageWrapper } from '@/components/layout'
 import { EntryTypeSelector } from '@/components/chronicle/EntryTypeSelector'
