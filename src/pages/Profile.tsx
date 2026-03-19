@@ -28,7 +28,7 @@ function SectionDivider({ label }: { label: string }) {
   )
 }
 
-const VARIANT_LABELS = ['Chiaroscuro', 'Gilded', 'Frost']
+const VARIANT_LABELS = ['Chiaroscuro', 'Gilded', 'Noir']
 
 export default function Profile() {
   const navigate = useNavigate()
