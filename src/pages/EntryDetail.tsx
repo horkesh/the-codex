@@ -22,6 +22,7 @@ import { useEntry } from '@/hooks/useEntry'
 import { useEntryFilter } from '@/hooks/useEntryFilter'
 import { fetchEntry, deleteEntry, updateEntry, updateEntryCover, updateEntryLore, togglePin } from '@/data/entries'
 import { deleteStampsByEntryId } from '@/data/stamps'
+import { fetchStoryByEntryId, deleteStory } from '@/data/stories'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
@@ -354,9 +355,12 @@ export default function EntryDetail() {
     if (!entry) return
     setDeleting(true)
     try {
-      // Clean up stamp SVGs from storage before CASCADE deletes the rows
+      // Clean up stamps and stories before CASCADE deletes the rows
       if (entry.type === 'mission') {
         await deleteStampsByEntryId(entry.id).catch(() => {})
+        // Delete the auto-created story linked to this mission
+        const story = await fetchStoryByEntryId(entry.id).catch(() => null)
+        if (story) await deleteStory(story.id).catch(() => {})
       }
       await deleteEntry(entry.id)
       addToast('Entry deleted.', 'success')

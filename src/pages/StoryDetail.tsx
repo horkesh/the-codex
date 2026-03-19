@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MapPin, BarChart3, RefreshCw, Camera } from 'lucide-react'
+import { MapPin, BarChart3, RefreshCw, Camera, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
-import { Button, Spinner } from '@/components/ui'
+import { Button, Spinner, Modal } from '@/components/ui'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
-import { fetchStory, updateStory } from '@/data/stories'
+import { fetchStory, updateStory, deleteStory } from '@/data/stories'
 import { fetchEntries, fetchEntryPhotos } from '@/data/entries'
 import { generateStoryArc } from '@/ai/storyArc'
 import { useUIStore } from '@/store/ui'
@@ -41,6 +41,8 @@ export default function StoryDetail() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Load story + linked entries
   useEffect(() => {
@@ -117,6 +119,21 @@ export default function StoryDetail() {
       addToast('Failed to regenerate arc', 'error')
     } finally {
       setRegenerating(false)
+    }
+  }
+
+  // ── Delete story ──
+  const handleDeleteConfirm = async () => {
+    if (!story) return
+    setDeleting(true)
+    try {
+      await deleteStory(story.id)
+      addToast('Story deleted.', 'success')
+      navigate('/passport', { replace: true })
+    } catch {
+      addToast('Could not delete story.', 'error')
+      setDeleting(false)
+      setDeleteOpen(false)
     }
   }
 
@@ -398,9 +415,34 @@ export default function StoryDetail() {
             Open in Studio
           </Button>
 
-          <div className="h-4" />
+          {/* ── Delete ── */}
+          <div className="mt-6 mb-4">
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="flex items-center justify-center gap-2 w-full py-3 text-xs text-red-400 hover:text-red-300 font-body transition-colors"
+            >
+              <Trash2 size={13} />
+              Delete Story
+            </button>
+          </div>
         </div>
       </PageWrapper>
+
+      {/* Delete confirmation modal */}
+      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Story">
+        <p className="text-sm text-ivory-dim font-body mb-5">
+          Are you sure you want to delete this story? This cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setDeleteOpen(false)} className="flex-1">
+            Cancel
+          </Button>
+          <Button variant="danger" size="sm" onClick={handleDeleteConfirm} loading={deleting} className="flex-1">
+            Delete
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }
