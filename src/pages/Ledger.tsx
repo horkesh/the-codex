@@ -14,6 +14,7 @@ import { SteakRatingsChart } from '@/components/ledger/SteakRatingsChart'
 import { StreaksSection } from '@/components/ledger/StreaksSection'
 import { RivalryIndex } from '@/components/ledger/RivalryIndex'
 import { PS5StreaksSection } from '@/components/ledger/PS5StreaksSection'
+import { ToastStatsSection } from '@/components/ledger/ToastStatsSection'
 import { GentComparison } from '@/components/ledger/GentComparison'
 import { fadeIn } from '@/lib/animations'
 
@@ -99,6 +100,7 @@ export default function Ledger() {
             <StreaksSection />
             <SommelierSection />
             <SteakRatingsChart />
+            <ToastStatsSection />
             <WrappedSection stats={stats} selectedYear={selectedYear} />
           </motion.div>
         )}
