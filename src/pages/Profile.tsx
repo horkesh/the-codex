@@ -28,8 +28,6 @@ function SectionDivider({ label }: { label: string }) {
   )
 }
 
-const VARIANT_LABELS = ['Chiaroscuro', 'Gilded', 'Noir']
-
 export default function Profile() {
   const navigate = useNavigate()
   const { gent, setGent } = useAuthStore()
@@ -53,6 +51,7 @@ export default function Profile() {
 
   // Portrait selection state
   const [portraitOptions, setPortraitOptions] = useState<string[]>([])
+  const [portraitLabels, setPortraitLabels] = useState<string[]>([])
   const [selectedPortrait, setSelectedPortrait] = useState<string | null>(null)
   const [settingAvatar, setSettingAvatar] = useState(false)
 
@@ -104,6 +103,7 @@ export default function Profile() {
     if (!gent) return
     setGeneratingPortrait(true)
     setPortraitOptions([])
+    setPortraitLabels([])
     setSelectedPortrait(null)
     try {
       const body: Record<string, string> = { gent_id: gent.id }
@@ -115,14 +115,17 @@ export default function Profile() {
       if (error || data?.error) throw new Error(error?.message ?? data?.error ?? 'Portrait generation failed')
 
       const urls: string[] = data?.portrait_urls ?? []
+      const labels: string[] = data?.portrait_labels ?? []
       if (urls.length === 0) throw new Error('No portraits returned')
 
       setPortraitOptions(urls)
+      setPortraitLabels(labels)
       // Update portrait_url in store (edge fn already saved first to DB)
       setGent({ ...gent, portrait_url: urls[0] })
       addToast('Choose your portrait.', 'success')
-    } catch {
-      addToast('Portrait generation failed. Try again.', 'error')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      addToast(`Portrait failed: ${msg}`, 'error')
     } finally {
       setGeneratingPortrait(false)
     }
@@ -342,7 +345,7 @@ export default function Profile() {
                             )}
                           </div>
                           <span className="text-[10px] text-ivory-dim font-body uppercase tracking-wider">
-                            {VARIANT_LABELS[idx]}
+                            {portraitLabels[idx] ?? `Style ${idx + 1}`}
                           </span>
                         </button>
                       )

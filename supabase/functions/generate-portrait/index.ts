@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
     if (photo_base64) {
       // Step 1a: Analyse photo with Gemini
       const analysisController = new AbortController()
-      const analysisTimeout = setTimeout(() => analysisController.abort(), 20_000)
+      const analysisTimeout = setTimeout(() => analysisController.abort(), 55_000)
       try {
         const analysisResponse = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`,
@@ -81,14 +81,18 @@ Output PURE JSON only, no markdown, no explanation.`,
         } catch { /* use defaults below */ }
       } catch (e) {
         clearTimeout(analysisTimeout)
-        throw e
+        console.error('Photo analysis failed, falling back to stored appearance:', e)
+        // Fall through — try stored appearance below instead of dying
       }
 
       // Save appearance for future use (scene generation, re-generation without photo)
       if (appearance) {
         await db.from('gents').update({ appearance_description: appearance }).eq('id', gent_id)
       }
-    } else {
+    }
+
+    // If we still have no appearance (analysis failed or no photo), try stored/canonical descriptions
+    if (!appearance) {
       // Step 1b: No photo — use stored appearance_description from DB
       const { data: gentRow } = await db
         .from('gents')
@@ -117,7 +121,7 @@ Output PURE JSON only, no markdown, no explanation.`,
       const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: ${variant.style} — while faithfully preserving the subject's exact skin tone, hair colour, facial structure, and distinguishing features. The person must be clearly recognisable. No text or words.`
 
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 20_000)
+      const timeout = setTimeout(() => controller.abort(), 55_000)
       try {
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${googleApiKey}`,
@@ -152,19 +156,35 @@ Output PURE JSON only, no markdown, no explanation.`,
         if (uploadError) throw new Error(`Storage upload error: ${uploadError.message}`)
 
         const { data: { publicUrl } } = db.storage.from('portraits').getPublicUrl(fileName)
-        return publicUrl
+        return { url: publicUrl, label: variant.label }
       } catch (e) {
         clearTimeout(timeout)
         throw e
       }
     })
 
-    const portraitUrls = await Promise.all(variantPromises)
+    const results = await Promise.allSettled(variantPromises)
+    const portraits = results
+      .filter((r): r is PromiseFulfilledResult<{ url: string; label: string }> => r.status === 'fulfilled')
+      .map((r) => r.value)
 
-    // Update portrait_url to the first variant as default
-    await db.from('gents').update({ portrait_url: portraitUrls[0] }).eq('id', gent_id)
+    const failures = results.filter((r) => r.status === 'rejected')
+    if (failures.length > 0) {
+      console.error('Some portrait variants failed:', failures.map((r) => (r as PromiseRejectedResult).reason))
+    }
 
-    return new Response(JSON.stringify({ portrait_urls: portraitUrls, appearance }), {
+    if (portraits.length === 0) {
+      throw new Error('All portrait variants failed to generate. Try again.')
+    }
+
+    // Update portrait_url to the first successful variant as default
+    await db.from('gents').update({ portrait_url: portraits[0].url }).eq('id', gent_id)
+
+    return new Response(JSON.stringify({
+      portrait_urls: portraits.map((p) => p.url),
+      portrait_labels: portraits.map((p) => p.label),
+      appearance,
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
