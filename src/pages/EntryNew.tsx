@@ -19,6 +19,7 @@ import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { createEntry, addEntryParticipants, addPersonAppearances, updateEntryCover, updateEntryLore, updateEntry } from '@/data/entries'
 import { ContactTagger } from '@/components/chronicle/ContactTagger'
 import { fetchProspectById, updateProspect } from '@/data/prospects'
+import { launchToastSession } from '@/ai/toast'
 import { generateLoreFull } from '@/ai/lore'
 import { generateTitle } from '@/ai/title'
 import { notifyOthers } from '@/hooks/usePushNotifications'
@@ -188,6 +189,14 @@ export default function EntryNew() {
   function handleTypeSelect(type: EntryType) {
     if (type === 'gathering') {
       navigate('/gathering/new')
+      return
+    }
+    if (type === 'toast') {
+      launchToastSession(gent!.id).catch((err) => {
+        console.error('Failed to launch Toast:', err)
+        setSelectedType(type)
+        setStep('form')
+      })
       return
     }
     setSelectedType(type)
