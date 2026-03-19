@@ -821,6 +821,12 @@ git commit -m "feat(lore): add toast entry type directive for lore generation"
 
 ---
 
+### Chunk 1 Checkpoint
+
+- [ ] Run `/simplify` to review changed code for reuse, quality, and efficiency before proceeding.
+
+---
+
 ## Chunk 2: Chronicles Data Layer
 
 ### Task 7: Toast Data Types
@@ -1123,6 +1129,12 @@ export async function launchToastSession(gentId: string): Promise<void> {
 git add src/ai/toast.ts
 git commit -m "feat(ai): add toast session launch + token generation client"
 ```
+
+---
+
+### Chunk 2 Checkpoint
+
+- [ ] Run `/simplify` to review changed code for reuse, quality, and efficiency before proceeding.
 
 ---
 
@@ -1714,6 +1726,12 @@ Add the route inside the ProtectedRoute group:
 git add src/pages/ToastDraftReview.tsx src/App.tsx
 git commit -m "feat(ui): add Toast draft review screen + route"
 ```
+
+---
+
+### Chunk 3 Checkpoint
+
+- [ ] Run `/simplify` to review changed code for reuse, quality, and efficiency before proceeding.
 
 ---
 
@@ -2431,6 +2449,12 @@ Verify all steps pass: Vercel, Supabase functions (including 3 new ones), DB mig
 - [ ] **Step 4: Set `TOAST_BRIDGE_SECRET` in Supabase**
 
 In the Supabase dashboard → Edge Functions → Environment Variables, add `TOAST_BRIDGE_SECRET` with a random 32+ char string. Set the same value in The Toast server's `.env`.
+
+---
+
+### Chunk 4 Checkpoint
+
+- [ ] Run `/simplify` to review changed code for reuse, quality, and efficiency before proceeding.
 
 ---
 
