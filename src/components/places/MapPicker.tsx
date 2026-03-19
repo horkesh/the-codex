@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
-import L from 'leaflet'
+import { useState, useCallback, useEffect } from 'react'
+import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps'
 import { X, Check } from 'lucide-react'
+
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string
 
 interface MapPickerProps {
   lat?: number | null
@@ -13,93 +15,26 @@ interface MapPickerProps {
 const DEFAULT_LAT = 43.8563
 const DEFAULT_LNG = 18.4131
 
-function makeIcon() {
-  return L.divIcon({
-    className: '',
-    html: `
-      <div style="
-        width:22px;height:22px;
-        background:#C9A84C;
-        border-radius:50%;
-        border:3px solid #fff;
-        box-shadow:0 2px 10px rgba(0,0,0,0.5);
-        position:relative;
-      ">
-        <div style="
-          position:absolute;bottom:-10px;left:50%;
-          transform:translateX(-50%);
-          width:2px;height:10px;
-          background:#C9A84C;
-        "></div>
-      </div>`,
-    iconSize: [22, 32],
-    iconAnchor: [11, 32],
-  })
-}
-
-export function MapPicker({ lat, lng, onConfirm, onClose }: MapPickerProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<L.Map | null>(null)
-  const markerRef = useRef<L.Marker | null>(null)
-
+function MapContent({ lat, lng, onConfirm, onClose }: MapPickerProps) {
+  const map = useMap()
   const [pinLat, setPinLat] = useState(lat ?? DEFAULT_LAT)
   const [pinLng, setPinLng] = useState(lng ?? DEFAULT_LNG)
 
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return
-
-    const initialLat = lat ?? DEFAULT_LAT
-    const initialLng = lng ?? DEFAULT_LNG
-
-    const map = L.map(containerRef.current, { zoomControl: true }).setView(
-      [initialLat, initialLng],
-      lat != null ? 16 : 13,
-    )
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-      maxZoom: 19,
-    }).addTo(map)
-
-    const marker = L.marker([initialLat, initialLng], {
-      icon: makeIcon(),
-      draggable: true,
-    }).addTo(map)
-
-    marker.on('dragend', () => {
-      const pos = marker.getLatLng()
-      setPinLat(pos.lat)
-      setPinLng(pos.lng)
-    })
-
-    map.on('click', (e: L.LeafletMouseEvent) => {
-      marker.setLatLng(e.latlng)
-      setPinLat(e.latlng.lat)
-      setPinLng(e.latlng.lng)
-    })
-
-    mapRef.current = map
-    markerRef.current = marker
-
-    // Fix resize glitch when opening inside a portal/overlay
-    setTimeout(() => map.invalidateSize(), 50)
-
-    return () => {
-      map.remove()
-      mapRef.current = null
-      markerRef.current = null
+  const handleClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      setPinLat(e.latLng.lat())
+      setPinLng(e.latLng.lng())
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
-  function handleConfirm() {
-    onConfirm(pinLat, pinLng)
-  }
+  useEffect(() => {
+    if (!map) return
+    const listener = map.addListener('click', handleClick)
+    return () => google.maps.event.removeListener(listener)
+  }, [map, handleClick])
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex flex-col bg-obsidian"
-      style={{ touchAction: 'none' }}
-    >
+    <div className="fixed inset-0 z-[60] flex flex-col bg-obsidian" style={{ touchAction: 'none' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-slate-dark border-b border-white/8 shrink-0">
         <button
@@ -113,7 +48,7 @@ export function MapPicker({ lat, lng, onConfirm, onClose }: MapPickerProps) {
         <p className="text-ivory text-sm font-body font-medium">Pin Location</p>
         <button
           type="button"
-          onClick={handleConfirm}
+          onClick={() => onConfirm(pinLat, pinLng)}
           className="flex items-center gap-1.5 text-gold hover:text-gold-light text-sm font-body font-semibold transition-colors"
         >
           <Check size={15} />
@@ -124,12 +59,25 @@ export function MapPicker({ lat, lng, onConfirm, onClose }: MapPickerProps) {
       {/* Instruction */}
       <div className="px-4 py-2 bg-slate-dark border-b border-white/6 shrink-0">
         <p className="text-ivory-dim text-xs font-body text-center">
-          Tap to place pin · drag to refine
+          Tap to place pin
         </p>
       </div>
 
       {/* Map */}
-      <div ref={containerRef} className="flex-1" />
+      <div className="flex-1">
+        <Map
+          defaultCenter={{ lat: lat ?? DEFAULT_LAT, lng: lng ?? DEFAULT_LNG }}
+          defaultZoom={lat != null ? 16 : 13}
+          gestureHandling="greedy"
+          disableDefaultUI
+          zoomControl
+          mapId="codex-map-picker"
+          colorScheme="DARK"
+          style={{ width: '100%', height: '100%' }}
+        >
+          <AdvancedMarker position={{ lat: pinLat, lng: pinLng }} />
+        </Map>
+      </div>
 
       {/* Coordinates footer */}
       <div className="px-4 py-2.5 bg-slate-dark border-t border-white/8 shrink-0">
@@ -138,5 +86,13 @@ export function MapPicker({ lat, lng, onConfirm, onClose }: MapPickerProps) {
         </p>
       </div>
     </div>
+  )
+}
+
+export function MapPicker(props: MapPickerProps) {
+  return (
+    <APIProvider apiKey={GOOGLE_MAPS_KEY}>
+      <MapContent {...props} />
+    </APIProvider>
   )
 }

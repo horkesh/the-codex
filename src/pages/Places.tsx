@@ -346,11 +346,10 @@ export default function Places() {
                       className="relative rounded-lg overflow-hidden border border-white/10 cursor-pointer h-32"
                       onClick={() => setMapPickerOpen(true)}
                     >
-                      <iframe
-                        title="map-preview"
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${form.lng - 0.003},${form.lat - 0.002},${form.lng + 0.003},${form.lat + 0.002}&layer=mapnik&marker=${form.lat},${form.lng}`}
-                        className="w-full h-full pointer-events-none"
-                        style={{ border: 0 }}
+                      <img
+                        alt="map preview"
+                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${form.lat},${form.lng}&zoom=16&size=600x200&scale=2&maptype=roadmap&markers=color:0xC9A84C%7C${form.lat},${form.lng}&style=feature:all%7Celement:geometry%7Ccolor:0x1a1a2e&style=feature:water%7Ccolor:0x0d0d1a&style=feature:road%7Celement:geometry%7Ccolor:0x2a2a3e&style=feature:poi%7Cvisibility:off&style=feature:all%7Celement:labels.text.fill%7Ccolor:0xc9a84c&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
+                        className="w-full h-full object-cover pointer-events-none"
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-obsidian/0 hover:bg-obsidian/20 transition-colors">
                         <div className="bg-obsidian/70 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5">
