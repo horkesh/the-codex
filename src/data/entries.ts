@@ -195,20 +195,30 @@ export async function fetchEntryPhotos(entryId: string): Promise<Array<{
   caption: string | null
   sort_order: number
   taken_by: string | null
+  exif_taken_at: string | null
+  gps_lat: number | null
+  gps_lng: number | null
+  ai_analysis: import('../types/app').PhotoAnalysis | null
+  created_at: string
 }>> {
   const { data, error } = await supabase
     .from('entry_photos')
-    .select('id, url, caption, sort_order, taken_by')
+    .select('id, url, caption, sort_order, taken_by, exif_taken_at, gps_lat, gps_lng, ai_analysis, created_at')
     .eq('entry_id', entryId)
     .order('sort_order', { ascending: true })
 
   if (error) throw error
-  return (data ?? []) as Array<{
+  return (data ?? []) as unknown as Array<{
     id: string
     url: string
     caption: string | null
     sort_order: number
     taken_by: string | null
+    exif_taken_at: string | null
+    gps_lat: number | null
+    gps_lng: number | null
+    ai_analysis: import('../types/app').PhotoAnalysis | null
+    created_at: string
   }>
 }
 
@@ -247,10 +257,13 @@ export async function uploadEntryPhoto(
   // Run storage upload and EXIF extraction in parallel
   const exifPromise = import('exifr').then(async (exifr) => {
     try {
-      const parsed = await exifr.default.parse(file, ['DateTimeOriginal'])
-      if (parsed?.DateTimeOriginal instanceof Date) return parsed.DateTimeOriginal.toISOString()
+      const parsed = await exifr.default.parse(file, ['DateTimeOriginal', 'latitude', 'longitude'])
+      const takenAt = parsed?.DateTimeOriginal instanceof Date ? parsed.DateTimeOriginal.toISOString() : null
+      const gpsLat = typeof parsed?.latitude === 'number' ? parsed.latitude : null
+      const gpsLng = typeof parsed?.longitude === 'number' ? parsed.longitude : null
+      return { takenAt, gpsLat, gpsLng }
     } catch { /* non-critical */ }
-    return null
+    return { takenAt: null, gpsLat: null, gpsLng: null }
   })
 
   const { error: uploadError } = await supabase.storage
@@ -264,7 +277,7 @@ export async function uploadEntryPhoto(
     .getPublicUrl(path)
 
   const publicUrl = urlData.publicUrl
-  const exifTakenAt = await exifPromise
+  const { takenAt: exifTakenAt, gpsLat, gpsLng } = await exifPromise
 
   // Insert metadata row — non-fatal; storage upload already succeeded so we always return the URL
   await supabase
@@ -276,6 +289,8 @@ export async function uploadEntryPhoto(
       caption: null,
       taken_by: null,
       exif_taken_at: exifTakenAt,
+      gps_lat: gpsLat,
+      gps_lng: gpsLng,
     })
 
   return publicUrl
