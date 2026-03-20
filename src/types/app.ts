@@ -309,7 +309,7 @@ export interface DayChapter {
 
 export interface DayRoute {
   day: string
-  points: Array<{ lat: number; lng: number; time?: string; photoId?: string }>
+  points: Array<{ lat: number; lng: number; time?: string; label?: string | null; photoId?: string }>
 }
 
 export interface DayStats {
@@ -435,102 +435,6 @@ export interface AudioIntelligence {
   ambient_noise: 'quiet' | 'moderate' | 'loud' | 'very_loud'
   languages_detected?: string[]
   description: string
-}
-
-/** A cluster of photos from the same place/time during a mission */
-export interface Scene {
-  id: string
-  day: string
-  dayIndex: number
-  sceneIndex: number
-  title: string | null
-  startTime: string | null
-  endTime: string | null
-  centroid: { lat: number; lng: number } | null
-  photoIds: string[]
-  heroPhotoId: string | null
-  mood: string | null
-  narrative: string | null
-}
-
-/** Full mission intelligence stored in entry.metadata.mission_intel */
-export interface MissionIntel {
-  version: number
-  scenes: Scene[]
-  days: DayChapter[]
-  route: DayRoute[]
-  highlights: string[]
-  ephemera: Ephemera[]
-  tripArc: string | null
-  verdict: MissionVerdict | null
-  crossMissionRefs: CrossMissionRef[]
-  tempo: TempoPoint[]
-  gent_scene_notes?: GentSceneNote[]
-  processed_at: string
-}
-
-/** Per-day chapter summary */
-export interface DayChapter {
-  day: string
-  dayIndex: number
-  label: string
-  briefing: string | null
-  debrief: string | null
-  narrative: string | null
-  sceneIds: string[]
-  photoIds: string[]
-  route: DayRoute | null
-  stats: DayStats
-}
-
-export interface DayRoute {
-  day: string
-  points: Array<{ lat: number; lng: number; time?: string; label?: string | null; photoId?: string }>
-}
-
-export interface DayStats {
-  photoCount: number
-  sceneCount: number
-  venuesVisited: string[]
-  foodDrinks: string[]
-  firstPhotoTime: string | null
-  lastPhotoTime: string | null
-}
-
-export interface MissionVerdict {
-  best_meal: string | null
-  best_venue: string | null
-  most_chaotic_moment: string | null
-  mvp_scene: string | null
-  would_return: string | null
-  trip_rating: number | null
-}
-
-export interface CrossMissionRef {
-  entryId: string
-  title: string
-  date: string
-  lore: string | null
-}
-
-export interface TempoPoint {
-  time: string
-  intensity: number
-  day: string
-}
-
-export interface GentSceneNote {
-  sceneId: string
-  gentId: string
-  gentAlias: string
-  note: string
-  addedAt: string
-}
-
-export interface MissionSoundtrack {
-  overall_mood?: string
-  per_day?: Record<string, string>
-  playlist_name?: string
 }
 
 // Reaction (gent reaction to an entry)
