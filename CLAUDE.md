@@ -419,7 +419,7 @@ All toast tables: RLS SELECT for authenticated, writes via service role key in e
 - **Export**: hidden off-screen composite at 1080px wide, height computed from captured photo's native aspect ratio (`capturedAspect`). Typically 1080x1440 (3:4) on mobile. Uses `html2canvas` via `exportToPng`. Share via Web Share API with download fallback.
 
 ### Overlay templates (`src/components/momento/`)
-All overlays implement `OverlayProps` from `types.ts`: `{ city, country, date, time, gents }`.
+All overlays implement `OverlayProps` from `types.ts`: `{ city, country, venue, date, time, gents }`.
 
 | Template | File | Aesthetic | Key elements |
 |---|---|---|---|
@@ -433,7 +433,22 @@ All overlays implement `OverlayProps` from `types.ts`: `{ city, country, date, t
 | Signal | `GlitchOverlay.tsx` | Digital corruption | RGB chromatic aberration text (3-layer offset), scanlines (repeating-linear-gradient), cyan/magenta glitch blocks, interference bar, `FEED::ACTIVE` status |
 
 - **Shared**: `AvatarStack.tsx` — overlapping circular avatar row with configurable size/overlap/border.
-- **Registry**: `OVERLAY_REGISTRY` + `OVERLAY_IDS` in Momento.tsx. Cycle with chevron buttons.
+- **Registry**: `OVERLAY_REGISTRY` + `OVERLAY_IDS` in Momento.tsx. Cycle with chevron buttons or swipe.
+- **Venue**: `OverlayProps` includes optional `venue` field. When present, venue shows as primary location name; city/country become secondary. All 8 overlays support this pattern.
+
+### Interactions
+- **Swipe to cycle templates**: horizontal swipe on camera preview (50px threshold, must be more horizontal than vertical via 1.5x ratio). Chevrons kept as fallback. Single `touchStart` ref tracks `{x, y}`.
+- **Gallery import**: `ImageIcon` button (left of shutter) opens native file picker (`accept="image/*"`). Selected photo enters captured mode via shared `commitCapture()` helper with same overlay/filter/export pipeline. `img.onerror` revokes object URL on failure.
+- **Self-timer**: `Timer` button (right of shutter, stacked with flip camera). 3s countdown with animated number overlay (120px, Framer Motion scale+fade per digit via `key={countdown}`). Countdown state derives timer-active (`countdown !== null`). Auto-captures when countdown hits 0. Timer cleanup on unmount.
+- **Publish to Chronicle**: `BookOpen` button in captured mode (left position). Creates `interlude` entry via `createEntry`, uploads styled export as cover via `uploadEntryPhoto` (PNG blob, `.png` extension), sets cover + registers participant in parallel (`updateEntryCover` + `addEntryParticipants`), navigates to entry detail.
+- **Back button**: floating overlay on camera preview (top-left, `env(safe-area-inset-top)` aware), visible in both live and captured modes.
+- **Venue picker**: tappable gold pill in controls bar opens `LocationSearchModal` with nearby places + search. Updates venue/city/country in overlays.
+
+### State design
+- `busy: 'exporting' | 'publishing' | null` — single union for mutually exclusive async operations. Disables all action buttons when non-null.
+- `visibleGents` — memoized via `useMemo` to prevent re-renders on clock tick.
+- Export filter baking: CSS filters baked into canvas data URL (`filteredExportUrl`) via `ctx.filter` because `html2canvas` doesn't support CSS filter. Grain overlay composited via temp canvas with `mix-blend-mode: overlay`.
+- Export scale: `1080 / 390` ratio scales overlay from phone-screen size to export canvas size via CSS `transform: scale()`.
 
 ### Camera filters
 User-toggleable CSS filters applied to video feed, captured image, and export composite. Horizontal pill strip in controls bar.
@@ -450,6 +465,12 @@ User-toggleable CSS filters applied to video feed, captured image, and export co
 - Grain uses inline SVG data URL with `feTurbulence` fractal noise, tiled at 128px.
 - Filter state: `activeFilter` in Momento.tsx, default `'none'`.
 - Filter CSS applied via inline `style={{ filter }}` on `<video>`, captured `<img>`, and export `<img>`.
+
+### Location search modal (`src/components/places/LocationSearchModal.tsx`)
+- Full-screen modal with Google Places Autocomplete search, used by both Chronicle entry creation and Momento.
+- **Auto-suggestions on open** (no typing needed): 1) Current city from GPS reverse geocode, 2) Nearby venues (300m radius, up to 10) from Google Places Nearby Search, 3) Saved places.
+- **Location-biased search**: autocomplete includes `locationBias` (50km radius circle around device GPS) so nearby results rank first.
+- iOS safe area: `env(safe-area-inset-top)` padding on header to avoid notch/Dynamic Island overlap.
 
 ## Iftar & Eid Studio templates
 - **IftarCard** (`src/export/templates/IftarCard.tsx`): 4 variants for Iftar (Table) entries. Warm amber accent (`#D4A843`), geometric border pattern, crescent + star SVG, text outline for photo legibility. Registered as `iftar_card` through `iftar_card_v4` with `requiresFlavour: 'iftar'`.
