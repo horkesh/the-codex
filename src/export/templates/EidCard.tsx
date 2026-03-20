@@ -46,7 +46,7 @@ function GeometricBorder() {
   )
 }
 
-function EidInner({ entry, backgroundUrl }: EidCardProps) {
+function EidInner({ backgroundUrl }: EidCardProps) {
   return (
     <div style={{ ...VARIANT_INNER, alignItems: 'center', padding: '0 80px' }}>
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
