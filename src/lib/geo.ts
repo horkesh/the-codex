@@ -372,6 +372,70 @@ export async function extractLocationFromPhoto(file: File): Promise<LocationFill
   }
 }
 
+/**
+ * Batch reverse geocode an array of GPS points.
+ * Clusters points within 50m of each other, geocodes only one point per cluster,
+ * then maps every input point back to its cluster result.
+ *
+ * Returns a Map keyed by "lat.toFixed(6),lng.toFixed(6)".
+ */
+export async function batchReverseGeocode(
+  points: { lat: number; lng: number }[],
+): Promise<Map<string, { city: string; country: string; country_code: string; venue: string | null }>> {
+  const result = new Map<string, { city: string; country: string; country_code: string; venue: string | null }>()
+  if (!points.length) return result
+
+  // --- Cluster: assign each point to the first existing cluster within 50m ---
+  type Cluster = {
+    centroid: { lat: number; lng: number }
+    keys: string[]
+  }
+  const clusters: Cluster[] = []
+
+  for (const pt of points) {
+    const key = `${pt.lat.toFixed(6)},${pt.lng.toFixed(6)}`
+    let assigned = false
+    for (const cluster of clusters) {
+      if (haversineMetres(pt.lat, pt.lng, cluster.centroid.lat, cluster.centroid.lng) <= 50) {
+        cluster.keys.push(key)
+        assigned = true
+        break
+      }
+    }
+    if (!assigned) {
+      clusters.push({ centroid: { lat: pt.lat, lng: pt.lng }, keys: [key] })
+    }
+  }
+
+  // --- Geocode each cluster centroid ---
+  for (let i = 0; i < clusters.length; i++) {
+    if (i > 0) {
+      // 100ms rate-limit delay between calls
+      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+    }
+    const { centroid, keys } = clusters[i]
+    try {
+      const [geo, venue] = await Promise.all([
+        reverseGeocode(centroid.lat, centroid.lng),
+        fetchNearestPOIGoogle(centroid.lat, centroid.lng),
+      ])
+      const entry = {
+        city: geo?.city ?? '',
+        country: geo?.country ?? '',
+        country_code: geo?.country_code ?? '',
+        venue: venue ?? null,
+      }
+      for (const key of keys) {
+        result.set(key, entry)
+      }
+    } catch {
+      // Non-critical — skip failed clusters silently
+    }
+  }
+
+  return result
+}
+
 /** Extract only the EXIF date from a photo (no geocoding). */
 export async function extractExifDate(file: File): Promise<string | null> {
   try {
