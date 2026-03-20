@@ -412,6 +412,12 @@ verify_jwt = false
 [functions.cleanup-toast-drafts]
 verify_jwt = false
 
+[functions.analyze-mission-photos]
+verify_jwt = false
+
+[functions.generate-mission-narrative]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
