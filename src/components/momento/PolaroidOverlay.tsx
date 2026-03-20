@@ -94,7 +94,7 @@ export function PolaroidOverlay({ city, country, date, time, gents }: OverlayPro
             fontSize: '10px',
             color: 'rgba(10,10,15,0.4)',
           }}>
-            {gents.map((g) => g.name?.split(' ')[0]).filter(Boolean).join(', ')}
+            {gents.map((g) => g.display_name?.split(' ')[0]).filter(Boolean).join(', ')}
           </span>
           <span style={{
             fontFamily: FONT.mono,

@@ -60,7 +60,7 @@ export function AvatarStack({
               fontFamily: FONT.body,
               fontWeight: '600',
             }}>
-              {g.name?.charAt(0)}
+              {g.display_name?.charAt(0)}
             </div>
           )}
         </div>
