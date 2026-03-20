@@ -89,11 +89,14 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
 
       // Try to extract GPS/date from the first photo (only once per session)
       if (onGeoDetected && !geoFiredRef.current && finalFiles.length > 0) {
-        // Extract first photo geo + last photo date in parallel
-        const lastPhoto = finalFiles.length > 1 ? finalFiles[finalFiles.length - 1] : null
-        const lastDatePromise = lastPhoto ? extractExifDate(lastPhoto) : Promise.resolve(null)
+        // Extract first photo geo + latest date from ALL photos in parallel
+        const allDatePromises = finalFiles.map((f) => extractExifDate(f))
+        const latestDatePromise = Promise.all(allDatePromises).then((dates) => {
+          const valid = dates.filter(Boolean) as string[]
+          return valid.length > 0 ? valid.sort().pop()! : null
+        })
 
-        Promise.all([extractLocationFromPhoto(finalFiles[0]), lastDatePromise]).then(async ([loc, lastPhotoDate]) => {
+        Promise.all([extractLocationFromPhoto(finalFiles[0]), latestDatePromise]).then(async ([loc, lastPhotoDate]) => {
           if (!loc || geoFiredRef.current) return
           geoFiredRef.current = true
 
@@ -235,7 +238,7 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
           variants={fadeIn}
           initial="initial"
           animate="animate"
-          className="grid grid-cols-3 gap-2"
+          className="grid grid-cols-4 gap-1.5"
         >
           <AnimatePresence>
             {photos.map((photo) => (
