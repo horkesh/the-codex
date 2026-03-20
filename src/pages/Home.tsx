@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { motion } from 'framer-motion'
-import { Wine } from 'lucide-react'
+import { Wine, Camera } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { useAuthStore } from '@/store/auth'
 import { NAV_SECTIONS } from '@/lib/navigation'
@@ -151,7 +151,17 @@ export default function Home() {
         </div>
 
         {/* Quick actions */}
-        <div className="pb-6">
+        <div className="pb-6 flex flex-col gap-3">
+          <Link
+            to="/momento"
+            className="w-full bg-slate-dark rounded-xl p-4 border border-gold/20 text-left flex items-center gap-3 active:scale-[0.98] transition-transform no-underline"
+          >
+            <Camera size={20} className="text-gold shrink-0" />
+            <div>
+              <p className="text-ivory font-body text-sm font-semibold">Momento</p>
+              <p className="text-ivory-dim font-body text-xs">Capture a framed story</p>
+            </div>
+          </Link>
           <button
             onClick={() => gent && launchToastSession(gent.id).catch(console.error)}
             className="w-full bg-slate-dark rounded-xl p-4 border border-gold/20 text-left flex items-center gap-3 active:scale-[0.98] transition-transform"
