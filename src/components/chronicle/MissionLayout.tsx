@@ -387,7 +387,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           {/* PAGE 1: Visa Card */}
-          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 160px)' }}>
+          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 96px)' }}>
             {visaCard}
 
             {/* City timeline */}
@@ -424,7 +424,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
             const supportingPhotos = dayPhotos.slice(1, 4) // max 3 supporting
             const dayOneliner = dayLore[0] ?? null
             return (
-              <div key={day.day} className="snap-center shrink-0 w-full px-4 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(100dvh - 160px)' }}>
+              <div key={day.day} className="snap-center shrink-0 w-full px-4 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(100dvh - 96px)' }}>
                 {/* Day header */}
                 <div className="mb-3 shrink-0">
                   <p className="text-[10px] font-body font-semibold tracking-[0.2em] text-gold/50 uppercase mb-1">
@@ -469,7 +469,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
           })}
 
           {/* LAST PAGE: Intelligence Report */}
-          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 160px)' }}>
+          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 96px)' }}>
             <SectionDivider label="Intelligence Report" />
             {debriefSection}
           </div>

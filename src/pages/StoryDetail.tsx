@@ -114,6 +114,11 @@ export default function StoryDetail() {
     return { earliest, latest, spanDays, uniquePlaces, uniqueCities }
   }, [linkedEntries])
 
+  // Strip markdown headings from AI-generated arc
+  const cleanLore = useMemo(() => {
+    return story?.lore?.replace(/^#+\s+.*\n*/gm, '').trim() ?? ''
+  }, [story?.lore])
+
   // ── Regenerate arc ──
   const handleRegenerate = async () => {
     if (!story || linkedEntries.length === 0) return
@@ -224,7 +229,7 @@ export default function StoryDetail() {
             <>
               <SectionLabel label="The Arc" />
               <div className="relative">
-                {story.lore && (
+                {cleanLore && (
                   <motion.div
                     variants={fadeUp}
                     initial="initial"
@@ -232,7 +237,7 @@ export default function StoryDetail() {
                     className="border-l-2 border-gold/40 pl-4 py-1"
                   >
                     <p className="font-display italic text-ivory-muted text-sm leading-relaxed whitespace-pre-wrap">
-                      {story.lore.replace(/^#+\s+.*\n*/gm, '').trim()}
+                      {cleanLore}
                     </p>
                   </motion.div>
                 )}
