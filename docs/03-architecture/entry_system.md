@@ -33,7 +33,7 @@ The Chronicle is built on entries. Every experience the Gents have is an entry.
 
 ## Entry creation flow
 
-### Standard flow (all types except Gathering)
+### Standard flow (non-mission types except Gathering)
 
 1. Tap **+** (floating action button)
 2. Select entry type (visual card selection — each type has distinct icon + colour)
@@ -44,10 +44,39 @@ The Chronicle is built on entries. Every experience the Gents have is an entry.
 7. App:
    - Creates entry in DB
    - Creates entry_participants rows
-   - If `mission`: creates passport stamps for each city/country
    - Triggers Claude `generate-lore` Edge Function (async — Lore appears after a few seconds)
    - Triggers Gemini `generate-cover` if no user photo uploaded (async)
    - Checks achievement criteria → awards any new achievements
+
+### Mission flow (intelligence pipeline)
+
+Missions run a dedicated multi-stage pipeline instead of simple lore generation. A `MissionProcessingOverlay` shows progress across 7 stages.
+
+1. Tap **+** → select Mission
+2. Fill in mission form (title, date range, cities, countries, description, highlights, expenses)
+3. Select participants
+4. Upload photos (up to 20)
+5. Select optional soundtrack mood (jazz / electronic / acoustic / rock / ambient / hiphop / classical)
+6. Tap **Publish** → staged pipeline runs:
+
+```
+Stage 1 — Uploading photos to Supabase Storage
+Stage 2 — EXIF extraction (GPS + timestamps from every photo)
+Stage 3 — Scene clustering (45min time gap + 500m GPS distance thresholds)
+Stage 4 — AI photo analysis (Gemini Flash, batches of 4 — venue, gents, food, ephemera, mood, quality)
+Stage 5 — Narrative generation (Claude Sonnet — per-scene, per-day, trip arc, verdict)
+Stage 6 — Intel assembly (buildMissionIntel() → MissionIntel JSON)
+Stage 7 — Complete (entry published, stamps created, cross-mission context updated)
+```
+
+7. App:
+   - Creates entry in DB with complete `MissionIntel` stored in `entry.metadata.mission_intel`
+   - Stores `gps_lat`, `gps_lng`, `ai_analysis` on each `entry_photos` row
+   - Creates passport stamps for each city/country (fire-and-forget)
+   - Checks achievement criteria → awards any new achievements
+   - **Fallback**: if pipeline fails at any stage, falls back to legacy `generateLoreFull()` and proceeds
+
+**Cross-mission memory**: Before narrative generation, `fetchCrossMissionContext()` queries previous missions to the same city. Claude receives this context and can reference prior visits naturally in the narrative.
 
 ### Gathering flow (two-phase)
 
@@ -82,7 +111,19 @@ The Chronicle is built on entries. Every experience the Gents have is an entry.
 - Description (textarea) — free notes
 - Total expense in KM (number)
 - Highlights (multi-text) — key moments, used by Claude for Lore
-- Photos (file upload, multiple)
+- Soundtrack (optional mood picker) — shapes narrative prose voice
+- Photos (file upload, up to 20)
+
+**Mission entry detail** renders `MissionDossier` (not the generic layout). Components:
+- `DayStickyNav` — sticky pill bar, auto-highlights current day on scroll via IntersectionObserver
+- `TripTempoGraph` — SVG waveform of photo frequency over time, gold bars, day boundary markers
+- Trip arc prose (3-4 paragraphs, gold drop-cap)
+- `DayChapter` per day — morning briefing, `RouteMap` (Google Maps dark style, gold polyline), `SceneCard` list, day narrative, evening debrief, food/drink pills
+- `HighlightReel` — AI-curated top 5-7 photos with quality scores
+- `MissionVerdict` — best meal, best venue, most chaotic moment, MVP scene, would return
+- `EphemeraGallery` — collected OCR text artifacts in cream paper cards
+
+**Scene-level interaction** (creator only): Each `SceneCard` has an edit icon opening `SceneEditor` (Director's Cut overlay). Gent can edit scene title, narrative text, and add a director's note. Submitting regenerates the scene narrative via `generate-mission-narrative` single-scene mode. Non-creator participants can add perspectives via `GentPerspectives`.
 
 ### Night Out
 - Title* (text) — auto-suggested: "[City] Night, [Date]"

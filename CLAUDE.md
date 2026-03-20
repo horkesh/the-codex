@@ -40,6 +40,9 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 | Studio restyle — scene analysis | `gemini-2.5-flash` | Vision: describes scene using saved gent identities |
 | Studio restyle — noir generation | `gemini-2.5-flash-image` | Text-only generation from scene description (no photo input — prevents filter-only output) |
 | Studio from-scratch backgrounds | `imagen-4.0-generate-001` | Noir geometric style backgrounds when no cover photo |
+| Mission photo analysis | `gemini-2.5-flash` | Per-photo vision: scene type, venue, food, gents, ephemera, mood, quality score |
+| Mission narrative generation | `claude-sonnet-4-6` | Multi-stage: per-scene, per-day (briefing/narrative/debrief), trip arc, verdict. Soundtrack-aware prose. |
+| Mission single-scene regen | `claude-sonnet-4-6` | Director's Cut: regenerate one scene narrative with director's note context |
 
 **Critical model notes:**
 - `gemini-2.0-flash` is deprecated for new API keys (404 "no longer available to new users"). Use `gemini-2.5-flash`.
@@ -120,6 +123,35 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Full Chronicle mode** (`metadata.full_chronicle`): toggle on entry creation (mission/night_out only). Instead of 2-3 sentences, asks for 4-6 dense, meaningful sentences where every line earns its place with a specific detail, name, sensory moment, or insider observation. Not longer for the sake of length — depth over breadth. `max_tokens`: 600 (vs 400 default).
 - **Lore on creation**: `EntryNew` calls `generateLoreFull()` (not `generateLore()`) after entry creation. Saves lore, `lore_oneliner` (to metadata), and `suggested_title` (updates entry title) in a single `updateEntry` call + `updateEntryLore`.
 - **Creator-only generation**: `LoreSection` accepts `readOnly` and `gentId` props. Only the creator can generate/regenerate lore. All participants can add Director's Notes. Non-participants see lore read-only.
+
+## Mission Intelligence Pipeline (`src/ai/missionIntel.ts`, `src/ai/missionLore.ts`)
+- **Overview**: Missions now run a full AI-powered intelligence pipeline instead of simple lore generation. On photo upload, the pipeline: extracts EXIF GPS + timestamps → clusters photos into scenes by temporal proximity (45min) + GPS distance (500m) → sends photos to Gemini Flash for per-photo analysis → generates multi-stage narrative via Claude Sonnet → assembles complete MissionIntel dossier.
+- **Scene Engine** (`src/lib/sceneEngine.ts`): `clusterIntoScenes()` groups photos by time gap (45min) + GPS distance (500m). `buildRoutes()` creates per-day GPS polyline data. `buildTempo()` calculates photo frequency over time for tempo graph.
+- **Video Support** (`src/lib/videoKeyframes.ts`): `extractKeyframes()` pulls frames from video via HTML Canvas. `extractAudioClip()` extracts WAV audio via AudioContext for ambient analysis. `isVideoFile()` detects video MIME types.
+- **Photo Analysis** (`supabase/functions/analyze-mission-photos/`): Gemini 2.5 Flash vision, batches of 4 photos. Returns per-photo JSON: scene_type, venue_name, description, gents_present, food_drinks, ephemera (OCR), mood, time_of_day_visual, quality_score, highlight_reason, unnamed_characters.
+- **Narrative Generation** (`supabase/functions/generate-mission-narrative/`): Claude Sonnet 4.6. Two modes:
+  - **Full mission**: generates per-scene narratives (1-2 sentences each), per-day chapters (briefing + narrative + debrief), overall trip arc (3-4 paragraphs), one-liner, 3 title suggestions, verdict (best meal, best venue, chaos, MVP scene, would return). Supports soundtrack-aware prose directives.
+  - **Single scene**: Director's Cut mode — regenerates one scene narrative with a director's note incorporated.
+- **Intel Builder** (`src/lib/missionIntelBuilder.ts`): `buildMissionIntel()` assembles scenes, routes, tempo, ephemera, highlights into the `MissionIntel` structure. `mergeNarratives()` applies AI-generated text back into the structure.
+- **Cross-Mission Memory**: `fetchCrossMissionContext()` in `src/data/entries.ts` queries previous missions to the same city, builds context string for Claude to reference naturally ("Last time at 360 Bar...").
+- **Data storage**: Complete intel stored in `entry.metadata.mission_intel` as `MissionIntel` JSON. Photos store GPS in `entry_photos.gps_lat`/`gps_lng` and AI analysis in `entry_photos.ai_analysis` (JSONB).
+- **Processing overlay**: `MissionProcessingOverlay` component shows stage-by-stage progress during creation: uploading → EXIF → scenes → AI analysis → narrative → intel assembly → complete.
+- **Fallback**: If the intelligence pipeline fails, falls back to legacy `generateLoreFull()` for basic lore generation.
+
+## Mission Dossier UI (`src/components/mission/`)
+- **MissionDossier**: Top-level vertical scroll layout replacing the old horizontal carousel. Orchestrates: sticky day nav → trip tempo graph → trip arc → day chapters → highlights → verdict → ephemera.
+- **DayStickyNav**: Sticky horizontal pill bar for day/section navigation. Auto-highlights on scroll via IntersectionObserver.
+- **DayChapter**: Single day's content: morning briefing (italic gold border-left), route map, scene cards, day narrative, evening debrief, food/drink inventory pills.
+- **SceneCard**: Individual scene with hero photo (AI-selected by quality_score), time range, Gent presence bar, narrative, expandable photo strip. Creator gets edit pencil icon.
+- **SceneEditor**: Director's Cut overlay — edit scene title, narrative text, add director's note + regenerate via AI.
+- **RouteMap**: Google Maps with dark style, gold polyline connecting GPS points, gold dot markers. Uses `@vis.gl/react-google-maps`.
+- **TripTempoGraph**: SVG waveform showing photo frequency over time. Gold bars on dark background, day boundary markers.
+- **MissionVerdict**: End-of-trip verdict card: best meal, best venue, most chaotic moment, MVP scene, would return.
+- **EphemeraGallery**: Collected text artifacts (menus, signs, tickets, receipts) in cream paper cards.
+- **HighlightReel**: AI-curated top 5-7 photos with quality scores and highlight reasons.
+- **GentPresenceBar**: Small avatar row showing which Gents were detected in each scene's photos.
+- **GentPerspectives**: Multi-narrator per-scene notes. Each participating Gent can add their perspective.
+- **SoundtrackPicker**: Optional mood picker (jazz/electronic/acoustic/rock/ambient/hiphop/classical) that shapes the AI narrative voice.
 
 ## Title generation (`supabase/functions/generate-title/`)
 - Uses `claude-haiku-4-5-20251001`. Two modes:

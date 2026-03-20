@@ -4,6 +4,38 @@ Chronological record of every session. Most recent first.
 
 ---
 
+## 2026-03-20 — Session 007: Mission Intelligence Overhaul
+
+**Agent**: Claude Opus 4.6
+**Status**: Deployed to production.
+
+### What happened
+- **Full mission intelligence pipeline**: Missions now run AI-powered photo analysis (Gemini Flash) + multi-stage narrative generation (Claude Sonnet) instead of simple lore. Extracts GPS/timestamps, clusters photos into scenes by temporal proximity, analyzes each photo for venues/food/gents/ephemera, generates per-scene + per-day + trip-level narratives with cross-mission memory.
+- **14 new UI components**: MissionDossier vertical scroll layout replacing broken horizontal carousel. Includes DayChapter, SceneCard, RouteMap (Google Maps with gold polyline), TripTempoGraph, MissionVerdict, EphemeraGallery, HighlightReel, GentPresenceBar, GentPerspectives, SceneEditor (Director's Cut), SoundtrackPicker, DayStickyNav.
+- **Database**: `entry_photos` gains `gps_lat`, `gps_lng`, `ai_analysis` columns. Complete MissionIntel stored in `entry.metadata.mission_intel`.
+- **Video support**: Keyframe extraction from videos via Canvas, audio clip extraction for ambient analysis.
+- **Cross-mission memory**: Previous trips to same city referenced in narrative generation.
+- **Director's Cut**: Per-scene editing with AI regeneration incorporating director's notes.
+- **Soundtrack integration**: Mood picker shapes AI prose style (jazz → smoky, electronic → kinetic, etc.).
+
+### Key decisions
+- Scene clustering uses 45-minute time gap + 500m GPS distance thresholds.
+- Gemini Flash for photo analysis (Claude refuses appearance scoring), Claude Sonnet for narrative (best literary voice).
+- MissionIntel stored in entry.metadata (not separate table) — single source of truth.
+- Legacy story auto-creation kept for backward compatibility but deprecated for missions.
+- Processing overlay shows 7 stages with progress counts.
+- Falls back to legacy lore on pipeline failure.
+
+### Files changed
+- New: `supabase/migrations/20260320000001_photo_intelligence.sql`
+- New: `src/lib/sceneEngine.ts`, `src/lib/videoKeyframes.ts`, `src/lib/missionIntelBuilder.ts`
+- New: `src/ai/missionIntel.ts`, `src/ai/missionLore.ts`
+- New: `supabase/functions/analyze-mission-photos/index.ts`, `supabase/functions/generate-mission-narrative/index.ts`
+- New: `src/components/mission/` (14 components)
+- Modified: `src/types/app.ts` (15+ new interfaces), `src/data/entries.ts` (GPS in upload, cross-mission context, extended photo fetch), `src/lib/geo.ts` (batch reverse geocode), `src/lib/dayBoundary.ts` (export formatDayLabel), `src/pages/EntryNew.tsx` (staged pipeline), `supabase/config.toml` (2 new functions)
+
+---
+
 ## 2026-03-14 — Session 006: Profile Polish + EXIF Geo + Saved Places
 
 **Agent**: Claude Sonnet 4.6

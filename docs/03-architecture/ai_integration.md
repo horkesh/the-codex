@@ -60,6 +60,57 @@ Output: Structured copy for the Wrapped export template.
 #### `generate-calling-card-bio`
 A one-line bio for a Gent's calling card. Sharp, character-revealing.
 
+#### `generate-mission-narrative`
+Generates multi-level mission narratives from structured photo intelligence. Uses `claude-sonnet-4-6`.
+
+Two modes:
+
+**Full mission mode** — called after photo analysis is complete:
+
+Input:
+```json
+{
+  "entry_id": "uuid",
+  "scenes": [...],
+  "trip_context": { "city": "Budapest", "days": 4, "gents": ["keys", "bass", "lorekeeper"] },
+  "cross_mission_context": "Last time in Budapest (2024): stayed at...",
+  "soundtrack": "jazz"
+}
+```
+
+Output:
+```json
+{
+  "scene_narratives": { "scene_id": "1-2 sentence narrative" },
+  "day_chapters": [{ "day": 1, "briefing": "...", "narrative": "...", "debrief": "..." }],
+  "trip_arc": "3-4 paragraph overall narrative",
+  "oneliner": "One sentence distillation",
+  "title_suggestions": ["The Budapest Protocol", "Two Days in Thermal Country", "..."],
+  "verdict": {
+    "best_meal": "Goulash at Borkonyha",
+    "best_venue": "360 Rooftop Bar",
+    "most_chaotic": "...",
+    "mvp_scene": "scene_id",
+    "would_return": true
+  }
+}
+```
+
+**Single scene mode** (Director's Cut) — regenerates one scene incorporating a director's note:
+
+Input:
+```json
+{
+  "scene": { ... },
+  "director_note": "Focus on the rain — we got completely soaked",
+  "entry_context": { ... }
+}
+```
+
+Output: `{ "narrative": "Updated scene narrative" }`
+
+Soundtrack directive shapes prose: `jazz` → smoky, deliberate; `electronic` → kinetic, fragmented; `acoustic` → intimate, unhurried; etc.
+
 ---
 
 ## Gemini — Image Generation
@@ -94,6 +145,38 @@ PlayStation: Abstract neon geometry. Game-inspired. No logos.
 
 #### `generate-portrait`
 Each Gent's portrait for their calling card. Stylized, not photorealistic. Oil painting or graphic novel aesthetic. No actual photo of real person — generated character portrait matching their persona.
+
+#### `analyze-mission-photos`
+Gemini 2.5 Flash vision analysis of mission photos. Processes in batches of 4. Returns structured per-photo intelligence.
+
+Input:
+```json
+{
+  "photos": [
+    { "url": "https://storage.url/...", "photo_id": "uuid", "taken_at": "2026-03-05T14:32:00Z", "gps_lat": 47.4979, "gps_lng": 19.0402 }
+  ],
+  "gent_identities": "Keys & Cocktails: tall, dark curly hair...",
+  "entry_context": { "city": "Budapest", "country": "Hungary" }
+}
+```
+
+Output (per photo):
+```json
+{
+  "photo_id": "uuid",
+  "scene_type": "restaurant | bar | outdoor | transport | hotel | landmark | street",
+  "venue_name": "Borkonyha Wineyard Restaurant",
+  "description": "Three men seated at a white-tablecloth restaurant...",
+  "gents_present": ["keys", "bass"],
+  "food_drinks": ["goulash", "red wine", "bread basket"],
+  "ephemera": ["Menu text: 'Borkonyha...'", "Sign: 'Open 12-22'"],
+  "mood": "relaxed | celebratory | intense | candid | adventurous",
+  "time_of_day_visual": "afternoon",
+  "quality_score": 8.2,
+  "highlight_reason": "Great light, all three gents visible, landmark in background",
+  "unnamed_characters": 2
+}
+```
 
 #### `generate-achievement-stamp`
 Special achievement stamps with unique visual identity. More ornate than mission stamps.
@@ -220,13 +303,16 @@ Additional context: ${JSON.stringify(metadata)}`
 
 | Action | AI triggered | When |
 |---|---|---|
-| Entry published | Claude: generate-lore | Immediately after creation |
+| Mission photos uploaded | Gemini: analyze-mission-photos | Staged pipeline; batches of 4 photos |
+| Mission photos uploaded | Claude: generate-mission-narrative | After photo analysis completes |
+| Non-mission entry published | Claude: generate-lore | Immediately after creation |
 | Mission published | Gemini: generate-stamp | For each city in the mission |
 | Entry published | Gemini: generate-cover | If no user photo uploaded |
 | Year-end Wrapped | Claude: generate-wrapped | Manual trigger in Ledger |
 | First load of Calling Card | Gemini: generate-portrait | Once per Gent, cached |
 | Verdict intake — photo uploaded | Gemini: scan-person-verdict | Blocks review step; 422 = ineligible |
 | Verdict intake — scan created | Gemini: generate-person-portrait | Non-blocking background; shimmer in review |
+| Scene Director's Cut | Claude: generate-mission-narrative (single scene) | On director's note submit in SceneEditor |
 
 ## Cost estimate (3 users, light usage)
 

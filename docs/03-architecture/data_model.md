@@ -69,7 +69,59 @@ RLS: All authenticated gents can read, create, update all entries.
     "fuel": 160.00,
     "food": 78.44
   },
-  "highlights": ["Thermal baths", "Ruin bars", "Goulash crisis"]
+  "highlights": ["Thermal baths", "Ruin bars", "Goulash crisis"],
+  "mission_intel": { ... }
+}
+```
+
+`mission_intel` is populated by the intelligence pipeline and has the following structure:
+```json
+{
+  "version": 1,
+  "generated_at": "2026-03-20T12:00:00Z",
+  "scenes": [
+    {
+      "id": "scene_001",
+      "day": 1,
+      "time_start": "2026-03-05T13:45:00Z",
+      "time_end": "2026-03-05T15:20:00Z",
+      "photo_ids": ["uuid1", "uuid2"],
+      "hero_photo_id": "uuid1",
+      "venue_name": "Borkonyha Wineyard Restaurant",
+      "scene_type": "restaurant",
+      "gents_present": ["keys", "bass", "lorekeeper"],
+      "food_drinks": ["goulash", "red wine"],
+      "ephemera": ["Menu text: 'Borkonyha...'"],
+      "mood": "relaxed",
+      "narrative": "Claude-generated 1-2 sentence scene narrative",
+      "gps_centroid": { "lat": 47.4979, "lng": 19.0402 }
+    }
+  ],
+  "day_chapters": [
+    {
+      "day": 1,
+      "date": "2026-03-05",
+      "label": "Day 1 — Budapest",
+      "briefing": "Morning briefing text (italic gold border-left in UI)",
+      "narrative": "Day narrative paragraph",
+      "debrief": "Evening debrief text",
+      "scene_ids": ["scene_001", "scene_002"],
+      "route": [{ "lat": 47.4979, "lng": 19.0402 }, ...]
+    }
+  ],
+  "trip_arc": "3-4 paragraph overall trip narrative",
+  "tempo": [{ "hour": 0, "count": 0 }, { "hour": 13, "count": 4 }, ...],
+  "highlights": [
+    { "photo_id": "uuid", "quality_score": 9.1, "reason": "Perfect golden hour shot" }
+  ],
+  "verdict": {
+    "best_meal": "Goulash at Borkonyha",
+    "best_venue": "360 Rooftop Bar",
+    "most_chaotic": "The underground ruin bar incident",
+    "mvp_scene": "scene_003",
+    "would_return": true
+  },
+  "ephemera": ["Menu text: 'Borkonyha...'", "Sign: 'Széchenyi 1913'"]
 }
 ```
 
@@ -185,8 +237,28 @@ create table entry_photos (
   caption     text,
   taken_by    uuid references gents(id),
   sort_order  int default 0,
+  gps_lat     float,                  -- GPS latitude from EXIF (missions)
+  gps_lng     float,                  -- GPS longitude from EXIF (missions)
+  ai_analysis jsonb,                  -- Per-photo Gemini analysis output (missions)
   created_at  timestamptz default now()
 );
+```
+
+`ai_analysis` JSONB shape (populated by `analyze-mission-photos` edge function):
+```json
+{
+  "scene_type": "restaurant",
+  "venue_name": "Borkonyha Wineyard Restaurant",
+  "description": "Three men seated at a white-tablecloth restaurant...",
+  "gents_present": ["keys", "bass"],
+  "food_drinks": ["goulash", "red wine"],
+  "ephemera": ["Menu text: 'Borkonyha...'"],
+  "mood": "relaxed",
+  "time_of_day_visual": "afternoon",
+  "quality_score": 8.2,
+  "highlight_reason": "Great light, all three gents visible",
+  "unnamed_characters": 0
+}
 ```
 
 Storage bucket: `entry-photos` (private, authenticated access only)
