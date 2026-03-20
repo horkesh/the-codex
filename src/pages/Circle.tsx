@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { ReactFlowProvider } from '@xyflow/react'
-import { Plus, Users, Radar, Network } from 'lucide-react'
+import { Plus, Users, Radar, Network, Search, Camera } from 'lucide-react'
 import { MindMapCanvas } from '@/pages/MindMap'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
@@ -216,18 +216,41 @@ export default function Circle() {
               <Spinner size="md" />
             </div>
           ) : poiPeople.length === 0 ? (
-            /* Empty state */
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-              <EmptyStateImage src="/empty-states/circle.webp" className="mb-1" />
-              <Radar size={40} className="text-ivory-dim opacity-40" />
-              <p className="text-ivory-dim text-sm font-body">No one on the radar yet.</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowActionSheet(true)}
+            /* Empty state — full scout options */
+            <div className="flex flex-col items-center justify-center flex-1 gap-5 px-2 py-8">
+              <div className="flex flex-col items-center gap-2 mb-4">
+                <Radar size={32} className="text-gold opacity-50" />
+                <p className="text-ivory font-display text-lg">Scout Someone</p>
+                <p className="text-ivory-dim text-xs font-body">Start building your radar</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { setPOIMode('research'); setShowPOIModal(true) }}
+                className="w-full flex items-center gap-4 px-5 py-5 rounded-xl bg-white/[0.03] border border-white/8 hover:bg-white/5 active:bg-white/8 transition-colors text-left"
               >
-                Scout Someone
-              </Button>
+                <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center shrink-0">
+                  <Search size={20} className="text-gold" />
+                </div>
+                <div>
+                  <p className="text-base text-ivory font-body font-medium">Research</p>
+                  <p className="text-sm text-ivory-dim font-body mt-0.5">Analyze an Instagram screenshot</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setPOIMode('scan'); setShowPOIModal(true) }}
+                className="w-full flex items-center gap-4 px-5 py-5 rounded-xl bg-white/[0.03] border border-white/8 hover:bg-white/5 active:bg-white/8 transition-colors text-left"
+              >
+                <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center shrink-0">
+                  <Camera size={20} className="text-gold" />
+                </div>
+                <div>
+                  <p className="text-base text-ivory font-body font-medium">Scan</p>
+                  <p className="text-sm text-ivory-dim font-body mt-0.5">Camera or photo from gallery</p>
+                </div>
+              </button>
             </div>
           ) : (
             <>
