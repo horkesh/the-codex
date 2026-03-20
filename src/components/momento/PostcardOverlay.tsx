@@ -40,31 +40,31 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
       {/* Stamp area — top right */}
       <div style={{
         position: 'absolute',
-        top: 16,
-        right: 16,
-        width: '64px',
-        height: '76px',
+        top: 20,
+        right: 20,
+        width: '76px',
+        height: '90px',
         border: `1.5px dashed rgba(201,168,76,0.45)`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '4px',
+        gap: '6px',
         zIndex: 12,
       }}>
         <img
           src="/logo-gold.webp"
           alt=""
           style={{
-            width: '28px',
-            height: '28px',
+            width: '36px',
+            height: '36px',
             objectFit: 'contain',
             opacity: 0.65,
           }}
         />
         <span style={{
           fontFamily: FONT.mono,
-          fontSize: '7px',
+          fontSize: '9px',
           color: COLOR.goldDim,
           letterSpacing: '0.15em',
           textTransform: 'uppercase',
@@ -76,21 +76,21 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
       {/* "AIR MAIL" stripe — top left */}
       <div style={{
         position: 'absolute',
-        top: 20,
-        left: 16,
+        top: 24,
+        left: 20,
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
+        gap: '8px',
         zIndex: 12,
       }}>
         <div style={{
           display: 'flex',
-          gap: '3px',
+          gap: '4px',
         }}>
           {[0, 1, 2].map((i) => (
             <div key={i} style={{
-              width: '12px',
-              height: '3px',
+              width: '16px',
+              height: '4px',
               backgroundColor: i % 2 === 0 ? COLOR.gold : 'rgba(255,255,255,0.3)',
               transform: 'skewX(-15deg)',
             }} />
@@ -98,7 +98,7 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
         </div>
         <span style={{
           fontFamily: FONT.mono,
-          fontSize: '8px',
+          fontSize: '11px',
           color: 'rgba(255,255,255,0.45)',
           letterSpacing: '0.3em',
           textTransform: 'uppercase',
@@ -110,32 +110,32 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
       {/* Bottom content area */}
       <div style={{
         position: 'absolute',
-        bottom: 20,
-        left: 20,
-        right: 20,
+        bottom: 24,
+        left: 24,
+        right: 24,
         zIndex: 12,
       }}>
         {/* Horizontal ruled line */}
         <div style={{
           height: '1px',
           background: 'rgba(255,255,255,0.15)',
-          marginBottom: '12px',
+          marginBottom: '14px',
         }} />
 
         {/* "Greetings from" + city */}
         <p style={{
           fontFamily: FONT.body,
-          fontSize: '10px',
+          fontSize: '13px',
           color: 'rgba(255,255,255,0.45)',
           letterSpacing: '0.2em',
           textTransform: 'uppercase',
-          margin: '0 0 4px',
+          margin: '0 0 6px',
         }}>
           GREETINGS FROM
         </p>
         <p style={{
           fontFamily: FONT.display,
-          fontSize: '32px',
+          fontSize: '40px',
           fontWeight: '700',
           color: COLOR.ivory,
           margin: 0,
@@ -150,12 +150,12 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginTop: '8px',
+          marginTop: '10px',
         }}>
           {country && city && (
             <span style={{
               fontFamily: FONT.body,
-              fontSize: '10px',
+              fontSize: '13px',
               color: COLOR.ivoryDim,
               letterSpacing: '0.15em',
               textTransform: 'uppercase',
@@ -165,7 +165,7 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
           )}
           <span style={{
             fontFamily: FONT.mono,
-            fontSize: '9px',
+            fontSize: '12px',
             color: 'rgba(255,255,255,0.35)',
             letterSpacing: '0.1em',
             marginLeft: 'auto',
@@ -175,8 +175,8 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
         </div>
 
         {/* Gent avatars */}
-        <div style={{ marginTop: '10px' }}>
-          <AvatarStack gents={gents} size={24} overlap={4} borderColor="rgba(255,255,255,0.3)" fallbackColor="rgba(255,255,255,0.5)" />
+        <div style={{ marginTop: '12px' }}>
+          <AvatarStack gents={gents} size={32} overlap={6} borderColor="rgba(255,255,255,0.3)" fallbackColor="rgba(255,255,255,0.5)" />
         </div>
       </div>
 
@@ -185,10 +185,10 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
         viewBox="0 0 80 80"
         style={{
           position: 'absolute',
-          top: 50,
-          left: 16,
-          width: '80px',
-          height: '80px',
+          top: 56,
+          left: 20,
+          width: '96px',
+          height: '96px',
           opacity: 0.12,
           zIndex: 12,
           transform: 'rotate(-12deg)',

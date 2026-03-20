@@ -60,7 +60,7 @@ export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) 
       {/* Top: time — large, centred, neon glow */}
       <div style={{
         position: 'absolute',
-        top: 36,
+        top: 40,
         left: 0,
         right: 0,
         textAlign: 'center',
@@ -68,7 +68,7 @@ export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) 
       }}>
         <span style={{
           fontFamily: FONT.display,
-          fontSize: '56px',
+          fontSize: '72px',
           fontWeight: '700',
           color: COLOR.gold,
           textShadow: `0 0 20px rgba(201,168,76,0.5), 0 0 40px rgba(201,168,76,0.2)`,
@@ -82,16 +82,16 @@ export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) 
       {/* Bottom content */}
       <div style={{
         position: 'absolute',
-        bottom: 32,
-        left: 32,
-        right: 32,
+        bottom: 36,
+        left: 36,
+        right: 36,
         zIndex: 12,
       }}>
         {/* City — large, bold */}
         {(city || country) && (
           <p style={{
             fontFamily: FONT.display,
-            fontSize: '28px',
+            fontSize: '36px',
             fontWeight: '700',
             color: COLOR.ivory,
             textShadow: '0 2px 8px rgba(0,0,0,0.5)',
@@ -109,11 +109,11 @@ export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginTop: '10px',
+          marginTop: '12px',
         }}>
           <span style={{
             fontFamily: FONT.mono,
-            fontSize: '10px',
+            fontSize: '13px',
             color: COLOR.gold,
             letterSpacing: '0.2em',
             textShadow: `0 0 8px rgba(201,168,76,0.4)`,
@@ -124,9 +124,9 @@ export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) 
           {/* Gent avatars with neon ring */}
           <AvatarStack
             gents={gents}
-            size={26}
-            overlap={5}
-            borderWidth={1.5}
+            size={34}
+            overlap={7}
+            borderWidth={2}
             borderColor={COLOR.gold}
             fallbackColor={COLOR.gold}
             boxShadow="0 0 6px rgba(201,168,76,0.4)"
@@ -134,13 +134,13 @@ export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) 
         </div>
 
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginTop: '12px' }}>
+        <div style={{ textAlign: 'center', marginTop: '14px' }}>
           <img
             src="/logo-gold.webp"
             alt=""
             style={{
-              width: '24px',
-              height: '24px',
+              width: '32px',
+              height: '32px',
               objectFit: 'contain',
               opacity: 0.6,
               filter: `drop-shadow(0 0 6px rgba(201,168,76,0.4))`,

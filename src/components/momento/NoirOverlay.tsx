@@ -16,13 +16,13 @@ export function NoirOverlay({ city, country, date, time }: OverlayProps) {
       pointerEvents: 'none',
       zIndex: 10,
     }}>
-      {/* Cinematic letterbox bars — thin */}
+      {/* Cinematic letterbox bars */}
       <div style={{
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: '48px',
+        height: '56px',
         backgroundColor: 'rgba(0,0,0,0.7)',
       }} />
       <div style={{
@@ -30,14 +30,14 @@ export function NoirOverlay({ city, country, date, time }: OverlayProps) {
         bottom: 0,
         left: 0,
         right: 0,
-        height: '48px',
+        height: '56px',
         backgroundColor: 'rgba(0,0,0,0.7)',
       }} />
 
       {/* Subtle bottom gradient for text readability */}
       <div style={{
         position: 'absolute',
-        bottom: '48px',
+        bottom: '56px',
         left: 0,
         right: 0,
         height: '80px',
@@ -50,16 +50,16 @@ export function NoirOverlay({ city, country, date, time }: OverlayProps) {
         top: 0,
         left: 0,
         right: 0,
-        height: '48px',
+        height: '56px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 20px',
+        padding: '0 24px',
         zIndex: 11,
       }}>
         <span style={{
           fontFamily: FONT.mono,
-          fontSize: '11px',
+          fontSize: '15px',
           color: 'rgba(255,255,255,0.4)',
           letterSpacing: '0.15em',
         }}>
@@ -69,8 +69,8 @@ export function NoirOverlay({ city, country, date, time }: OverlayProps) {
           src="/logo-gold.webp"
           alt=""
           style={{
-            width: '20px',
-            height: '20px',
+            width: '28px',
+            height: '28px',
             objectFit: 'contain',
             opacity: 0.35,
           }}
@@ -83,16 +83,16 @@ export function NoirOverlay({ city, country, date, time }: OverlayProps) {
         bottom: 0,
         left: 0,
         right: 0,
-        height: '48px',
+        height: '56px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 20px',
+        padding: '0 24px',
         zIndex: 11,
       }}>
         <span style={{
           fontFamily: FONT.display,
-          fontSize: '13px',
+          fontSize: '18px',
           fontWeight: '400',
           color: 'rgba(255,255,255,0.5)',
           letterSpacing: '0.05em',
@@ -101,7 +101,7 @@ export function NoirOverlay({ city, country, date, time }: OverlayProps) {
         </span>
         <span style={{
           fontFamily: FONT.mono,
-          fontSize: '9px',
+          fontSize: '12px',
           color: 'rgba(255,255,255,0.3)',
           letterSpacing: '0.2em',
         }}>

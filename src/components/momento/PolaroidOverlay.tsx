@@ -6,8 +6,8 @@
 import { FONT, COLOR } from '@/export/templates/shared/utils'
 import type { OverlayProps } from './types'
 
-const BORDER = 14
-const BOTTOM = 72
+const BORDER = 16
+const BOTTOM = 88
 
 export function PolaroidOverlay({ city, country, date, time, gents }: OverlayProps) {
   return (
@@ -65,7 +65,7 @@ export function PolaroidOverlay({ city, country, date, time, gents }: OverlayPro
         }}>
           <span style={{
             fontFamily: FONT.display,
-            fontSize: '18px',
+            fontSize: '24px',
             fontWeight: '600',
             color: COLOR.obsidian,
             fontStyle: 'italic',
@@ -74,7 +74,7 @@ export function PolaroidOverlay({ city, country, date, time, gents }: OverlayPro
           </span>
           <span style={{
             fontFamily: FONT.body,
-            fontSize: '10px',
+            fontSize: '13px',
             color: 'rgba(10,10,15,0.45)',
             letterSpacing: '0.1em',
           }}>
@@ -87,18 +87,18 @@ export function PolaroidOverlay({ city, country, date, time, gents }: OverlayPro
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginTop: '4px',
+          marginTop: '6px',
         }}>
           <span style={{
             fontFamily: FONT.body,
-            fontSize: '10px',
+            fontSize: '13px',
             color: 'rgba(10,10,15,0.4)',
           }}>
             {gents.map((g) => g.display_name?.split(' ')[0]).filter(Boolean).join(', ')}
           </span>
           <span style={{
             fontFamily: FONT.mono,
-            fontSize: '9px',
+            fontSize: '12px',
             color: 'rgba(10,10,15,0.3)',
           }}>
             {time}

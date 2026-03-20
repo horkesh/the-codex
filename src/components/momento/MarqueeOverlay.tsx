@@ -9,7 +9,7 @@ import type { OverlayProps } from './types'
 
 export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProps) {
   const hasLocation = !!(city || country)
-  const inset = 16
+  const inset = 20
 
   return (
     <div style={{
@@ -69,15 +69,15 @@ export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProp
           src="/logo-gold.webp"
           alt=""
           style={{
-            width: '28px',
-            height: '28px',
+            width: '36px',
+            height: '36px',
             objectFit: 'contain',
             opacity: 0.75,
           }}
         />
         <span style={{
           fontFamily: FONT.display,
-          fontSize: '16px',
+          fontSize: '22px',
           color: COLOR.ivory,
           fontWeight: '300',
           letterSpacing: '0.05em',
@@ -95,12 +95,12 @@ export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProp
         zIndex: 13,
       }}>
         {/* Location — centered */}
-        <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
           {hasLocation && (
             <>
               <p style={{
                 fontFamily: FONT.display,
-                fontSize: '20px',
+                fontSize: '26px',
                 fontWeight: '600',
                 color: COLOR.ivory,
                 margin: 0,
@@ -111,7 +111,7 @@ export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProp
               {city && country && (
                 <p style={{
                   fontFamily: FONT.body,
-                  fontSize: '10px',
+                  fontSize: '13px',
                   color: COLOR.ivoryDim,
                   letterSpacing: '0.2em',
                   textTransform: 'uppercase',
@@ -132,7 +132,7 @@ export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProp
         }}>
           <span style={{
             fontFamily: FONT.body,
-            fontSize: '10px',
+            fontSize: '13px',
             color: COLOR.ivoryDim,
             letterSpacing: '0.15em',
           }}>
@@ -140,7 +140,7 @@ export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProp
           </span>
 
           {/* Gent avatars */}
-          <AvatarStack gents={gents} size={24} overlap={4} borderColor={COLOR.gold} fallbackColor={COLOR.gold} />
+          <AvatarStack gents={gents} size={32} overlap={6} borderColor={COLOR.gold} fallbackColor={COLOR.gold} />
         </div>
       </div>
     </div>

@@ -22,16 +22,16 @@ export function FieldReportOverlay({ city, country, date, time, gents }: Overlay
     }}>
       {/* ── Top strip ── */}
       <div style={{
-        padding: '20px 20px 0',
+        padding: '24px 24px 0',
         background: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)',
-        paddingBottom: '36px',
+        paddingBottom: '48px',
       }}>
         {/* Classification badge */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '8px',
+          marginBottom: '10px',
         }}>
           <div style={{
             display: 'flex',
@@ -39,15 +39,15 @@ export function FieldReportOverlay({ city, country, date, time, gents }: Overlay
             gap: '8px',
           }}>
             <div style={{
-              width: '6px',
-              height: '6px',
+              width: '8px',
+              height: '8px',
               borderRadius: '50%',
               backgroundColor: COLOR.gold,
               boxShadow: `0 0 8px ${COLOR.goldDim}`,
             }} />
             <span style={{
               fontFamily: FONT.mono,
-              fontSize: '10px',
+              fontSize: '13px',
               color: COLOR.gold,
               letterSpacing: '0.25em',
               textTransform: 'uppercase',
@@ -57,7 +57,7 @@ export function FieldReportOverlay({ city, country, date, time, gents }: Overlay
           </div>
           <span style={{
             fontFamily: FONT.mono,
-            fontSize: '10px',
+            fontSize: '13px',
             color: COLOR.ivoryDim,
             letterSpacing: '0.1em',
           }}>
@@ -68,7 +68,7 @@ export function FieldReportOverlay({ city, country, date, time, gents }: Overlay
         {/* Time — large display */}
         <div style={{
           fontFamily: FONT.display,
-          fontSize: '48px',
+          fontSize: '64px',
           fontWeight: '300',
           color: COLOR.ivory,
           letterSpacing: '-0.02em',
@@ -79,25 +79,25 @@ export function FieldReportOverlay({ city, country, date, time, gents }: Overlay
 
         {/* Thin gold rule */}
         <div style={{
-          height: '1px',
-          marginTop: '12px',
+          height: '1.5px',
+          marginTop: '14px',
           background: `linear-gradient(to right, ${COLOR.goldDim}, transparent)`,
-          width: '120px',
+          width: '140px',
         }} />
       </div>
 
       {/* ── Bottom strip ── */}
       <div style={{
-        padding: '0 20px 24px',
+        padding: '0 24px 28px',
         background: 'linear-gradient(0deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 60%, transparent 100%)',
-        paddingTop: '40px',
+        paddingTop: '48px',
       }}>
         {/* Location */}
         {hasLocation && (
-          <div style={{ marginBottom: '8px' }}>
+          <div style={{ marginBottom: '10px' }}>
             <p style={{
               fontFamily: FONT.display,
-              fontSize: '22px',
+              fontSize: '28px',
               fontWeight: '600',
               color: COLOR.ivory,
               lineHeight: 1.2,
@@ -108,11 +108,11 @@ export function FieldReportOverlay({ city, country, date, time, gents }: Overlay
             {city && country && (
               <p style={{
                 fontFamily: FONT.body,
-                fontSize: '11px',
+                fontSize: '14px',
                 color: COLOR.ivoryDim,
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
-                margin: '2px 0 0',
+                margin: '4px 0 0',
               }}>
                 {country}
               </p>
@@ -125,12 +125,12 @@ export function FieldReportOverlay({ city, country, date, time, gents }: Overlay
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          marginTop: '12px',
+          marginTop: '14px',
         }}>
-          <AvatarStack gents={gents} size={28} overlap={6} borderWidth={1.5} borderColor={COLOR.gold} fallbackColor={COLOR.gold} />
+          <AvatarStack gents={gents} size={36} overlap={8} borderWidth={2} borderColor={COLOR.gold} fallbackColor={COLOR.gold} />
           <span style={{
             fontFamily: FONT.body,
-            fontSize: '11px',
+            fontSize: '14px',
             color: COLOR.ivoryDim,
             letterSpacing: '0.1em',
           }}>
@@ -142,8 +142,8 @@ export function FieldReportOverlay({ city, country, date, time, gents }: Overlay
             src="/logo-gold.webp"
             alt=""
             style={{
-              width: '24px',
-              height: '24px',
+              width: '32px',
+              height: '32px',
               objectFit: 'contain',
               opacity: 0.7,
               marginLeft: 'auto',
