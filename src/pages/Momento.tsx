@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, RefreshCw, Camera, Share2, ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Camera, Share2, ChevronLeft, ChevronRight, MapPin, Image as ImageIcon, Timer, BookOpen } from 'lucide-react'
 import { useCamera } from '@/hooks/useCamera'
+import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
+import { createEntry, uploadEntryPhoto, updateEntry } from '@/data/entries'
 import { fetchAllGents } from '@/data/gents'
 import { getDevicePosition, reverseGeocode, fetchNearestPOIGoogle } from '@/lib/geo'
 import { formatDate } from '@/lib/utils'
@@ -74,6 +76,7 @@ const FILTER_IDS: FilterId[] = ['none', 'grain', 'mono', 'warm', 'cool', 'fade']
 export default function Momento() {
   const navigate = useNavigate()
   const addToast = useUIStore((s) => s.addToast)
+  const gent = useAuthStore((s) => s.gent)
   const camera = useCamera()
 
   // State
@@ -87,11 +90,18 @@ export default function Momento() {
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null)
   const [capturedTime, setCapturedTime] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const [activeFilter, setActiveFilter] = useState<FilterId>('none')
   const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const [timerActive, setTimerActive] = useState(false)
 
   const compositeRef = useRef<HTMLDivElement | null>(null)
   const filterCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
   const [capturedAspect, setCapturedAspect] = useState<number>(4 / 3) // width/height — default 3:4 portrait
   const [filteredExportUrl, setFilteredExportUrl] = useState<string | null>(null)
 
@@ -251,6 +261,93 @@ export default function Momento() {
     })
   }, [])
 
+  // ── Swipe to cycle templates ──
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }, [])
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    touchStartX.current = null
+    touchStartY.current = null
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      cycleOverlay(dx < 0 ? 1 : -1)
+    }
+  }, [cycleOverlay])
+
+  // ── Gallery import ──
+  const handleGalleryPick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      setCapturedAspect(img.naturalWidth / img.naturalHeight)
+      setCapturedTime(timeNow())
+      setCapturedUrl(url)
+      camera.stop()
+    }
+    img.src = url
+    e.target.value = ''
+  }, [camera])
+
+  // ── Self-timer ──
+  const handleTimerCapture = useCallback(() => {
+    if (timerActive) return
+    setTimerActive(true)
+    setCountdown(3)
+    let count = 3
+    timerRef.current = setInterval(() => {
+      count -= 1
+      if (count <= 0) {
+        clearInterval(timerRef.current!)
+        timerRef.current = null
+        setCountdown(null)
+        setTimerActive(false)
+        handleCapture()
+      } else {
+        setCountdown(count)
+      }
+    }, 1000)
+  }, [timerActive, handleCapture])
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [])
+
+  // ── Publish to Chronicle ──
+  const handlePublish = useCallback(async () => {
+    if (!compositeRef.current || !gent) return
+    setPublishing(true)
+    try {
+      const blob = await exportToPng(compositeRef.current)
+      const file = new File([blob], `momento-${Date.now()}.webp`, { type: 'image/webp' })
+      const dateStr = new Date().toISOString().slice(0, 10)
+      const entry = await createEntry({
+        type: 'interlude',
+        title: venue || city || 'Momento',
+        date: dateStr,
+        location: venue ?? undefined,
+        city: city ?? undefined,
+        country: country ?? undefined,
+        created_by: gent.id,
+      })
+      const photoUrl = await uploadEntryPhoto(entry.id, file, 0)
+      await updateEntry(entry.id, { cover_image_url: photoUrl })
+      addToast('Logged to Chronicle', 'success')
+      navigate(`/chronicle/${entry.id}`)
+    } catch (e) {
+      console.error('Publish failed:', e)
+      addToast('Failed to log', 'error')
+    } finally {
+      setPublishing(false)
+    }
+  }, [gent, venue, city, country, addToast, navigate])
+
   // Live overlay shows current time; export composite uses frozen capture time
   const visibleGents = gents.filter((g) => selectedGentIds.has(g.id))
   const liveOverlayProps = { city, country, venue, date: today, time: currentTime, gents: visibleGents }
@@ -266,7 +363,20 @@ export default function Momento() {
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Camera / captured photo area */}
-      <div className="relative flex-1 overflow-hidden">
+      <div
+        className="relative flex-1 overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Floating back button */}
+        <button
+          onClick={handleBack}
+          className="absolute z-20 p-2 rounded-full bg-black/40 text-ivory/80 active:text-ivory transition-colors"
+          style={{ top: 'max(env(safe-area-inset-top, 16px), 16px)', left: '16px' }}
+        >
+          <ArrowLeft size={20} />
+        </button>
+
         {/* Live camera feed */}
         {!capturedUrl && (
           <video
@@ -353,6 +463,27 @@ export default function Momento() {
           >
             <ActiveOverlay {...liveOverlayProps} />
           </motion.div>
+        </AnimatePresence>
+
+        {/* Timer countdown overlay */}
+        <AnimatePresence>
+          {countdown !== null && (
+            <motion.div
+              key={countdown}
+              initial={{ scale: 2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
+            >
+              <span
+                className="text-ivory font-display text-[120px] font-bold"
+                style={{ textShadow: '0 0 40px rgba(0,0,0,0.8)' }}
+              >
+                {countdown}
+              </span>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* ── Export composite (hidden, rendered at native aspect ratio) ── */}
@@ -495,39 +626,57 @@ export default function Momento() {
 
         {/* Action buttons */}
         <div className="flex items-center justify-between px-6 pb-3">
-          {/* Back */}
-          <button
-            onClick={handleBack}
-            className="p-3 rounded-full text-ivory/70 active:text-ivory transition-colors"
-          >
-            <ArrowLeft size={22} />
-          </button>
-
           {!capturedUrl ? (
             <>
+              {/* Gallery */}
+              <button
+                onClick={() => galleryInputRef.current?.click()}
+                className="p-3 rounded-full text-ivory/70 active:text-ivory transition-colors"
+              >
+                <ImageIcon size={22} />
+              </button>
+
               {/* Shutter */}
               <button
                 onClick={handleCapture}
-                disabled={!camera.stream}
+                disabled={!camera.stream || timerActive}
                 className="w-16 h-16 rounded-full border-[3px] border-gold/80 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
               >
                 <div className="w-12 h-12 rounded-full bg-ivory" />
               </button>
 
-              {/* Flip camera */}
-              <button
-                onClick={camera.flip}
-                className="p-3 rounded-full text-ivory/70 active:text-ivory transition-colors"
-              >
-                <RefreshCw size={22} />
-              </button>
+              {/* Timer + Flip */}
+              <div className="flex flex-col items-center gap-1.5">
+                <button
+                  onClick={handleTimerCapture}
+                  disabled={!camera.stream || timerActive}
+                  className="p-2 rounded-full text-ivory/70 active:text-ivory transition-colors disabled:opacity-40"
+                >
+                  <Timer size={18} />
+                </button>
+                <button
+                  onClick={camera.flip}
+                  className="p-2 rounded-full text-ivory/70 active:text-ivory transition-colors"
+                >
+                  <RefreshCw size={18} />
+                </button>
+              </div>
             </>
           ) : (
             <>
+              {/* Log to Chronicle */}
+              <button
+                onClick={handlePublish}
+                disabled={publishing || exporting}
+                className="p-3 rounded-full text-ivory/70 active:text-ivory transition-colors disabled:opacity-40"
+              >
+                {publishing ? <Spinner size="sm" /> : <BookOpen size={22} />}
+              </button>
+
               {/* Export / Share */}
               <button
                 onClick={handleExport}
-                disabled={exporting}
+                disabled={exporting || publishing}
                 className="px-6 py-3 rounded-full bg-gold text-obsidian font-body text-sm font-semibold flex items-center gap-2 active:scale-95 transition-transform disabled:opacity-60"
               >
                 {exporting ? (
@@ -551,6 +700,15 @@ export default function Momento() {
           )}
         </div>
       </div>
+
+      {/* Hidden gallery input */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleGalleryPick}
+      />
 
       {/* Location picker modal */}
       {showLocationPicker && (
