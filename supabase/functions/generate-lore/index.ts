@@ -30,6 +30,8 @@ const liveMusicDirective = `This is a Live Music night — one of the Gents at t
 
 const iftarDirective = `This is an Iftar — the breaking of the fast. The prose should carry the quiet weight of a day's patience rewarded: the first sip of water, the dates, the unhurried gratitude before the feast begins. Let the ritual texture the scene — the communal table, the generosity of the spread, the way conversation deepens when it follows silence. Reference the food with reverence but not formality. If the setting is a restaurant, note the shared atmosphere; if it is intimate, honour the closeness. The tone is warm, grounded, and gently reverent — faith woven into fellowship, never preachy.`
 
+const eidDirective = `This is an Eid gathering — Bajram, the feast that crowns the fast. The prose should carry celebration and earned joy: the morning prayers still fresh, the embraces at the door, the table set with intention. The food is abundant and deliberate — this is not restraint but reward. Reference the dishes, the generosity, the way laughter fills a room that spent weeks in quiet discipline. If family or extended circle is present, honour the warmth. The tone is festive, grateful, communal — a holiday earned, not given.`
+
 // WMO weather code to description
 const WMO_CODES: Record<number, string> = {
   0: 'clear skies', 1: 'mostly clear', 2: 'partly cloudy', 3: 'overcast',
@@ -123,6 +125,8 @@ Deno.serve(async (req: Request) => {
     const flavour = entry.metadata?.flavour as string | undefined
     const typeDirective = (entry.type === 'steak' && flavour === 'iftar')
       ? iftarDirective
+      : (entry.type === 'steak' && flavour === 'eid')
+      ? eidDirective
       : (entry.type === 'night_out' && flavour === 'live_music')
       ? liveMusicDirective
       : (entryTypeDirectives[entry.type] || '')

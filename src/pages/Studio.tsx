@@ -24,6 +24,7 @@ import { NightOutCard } from '@/export/templates/NightOutCard'
 import { MissionCarousel } from '@/export/templates/MissionCarousel'
 import { SteakVerdict } from '@/export/templates/SteakVerdict'
 import { IftarCard } from '@/export/templates/IftarCard'
+import { EidCard } from '@/export/templates/EidCard'
 import { PS5MatchCard } from '@/export/templates/PS5MatchCard'
 import { GatheringInviteCard } from '@/export/templates/GatheringInviteCard'
 import { CountdownCard } from '@/export/templates/CountdownCard'
@@ -57,6 +58,7 @@ type TemplateId =
   | 'mission_carousel' | 'mission_carousel_v2' | 'mission_carousel_v3' | 'mission_carousel_v4'
   | 'steak_verdict' | 'steak_verdict_v2' | 'steak_verdict_v3' | 'steak_verdict_v4'
   | 'iftar_card' | 'iftar_card_v2' | 'iftar_card_v3' | 'iftar_card_v4'
+  | 'eid_card'
   | 'ps5_match_card' | 'ps5_match_card_v2' | 'ps5_match_card_v3' | 'ps5_match_card_v4'
   | 'gathering_invite'
   | 'countdown'
@@ -115,6 +117,7 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
     { id: 'iftar_card_v2',    label: 'Spread',         dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'iftar' },
     { id: 'iftar_card_v3',    label: 'Contemplative',  dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'iftar' },
     { id: 'iftar_card_v4',    label: 'Gathering',      dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'iftar' },
+    { id: 'eid_card',         label: 'Bajram',         dims: '1080×1350', bgAspect: '3:4', requiresFlavour: 'eid' },
   ],
   playstation: [
     { id: 'ps5_match_card',    label: 'Scoreboard',    dims: '1080×1350', bgAspect: '3:4' },
@@ -371,6 +374,8 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
       return <IftarCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={3} />
     case 'iftar_card_v4':
       return <IftarCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={4} />
+    case 'eid_card':
+      return <EidCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'ps5_match_card':
       return <PS5MatchCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
     case 'ps5_match_card_v2':
