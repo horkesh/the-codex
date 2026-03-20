@@ -91,7 +91,12 @@ export default function Momento() {
   const [showLocationPicker, setShowLocationPicker] = useState(false)
 
   const compositeRef = useRef<HTMLDivElement | null>(null)
+  const filterCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const [capturedAspect, setCapturedAspect] = useState<number>(4 / 3) // width/height — default 3:4 portrait
+  const [filteredExportUrl, setFilteredExportUrl] = useState<string | null>(null)
+
+  const filterCss = FILTER_REGISTRY[activeFilter].css
+  const showGrain = activeFilter === 'grain'
   const [today] = useState(() => formatDate(new Date().toISOString().slice(0, 10)))
 
   // Fetch gents + location on mount
@@ -135,6 +140,59 @@ export default function Momento() {
       if (capturedUrl) URL.revokeObjectURL(capturedUrl)
     }
   }, [capturedUrl])
+
+  // Bake CSS filter into a canvas data URL for export (html2canvas doesn't support CSS filter)
+  useEffect(() => {
+    if (!capturedUrl) { setFilteredExportUrl(null); return }
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      if (!filterCanvasRef.current) filterCanvasRef.current = document.createElement('canvas')
+      const canvas = filterCanvasRef.current
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.filter = filterCss || 'none'
+      ctx.drawImage(img, 0, 0)
+      ctx.filter = 'none'
+      // Grain overlay: draw noise if active
+      if (showGrain) {
+        ctx.globalAlpha = 0.12
+        ctx.globalCompositeOperation = 'overlay'
+        // Simple noise: random grey pixels
+        const noise = ctx.createImageData(canvas.width, canvas.height)
+        for (let i = 0; i < noise.data.length; i += 4) {
+          const v = Math.random() * 255
+          noise.data[i] = v; noise.data[i + 1] = v; noise.data[i + 2] = v; noise.data[i + 3] = 255
+        }
+        ctx.putImageData(noise, 0, 0)
+        // putImageData ignores composite, so re-draw with overlay
+        // Actually putImageData replaces pixels directly, need a different approach
+        // Use a temp canvas for the noise, then drawImage with overlay
+        const noiseCanvas = document.createElement('canvas')
+        noiseCanvas.width = canvas.width
+        noiseCanvas.height = canvas.height
+        const nCtx = noiseCanvas.getContext('2d')!
+        nCtx.putImageData(noise, 0, 0)
+        // Re-draw the filtered image first
+        ctx.globalAlpha = 1
+        ctx.globalCompositeOperation = 'source-over'
+        ctx.filter = filterCss || 'none'
+        ctx.drawImage(img, 0, 0)
+        ctx.filter = 'none'
+        // Then overlay the noise
+        ctx.globalAlpha = 0.12
+        ctx.globalCompositeOperation = 'overlay'
+        ctx.drawImage(noiseCanvas, 0, 0)
+        ctx.globalAlpha = 1
+        ctx.globalCompositeOperation = 'source-over'
+      }
+      setFilteredExportUrl(canvas.toDataURL('image/jpeg', 0.95))
+    }
+    img.src = capturedUrl
+  }, [capturedUrl, filterCss, showGrain])
 
   const handleCapture = useCallback(async () => {
     // Read native video dimensions before capture to compute aspect ratio
@@ -198,8 +256,6 @@ export default function Momento() {
   const liveOverlayProps = { city, country, venue, date: today, time: currentTime, gents: visibleGents }
   const exportOverlayProps = { city, country, venue, date: today, time: capturedTime ?? currentTime, gents: visibleGents }
   const ActiveOverlay = OVERLAY_REGISTRY[activeOverlay].Component
-  const filterCss = FILTER_REGISTRY[activeFilter].css
-  const showGrain = activeFilter === 'grain'
 
   // Export scale: overlays are designed for ~390px phone screen width.
   // The export canvas is 1080px wide, so scale overlay elements up proportionally.
@@ -312,8 +368,9 @@ export default function Momento() {
                 backgroundColor: '#000',
               }}
             >
+              {/* Filter baked into image via canvas — html2canvas doesn't support CSS filter */}
               <img
-                src={capturedUrl}
+                src={filteredExportUrl || capturedUrl}
                 alt=""
                 style={{
                   position: 'absolute',
@@ -321,23 +378,8 @@ export default function Momento() {
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  filter: filterCss || undefined,
                 }}
               />
-              {showGrain && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    zIndex: 5,
-                    pointerEvents: 'none',
-                    opacity: 0.14,
-                    mixBlendMode: 'overlay',
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                    backgroundSize: '128px 128px',
-                  }}
-                />
-              )}
               {/* Overlay scaled up from phone-screen size to export canvas size */}
               <div style={{
                 position: 'absolute',

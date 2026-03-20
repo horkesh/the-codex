@@ -19,23 +19,21 @@ function RGBText({ children, fontSize = '14px', fontWeight = '400' }: { children
     fontSize,
     fontWeight,
     letterSpacing: '0.15em',
-    textTransform: 'uppercase' as const,
-    lineHeight: 1,
-    position: 'absolute' as const,
-    whiteSpace: 'nowrap' as const,
+    textTransform: 'uppercase',
+    lineHeight: 1.15,
   }
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ position: 'relative' }}>
       {/* Red channel — offset left */}
-      <span style={{ ...base, color: MAGENTA, opacity: 0.5, transform: 'translate(-2px, 1px)' }}>
+      <span style={{ ...base, color: MAGENTA, opacity: 0.5, position: 'absolute', inset: 0, transform: 'translate(-2px, 1px)' }}>
         {children}
       </span>
       {/* Cyan channel — offset right */}
-      <span style={{ ...base, color: CYAN, opacity: 0.45, transform: 'translate(2px, -1px)' }}>
+      <span style={{ ...base, color: CYAN, opacity: 0.45, position: 'absolute', inset: 0, transform: 'translate(2px, -1px)' }}>
         {children}
       </span>
-      {/* White channel — center */}
+      {/* White channel — center (this one flows and sets the container size) */}
       <span style={{ ...base, color: COLOR.ivory, position: 'relative' }}>
         {children}
       </span>
@@ -51,19 +49,39 @@ export function GlitchOverlay({ city, country, venue, date, time, gents }: Overl
       pointerEvents: 'none',
       zIndex: 10,
     }}>
-      {/* Scanlines — repeating horizontal stripes */}
+      {/* Scanlines — denser VHS-style */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px)',
+        background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 3px)',
         zIndex: 11,
       }} />
 
-      {/* Dark vignette */}
+      {/* Chromatic aberration edge tint — subtle red/cyan bars at edges */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        width: '3px',
+        backgroundColor: 'rgba(255,0,96,0.15)',
+        zIndex: 11,
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: '3px',
+        backgroundColor: 'rgba(0,240,255,0.15)',
+        zIndex: 11,
+      }} />
+
+      {/* Dark vignette — heavier for VHS look */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.5) 100%)',
+        background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 100%)',
       }} />
 
       {/* Top gradient */}
@@ -87,54 +105,103 @@ export function GlitchOverlay({ city, country, venue, date, time, gents }: Overl
       }} />
 
       {/* ── Corner glitch blocks ── */}
-      {/* Top-right */}
+      {/* Top-right cluster */}
       <div style={{
         position: 'absolute',
         top: 16,
         right: 0,
-        width: '48px',
-        height: '6px',
+        width: '64px',
+        height: '8px',
         backgroundColor: CYAN_DIM,
         zIndex: 12,
       }} />
       <div style={{
         position: 'absolute',
-        top: 26,
-        right: 12,
-        width: '28px',
+        top: 28,
+        right: 8,
+        width: '40px',
+        height: '5px',
+        backgroundColor: MAGENTA_DIM,
+        zIndex: 12,
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: 37,
+        right: 0,
+        width: '24px',
+        height: '3px',
+        backgroundColor: CYAN_DIM,
+        zIndex: 12,
+      }} />
+
+      {/* Bottom-left cluster */}
+      <div style={{
+        position: 'absolute',
+        bottom: 130,
+        left: 0,
+        width: '52px',
+        height: '7px',
+        backgroundColor: CYAN_DIM,
+        zIndex: 12,
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: 142,
+        left: 6,
+        width: '68px',
         height: '4px',
         backgroundColor: MAGENTA_DIM,
         zIndex: 12,
       }} />
 
-      {/* Bottom-left */}
+      {/* Mid-right glitch */}
       <div style={{
         position: 'absolute',
-        bottom: 120,
-        left: 0,
-        width: '36px',
-        height: '5px',
-        backgroundColor: CYAN_DIM,
-        zIndex: 12,
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: 130,
-        left: 8,
-        width: '52px',
-        height: '3px',
+        top: '60%',
+        right: 0,
+        width: '32px',
+        height: '6px',
         backgroundColor: MAGENTA_DIM,
         zIndex: 12,
       }} />
 
-      {/* ── Interference bar — thin horizontal strip ── */}
+      {/* ── Interference bars — VHS tracking lines ── */}
       <div style={{
         position: 'absolute',
         top: '42%',
         left: 0,
         right: 0,
+        height: '3px',
+        backgroundColor: 'rgba(0,240,255,0.1)',
+        zIndex: 12,
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: '43%',
+        left: 0,
+        right: 0,
+        height: '1px',
+        backgroundColor: 'rgba(255,0,96,0.08)',
+        zIndex: 12,
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: '68%',
+        left: 0,
+        width: '70%',
         height: '2px',
-        backgroundColor: 'rgba(0,240,255,0.08)',
+        backgroundColor: 'rgba(0,240,255,0.06)',
+        zIndex: 12,
+      }} />
+
+      {/* VHS tracking distortion band */}
+      <div style={{
+        position: 'absolute',
+        top: '22%',
+        left: 0,
+        right: 0,
+        height: '16px',
+        background: 'linear-gradient(0deg, transparent, rgba(0,240,255,0.03) 30%, rgba(255,0,96,0.02) 70%, transparent)',
         zIndex: 12,
       }} />
 
@@ -162,15 +229,36 @@ export function GlitchOverlay({ city, country, venue, date, time, gents }: Overl
         </div>
 
         {/* Status line */}
-        <p style={{
-          fontFamily: FONT.mono,
-          fontSize: '10px',
-          color: 'rgba(0,240,255,0.35)',
-          letterSpacing: '0.1em',
-          marginTop: '10px',
-        }}>
-          FEED::ACTIVE // {date.replace(/\//g, '-')}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+          {/* REC indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#FF0040',
+              boxShadow: '0 0 6px rgba(255,0,64,0.6)',
+            }} />
+            <span style={{
+              fontFamily: FONT.mono,
+              fontSize: '10px',
+              color: '#FF0040',
+              letterSpacing: '0.1em',
+              fontWeight: '700',
+            }}>
+              REC
+            </span>
+          </div>
+          <p style={{
+            fontFamily: FONT.mono,
+            fontSize: '10px',
+            color: 'rgba(0,240,255,0.35)',
+            letterSpacing: '0.1em',
+            margin: 0,
+          }}>
+            FEED::ACTIVE // {date.replace(/\//g, '-')}
+          </p>
+        </div>
       </div>
 
       {/* ── Bottom: city + gents ── */}

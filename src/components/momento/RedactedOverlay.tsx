@@ -114,17 +114,17 @@ export function RedactedOverlay({ city, country, venue, date, time, gents }: Ove
         top: '28%',
         left: 0,
         width: '65%',
-        height: '14px',
-        backgroundColor: 'rgba(0,0,0,0.82)',
+        height: '28px',
+        backgroundColor: 'rgba(0,0,0,0.85)',
         zIndex: 11,
       }} />
       <div style={{
         position: 'absolute',
-        top: '35%',
+        top: '36%',
         right: 0,
         width: '45%',
-        height: '10px',
-        backgroundColor: 'rgba(0,0,0,0.78)',
+        height: '22px',
+        backgroundColor: 'rgba(0,0,0,0.82)',
         zIndex: 11,
       }} />
       <div style={{
@@ -132,8 +132,8 @@ export function RedactedOverlay({ city, country, venue, date, time, gents }: Ove
         top: '52%',
         left: '10%',
         width: '55%',
-        height: '12px',
-        backgroundColor: 'rgba(0,0,0,0.8)',
+        height: '26px',
+        backgroundColor: 'rgba(0,0,0,0.84)',
         zIndex: 11,
       }} />
 
