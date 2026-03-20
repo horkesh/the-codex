@@ -3,18 +3,11 @@
  * Cream-tinted borders with handwritten-style elements,
  * "stamp" area, and postal markings. Travel / mission mood.
  */
-import type { Gent } from '@/types/app'
 import { FONT, COLOR } from '@/export/templates/shared/utils'
+import { AvatarStack } from './AvatarStack'
+import type { OverlayProps } from './types'
 
-interface PostcardOverlayProps {
-  city?: string | null
-  country?: string | null
-  date: string
-  time: string
-  gents: Gent[]
-}
-
-export function PostcardOverlay({ city, country, date, time, gents }: PostcardOverlayProps) {
+export function PostcardOverlay({ city, country, date, time, gents }: OverlayProps) {
   const cityUpper = (city || country || '').toUpperCase()
 
   return (
@@ -182,52 +175,8 @@ export function PostcardOverlay({ city, country, date, time, gents }: PostcardOv
         </div>
 
         {/* Gent avatars */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginTop: '10px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {gents.map((g, i) => (
-              <div
-                key={g.id}
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  border: `1px solid rgba(255,255,255,0.3)`,
-                  overflow: 'hidden',
-                  marginLeft: i > 0 ? '-4px' : 0,
-                  position: 'relative',
-                  zIndex: gents.length - i,
-                  backgroundColor: '#1e1a28',
-                }}
-              >
-                {g.avatar_url ? (
-                  <img
-                    src={g.avatar_url}
-                    alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '10px',
-                    color: 'rgba(255,255,255,0.5)',
-                    fontFamily: FONT.body,
-                    fontWeight: '600',
-                  }}>
-                    {g.name?.charAt(0)}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+        <div style={{ marginTop: '10px' }}>
+          <AvatarStack gents={gents} size={24} overlap={4} borderColor="rgba(255,255,255,0.3)" fallbackColor="rgba(255,255,255,0.5)" />
         </div>
       </div>
 

@@ -4,18 +4,11 @@
  * small logo mark. Lets the photo do all the talking.
  * Perfect for late-night moody shots.
  */
-import type { Gent } from '@/types/app'
-import { FONT, COLOR } from '@/export/templates/shared/utils'
+import { FONT } from '@/export/templates/shared/utils'
+import type { OverlayProps } from './types'
 
-interface NoirOverlayProps {
-  city?: string | null
-  country?: string | null
-  date: string
-  time: string
-  gents: Gent[]
-}
-
-export function NoirOverlay({ city, country, date, time }: NoirOverlayProps) {
+// gents deliberately unused — noir aesthetic shows no avatars
+export function NoirOverlay({ city, country, date, time }: OverlayProps) {
   return (
     <div style={{
       position: 'absolute',

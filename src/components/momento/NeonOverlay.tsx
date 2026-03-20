@@ -4,21 +4,13 @@
  * Thick borders, large time, club-ready aesthetic.
  * Best for night out / bar / club moments.
  */
-import type { Gent } from '@/types/app'
 import { FONT, COLOR } from '@/export/templates/shared/utils'
+import { AvatarStack } from './AvatarStack'
+import type { OverlayProps } from './types'
 
-interface NeonOverlayProps {
-  city?: string | null
-  country?: string | null
-  date: string
-  time: string
-  gents: Gent[]
-}
-
-const NEON_GOLD = COLOR.gold
 const NEON_GLOW = `0 0 12px rgba(201,168,76,0.6), 0 0 24px rgba(201,168,76,0.25)`
 
-export function NeonOverlay({ city, country, date, time, gents }: NeonOverlayProps) {
+export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) {
   return (
     <div style={{
       position: 'absolute',
@@ -60,7 +52,7 @@ export function NeonOverlay({ city, country, date, time, gents }: NeonOverlayPro
         left: 20,
         right: 20,
         bottom: 20,
-        border: `2px solid ${NEON_GOLD}`,
+        border: `2px solid ${COLOR.gold}`,
         boxShadow: NEON_GLOW,
         zIndex: 11,
       }} />
@@ -78,7 +70,7 @@ export function NeonOverlay({ city, country, date, time, gents }: NeonOverlayPro
           fontFamily: FONT.display,
           fontSize: '56px',
           fontWeight: '700',
-          color: NEON_GOLD,
+          color: COLOR.gold,
           textShadow: `0 0 20px rgba(201,168,76,0.5), 0 0 40px rgba(201,168,76,0.2)`,
           letterSpacing: '0.05em',
           lineHeight: 1,
@@ -122,7 +114,7 @@ export function NeonOverlay({ city, country, date, time, gents }: NeonOverlayPro
           <span style={{
             fontFamily: FONT.mono,
             fontSize: '10px',
-            color: NEON_GOLD,
+            color: COLOR.gold,
             letterSpacing: '0.2em',
             textShadow: `0 0 8px rgba(201,168,76,0.4)`,
           }}>
@@ -130,47 +122,15 @@ export function NeonOverlay({ city, country, date, time, gents }: NeonOverlayPro
           </span>
 
           {/* Gent avatars with neon ring */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {gents.map((g, i) => (
-              <div
-                key={g.id}
-                style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '50%',
-                  border: `1.5px solid ${NEON_GOLD}`,
-                  boxShadow: `0 0 6px rgba(201,168,76,0.4)`,
-                  overflow: 'hidden',
-                  marginLeft: i > 0 ? '-5px' : 0,
-                  position: 'relative',
-                  zIndex: gents.length - i,
-                  backgroundColor: '#1e1a28',
-                }}
-              >
-                {g.avatar_url ? (
-                  <img
-                    src={g.avatar_url}
-                    alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '10px',
-                    color: NEON_GOLD,
-                    fontFamily: FONT.body,
-                    fontWeight: '600',
-                  }}>
-                    {g.name?.charAt(0)}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <AvatarStack
+            gents={gents}
+            size={26}
+            overlap={5}
+            borderWidth={1.5}
+            borderColor={COLOR.gold}
+            fallbackColor={COLOR.gold}
+            boxShadow="0 0 6px rgba(201,168,76,0.4)"
+          />
         </div>
 
         {/* Logo */}

@@ -3,21 +3,13 @@
  * White border frame with a wider bottom strip for caption area.
  * Warm, nostalgic feel. Good for casual group moments.
  */
-import type { Gent } from '@/types/app'
 import { FONT, COLOR } from '@/export/templates/shared/utils'
-
-interface PolaroidOverlayProps {
-  city?: string | null
-  country?: string | null
-  date: string
-  time: string
-  gents: Gent[]
-}
+import type { OverlayProps } from './types'
 
 const BORDER = 14
 const BOTTOM = 72
 
-export function PolaroidOverlay({ city, country, date, time, gents }: PolaroidOverlayProps) {
+export function PolaroidOverlay({ city, country, date, time, gents }: OverlayProps) {
   return (
     <div style={{
       position: 'absolute',

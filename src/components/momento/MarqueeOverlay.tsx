@@ -3,18 +3,11 @@
  * Thin gold border inset with elegant typography.
  * Rendered on top of live camera feed (transparent background).
  */
-import type { Gent } from '@/types/app'
 import { FONT, COLOR } from '@/export/templates/shared/utils'
+import { AvatarStack } from './AvatarStack'
+import type { OverlayProps } from './types'
 
-interface MarqueeOverlayProps {
-  city?: string | null
-  country?: string | null
-  date: string // DD/MM/YYYY
-  time: string // HH:MM
-  gents: Gent[]
-}
-
-export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOverlayProps) {
+export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProps) {
   const hasLocation = !!(city || country)
   const inset = 16
 
@@ -147,46 +140,7 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
           </span>
 
           {/* Gent avatars */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {gents.map((g, i) => (
-              <div
-                key={g.id}
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  border: `1px solid ${COLOR.gold}`,
-                  overflow: 'hidden',
-                  marginLeft: i > 0 ? '-4px' : 0,
-                  position: 'relative',
-                  zIndex: gents.length - i,
-                  backgroundColor: '#1e1a28',
-                }}
-              >
-                {g.avatar_url ? (
-                  <img
-                    src={g.avatar_url}
-                    alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '10px',
-                    color: COLOR.gold,
-                    fontFamily: FONT.body,
-                    fontWeight: '600',
-                  }}>
-                    {g.name?.charAt(0)}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <AvatarStack gents={gents} size={24} overlap={4} borderColor={COLOR.gold} fallbackColor={COLOR.gold} />
         </div>
       </div>
     </div>

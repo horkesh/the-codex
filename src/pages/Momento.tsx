@@ -16,6 +16,7 @@ import { NeonOverlay } from '@/components/momento/NeonOverlay'
 import { PostcardOverlay } from '@/components/momento/PostcardOverlay'
 import { exportToPng, shareImage } from '@/export/exporter'
 import type { Gent } from '@/types/app'
+import type { OverlayProps } from '@/components/momento/types'
 import { Spinner } from '@/components/ui'
 
 // ---------------------------------------------------------------------------
@@ -27,14 +28,6 @@ type OverlayId = 'field_report' | 'marquee' | 'noir' | 'polaroid' | 'neon' | 'po
 interface OverlayEntry {
   label: string
   Component: React.ComponentType<OverlayProps>
-}
-
-interface OverlayProps {
-  city?: string | null
-  country?: string | null
-  date: string
-  time: string
-  gents: Gent[]
 }
 
 const OVERLAY_REGISTRY: Record<OverlayId, OverlayEntry> = {

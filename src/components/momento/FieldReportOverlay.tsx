@@ -3,18 +3,11 @@
  * Rendered on top of live camera feed (transparent background).
  * Also used as the export template overlay on captured photos.
  */
-import type { Gent } from '@/types/app'
 import { FONT, COLOR } from '@/export/templates/shared/utils'
+import { AvatarStack } from './AvatarStack'
+import type { OverlayProps } from './types'
 
-interface FieldReportOverlayProps {
-  city?: string | null
-  country?: string | null
-  date: string // DD/MM/YYYY
-  time: string // HH:MM
-  gents: Gent[]
-}
-
-export function FieldReportOverlay({ city, country, date, time, gents }: FieldReportOverlayProps) {
+export function FieldReportOverlay({ city, country, date, time, gents }: OverlayProps) {
   const hasLocation = !!(city || country)
 
   return (
@@ -134,49 +127,7 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
           gap: '10px',
           marginTop: '12px',
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-          }}>
-            {gents.map((g, i) => (
-              <div
-                key={g.id}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  border: `1.5px solid ${COLOR.gold}`,
-                  overflow: 'hidden',
-                  marginLeft: i > 0 ? '-6px' : 0,
-                  position: 'relative',
-                  zIndex: gents.length - i,
-                  backgroundColor: '#1e1a28',
-                }}
-              >
-                {g.avatar_url ? (
-                  <img
-                    src={g.avatar_url}
-                    alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '11px',
-                    color: COLOR.gold,
-                    fontFamily: FONT.body,
-                    fontWeight: '600',
-                  }}>
-                    {g.name?.charAt(0)}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <AvatarStack gents={gents} size={28} overlap={6} borderWidth={1.5} borderColor={COLOR.gold} fallbackColor={COLOR.gold} />
           <span style={{
             fontFamily: FONT.body,
             fontSize: '11px',
