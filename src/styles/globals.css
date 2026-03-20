@@ -108,8 +108,13 @@ html {
 
 /* ── Comfort mode — larger text + tap targets for accessibility ─────────── */
 html.comfort-mode {
-  font-size: 19px;
+  font-size: 20px;
 }
+/* Scale all fixed-pixel text up */
+html.comfort-mode .text-\[8px\]  { font-size: 11px !important; }
+html.comfort-mode .text-\[9px\]  { font-size: 12px !important; }
+html.comfort-mode .text-\[10px\] { font-size: 13px !important; }
+html.comfort-mode .text-\[11px\] { font-size: 14px !important; }
 /* Bigger tap targets */
 html.comfort-mode button,
 html.comfort-mode a,
