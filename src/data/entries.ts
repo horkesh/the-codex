@@ -432,6 +432,33 @@ export async function fetchCityVisits(city: string, entryId: string): Promise<Ci
   }
 }
 
+/** Fetch previous missions to the same city with lore for cross-referencing */
+export async function fetchCrossMissionContext(
+  city: string,
+  currentEntryId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id, title, date, lore, metadata')
+    .eq('type', 'mission')
+    .eq('city', city)
+    .in('status', ['published', 'gathering_post'])
+    .neq('id', currentEntryId)
+    .order('date', { ascending: false })
+    .limit(3)
+
+  if (error || !data?.length) return null
+
+  const lines = data.map(e => {
+    const meta = e.metadata as Record<string, unknown> | null
+    const venues = (meta?.landmarks as string[])?.join(', ') ?? 'unknown venues'
+    const oneliner = (meta?.lore_oneliner as string) ?? ''
+    return `- "${e.title}" (${e.date}): ${oneliner}. Venues: ${venues}`
+  })
+
+  return `Previous missions to ${city}:\n${lines.join('\n')}\nUse these naturally — reference shared venues, compare experiences, note changes.`
+}
+
 export async function fetchRecentEntryIds(days: number): Promise<string[]> {
   const since = new Date()
   since.setDate(since.getDate() - days)
