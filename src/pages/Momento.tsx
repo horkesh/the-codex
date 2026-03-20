@@ -10,6 +10,10 @@ import { getDevicePosition, reverseGeocode } from '@/lib/geo'
 import { formatDate } from '@/lib/utils'
 import { FieldReportOverlay } from '@/components/momento/FieldReportOverlay'
 import { MarqueeOverlay } from '@/components/momento/MarqueeOverlay'
+import { NoirOverlay } from '@/components/momento/NoirOverlay'
+import { PolaroidOverlay } from '@/components/momento/PolaroidOverlay'
+import { NeonOverlay } from '@/components/momento/NeonOverlay'
+import { PostcardOverlay } from '@/components/momento/PostcardOverlay'
 import { exportToPng, shareImage } from '@/export/exporter'
 import type { Gent } from '@/types/app'
 import { Spinner } from '@/components/ui'
@@ -18,14 +22,31 @@ import { Spinner } from '@/components/ui'
 // Template registry
 // ---------------------------------------------------------------------------
 
-type OverlayId = 'field_report' | 'marquee'
+type OverlayId = 'field_report' | 'marquee' | 'noir' | 'polaroid' | 'neon' | 'postcard'
 
-const OVERLAY_LABELS: Record<OverlayId, string> = {
-  field_report: 'Field Report',
-  marquee: 'Marquee',
+interface OverlayEntry {
+  label: string
+  Component: React.ComponentType<OverlayProps>
 }
 
-const OVERLAY_IDS: OverlayId[] = ['field_report', 'marquee']
+interface OverlayProps {
+  city?: string | null
+  country?: string | null
+  date: string
+  time: string
+  gents: Gent[]
+}
+
+const OVERLAY_REGISTRY: Record<OverlayId, OverlayEntry> = {
+  field_report: { label: 'Field Report', Component: FieldReportOverlay },
+  marquee:      { label: 'Marquee',      Component: MarqueeOverlay },
+  noir:         { label: 'Noir',         Component: NoirOverlay },
+  polaroid:     { label: 'Polaroid',     Component: PolaroidOverlay },
+  neon:         { label: 'Neon',         Component: NeonOverlay },
+  postcard:     { label: 'Postcard',     Component: PostcardOverlay },
+}
+
+const OVERLAY_IDS: OverlayId[] = ['field_report', 'marquee', 'noir', 'polaroid', 'neon', 'postcard']
 
 // ---------------------------------------------------------------------------
 // Component
@@ -131,6 +152,7 @@ export default function Momento() {
   // Live overlay shows current time; export composite uses frozen capture time
   const liveOverlayProps = { city, country, date: today, time: currentTime, gents }
   const exportOverlayProps = { city, country, date: today, time: capturedTime ?? currentTime, gents }
+  const ActiveOverlay = OVERLAY_REGISTRY[activeOverlay].Component
 
   // ── Render ──
 
@@ -204,8 +226,7 @@ export default function Momento() {
             transition={{ duration: 0.2 }}
             style={{ position: 'absolute', inset: 0 }}
           >
-            {activeOverlay === 'field_report' && <FieldReportOverlay {...liveOverlayProps} />}
-            {activeOverlay === 'marquee' && <MarqueeOverlay {...liveOverlayProps} />}
+            <ActiveOverlay {...liveOverlayProps} />
           </motion.div>
         </AnimatePresence>
 
@@ -233,8 +254,7 @@ export default function Momento() {
                   objectFit: 'cover',
                 }}
               />
-              {activeOverlay === 'field_report' && <FieldReportOverlay {...exportOverlayProps} />}
-              {activeOverlay === 'marquee' && <MarqueeOverlay {...exportOverlayProps} />}
+              <ActiveOverlay {...exportOverlayProps} />
             </div>
           </div>
         )}
@@ -254,7 +274,7 @@ export default function Momento() {
             <ChevronLeft size={16} />
           </button>
           <span className="text-ivory font-body text-xs tracking-widest uppercase min-w-[100px] text-center">
-            {OVERLAY_LABELS[activeOverlay]}
+            {OVERLAY_REGISTRY[activeOverlay].label}
           </span>
           <button
             onClick={() => cycleOverlay(1)}
