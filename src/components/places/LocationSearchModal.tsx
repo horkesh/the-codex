@@ -41,6 +41,7 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
   const [geoCity, setGeoCity] = useState<{ city: string; country: string; country_code?: string; lat: number; lng: number } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const devicePosRef = useRef<{ lat: number; lng: number } | null>(null)
 
   // Auto-focus input
   useEffect(() => {
@@ -53,6 +54,7 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
     setNearbyLoading(true)
     getDevicePosition().then(async (pos) => {
       if (!pos) { setNearbyLoading(false); return }
+      devicePosRef.current = { lat: pos.lat, lng: pos.lng }
 
       // Reverse geocode for city (first pick)
       reverseGeocode(pos.lat, pos.lng).then((addr) => {
@@ -102,6 +104,14 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
           body: JSON.stringify({
             input: text,
             languageCode: 'en',
+            ...(devicePosRef.current && {
+              locationBias: {
+                circle: {
+                  center: { latitude: devicePosRef.current.lat, longitude: devicePosRef.current.lng },
+                  radius: 50000,
+                },
+              },
+            }),
           }),
           signal: AbortSignal.timeout(5000),
         },
