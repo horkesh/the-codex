@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, RefreshCw, Camera, Share2, ChevronLeft, ChevronRight, MapPin, Image as ImageIcon, Timer, BookOpen } from 'lucide-react'
 import { useCamera } from '@/hooks/useCamera'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
-import { createEntry, uploadEntryPhoto, updateEntry } from '@/data/entries'
+import { createEntry, uploadEntryPhoto, updateEntryCover, addEntryParticipants } from '@/data/entries'
 import { fetchAllGents } from '@/data/gents'
 import { getDevicePosition, reverseGeocode, fetchNearestPOIGoogle } from '@/lib/geo'
 import { formatDate } from '@/lib/utils'
@@ -89,19 +89,16 @@ export default function Momento() {
   const [activeOverlay, setActiveOverlay] = useState<OverlayId>('field_report')
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null)
   const [capturedTime, setCapturedTime] = useState<string | null>(null)
-  const [exporting, setExporting] = useState(false)
-  const [publishing, setPublishing] = useState(false)
+  const [busy, setBusy] = useState<'exporting' | 'publishing' | null>(null)
   const [activeFilter, setActiveFilter] = useState<FilterId>('none')
   const [showLocationPicker, setShowLocationPicker] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
-  const [timerActive, setTimerActive] = useState(false)
 
   const compositeRef = useRef<HTMLDivElement | null>(null)
   const filterCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const touchStartX = useRef<number | null>(null)
-  const touchStartY = useRef<number | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
   const [capturedAspect, setCapturedAspect] = useState<number>(4 / 3) // width/height — default 3:4 portrait
   const [filteredExportUrl, setFilteredExportUrl] = useState<string | null>(null)
 
@@ -204,29 +201,31 @@ export default function Momento() {
     img.src = capturedUrl
   }, [capturedUrl, filterCss, showGrain])
 
-  const handleCapture = useCallback(async () => {
-    // Read native video dimensions before capture to compute aspect ratio
-    const video = camera.videoRef.current
-    if (video && video.videoWidth && video.videoHeight) {
-      setCapturedAspect(video.videoWidth / video.videoHeight)
-    }
-    const blob = await camera.capture()
-    if (!blob) return
+  const commitCapture = useCallback((url: string, aspect: number) => {
+    setCapturedAspect(aspect)
     setCapturedTime(timeNow())
-    setCapturedUrl(URL.createObjectURL(blob))
+    setCapturedUrl(url)
     camera.stop()
   }, [camera])
 
+  const handleCapture = useCallback(async () => {
+    const video = camera.videoRef.current
+    const aspect = (video && video.videoWidth && video.videoHeight)
+      ? video.videoWidth / video.videoHeight : 4 / 3
+    const blob = await camera.capture()
+    if (!blob) return
+    commitCapture(URL.createObjectURL(blob), aspect)
+  }, [camera, commitCapture])
+
   const handleRetake = useCallback(() => {
-    if (capturedUrl) URL.revokeObjectURL(capturedUrl)
-    setCapturedUrl(null)
+    setCapturedUrl(null) // cleanup effect revokes the old URL
     setCapturedTime(null)
     camera.start()
-  }, [camera, capturedUrl])
+  }, [camera])
 
   const handleExport = useCallback(async () => {
     if (!compositeRef.current) return
-    setExporting(true)
+    setBusy('exporting')
     try {
       const blob = await exportToPng(compositeRef.current)
       await shareImage(blob, `momento-${Date.now()}.png`)
@@ -235,7 +234,7 @@ export default function Momento() {
       console.error('Export failed:', e)
       addToast('Export failed', 'error')
     } finally {
-      setExporting(false)
+      setBusy(null)
     }
   }, [addToast])
 
@@ -263,16 +262,14 @@ export default function Momento() {
 
   // ── Swipe to cycle templates ──
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
   }, [])
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    const dy = e.changedTouches[0].clientY - touchStartY.current
-    touchStartX.current = null
-    touchStartY.current = null
+    if (!touchStart.current) return
+    const dx = e.changedTouches[0].clientX - touchStart.current.x
+    const dy = e.changedTouches[0].clientY - touchStart.current.y
+    touchStart.current = null
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
       cycleOverlay(dx < 0 ? 1 : -1)
     }
@@ -284,20 +281,15 @@ export default function Momento() {
     if (!file) return
     const img = new Image()
     const url = URL.createObjectURL(file)
-    img.onload = () => {
-      setCapturedAspect(img.naturalWidth / img.naturalHeight)
-      setCapturedTime(timeNow())
-      setCapturedUrl(url)
-      camera.stop()
-    }
+    img.onload = () => commitCapture(url, img.naturalWidth / img.naturalHeight)
+    img.onerror = () => URL.revokeObjectURL(url)
     img.src = url
     e.target.value = ''
-  }, [camera])
+  }, [commitCapture])
 
   // ── Self-timer ──
   const handleTimerCapture = useCallback(() => {
-    if (timerActive) return
-    setTimerActive(true)
+    if (countdown !== null) return
     setCountdown(3)
     let count = 3
     timerRef.current = setInterval(() => {
@@ -306,13 +298,12 @@ export default function Momento() {
         clearInterval(timerRef.current!)
         timerRef.current = null
         setCountdown(null)
-        setTimerActive(false)
         handleCapture()
       } else {
         setCountdown(count)
       }
     }, 1000)
-  }, [timerActive, handleCapture])
+  }, [countdown, handleCapture])
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -322,10 +313,10 @@ export default function Momento() {
   // ── Publish to Chronicle ──
   const handlePublish = useCallback(async () => {
     if (!compositeRef.current || !gent) return
-    setPublishing(true)
+    setBusy('publishing')
     try {
       const blob = await exportToPng(compositeRef.current)
-      const file = new File([blob], `momento-${Date.now()}.webp`, { type: 'image/webp' })
+      const file = new File([blob], `momento-${Date.now()}.png`, { type: 'image/png' })
       const dateStr = new Date().toISOString().slice(0, 10)
       const entry = await createEntry({
         type: 'interlude',
@@ -337,19 +328,22 @@ export default function Momento() {
         created_by: gent.id,
       })
       const photoUrl = await uploadEntryPhoto(entry.id, file, 0)
-      await updateEntry(entry.id, { cover_image_url: photoUrl })
+      await Promise.all([
+        updateEntryCover(entry.id, photoUrl),
+        addEntryParticipants(entry.id, [gent.id]),
+      ])
       addToast('Logged to Chronicle', 'success')
       navigate(`/chronicle/${entry.id}`)
     } catch (e) {
       console.error('Publish failed:', e)
       addToast('Failed to log', 'error')
     } finally {
-      setPublishing(false)
+      setBusy(null)
     }
   }, [gent, venue, city, country, addToast, navigate])
 
   // Live overlay shows current time; export composite uses frozen capture time
-  const visibleGents = gents.filter((g) => selectedGentIds.has(g.id))
+  const visibleGents = useMemo(() => gents.filter((g) => selectedGentIds.has(g.id)), [gents, selectedGentIds])
   const liveOverlayProps = { city, country, venue, date: today, time: currentTime, gents: visibleGents }
   const exportOverlayProps = { city, country, venue, date: today, time: capturedTime ?? currentTime, gents: visibleGents }
   const ActiveOverlay = OVERLAY_REGISTRY[activeOverlay].Component
@@ -639,7 +633,7 @@ export default function Momento() {
               {/* Shutter */}
               <button
                 onClick={handleCapture}
-                disabled={!camera.stream || timerActive}
+                disabled={!camera.stream || countdown !== null}
                 className="w-16 h-16 rounded-full border-[3px] border-gold/80 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
               >
                 <div className="w-12 h-12 rounded-full bg-ivory" />
@@ -649,7 +643,7 @@ export default function Momento() {
               <div className="flex flex-col items-center gap-1.5">
                 <button
                   onClick={handleTimerCapture}
-                  disabled={!camera.stream || timerActive}
+                  disabled={!camera.stream || countdown !== null}
                   className="p-2 rounded-full text-ivory/70 active:text-ivory transition-colors disabled:opacity-40"
                 >
                   <Timer size={18} />
@@ -667,19 +661,19 @@ export default function Momento() {
               {/* Log to Chronicle */}
               <button
                 onClick={handlePublish}
-                disabled={publishing || exporting}
+                disabled={busy !== null}
                 className="p-3 rounded-full text-ivory/70 active:text-ivory transition-colors disabled:opacity-40"
               >
-                {publishing ? <Spinner size="sm" /> : <BookOpen size={22} />}
+                {busy === 'publishing' ? <Spinner size="sm" /> : <BookOpen size={22} />}
               </button>
 
               {/* Export / Share */}
               <button
                 onClick={handleExport}
-                disabled={exporting || publishing}
+                disabled={busy !== null}
                 className="px-6 py-3 rounded-full bg-gold text-obsidian font-body text-sm font-semibold flex items-center gap-2 active:scale-95 transition-transform disabled:opacity-60"
               >
-                {exporting ? (
+                {busy === 'exporting' ? (
                   <Spinner size="sm" />
                 ) : (
                   <>
