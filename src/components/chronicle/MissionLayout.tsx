@@ -420,46 +420,48 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
           {dayEpisodes.map((day, dayIdx) => {
             const dayPhotos = day.photoIds.map(id => photoById.get(id)).filter(Boolean) as EntryPhoto[]
             const dayLore = loreByDay[dayIdx] ?? []
+            const heroPhoto = dayPhotos[0] ?? null
+            const supportingPhotos = dayPhotos.slice(1, 4) // max 3 supporting
+            const dayOneliner = dayLore[0] ?? null
             return (
-              <div key={day.day} className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 160px)' }}>
+              <div key={day.day} className="snap-center shrink-0 w-full px-4 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(100dvh - 160px)' }}>
                 {/* Day header */}
-                <div className="mb-4">
+                <div className="mb-3 shrink-0">
                   <p className="text-[10px] font-body font-semibold tracking-[0.2em] text-gold/50 uppercase mb-1">
                     {day.label}
                   </p>
                   <div className="h-px bg-gradient-to-r from-gold/30 to-transparent" />
                 </div>
 
-                {/* Day photos — hero + grid */}
-                {dayPhotos.length > 0 && (
-                  <>
-                    <div className="relative rounded-lg overflow-hidden mb-4" style={{ aspectRatio: '16/9' }}>
-                      <img src={dayPhotos[0].url} alt="" className="w-full h-full object-cover" draggable={false} />
-                    </div>
-                    {dayPhotos.length > 1 && (
-                      <div className="grid grid-cols-3 gap-1.5 mb-4">
-                        {dayPhotos.slice(1).map(p => (
-                          <img key={p.id} src={p.url} alt="" className="w-full aspect-square object-cover rounded-md border border-gold/10" draggable={false} />
-                        ))}
-                      </div>
-                    )}
-                  </>
+                {/* Hero photo */}
+                {heroPhoto && (
+                  <div className="relative rounded-lg overflow-hidden mb-2 shrink-0" style={{ aspectRatio: '16/9' }}>
+                    <img src={heroPhoto.url} alt="" className="w-full h-full object-cover" draggable={false} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                  </div>
                 )}
 
-                {/* Day lore */}
-                {dayLore.map((p, i) => (
-                  <p
-                    key={i}
-                    className={cn(
-                      'font-display text-[15px] text-ivory/85 leading-[1.7] mb-4',
-                      i === 0 && dayIdx === 0 && 'first-letter:text-[48px] first-letter:float-left first-letter:leading-[1] first-letter:mr-2 first-letter:text-gold first-letter:font-bold',
-                    )}
-                  >
-                    {p}
-                  </p>
-                ))}
+                {/* Supporting photos — 3-col row */}
+                {supportingPhotos.length > 0 && (
+                  <div className="grid grid-cols-3 gap-1.5 mb-3 shrink-0">
+                    {supportingPhotos.map(p => (
+                      <div key={p.id} className="aspect-square rounded-md overflow-hidden border border-gold/10">
+                        <img src={p.url} alt="" className="w-full h-full object-cover" draggable={false} />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                {dayPhotos.length === 0 && dayLore.length === 0 && (
+                {/* Day one-liner caption */}
+                {dayOneliner && (
+                  <div className="mt-auto pt-3 pb-1 shrink-0">
+                    <p className="font-display italic text-gold/80 text-[13px] leading-relaxed text-center px-2">
+                      &ldquo;{dayOneliner}&rdquo;
+                    </p>
+                  </div>
+                )}
+
+                {dayPhotos.length === 0 && !dayOneliner && (
                   <p className="text-xs text-ivory-dim/40 font-body italic text-center py-8">No records for this day</p>
                 )}
               </div>
