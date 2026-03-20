@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { X, Search, MapPin, Loader2, Navigation } from 'lucide-react'
 import type { LocationFill } from '@/lib/geo'
-import { getDevicePosition } from '@/lib/geo'
+import { getDevicePosition, reverseGeocode } from '@/lib/geo'
 import type { SavedLocation } from '@/types/app'
 
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string
@@ -38,6 +38,7 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
   const [resolving, setResolving] = useState<string | null>(null)
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([])
   const [nearbyLoading, setNearbyLoading] = useState(false)
+  const [geoCity, setGeoCity] = useState<{ city: string; country: string; country_code?: string; lat: number; lng: number } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
@@ -46,12 +47,21 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
     setTimeout(() => inputRef.current?.focus(), 100)
   }, [])
 
-  // Fetch nearby places on mount
+  // Fetch city + nearby places on mount
   useEffect(() => {
     if (!GOOGLE_MAPS_KEY) return
     setNearbyLoading(true)
     getDevicePosition().then(async (pos) => {
       if (!pos) { setNearbyLoading(false); return }
+
+      // Reverse geocode for city (first pick)
+      reverseGeocode(pos.lat, pos.lng).then((addr) => {
+        if (addr?.city) {
+          setGeoCity({ city: addr.city, country: addr.country ?? '', country_code: addr.country_code, lat: pos.lat, lng: pos.lng })
+        }
+      }).catch(() => {})
+
+      // Nearby venues
       try {
         const res = await fetch(
           `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${pos.lat},${pos.lng}&radius=300&type=restaurant|bar|cafe|night_club|movie_theater|gym|hotel|museum|park|shopping_mall&key=${GOOGLE_MAPS_KEY}`,
@@ -277,6 +287,39 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
         {!loading && query.trim() && results.length === 0 && (
           <div className="px-4 py-8 text-center">
             <p className="text-ivory-dim text-sm font-body">No places found</p>
+          </div>
+        )}
+
+        {/* City — first pick (shown when no query) */}
+        {!query.trim() && geoCity && (
+          <div className="flex flex-col">
+            <p className="px-4 pt-4 pb-2 text-ivory-dim text-[10px] uppercase tracking-widest font-body flex items-center gap-1.5">
+              <Navigation size={10} className="text-gold/50" />
+              Current Location
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                onSelect({
+                  city: geoCity.city,
+                  country: geoCity.country,
+                  country_code: geoCity.country_code,
+                  lat: geoCity.lat,
+                  lng: geoCity.lng,
+                  overwrite: true,
+                })
+                onClose()
+              }}
+              className="flex items-start gap-3 px-4 py-3 border-b border-white/5 text-left hover:bg-white/3 active:bg-white/5 transition-colors"
+            >
+              <MapPin size={16} className="text-gold mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-ivory text-sm font-body truncate">{geoCity.city}</p>
+                {geoCity.country && (
+                  <p className="text-ivory-dim text-xs font-body truncate mt-0.5">{geoCity.country}</p>
+                )}
+              </div>
+            </button>
           </div>
         )}
 
