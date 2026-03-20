@@ -421,6 +421,211 @@ Note: Apple takes 30% in year 1, dropping to 15% under the Small Business Progra
 
 ---
 
+## 13. AI Agent Operations — Minimum-Effort Autonomous Business
+
+### 13.1 Philosophy
+
+The goal: run a profitable app business with ~2-3 hours of human effort per week. Everything else is handled by a fleet of specialized AI agents. You make decisions; agents execute.
+
+**Your role:** Creative director + final approver. You record raw videos, approve content, make product calls, and check numbers. That's it.
+
+### 13.2 The Agent Stack
+
+#### Agent 1: Content Factory (Daily, autonomous)
+
+**Purpose:** Generate and schedule all social media content across TikTok, Instagram, and Twitter/X.
+
+**Tools:** Claude Agent SDK + MCP connections to Buffer/Later + Canva API + Supabase Storage (for pulling real app screenshots and lore samples)
+
+**How it works:**
+- Every day, pulls recent Momento screenshots, lore samples, and mind map visuals from Supabase storage
+- Generates 3 pieces of content: 1 TikTok/Reel script, 1 carousel post, 1 story
+- Formats each for platform specs (9:16 for TikTok, 4:5 for Instagram, 1:1 for Twitter)
+- Writes captions with trending hashtags (queries TikTok Creative Center API for current trends)
+- Schedules posts via Buffer API
+- Sends a daily Slack/Telegram notification: "3 posts queued for tomorrow. Approve or edit."
+
+**Content themes on weekly rotation:**
+| Day | Theme | Content type |
+|---|---|---|
+| Monday | "AI wrote this about my dinner" | Lore showcase (before/after) |
+| Tuesday | "POV: your camera but cinematic" | Momento overlay comparison reel |
+| Wednesday | "This app knows who my real friends are" | Mind map reveal video |
+| Thursday | "How we document trips now" | Mission intelligence demo |
+| Friday | "New overlay dropped" | Feature teaser |
+| Weekend | User-generated reposts / community highlights | Engagement |
+
+**Your input:** Record 2-3 raw 30-second phone videos per week showing features. Agent handles editing, captions, formatting, and scheduling.
+
+**Monthly cost:** ~$30 (Claude API + Buffer $6/mo + Canva API free tier)
+
+#### Agent 2: Code Shipping (On-demand)
+
+**Purpose:** Implement features, fix bugs, and deploy — triggered by plain-English instructions.
+
+**Tools:** Claude Code (current setup) + GitHub Actions
+
+**How it works:**
+- You create a GitHub Issue in plain English: "Add a new Momento overlay called Vintage with sepia borders and handwritten font"
+- Agent picks up the issue, writes code, type-checks, commits, pushes, verifies deploy
+- You test on your phone, respond "ship it" or "the font is too small"
+- Agent iterates until approved, then closes the issue
+
+**Pipeline:** GitHub Issues → Claude Code webhook → implementation → PR → auto-deploy on merge
+
+**This is already operational** — it's the workflow used throughout this conversation. The systematization step is adding a GitHub webhook trigger so you don't need to open a terminal.
+
+**Monthly cost:** $0 (already included in Claude Code subscription)
+
+#### Agent 3: ASO (App Store Optimization) Agent (Weekly)
+
+**Purpose:** Optimize App Store/Play Store listing for maximum organic discovery.
+
+**Tools:** Claude API + App Store Connect API + keyword tracking
+
+**How it works:**
+- Monitors keyword rankings weekly (scrapes search results for target keywords)
+- Generates 5 keyword variants for app subtitle and description
+- A/B tests screenshots (generates new variants from Studio templates via Puppeteer/html2canvas)
+- Tracks competitor rankings (VSCO, Day One, BeReal, Polarsteps)
+- Sends weekly report: "Ranking #47 for 'AI journal' (up 12). Suggested: swap 'photo diary' for 'camera journal'. Approve?"
+
+**Your input:** Approve or reject keyword/screenshot changes once per week (5 minutes).
+
+**Monthly cost:** ~$10 (Claude API)
+
+#### Agent 4: Community Manager (Always-on)
+
+**Purpose:** Run Discord/community server, handle support, surface insights.
+
+**Tools:** Claude Agent SDK + MCP for Discord + Supabase
+
+**How it works:**
+- Answers user questions ("How do I use the mind map?" → links to relevant guide)
+- Flags bugs from user reports → auto-creates GitHub Issues with reproduction steps
+- Highlights feature requests with sentiment analysis → weekly digest
+- Sends personalized onboarding DMs to new users with tips based on their first actions
+- Moderates (removes spam, enforces community guidelines)
+- Escalates only genuinely complex issues to you
+
+**Your input:** Review weekly community digest (10 minutes). Respond to high-value conversations occasionally.
+
+**Monthly cost:** ~$20 (Claude API + Discord bot hosting)
+
+#### Agent 5: Analytics & Intelligence (Daily)
+
+**Purpose:** Track all metrics, detect anomalies, generate insights without you opening a dashboard.
+
+**Tools:** Claude API + Supabase direct queries + Vercel Analytics API
+
+**How it works:**
+- Runs daily queries: new signups, DAU/MAU, entries created, AI generations used, conversion rate, churn rate, revenue
+- Compares to previous day/week/month baselines
+- Detects anomalies: "Signups up 340% today — traced to a TikTok post going viral. Here's which one."
+- Generates a daily dashboard card sent to Telegram/Slack
+- Weekly: produces a "metrics memo" with trends, cohort analysis, and suggested actions
+- Monthly: generates investor-ready metrics summary (if fundraising)
+
+**Your input:** Glance at the daily card (2 minutes). Read weekly memo (10 minutes).
+
+**Monthly cost:** ~$5 (Claude API, Supabase queries are free on Pro plan)
+
+#### Agent 6: Email & Lifecycle (Automated)
+
+**Purpose:** Automated email sequences for onboarding, retention, re-engagement, and announcements.
+
+**Tools:** Resend or Loops (email delivery) + Claude for copywriting
+
+**Sequences:**
+| Trigger | Email | Timing |
+|---|---|---|
+| New signup | Welcome + "Here's how to take your first Momento" | Immediate |
+| Day 3, no entry | "Your chronicle is empty — here's inspiration" | Day 3 |
+| Day 7, active | "Your first week: here's your chronicle stats" | Day 7 |
+| Day 14, no return | "We miss you — here's what's new" | Day 14 |
+| New feature shipped | "Just dropped: [feature name]" | On deploy |
+| Weekly (active users) | "Your weekly chronicle" — lore previews + stats | Every Monday |
+| Subscription lapsed | "Your Premium expired — here's what you're missing" | On expiry |
+
+**All copy generated by Claude** in the app's brand voice (noir/sophisticated). You approve templates once during setup, then the system runs autonomously.
+
+**Monthly cost:** ~$25 (Resend $20/mo for 50K emails + Claude API)
+
+### 13.3 The Daily Routine
+
+**Morning — 5 minutes:**
+- Check Telegram bot: "3 posts queued | 18 new signups | 1 bug flagged (minor)"
+- Tap "Approve" on posts (or edit one caption)
+- Bug flagged as minor → agent already created the GitHub Issue
+
+**Evening — 15 minutes:**
+- Record a quick 30-second raw phone video showing a feature
+- Review any pending code changes from the shipping agent
+- Glance at the analytics card
+
+**Weekly — 1 hour:**
+- Review ASO report, approve/reject keyword changes
+- Read community digest, star 2-3 feature requests for next sprint
+- Review metrics memo
+- Record 1-2 longer demo videos if content pipeline needs fresh raw material
+
+**Total weekly time: 2-3 hours**
+
+### 13.4 Agent Costs Summary
+
+| Agent | Function | Monthly cost |
+|---|---|---|
+| Content Factory | Social media content generation + scheduling | $30 |
+| Code Shipping | Feature development + bug fixes + deployment | $0 (existing) |
+| ASO | App Store keyword optimization + screenshot testing | $10 |
+| Community Manager | Discord support + bug triage + onboarding | $20 |
+| Analytics | Daily metrics + anomaly detection + reports | $5 |
+| Email Lifecycle | Onboarding + retention + re-engagement emails | $25 |
+| **Total** | | **$90/mo** |
+
+For context: a single part-time marketing intern costs $1,500-2,500/mo. This agent fleet does more work, runs 24/7, never calls in sick, and costs $90.
+
+### 13.5 What You Must Still Do (Irreplaceable Human Tasks)
+
+1. **Record raw video** — Agents can edit and format, but the authentic "look at this cool thing" energy needs to come from a real person. 2-3 videos per week, 30 seconds each, shot on your phone. No editing needed.
+
+2. **Make product decisions** — "Should we add this feature?" / "Is this overlay good?" / "Should we raise the price?" These are judgment calls that require taste and vision.
+
+3. **Approve content** — Final eye on anything that goes public. Takes 5 minutes but prevents brand-damaging mistakes.
+
+4. **High-value relationships** — If a journalist, influencer, or investor reaches out, you handle it. Agent flags these for you.
+
+5. **Strategic pivots** — If a feature takes off unexpectedly or the market shifts, you decide the response. Agent provides the data; you make the call.
+
+### 13.6 Build Order
+
+| Week | Agent | Why first |
+|---|---|---|
+| 1 | Content Factory | Highest ROI — consistent posting starts the growth flywheel |
+| 2 | Analytics | Know your numbers from day one without manual dashboards |
+| 3 | Community Manager | As users arrive from content, they need support |
+| 4 | Email Lifecycle | Automate retention before churn becomes a problem |
+| Post-launch | ASO | Optimize once you're on the App Store |
+| Ongoing | Code Shipping | Already operational, systematize with GitHub webhook |
+
+### 13.7 Scaling the Agent Fleet
+
+As revenue grows, the agent stack expands:
+
+**At $5K MRR:**
+- Add a **PR Agent** — monitors tech blogs, drafts and pitches press releases, personalizes outreach to journalists
+- Add a **Competitor Watch Agent** — tracks VSCO/BeReal/Day One feature releases, suggests responses
+
+**At $20K MRR:**
+- Add a **Localization Agent** — translates app strings, generates localized ASO copy and marketing content for top 5 markets
+- Add an **Ad Optimization Agent** — manages $500/mo TikTok Spark Ads budget, pauses underperformers, scales winners
+
+**At $50K MRR:**
+- Add an **Investor Relations Agent** — generates monthly investor updates, tracks milestones against fundraising targets
+- Add a **Partnership Agent** — identifies potential brand collaborators, drafts partnership proposals, manages outreach sequences
+
+---
+
 ## Sources
 
 - [Digital Journal Apps Market Size & Growth](https://www.futuremarketinsights.com/reports/digital-journal-apps-market) — $5.7B market, 11.5% CAGR
@@ -433,3 +638,7 @@ Note: Apple takes 30% in year 1, dropping to 15% under the Small Business Progra
 - [App Marketing on TikTok](https://splitmetrics.com/blog/intro-to-app-marketing-on-tiktok-hook-entertain-analyze-optimize/) — organic growth strategy
 - [PhotoAI — $132K Monthly Revenue](https://ppc.land/how-one-photo-ai-app-generates-132k-monthly-after-70-failed-startups/) — indie AI photo app benchmark
 - [Journal App Market Report 2033](https://www.businessresearchinsights.com/market-reports/journal-app-market-120441) — market projections
+- [AI Agents for Content Creation 2026](https://noimosai.com/en/blog/the-ultimate-guide-to-ai-agents-for-content-creation-scale-your-marketing-autonomously-in-2026) — 80% reduction in marketing overhead
+- [Best AI Agents for Marketing 2026](https://www.tofuhq.com/post/best-ai-agents-for-marketing) — multi-agent systems outperform single-agent by 90.2%
+- [Claude Agent SDK — Building Agents](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk) — production-ready autonomous workflows
+- [AI Marketing Agents — Autonomous Content Ops](https://www.averi.ai/how-to/ai-agent-marketing-how-autonomous-ai-is-changing-content-ops-in-2026) — Action AI in marketing
