@@ -411,6 +411,56 @@ All toast tables: RLS SELECT for authenticated, writes via service role key in e
 ### Cron
 - `.github/workflows/cleanup-toast-drafts.yml` — daily 3am UTC, cleans up orphaned toast drafts
 
+## Momento — camera overlay feature (`/momento`)
+- **Route**: `/momento` (protected). Linked from Home page.
+- **Page**: `src/pages/Momento.tsx` — full-screen camera with styled overlays for instant shareable photos.
+- **Camera hook**: `src/hooks/useCamera.ts` — `getUserMedia` with front/back toggle, no resolution constraint (uses native FOV to avoid zoom/crop on mobile). Captures via canvas `toBlob` (JPEG 0.92). Front camera mirrors via `scaleX(-1)`.
+- **Gent selector**: tap avatars in controls bar to toggle which Gents appear in overlay signatures. All selected by default. `selectedGentIds` state filters `gents` array before passing to overlays.
+- **Export**: hidden off-screen composite at 1080px wide, height computed from captured photo's native aspect ratio (`capturedAspect`). Typically 1080x1440 (3:4) on mobile. Uses `html2canvas` via `exportToPng`. Share via Web Share API with download fallback.
+
+### Overlay templates (`src/components/momento/`)
+All overlays implement `OverlayProps` from `types.ts`: `{ city, country, date, time, gents }`.
+
+| Template | File | Aesthetic | Key elements |
+|---|---|---|---|
+| Field Report | `FieldReportOverlay.tsx` | Military dossier | Classification badge, large time (64px), gold rule, avatars + "The Gents", logo |
+| Marquee | `MarqueeOverlay.tsx` | Minimal elegant | Gold inset border, corner L-shape accents, centered city, logo + time |
+| Noir | `NoirOverlay.tsx` | Cinematic | Letterbox bars (56px), ultra-minimal, no avatars, city + date only |
+| Polaroid | `PolaroidOverlay.tsx` | Instant camera | White border frame (16px), cream caption strip (88px), gent first names, italic city |
+| Neon | `NeonOverlay.tsx` | Nightlife | Thick gold border with glow, large neon time (72px), vignette, avatars with glow |
+| Postcard | `PostcardOverlay.tsx` | Vintage travel | Dashed stamp area, "PAR AVION" stripe, postmark SVG, "GREETINGS FROM" + large city |
+| Classified | `RedactedOverlay.tsx` | Intelligence leak | `[CLASSIFIED]` stamp, fake GPS coordinates (deterministic hash from city), black redaction bars, `EYES ONLY`, "FIELD OPERATIVES" label |
+| Signal | `GlitchOverlay.tsx` | Digital corruption | RGB chromatic aberration text (3-layer offset), scanlines (repeating-linear-gradient), cyan/magenta glitch blocks, interference bar, `FEED::ACTIVE` status |
+
+- **Shared**: `AvatarStack.tsx` — overlapping circular avatar row with configurable size/overlap/border.
+- **Registry**: `OVERLAY_REGISTRY` + `OVERLAY_IDS` in Momento.tsx. Cycle with chevron buttons.
+
+### Camera filters
+User-toggleable CSS filters applied to video feed, captured image, and export composite. Horizontal pill strip in controls bar.
+
+| Filter | CSS | Effect |
+|---|---|---|
+| None | *(none)* | Raw camera |
+| Grain | `saturate(0.9) contrast(1.05)` + SVG noise overlay | Film grain texture, `mix-blend-mode: overlay` at 0.14 opacity |
+| Mono | `grayscale(1) contrast(1.2)` | High-contrast black & white |
+| Warm | `sepia(0.15) saturate(1.2) brightness(1.05)` | Golden hour warmth |
+| Cool | `hue-rotate(15deg) saturate(0.8) brightness(0.95)` | Teal nighttime shift |
+| Fade | `brightness(1.1) contrast(0.85) saturate(0.7)` | Lifted blacks, muted vintage |
+
+- Grain uses inline SVG data URL with `feTurbulence` fractal noise, tiled at 128px.
+- Filter state: `activeFilter` in Momento.tsx, default `'none'`.
+- Filter CSS applied via inline `style={{ filter }}` on `<video>`, captured `<img>`, and export `<img>`.
+
+## Iftar & Eid Studio templates
+- **IftarCard** (`src/export/templates/IftarCard.tsx`): 4 variants for Iftar (Table) entries. Warm amber accent (`#D4A843`), geometric border pattern, crescent + star SVG, text outline for photo legibility. Registered as `iftar_card` through `iftar_card_v4` with `requiresFlavour: 'iftar'`.
+  - V1 (Crescent): centred, crescent above title, oneliner, date, participants
+  - V2 (Spread): crescent header top-left, large title bottom, watermark top-right
+  - V3 (Contemplative): centred, quiet, generous whitespace, quoted oneliner
+  - V4 (Gathering): decorative top band with date + crescent, title + participants bottom
+- **EidCard** (`src/export/templates/EidCard.tsx`): Single variant for Eid greeting. "Bajram šerif mubarek olsun" title + crescent in bottom half, "Eid Mubarak" label, text outline. Registered as `eid_card` with `requiresFlavour: 'eid'`.
+- Both use `BackgroundLayer`, `InsetFrame`, `GeometricBorder` (repeating 45deg gold gradient), `CrescentMark` SVG.
+- Text outline: multi-directional `text-shadow` for legibility against background photos.
+
 ## Related projects (for reference)
 - `C:\...\Tonight` — Social game app. Source of avatar prompt patterns.
 - `C:\...\The Grand Tour` — Italy trip PWA.
