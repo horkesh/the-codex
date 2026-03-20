@@ -143,7 +143,7 @@ export default function EntryNew() {
     }).catch(() => {})
   }, [searchParams])
 
-  const maxPhotos = selectedType === 'mission' ? 20 : selectedType === 'night_out' ? 15 : 10
+  const maxPhotos = selectedType === 'mission' ? 40 : selectedType === 'night_out' ? 15 : 10
   const { pendingFiles, addFiles: rawAddFiles, removeFile, uploadAll, clearFiles } = usePendingPhotos(maxPhotos)
 
   const handleRetitle = useCallback(() => {

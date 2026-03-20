@@ -107,7 +107,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - All edge functions that generate/analyse images of The Gents should import from this shared file.
 
 ## Photo upload limits
-- Mission: 20 photos, Night Out: 15, all others: 10
+- Mission: 40 photos, Night Out: 15, all others: 10
 - `PhotoUpload` accepts `maxPhotos` prop; `usePendingPhotos(maxPhotos)` enforces the cap
 - Limits set in `EntryNew.tsx` based on `selectedType`
 - **Picker loading state**: `picking` state shows spinning gents logo (`logo-gold.webp`) + "Processing photos..." while the native gallery processes selected files. Clears on file arrival or picker cancel (via `window.focus` listener with 500ms debounce).
