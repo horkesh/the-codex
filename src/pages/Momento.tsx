@@ -13,6 +13,8 @@ import { NoirOverlay } from '@/components/momento/NoirOverlay'
 import { PolaroidOverlay } from '@/components/momento/PolaroidOverlay'
 import { NeonOverlay } from '@/components/momento/NeonOverlay'
 import { PostcardOverlay } from '@/components/momento/PostcardOverlay'
+import { RedactedOverlay } from '@/components/momento/RedactedOverlay'
+import { GlitchOverlay } from '@/components/momento/GlitchOverlay'
 import { exportToPng, shareImage } from '@/export/exporter'
 import type { Gent } from '@/types/app'
 import type { OverlayProps } from '@/components/momento/types'
@@ -22,7 +24,7 @@ import { Spinner } from '@/components/ui'
 // Template registry
 // ---------------------------------------------------------------------------
 
-type OverlayId = 'field_report' | 'marquee' | 'noir' | 'polaroid' | 'neon' | 'postcard'
+type OverlayId = 'field_report' | 'marquee' | 'noir' | 'polaroid' | 'neon' | 'postcard' | 'redacted' | 'glitch'
 
 interface OverlayEntry {
   label: string
@@ -36,9 +38,33 @@ const OVERLAY_REGISTRY: Record<OverlayId, OverlayEntry> = {
   polaroid:     { label: 'Polaroid',     Component: PolaroidOverlay },
   neon:         { label: 'Neon',         Component: NeonOverlay },
   postcard:     { label: 'Postcard',     Component: PostcardOverlay },
+  redacted:     { label: 'Classified',   Component: RedactedOverlay },
+  glitch:       { label: 'Signal',       Component: GlitchOverlay },
 }
 
-const OVERLAY_IDS: OverlayId[] = ['field_report', 'marquee', 'noir', 'polaroid', 'neon', 'postcard']
+const OVERLAY_IDS: OverlayId[] = ['field_report', 'marquee', 'noir', 'polaroid', 'neon', 'postcard', 'redacted', 'glitch']
+
+// ---------------------------------------------------------------------------
+// Filter registry
+// ---------------------------------------------------------------------------
+
+type FilterId = 'none' | 'grain' | 'mono' | 'warm' | 'cool' | 'fade'
+
+interface FilterEntry {
+  label: string
+  css: string // CSS filter value
+}
+
+const FILTER_REGISTRY: Record<FilterId, FilterEntry> = {
+  none:  { label: 'None',  css: '' },
+  grain: { label: 'Grain', css: 'saturate(0.9) contrast(1.05)' },
+  mono:  { label: 'Mono',  css: 'grayscale(1) contrast(1.2)' },
+  warm:  { label: 'Warm',  css: 'sepia(0.15) saturate(1.2) brightness(1.05)' },
+  cool:  { label: 'Cool',  css: 'hue-rotate(15deg) saturate(0.8) brightness(0.95)' },
+  fade:  { label: 'Fade',  css: 'brightness(1.1) contrast(0.85) saturate(0.7)' },
+}
+
+const FILTER_IDS: FilterId[] = ['none', 'grain', 'mono', 'warm', 'cool', 'fade']
 
 // ---------------------------------------------------------------------------
 // Component
@@ -59,6 +85,7 @@ export default function Momento() {
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null)
   const [capturedTime, setCapturedTime] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [activeFilter, setActiveFilter] = useState<FilterId>('none')
 
   const compositeRef = useRef<HTMLDivElement | null>(null)
   const [capturedAspect, setCapturedAspect] = useState<number>(4 / 3) // width/height — default 3:4 portrait
@@ -164,6 +191,8 @@ export default function Momento() {
   const liveOverlayProps = { city, country, date: today, time: currentTime, gents: visibleGents }
   const exportOverlayProps = { city, country, date: today, time: capturedTime ?? currentTime, gents: visibleGents }
   const ActiveOverlay = OVERLAY_REGISTRY[activeOverlay].Component
+  const filterCss = FILTER_REGISTRY[activeFilter].css
+  const showGrain = activeFilter === 'grain'
 
   // ── Render ──
 
@@ -185,6 +214,7 @@ export default function Momento() {
               height: '100%',
               objectFit: 'cover',
               transform: camera.facing === 'user' ? 'scaleX(-1)' : undefined,
+              filter: filterCss || undefined,
             }}
           />
         )}
@@ -200,6 +230,23 @@ export default function Momento() {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
+              filter: filterCss || undefined,
+            }}
+          />
+        )}
+
+        {/* Film grain overlay */}
+        {showGrain && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 5,
+              pointerEvents: 'none',
+              opacity: 0.14,
+              mixBlendMode: 'overlay',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+              backgroundSize: '128px 128px',
             }}
           />
         )}
@@ -263,8 +310,23 @@ export default function Momento() {
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
+                  filter: filterCss || undefined,
                 }}
               />
+              {showGrain && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 5,
+                    pointerEvents: 'none',
+                    opacity: 0.14,
+                    mixBlendMode: 'overlay',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                    backgroundSize: '128px 128px',
+                  }}
+                />
+              )}
               <ActiveOverlay {...exportOverlayProps} />
             </div>
           </div>
@@ -310,6 +372,24 @@ export default function Momento() {
             })}
           </div>
         )}
+
+        {/* Filter strip */}
+        <div className="flex items-center justify-center gap-2 pt-2 px-4 overflow-x-auto">
+          {FILTER_IDS.map((fid) => (
+            <button
+              key={fid}
+              onClick={() => setActiveFilter(fid)}
+              className="shrink-0 px-3 py-1 rounded-full font-body text-[11px] tracking-wider uppercase transition-all"
+              style={{
+                backgroundColor: activeFilter === fid ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)',
+                color: activeFilter === fid ? '#c9a84c' : 'rgba(245,240,232,0.45)',
+                border: activeFilter === fid ? '1px solid rgba(201,168,76,0.4)' : '1px solid transparent',
+              }}
+            >
+              {FILTER_REGISTRY[fid].label}
+            </button>
+          ))}
+        </div>
 
         {/* Template selector */}
         <div className="flex items-center justify-center gap-3 py-3 px-4">
