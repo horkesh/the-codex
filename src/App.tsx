@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '@/store/auth'
 import { useAuthListener } from '@/hooks/useAuth'
+import { useComfortMode } from '@/hooks/useComfortMode'
 import { Shell } from '@/components/layout'
 import { Spinner } from '@/components/ui'
 
@@ -105,6 +106,7 @@ function AnimatedRoutes() {
 // Single auth listener — mounted once for the entire app lifetime
 function AppContent() {
   useAuthListener()
+  useComfortMode()
   return <AnimatedRoutes />
 }
 

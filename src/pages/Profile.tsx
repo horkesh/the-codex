@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { HelpCircle, ChevronRight, MapPin, Bell, BellOff, Check } from 'lucide-react'
+import { HelpCircle, ChevronRight, MapPin, Bell, BellOff, Check, Eye } from 'lucide-react'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { toggleComfortMode, isComfortMode } from '@/hooks/useComfortMode'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Avatar } from '@/components/ui/Avatar'
@@ -45,6 +46,7 @@ export default function Profile() {
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [toastStats, setToastStats] = useState<ToastGentStats[]>([])
+  const [comfortEnabled, setComfortEnabled] = useState(() => gent ? isComfortMode(gent.id) : false)
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
@@ -572,6 +574,29 @@ export default function Profile() {
                 </button>
               </>
             )}
+
+            {/* Comfort mode toggle */}
+            <button
+              type="button"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-dark border border-white/5 mt-2"
+              onClick={() => {
+                if (!gent) return
+                const enabled = toggleComfortMode(gent.id)
+                setComfortEnabled(enabled)
+                addToast(enabled ? 'Comfort mode enabled' : 'Comfort mode disabled', 'info')
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <Eye size={16} className={comfortEnabled ? 'text-gold' : 'text-ivory-muted'} />
+                <div className="text-left">
+                  <p className="text-sm font-body font-medium">Comfort Mode</p>
+                  <p className="text-xs text-ivory-muted font-body">Larger text and tap targets</p>
+                </div>
+              </div>
+              <div className={cn('w-10 h-6 rounded-full transition-colors relative', comfortEnabled ? 'bg-gold' : 'bg-white/10')}>
+                <div className={cn('absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform', comfortEnabled ? 'translate-x-5' : 'translate-x-1')} />
+              </div>
+            </button>
 
             {/* Toast Service Record */}
             {toastStats.length > 0 && (
