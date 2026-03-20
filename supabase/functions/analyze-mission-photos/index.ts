@@ -74,7 +74,13 @@ async function analyzeBatch(
       const imgRes = await fetch(photo.url, { signal: controller.signal })
       if (!imgRes.ok) continue
       const imgBuf = await imgRes.arrayBuffer()
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(imgBuf)))
+      // Chunk-based base64 encoding to avoid call-stack overflow on large images
+      const bytes = new Uint8Array(imgBuf)
+      let binary = ''
+      for (let i = 0; i < bytes.length; i += 8192) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 8192))
+      }
+      const base64 = btoa(binary)
       const mimeType = imgRes.headers.get("content-type") || "image/webp"
 
       parts.push({

@@ -95,12 +95,6 @@ export default function Profile() {
     }
   }
 
-  useEffect(() => {
-    if (!generatingPortrait) return
-    const t = setInterval(() => {}, 1000)
-    return () => clearInterval(t)
-  }, [generatingPortrait])
-
   async function handleGeneratePortraits(photoFile?: File) {
     if (!gent) return
     setGeneratingPortrait(true)

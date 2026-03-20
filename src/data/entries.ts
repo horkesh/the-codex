@@ -282,8 +282,7 @@ export async function uploadEntryPhoto(
   const publicUrl = urlData.publicUrl
   const exif = await exifPromise
 
-  // Insert metadata row — non-fatal; storage upload already succeeded so we always return the URL
-  await supabase
+  const { error: insertError } = await supabase
     .from('entry_photos')
     .insert({
       entry_id: entryId,
@@ -295,6 +294,8 @@ export async function uploadEntryPhoto(
       gps_lat: exif.gpsLat,
       gps_lng: exif.gpsLng,
     })
+
+  if (insertError) console.error('entry_photos insert failed:', insertError)
 
   return publicUrl
 }

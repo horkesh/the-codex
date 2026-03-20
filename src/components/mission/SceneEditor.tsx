@@ -27,9 +27,14 @@ export function SceneEditor({ scene, photos, onSave, onRegenerate, onClose }: Pr
   const handleRegenerate = async () => {
     if (!directorNote.trim()) return
     setRegenerating(true)
-    const result = await onRegenerate(directorNote.trim())
-    if (result) setNarrative(result)
-    setRegenerating(false)
+    try {
+      const result = await onRegenerate(directorNote.trim())
+      if (result) setNarrative(result)
+    } catch (err) {
+      console.error('Scene regeneration failed:', err)
+    } finally {
+      setRegenerating(false)
+    }
   }
 
   const handleSave = () => {

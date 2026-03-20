@@ -20,12 +20,17 @@ export function useEntry(id: string | undefined) {
     if (!id) return
     setLoading(true)
     setNotFound(false)
-    const [e, p] = await Promise.all([fetchEntry(id), fetchEntryPhotos(id)])
-    if (!e) {
+    try {
+      const [e, p] = await Promise.all([fetchEntry(id), fetchEntryPhotos(id)])
+      if (!e) {
+        setNotFound(true)
+      } else {
+        setEntry(e)
+        setPhotos(p)
+      }
+    } catch (err) {
+      console.error('Failed to load entry:', err)
       setNotFound(true)
-    } else {
-      setEntry(e)
-      setPhotos(p)
     }
     setLoading(false)
   }, [id])

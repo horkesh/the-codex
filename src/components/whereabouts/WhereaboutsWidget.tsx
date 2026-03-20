@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, Radio, X } from 'lucide-react'
 import { useWhereaboutsStore } from '@/store/whereabouts'
 import { useWhereabouts } from '@/hooks/useWhereabouts'
 import { useAuthStore } from '@/store/auth'
+import { fetchAllGents } from '@/data/gents'
 import type { GentWhereabouts } from '@/types/app'
 
 function timeAgo(ms: number): string {
@@ -18,6 +19,14 @@ export function WhereaboutsWidget() {
   const gent = useAuthStore(s => s.gent)
   const { locations, sharing, shareExpiresAt } = useWhereaboutsStore()
   const { startSharing, stopSharing } = useWhereabouts()
+  const [gentNames, setGentNames] = useState<Record<string, string>>({})
+  useEffect(() => {
+    fetchAllGents().then((g) => {
+      const map: Record<string, string> = {}
+      for (const gent of g) map[gent.id] = gent.display_name
+      setGentNames(map)
+    }).catch(() => {})
+  }, [])
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -134,7 +143,7 @@ export function WhereaboutsWidget() {
               <div className="px-4 pb-3 flex items-center gap-3 border-t border-white/5 pt-3">
                 <span className="w-2 h-2 rounded-full bg-gold shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-ivory font-body">{loc.gent_id}</p>
+                  <p className="text-xs text-ivory font-body">{gentNames[loc.gent_id] ?? 'Unknown'}</p>
                   <p className="text-[10px] text-ivory-dim font-body mt-0.5">
                     {loc.neighborhood} · {timeAgo(loc.shared_at)}
                   </p>

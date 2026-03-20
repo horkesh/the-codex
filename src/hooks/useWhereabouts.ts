@@ -39,6 +39,7 @@ export function useWhereabouts() {
       supabase.removeChannel(channel)
       channelRef.current = null
       clearInterval(pruneInterval)
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
     }
   }, [gent?.id])
 
