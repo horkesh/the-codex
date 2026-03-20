@@ -65,11 +65,6 @@ function EidInner({ entry, backgroundUrl }: EidCardProps) {
           Bajram serif mubarek olsun
         </h1>
         <div style={{ height: '1px', width: '48px', backgroundColor: EID_GOLD, opacity: 0.3 }} />
-        {entry.title && (
-          <p style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: '24px', color: '#B0A898', textAlign: 'center', lineHeight: '1.4' }}>
-            {entry.title}
-          </p>
-        )}
         {entry.location && (
           <p style={{ fontFamily: FONT.body, fontSize: '18px', color: '#A09890', letterSpacing: '0.05em' }}>{entry.location}</p>
         )}
