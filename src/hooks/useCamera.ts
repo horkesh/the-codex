@@ -38,11 +38,7 @@ export function useCamera(): UseCameraReturn {
     streamRef.current?.getTracks().forEach((t) => t.stop())
     try {
       const s = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode,
-          width: { ideal: 1080 },
-          height: { ideal: 1920 },
-        },
+        video: { facingMode },
         audio: false,
       })
       streamRef.current = s

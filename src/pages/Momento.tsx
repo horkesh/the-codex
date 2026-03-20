@@ -51,6 +51,7 @@ export default function Momento() {
 
   // State
   const [gents, setGents] = useState<Gent[]>([])
+  const [selectedGentIds, setSelectedGentIds] = useState<Set<string>>(new Set())
   const [city, setCity] = useState<string | null>(null)
   const [country, setCountry] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(() => timeNow())
@@ -60,11 +61,15 @@ export default function Momento() {
   const [exporting, setExporting] = useState(false)
 
   const compositeRef = useRef<HTMLDivElement | null>(null)
+  const [capturedAspect, setCapturedAspect] = useState<number>(4 / 3) // width/height — default 3:4 portrait
   const [today] = useState(() => formatDate(new Date().toISOString().slice(0, 10)))
 
   // Fetch gents + location on mount
   useEffect(() => {
-    fetchAllGents().then(setGents).catch(() => {})
+    fetchAllGents().then((g) => {
+      setGents(g)
+      setSelectedGentIds(new Set(g.map((x) => x.id)))
+    }).catch(() => {})
     getDevicePosition().then((pos) => {
       if (pos) {
         reverseGeocode(pos.lat, pos.lng).then((addr) => {
@@ -98,6 +103,11 @@ export default function Momento() {
   }, [capturedUrl])
 
   const handleCapture = useCallback(async () => {
+    // Read native video dimensions before capture to compute aspect ratio
+    const video = camera.videoRef.current
+    if (video && video.videoWidth && video.videoHeight) {
+      setCapturedAspect(video.videoWidth / video.videoHeight)
+    }
     const blob = await camera.capture()
     if (!blob) return
     setCapturedTime(timeNow())
@@ -140,9 +150,19 @@ export default function Momento() {
     })
   }, [])
 
+  const toggleGent = useCallback((id: string) => {
+    setSelectedGentIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
   // Live overlay shows current time; export composite uses frozen capture time
-  const liveOverlayProps = { city, country, date: today, time: currentTime, gents }
-  const exportOverlayProps = { city, country, date: today, time: capturedTime ?? currentTime, gents }
+  const visibleGents = gents.filter((g) => selectedGentIds.has(g.id))
+  const liveOverlayProps = { city, country, date: today, time: currentTime, gents: visibleGents }
+  const exportOverlayProps = { city, country, date: today, time: capturedTime ?? currentTime, gents: visibleGents }
   const ActiveOverlay = OVERLAY_REGISTRY[activeOverlay].Component
 
   // ── Render ──
@@ -221,14 +241,14 @@ export default function Momento() {
           </motion.div>
         </AnimatePresence>
 
-        {/* ── Export composite (hidden, rendered at 1080x1920 for export) ── */}
+        {/* ── Export composite (hidden, rendered at native aspect ratio) ── */}
         {capturedUrl && (
           <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
             <div
               ref={compositeRef}
               style={{
                 width: '1080px',
-                height: '1920px',
+                height: `${Math.round(1080 / capturedAspect)}px`,
                 position: 'relative',
                 overflow: 'hidden',
                 backgroundColor: '#000',
@@ -256,6 +276,41 @@ export default function Momento() {
         className="shrink-0 bg-black/90 backdrop-blur-xl"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
       >
+        {/* Gent selector — tap to toggle who's in the shot */}
+        {gents.length > 0 && (
+          <div className="flex items-center justify-center gap-3 pt-3 px-4">
+            {gents.map((g) => {
+              const selected = selectedGentIds.has(g.id)
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => toggleGent(g.id)}
+                  className="flex flex-col items-center gap-1 transition-opacity"
+                  style={{ opacity: selected ? 1 : 0.3 }}
+                >
+                  <div
+                    className="rounded-full overflow-hidden"
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      border: selected ? '2px solid #c9a84c' : '2px solid transparent',
+                      backgroundColor: '#1e1a28',
+                    }}
+                  >
+                    {g.avatar_url ? (
+                      <img src={g.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gold text-xs font-body font-semibold">
+                        {g.display_name?.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {/* Template selector */}
         <div className="flex items-center justify-center gap-3 py-3 px-4">
           <button
