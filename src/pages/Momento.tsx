@@ -5,7 +5,7 @@ import { ArrowLeft, RefreshCw, Camera, Share2, ChevronLeft, ChevronRight } from 
 import { useCamera } from '@/hooks/useCamera'
 import { useUIStore } from '@/store/ui'
 import { fetchAllGents } from '@/data/gents'
-import { getDevicePosition, reverseGeocode } from '@/lib/geo'
+import { getDevicePosition, reverseGeocode, fetchNearestPOIGoogle } from '@/lib/geo'
 import { formatDate } from '@/lib/utils'
 import { FieldReportOverlay } from '@/components/momento/FieldReportOverlay'
 import { MarqueeOverlay } from '@/components/momento/MarqueeOverlay'
@@ -80,6 +80,7 @@ export default function Momento() {
   const [selectedGentIds, setSelectedGentIds] = useState<Set<string>>(new Set())
   const [city, setCity] = useState<string | null>(null)
   const [country, setCountry] = useState<string | null>(null)
+  const [venue, setVenue] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(() => timeNow())
   const [activeOverlay, setActiveOverlay] = useState<OverlayId>('field_report')
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null)
@@ -104,6 +105,10 @@ export default function Momento() {
             setCity(addr.city ?? null)
             setCountry(addr.country ?? null)
           }
+        }).catch(() => {})
+        // Micro-location: nearest venue from Google Places
+        fetchNearestPOIGoogle(pos.lat, pos.lng).then((name) => {
+          if (name) setVenue(name)
         }).catch(() => {})
       }
     })
@@ -188,11 +193,15 @@ export default function Momento() {
 
   // Live overlay shows current time; export composite uses frozen capture time
   const visibleGents = gents.filter((g) => selectedGentIds.has(g.id))
-  const liveOverlayProps = { city, country, date: today, time: currentTime, gents: visibleGents }
-  const exportOverlayProps = { city, country, date: today, time: capturedTime ?? currentTime, gents: visibleGents }
+  const liveOverlayProps = { city, country, venue, date: today, time: currentTime, gents: visibleGents }
+  const exportOverlayProps = { city, country, venue, date: today, time: capturedTime ?? currentTime, gents: visibleGents }
   const ActiveOverlay = OVERLAY_REGISTRY[activeOverlay].Component
   const filterCss = FILTER_REGISTRY[activeFilter].css
   const showGrain = activeFilter === 'grain'
+
+  // Export scale: overlays are designed for ~390px phone screen width.
+  // The export canvas is 1080px wide, so scale overlay elements up proportionally.
+  const EXPORT_SCALE = 1080 / 390
 
   // ── Render ──
 
@@ -327,7 +336,17 @@ export default function Momento() {
                   }}
                 />
               )}
-              <ActiveOverlay {...exportOverlayProps} />
+              {/* Overlay scaled up from phone-screen size to export canvas size */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                transformOrigin: 'top left',
+                transform: `scale(${EXPORT_SCALE})`,
+                width: `${100 / EXPORT_SCALE}%`,
+                height: `${100 / EXPORT_SCALE}%`,
+              }}>
+                <ActiveOverlay {...exportOverlayProps} />
+              </div>
             </div>
           </div>
         )}

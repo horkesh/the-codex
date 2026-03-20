@@ -7,8 +7,8 @@ import { FONT, COLOR } from '@/export/templates/shared/utils'
 import { AvatarStack } from './AvatarStack'
 import type { OverlayProps } from './types'
 
-export function FieldReportOverlay({ city, country, date, time, gents }: OverlayProps) {
-  const hasLocation = !!(city || country)
+export function FieldReportOverlay({ city, country, venue, date, time, gents }: OverlayProps) {
+  const hasLocation = !!(city || country || venue)
 
   return (
     <div style={{
@@ -95,28 +95,30 @@ export function FieldReportOverlay({ city, country, date, time, gents }: Overlay
         {/* Location */}
         {hasLocation && (
           <div style={{ marginBottom: '10px' }}>
-            <p style={{
-              fontFamily: FONT.display,
-              fontSize: '28px',
-              fontWeight: '600',
-              color: COLOR.ivory,
-              lineHeight: 1.2,
-              margin: 0,
-            }}>
-              {city || country}
-            </p>
-            {city && country && (
+            {venue && (
               <p style={{
-                fontFamily: FONT.body,
-                fontSize: '14px',
-                color: COLOR.ivoryDim,
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                margin: '4px 0 0',
+                fontFamily: FONT.display,
+                fontSize: '28px',
+                fontWeight: '600',
+                color: COLOR.ivory,
+                lineHeight: 1.2,
+                margin: '0 0 4px',
               }}>
-                {country}
+                {venue}
               </p>
             )}
+            <p style={{
+              fontFamily: venue ? FONT.body : FONT.display,
+              fontSize: venue ? '14px' : '28px',
+              fontWeight: venue ? '400' : '600',
+              color: venue ? COLOR.ivoryDim : COLOR.ivory,
+              letterSpacing: venue ? '0.15em' : undefined,
+              textTransform: venue ? 'uppercase' : undefined,
+              lineHeight: 1.2,
+              margin: 0,
+            } as React.CSSProperties}>
+              {[city, country].filter(Boolean).join(', ')}
+            </p>
           </div>
         )}
 

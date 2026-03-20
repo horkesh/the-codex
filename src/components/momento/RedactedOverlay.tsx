@@ -10,7 +10,7 @@ import type { OverlayProps } from './types'
 const MONO = FONT.mono
 const RED_GOLD = '#D4A050'
 
-export function RedactedOverlay({ city, country, date, time, gents }: OverlayProps) {
+export function RedactedOverlay({ city, country, venue, date, time, gents }: OverlayProps) {
   // Fake coordinates derived from city name (deterministic hash for visual consistency)
   const lat = city ? (hashStr(city) % 9000 / 100).toFixed(4) : '44.7866'
   const lng = city ? (hashStr(city + 'lng') % 18000 / 100).toFixed(4) : '20.4489'
@@ -164,8 +164,8 @@ export function RedactedOverlay({ city, country, date, time, gents }: OverlayPro
           margin: '8px 0 12px',
         }} />
 
-        {/* City */}
-        {(city || country) && (
+        {/* Venue / City */}
+        {(venue || city || country) && (
           <p style={{
             fontFamily: MONO,
             fontSize: '22px',
@@ -176,12 +176,12 @@ export function RedactedOverlay({ city, country, date, time, gents }: OverlayPro
             margin: '0 0 6px',
             lineHeight: 1.1,
           }}>
-            {city || country}
+            {venue || city || country}
           </p>
         )}
 
-        {/* Country */}
-        {city && country && (
+        {/* Sub-location */}
+        {(venue ? (city || country) : (city && country)) && (
           <p style={{
             fontFamily: MONO,
             fontSize: '12px',
@@ -190,7 +190,7 @@ export function RedactedOverlay({ city, country, date, time, gents }: OverlayPro
             textTransform: 'uppercase',
             margin: '0 0 14px',
           }}>
-            {country}
+            {venue ? [city, country].filter(Boolean).join(', ') : country}
           </p>
         )}
 

@@ -136,7 +136,7 @@ export function haversineMetres(
 }
 
 /** Google Places Nearby Search — find the nearest named POI within 150m. */
-async function fetchNearestPOIGoogle(lat: number, lng: number): Promise<string | null> {
+export async function fetchNearestPOIGoogle(lat: number, lng: number): Promise<string | null> {
   if (!GOOGLE_MAPS_KEY) return fetchNearestPOINominatim(lat, lng)
   try {
     const res = await fetch(

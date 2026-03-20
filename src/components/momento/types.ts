@@ -4,6 +4,7 @@ import type { Gent } from '@/types/app'
 export interface OverlayProps {
   city?: string | null
   country?: string | null
+  venue?: string | null
   date: string
   time: string
   gents: Gent[]

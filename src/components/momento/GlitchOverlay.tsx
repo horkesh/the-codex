@@ -43,7 +43,7 @@ function RGBText({ children, fontSize = '14px', fontWeight = '400' }: { children
   )
 }
 
-export function GlitchOverlay({ city, country, date, time, gents }: OverlayProps) {
+export function GlitchOverlay({ city, country, venue, date, time, gents }: OverlayProps) {
   return (
     <div style={{
       position: 'absolute',
@@ -181,15 +181,15 @@ export function GlitchOverlay({ city, country, date, time, gents }: OverlayProps
         right: 24,
         zIndex: 13,
       }}>
-        {/* City with RGB split */}
-        {(city || country) && (
+        {/* Venue / City with RGB split */}
+        {(venue || city || country) && (
           <div style={{ marginBottom: '8px' }}>
-            <RGBText fontSize="28px" fontWeight="700">{(city || country || '').toUpperCase()}</RGBText>
+            <RGBText fontSize="28px" fontWeight="700">{(venue || city || country || '').toUpperCase()}</RGBText>
           </div>
         )}
 
-        {/* Country */}
-        {city && country && (
+        {/* Sub-location */}
+        {(venue ? (city || country) : (city && country)) && (
           <p style={{
             fontFamily: FONT.mono,
             fontSize: '12px',
@@ -198,7 +198,7 @@ export function GlitchOverlay({ city, country, date, time, gents }: OverlayProps
             textTransform: 'uppercase',
             margin: '0 0 14px',
           }}>
-            {country}
+            {venue ? [city, country].filter(Boolean).join(', ') : country}
           </p>
         )}
 

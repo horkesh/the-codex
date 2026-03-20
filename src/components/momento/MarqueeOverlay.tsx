@@ -7,8 +7,8 @@ import { FONT, COLOR } from '@/export/templates/shared/utils'
 import { AvatarStack } from './AvatarStack'
 import type { OverlayProps } from './types'
 
-export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProps) {
-  const hasLocation = !!(city || country)
+export function MarqueeOverlay({ city, country, venue, date, time, gents }: OverlayProps) {
+  const hasLocation = !!(city || country || venue)
   const inset = 20
 
   return (
@@ -106,9 +106,9 @@ export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProp
                 margin: 0,
                 lineHeight: 1.2,
               }}>
-                {city || country}
+                {venue || city || country}
               </p>
-              {city && country && (
+              {(venue ? city || country : city && country) && (
                 <p style={{
                   fontFamily: FONT.body,
                   fontSize: '13px',
@@ -117,7 +117,7 @@ export function MarqueeOverlay({ city, country, date, time, gents }: OverlayProp
                   textTransform: 'uppercase',
                   margin: '4px 0 0',
                 }}>
-                  {country}
+                  {venue ? [city, country].filter(Boolean).join(', ') : country}
                 </p>
               )}
             </>

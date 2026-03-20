@@ -7,8 +7,9 @@ import { FONT, COLOR } from '@/export/templates/shared/utils'
 import { AvatarStack } from './AvatarStack'
 import type { OverlayProps } from './types'
 
-export function PostcardOverlay({ city, country, date, time, gents }: OverlayProps) {
-  const cityUpper = (city || country || '').toUpperCase()
+export function PostcardOverlay({ city, country, venue, date, time, gents }: OverlayProps) {
+  const locationName = venue || city || country || ''
+  const cityUpper = locationName.toUpperCase()
 
   return (
     <div style={{
@@ -152,7 +153,7 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
           justifyContent: 'space-between',
           marginTop: '10px',
         }}>
-          {country && city && (
+          {(venue ? (city || country) : (country && city)) && (
             <span style={{
               fontFamily: FONT.body,
               fontSize: '13px',
@@ -160,7 +161,7 @@ export function PostcardOverlay({ city, country, date, time, gents }: OverlayPro
               letterSpacing: '0.15em',
               textTransform: 'uppercase',
             }}>
-              {country}
+              {venue ? [city, country].filter(Boolean).join(', ') : country}
             </span>
           )}
           <span style={{

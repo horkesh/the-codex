@@ -9,7 +9,7 @@ import type { OverlayProps } from './types'
 const BORDER = 16
 const BOTTOM = 88
 
-export function PolaroidOverlay({ city, country, date, time, gents }: OverlayProps) {
+export function PolaroidOverlay({ city, country, venue, date, time, gents }: OverlayProps) {
   return (
     <div style={{
       position: 'absolute',
@@ -70,7 +70,7 @@ export function PolaroidOverlay({ city, country, date, time, gents }: OverlayPro
             color: COLOR.obsidian,
             fontStyle: 'italic',
           }}>
-            {city || country || ''}
+            {venue || city || country || ''}
           </span>
           <span style={{
             fontFamily: FONT.body,

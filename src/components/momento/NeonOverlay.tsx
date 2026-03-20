@@ -10,7 +10,7 @@ import type { OverlayProps } from './types'
 
 const NEON_GLOW = `0 0 12px rgba(201,168,76,0.6), 0 0 24px rgba(201,168,76,0.25)`
 
-export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) {
+export function NeonOverlay({ city, country, venue, date, time, gents }: OverlayProps) {
   return (
     <div style={{
       position: 'absolute',
@@ -87,8 +87,8 @@ export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) 
         right: 36,
         zIndex: 12,
       }}>
-        {/* City — large, bold */}
-        {(city || country) && (
+        {/* Venue / City — large, bold */}
+        {(venue || city || country) && (
           <p style={{
             fontFamily: FONT.display,
             fontSize: '36px',
@@ -100,7 +100,7 @@ export function NeonOverlay({ city, country, date, time, gents }: OverlayProps) 
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
           }}>
-            {city || country}
+            {venue || city || country}
           </p>
         )}
 

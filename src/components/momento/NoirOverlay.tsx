@@ -8,7 +8,7 @@ import { FONT } from '@/export/templates/shared/utils'
 import type { OverlayProps } from './types'
 
 // gents deliberately unused — noir aesthetic shows no avatars
-export function NoirOverlay({ city, country, date, time }: OverlayProps) {
+export function NoirOverlay({ city, country, venue, date, time }: OverlayProps) {
   return (
     <div style={{
       position: 'absolute',
@@ -97,7 +97,7 @@ export function NoirOverlay({ city, country, date, time }: OverlayProps) {
           color: 'rgba(255,255,255,0.5)',
           letterSpacing: '0.05em',
         }}>
-          {city || country || ''}
+          {venue || city || country || ''}
         </span>
         <span style={{
           fontFamily: FONT.mono,
