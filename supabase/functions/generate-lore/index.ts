@@ -150,7 +150,7 @@ Deno.serve(async (req: Request) => {
         : 'Write exactly 2-3 sentences of narrative lore for their private chronicle.'
 
     const multiDayFormat = isMultiDay
-      ? `\n\nThis is a multi-day mission spanning ${dayLabels.length} days: ${dayLabels.join('; ')}.\n\nReturn your response in this format:\n<lore>2-3 sentence overview of the entire mission — the arc, the mood, the defining character of this trip.</lore>\n${dayLabels.map((_: string, i: number) => `<day${i + 1}>1-2 sentences capturing the essence of ${dayLabels[i]} — what happened, what stood out, the energy of that day.</day${i + 1}>`).join('\n')}\n<oneliner>One punchy sentence distilled from the mission — poster-worthy.</oneliner>\n<title>A short, evocative title (3-7 words, no dates, no quotes).</title>`
+      ? `\n\nThis is a multi-day mission spanning ${dayLabels.length} days: ${dayLabels.join('; ')}.\n\nReturn your response in this format:\n<lore>2-3 sentence overview of the entire mission — the arc, the mood, the defining character of this trip.</lore>\n${dayLabels.map((_: string, i: number) => `<day${i + 1}>2-3 sentences narrating ${dayLabels[i]} — what happened, what stood out, the mood and energy. Every sentence earns its place with a specific detail, venue, or observation.</day${i + 1}>\n<day${i + 1}_oneliner>One punchy sentence distilling this day — poster-worthy.</day${i + 1}_oneliner>`).join('\n')}\n<oneliner>One punchy sentence distilling the entire mission — poster-worthy.</oneliner>\n<title>A short, evocative title (3-7 words, no dates, no quotes).</title>`
       : `\n\nReturn your response in exactly this format (three lines, no labels on the first line):\n<lore>The ${isFullChronicle ? '4-6 sentence' : '2-3 sentence'} narrative.</lore>\n<oneliner>One punchy sentence distilled from the lore — the kind of line you'd put on a poster or Instagram export card.</oneliner>\n<title>A short, evocative title for this entry (3-7 words, no dates, no quotes).</title>`
 
     const prompt = `You are the chronicler of The Gents — three sophisticated gentlemen who document their lives together with style and wit. ${lengthInstruction} The prose should be eloquent, slightly self-aware, warm, and feel like an entry in a very exclusive private journal.
@@ -206,17 +206,21 @@ Write the lore in first person plural ("We", "The Gents"). No hashtags, no emoji
     const oneliner = onelinerMatch?.[1]?.trim() || null
     const suggested_title = titleMatch?.[1]?.trim() || null
 
-    // Extract per-day lore for multi-day missions
+    // Extract per-day lore + one-liners for multi-day missions
     let day_lore: string[] | undefined
+    let day_oneliners: string[] | undefined
     if (isMultiDay) {
       day_lore = []
+      day_oneliners = []
       for (let i = 0; i < dayLabels.length; i++) {
         const dayMatch = raw.match(new RegExp(`<day${i + 1}>([\\s\\S]*?)<\\/day${i + 1}>`))
         day_lore.push(dayMatch?.[1]?.trim() || '')
+        const olMatch = raw.match(new RegExp(`<day${i + 1}_oneliner>([\\s\\S]*?)<\\/day${i + 1}_oneliner>`))
+        day_oneliners.push(olMatch?.[1]?.trim() || '')
       }
     }
 
-    return new Response(JSON.stringify({ lore, oneliner, suggested_title, day_lore }), {
+    return new Response(JSON.stringify({ lore, oneliner, suggested_title, day_lore, day_oneliners }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {

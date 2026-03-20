@@ -7,6 +7,8 @@ export interface LoreResult {
   suggested_title: string | null
   /** Per-day lore for multi-day missions (same order as dayLabels) */
   day_lore?: string[]
+  /** Per-day one-liners for carousel export (same order as dayLabels) */
+  day_oneliners?: string[]
 }
 
 export async function generateLore(entry: EntryWithParticipants, photoUrls?: string[]): Promise<string | null> {
@@ -34,6 +36,7 @@ export async function generateLoreFull(
       oneliner: data.oneliner ?? null,
       suggested_title: data.suggested_title ?? null,
       day_lore: Array.isArray(data.day_lore) ? data.day_lore : undefined,
+      day_oneliners: Array.isArray(data.day_oneliners) ? data.day_oneliners : undefined,
     }
   } catch (err) {
     console.error('generate-lore failed:', err)

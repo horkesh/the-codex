@@ -311,29 +311,29 @@ export default function EntryDetail() {
       const fresh = await fetchEntry(entry.id)
       const entryForLore = fresh ?? entry
 
-      // For missions, fetch story to get day labels
+      // For missions, read day labels from entry.metadata.day_episodes
       let dayLabels: string[] | undefined
       if (entry.type === 'mission') {
-        const { fetchStoryByEntryId, updateStory } = await import('@/data/stories')
-        const story = await fetchStoryByEntryId(entry.id)
-        if (story?.metadata?.day_episodes && story.metadata.day_episodes.length > 1) {
-          dayLabels = story.metadata.day_episodes.map(d => d.label)
+        const entryMeta = entryForLore.metadata as Record<string, unknown> | undefined
+        const episodes = entryMeta?.day_episodes as Array<{ label: string; lore?: string; oneliner?: string; photoIds: string[]; day: string }> | undefined
+        if (episodes && episodes.length > 1) {
+          dayLabels = episodes.map(d => d.label)
         }
         const result = await generateLoreFull(entryForLore, photoUrls, dayLabels)
         if (result) {
-          const meta = { ...(entryForLore.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
+          const meta: Record<string, unknown> = { ...(entryMeta ?? {}), lore_oneliner: result.oneliner }
+          // Save per-day lore + one-liners to entry.metadata.day_episodes
+          if (result.day_lore && episodes) {
+            meta.day_episodes = episodes.map((ep, i) => ({
+              ...ep,
+              lore: result.day_lore?.[i] || ep.lore,
+              oneliner: result.day_oneliners?.[i] || ep.oneliner,
+            }))
+          }
           await Promise.all([
             updateEntryLore(entry.id, result.lore),
             updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {}),
           ])
-          // Save per-day lore to story
-          if (result.day_lore && story?.metadata?.day_episodes) {
-            const episodes = story.metadata.day_episodes.map((ep, i) => ({
-              ...ep,
-              lore: result.day_lore?.[i] || ep.lore,
-            }))
-            await updateStory(story.id, { metadata: { ...story.metadata, day_episodes: episodes } }).catch(() => {})
-          }
           const now = new Date().toISOString()
           setEntry({ ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta })
           if (result.suggested_title) {

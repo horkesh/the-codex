@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Avatar } from '@/components/ui'
 import { fetchStampByEntryId } from '@/data/stamps'
-import { fetchStoryByEntryId } from '@/data/stories'
 import { fetchCityVisits, type CityVisit } from '@/data/entries'
 import { flagEmoji, cn, getCoverCrop } from '@/lib/utils'
 import { generateMissionDebrief } from '@/ai/debrief'
@@ -60,24 +59,25 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
 
   const [stamp, setStamp] = useState<PassportStamp | null>(null)
   const [cityVisit, setCityVisit] = useState<CityVisit | null>(null)
-  const [dayEpisodes, setDayEpisodes] = useState<StoryDayEpisode[]>([])
   const [generatingDebrief, setGeneratingDebrief] = useState(false)
   const [controlsExpanded, setControlsExpanded] = useState(false)
   const [activePage, setActivePage] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Fetch stamp + city visits + story on mount
+  // Read day episodes directly from entry metadata (no Story dependency)
+  const entryMeta = entry.metadata as Record<string, unknown> | undefined
+  const dayEpisodes = useMemo(() => {
+    const eps = entryMeta?.day_episodes as StoryDayEpisode[] | undefined
+    return (eps && eps.length > 1) ? eps : []
+  }, [entryMeta?.day_episodes])
+
+  // Fetch stamp + city visits on mount
   useEffect(() => {
     let cancelled = false
     fetchStampByEntryId(entry.id).then(s => { if (!cancelled) setStamp(s) }).catch(() => {})
     if (entry.city) {
       fetchCityVisits(entry.city, entry.id).then(v => { if (!cancelled) setCityVisit(v) }).catch(() => {})
     }
-    fetchStoryByEntryId(entry.id).then(story => {
-      if (!cancelled && story?.metadata?.day_episodes && story.metadata.day_episodes.length > 1) {
-        setDayEpisodes(story.metadata.day_episodes)
-      }
-    }).catch(() => {})
     return () => { cancelled = true }
   }, [entry.id, entry.city])
 
@@ -150,8 +150,8 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
     return dayEpisodes.map(() => [] as string[])
   }, [isMultiDay, dayEpisodes])
 
-  // Total pages: visa card + day pages + debrief
-  const totalPages = isMultiDay ? 1 + dayEpisodes.length + 1 : 0
+  // Total pages: visa+intel card + day pages (no trailing intel — it's on slide 1)
+  const totalPages = isMultiDay ? 1 + dayEpisodes.length : 0
 
   function scrollToPage(page: number) {
     if (!scrollRef.current) return
@@ -387,7 +387,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
           className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
-          {/* PAGE 1: Visa Card */}
+          {/* PAGE 1: Visa Card + Intelligence Report */}
           <div className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 96px)' }}>
             {visaCard}
 
@@ -415,6 +415,12 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
                 </div>
               </div>
             )}
+
+            {/* Intelligence Report — below visa on first slide */}
+            <div className="mt-5">
+              <SectionDivider label="Intelligence Report" />
+              {debriefSection}
+            </div>
           </div>
 
           {/* DAY PAGES */}
@@ -465,11 +471,11 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
                   </div>
                 )}
 
-                {/* Day one-liner caption */}
+                {/* Per-day lore */}
                 {dayOneliner && (
-                  <div className="mt-auto pt-3 pb-1 shrink-0">
-                    <p className="font-display italic text-gold/80 text-[13px] leading-relaxed text-center px-2">
-                      &ldquo;{dayOneliner}&rdquo;
+                  <div className="pt-3 pb-1 shrink-0">
+                    <p className="font-display italic text-ivory/80 text-[14px] leading-relaxed px-1">
+                      {dayOneliner}
                     </p>
                   </div>
                 )}
@@ -481,11 +487,6 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
             )
           })}
 
-          {/* LAST PAGE: Intelligence Report */}
-          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 96px)' }}>
-            <SectionDivider label="Intelligence Report" />
-            {debriefSection}
-          </div>
         </div>
 
         {/* Dot navigation */}

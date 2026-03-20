@@ -28,7 +28,7 @@ import { generateCover } from '@/ai/cover'
 import { generateStamp } from '@/ai/stamp'
 import { createMissionStamp, updateStampImage } from '@/data/stamps'
 import { createMissionStory } from '@/data/stories'
-import { formatDayLabel } from '@/lib/dayBoundary'
+import { groupIntoDays } from '@/lib/dayBoundary'
 import { MissionProcessingOverlay, type ProcessingStage } from '@/components/mission/MissionProcessingOverlay'
 import { clusterIntoScenes } from '@/lib/sceneEngine'
 import { analyzePhotos, enrichScenesWithAnalysis } from '@/ai/missionIntel'
@@ -291,9 +291,27 @@ export default function EntryNew() {
           setMissionStage('extracting_exif')
           const freshPhotos = await fetchEntryPhotos(entry.id) as unknown as EntryPhoto[]
 
+          // Build and save day_episodes to entry metadata
+          const dateEnd = (formData.metadata as Record<string, unknown>)?.date_end as string | undefined
+          const photoData = freshPhotos.map(p => {
+            let exifDate: string | null = null
+            let exifTime: string | null = null
+            if (p.exif_taken_at) {
+              const d = new Date(p.exif_taken_at)
+              exifDate = d.toISOString().split('T')[0]
+              exifTime = d.toISOString().split('T')[1]?.slice(0, 5) ?? null
+            }
+            return { id: p.id, exifDate, exifTime }
+          })
+          const dayEps = groupIntoDays(photoData, formData.date, dateEnd)
+          if (dayEps.length > 1) {
+            const metaWithDays = { ...(entry.metadata as Record<string, unknown> ?? {}), day_episodes: dayEps }
+            await updateEntry(entry.id, { metadata: metaWithDays } as Partial<typeof entry>).catch(() => {})
+            entry.metadata = metaWithDays
+          }
+
           // Stage: Scene clustering
           setMissionStage('clustering_scenes')
-          const dateEnd = (formData.metadata as Record<string, unknown>)?.date_end as string | undefined
           const rawScenes = clusterIntoScenes(freshPhotos, formData.date, dateEnd)
 
           // Stage: AI photo analysis
@@ -352,24 +370,24 @@ export default function EntryNew() {
         } catch (err) {
           console.error('Mission intelligence pipeline error:', err)
           setMissionStage(null)
-          // Fallback to legacy lore generation — derive day labels from date range
+          // Fallback to legacy lore generation — use day labels from entry metadata
           const entryWithParticipants = { ...entry, participants: participantGents }
-          const dateEnd = (formData.metadata as Record<string, unknown>)?.date_end as string | undefined
-          let fallbackDayLabels: string[] | undefined
-          if (dateEnd && dateEnd !== formData.date) {
-            fallbackDayLabels = []
-            const s = new Date(formData.date + 'T12:00:00Z')
-            const e = new Date(dateEnd + 'T12:00:00Z')
-            let dayNum = 1
-            while (s <= e) {
-              fallbackDayLabels.push(formatDayLabel(dayNum, s.toISOString().split('T')[0]))
-              s.setUTCDate(s.getUTCDate() + 1)
-              dayNum++
-            }
-          }
+          const fbMeta = entry.metadata as Record<string, unknown> | undefined
+          const fbEpisodes = fbMeta?.day_episodes as Array<{ label: string; lore?: string; oneliner?: string; photoIds: string[]; day: string }> | undefined
+          const fallbackDayLabels = fbEpisodes && fbEpisodes.length > 1
+            ? fbEpisodes.map(d => d.label)
+            : undefined
           generateLoreFull(entryWithParticipants, uploadedUrls, fallbackDayLabels).then(async (result) => {
             if (!result) return
-            const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
+            const meta: Record<string, unknown> = { ...(fbMeta ?? {}), lore_oneliner: result.oneliner }
+            // Save per-day lore to entry.metadata.day_episodes
+            if (result.day_lore && fbEpisodes) {
+              meta.day_episodes = fbEpisodes.map((ep, i) => ({
+                ...ep,
+                lore: result.day_lore?.[i] || ep.lore,
+                oneliner: result.day_oneliners?.[i] || ep.oneliner,
+              }))
+            }
             const updates: Partial<typeof entry> = { metadata: meta } as Partial<typeof entry>
             if (result.suggested_title) updates.title = result.suggested_title
             await Promise.all([updateEntryLore(entry.id, result.lore), updateEntry(entry.id, updates)])
