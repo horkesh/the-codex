@@ -9,7 +9,7 @@ export interface UseCameraReturn {
   start: () => Promise<void>
   stop: () => void
   flip: () => void
-  capture: () => Blob | null
+  capture: () => Promise<Blob | null>
 }
 
 /**
@@ -19,25 +19,23 @@ export interface UseCameraReturn {
 export function useCamera(): UseCameraReturn {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [facing, setFacing] = useState<'user' | 'environment'>('user')
   const [error, setError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
 
   const stopStream = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop())
-      setStream(null)
-    }
-  }, [stream])
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    streamRef.current = null
+    setStream(null)
+  }, [])
 
-  const startCamera = useCallback(async (facingMode: 'user' | 'environment' = facing) => {
+  const startCamera = useCallback(async (facingMode: 'user' | 'environment') => {
     setStarting(true)
     setError(null)
     // Stop any existing stream first
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop())
-    }
+    streamRef.current?.getTracks().forEach((t) => t.stop())
     try {
       const s = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -47,6 +45,7 @@ export function useCamera(): UseCameraReturn {
         },
         audio: false,
       })
+      streamRef.current = s
       setStream(s)
       if (videoRef.current) {
         videoRef.current.srcObject = s
@@ -58,50 +57,53 @@ export function useCamera(): UseCameraReturn {
     } finally {
       setStarting(false)
     }
-  }, [facing, stream])
+  }, [])
 
   const flip = useCallback(() => {
-    const next = facing === 'user' ? 'environment' : 'user'
-    setFacing(next)
-    startCamera(next)
-  }, [facing, startCamera])
+    setFacing((prev) => {
+      const next = prev === 'user' ? 'environment' : 'user'
+      startCamera(next)
+      return next
+    })
+  }, [startCamera])
 
-  const capture = useCallback((): Blob | null => {
-    const video = videoRef.current
-    if (!video || !video.videoWidth) return null
+  const start = useCallback(() => startCamera(facing), [startCamera, facing])
 
-    if (!canvasRef.current) {
-      canvasRef.current = document.createElement('canvas')
-    }
-    const canvas = canvasRef.current
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
+  const capture = useCallback((): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      const video = videoRef.current
+      if (!video || !video.videoWidth) { resolve(null); return }
 
-    // Mirror if front-facing
-    if (facing === 'user') {
-      ctx.translate(canvas.width, 0)
-      ctx.scale(-1, 1)
-    }
-    ctx.drawImage(video, 0, 0)
-    // Reset transform
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
+      if (!canvasRef.current) {
+        canvasRef.current = document.createElement('canvas')
+      }
+      const canvas = canvasRef.current
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { resolve(null); return }
 
-    // Synchronous blob via toDataURL → manual conversion
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
-    const bin = atob(dataUrl.split(',')[1])
-    const arr = new Uint8Array(bin.length)
-    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-    return new Blob([arr], { type: 'image/jpeg' })
+      // Mirror if front-facing
+      if (facing === 'user') {
+        ctx.translate(canvas.width, 0)
+        ctx.scale(-1, 1)
+      }
+      ctx.drawImage(video, 0, 0)
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        'image/jpeg',
+        0.92,
+      )
+    })
   }, [facing])
 
-  // Cleanup on unmount
+  // Cleanup on unmount — streamRef always has the latest reference
   useEffect(() => {
     return () => {
-      stream?.getTracks().forEach((t) => t.stop())
+      streamRef.current?.getTracks().forEach((t) => t.stop())
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return {
@@ -110,7 +112,7 @@ export function useCamera(): UseCameraReturn {
     facing,
     error,
     starting,
-    start: () => startCamera(facing),
+    start,
     stop: stopStream,
     flip,
     capture,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, RefreshCw, Camera, Download, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Camera, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCamera } from '@/hooks/useCamera'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -20,15 +20,12 @@ import { Spinner } from '@/components/ui'
 
 type OverlayId = 'field_report' | 'marquee'
 
-interface OverlayConfig {
-  id: OverlayId
-  label: string
+const OVERLAY_LABELS: Record<OverlayId, string> = {
+  field_report: 'Field Report',
+  marquee: 'Marquee',
 }
 
-const OVERLAYS: OverlayConfig[] = [
-  { id: 'field_report', label: 'Field Report' },
-  { id: 'marquee', label: 'Marquee' },
-]
+const OVERLAY_IDS: OverlayId[] = ['field_report', 'marquee']
 
 // ---------------------------------------------------------------------------
 // Component
@@ -46,11 +43,12 @@ export default function Momento() {
   const [country, setCountry] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(() => timeNow())
   const [activeOverlay, setActiveOverlay] = useState<OverlayId>('field_report')
-  const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null)
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null)
+  const [capturedTime, setCapturedTime] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
 
   const compositeRef = useRef<HTMLDivElement | null>(null)
+  const [today] = useState(() => formatDate(new Date().toISOString().slice(0, 10)))
 
   // Fetch gents + location on mount
   useEffect(() => {
@@ -73,11 +71,12 @@ export default function Momento() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Update time every second
+  // Update time every second (only while live — paused after capture)
   useEffect(() => {
+    if (capturedUrl) return
     const id = setInterval(() => setCurrentTime(timeNow()), 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [capturedUrl])
 
   // Cleanup captured URL on unmount
   useEffect(() => {
@@ -86,18 +85,18 @@ export default function Momento() {
     }
   }, [capturedUrl])
 
-  const handleCapture = useCallback(() => {
-    const blob = camera.capture()
+  const handleCapture = useCallback(async () => {
+    const blob = await camera.capture()
     if (!blob) return
-    setCapturedBlob(blob)
+    setCapturedTime(timeNow())
     setCapturedUrl(URL.createObjectURL(blob))
     camera.stop()
   }, [camera])
 
   const handleRetake = useCallback(() => {
     if (capturedUrl) URL.revokeObjectURL(capturedUrl)
-    setCapturedBlob(null)
     setCapturedUrl(null)
+    setCapturedTime(null)
     camera.start()
   }, [camera, capturedUrl])
 
@@ -122,20 +121,16 @@ export default function Momento() {
   }, [camera, navigate])
 
   const cycleOverlay = useCallback((dir: 1 | -1) => {
-    const idx = OVERLAYS.findIndex((o) => o.id === activeOverlay)
-    const next = (idx + dir + OVERLAYS.length) % OVERLAYS.length
-    setActiveOverlay(OVERLAYS[next].id)
-  }, [activeOverlay])
+    setActiveOverlay((prev) => {
+      const idx = OVERLAY_IDS.indexOf(prev)
+      const next = (idx + dir + OVERLAY_IDS.length) % OVERLAY_IDS.length
+      return OVERLAY_IDS[next]
+    })
+  }, [])
 
-  const today = formatDate(new Date().toISOString().slice(0, 10))
-
-  const overlayProps = {
-    city,
-    country,
-    date: today,
-    time: currentTime,
-    gents,
-  }
+  // Live overlay shows current time; export composite uses frozen capture time
+  const liveOverlayProps = { city, country, date: today, time: currentTime, gents }
+  const exportOverlayProps = { city, country, date: today, time: capturedTime ?? currentTime, gents }
 
   // ── Render ──
 
@@ -209,8 +204,8 @@ export default function Momento() {
             transition={{ duration: 0.2 }}
             style={{ position: 'absolute', inset: 0 }}
           >
-            {activeOverlay === 'field_report' && <FieldReportOverlay {...overlayProps} />}
-            {activeOverlay === 'marquee' && <MarqueeOverlay {...overlayProps} />}
+            {activeOverlay === 'field_report' && <FieldReportOverlay {...liveOverlayProps} />}
+            {activeOverlay === 'marquee' && <MarqueeOverlay {...liveOverlayProps} />}
           </motion.div>
         </AnimatePresence>
 
@@ -238,8 +233,8 @@ export default function Momento() {
                   objectFit: 'cover',
                 }}
               />
-              {activeOverlay === 'field_report' && <FieldReportOverlay {...overlayProps} />}
-              {activeOverlay === 'marquee' && <MarqueeOverlay {...overlayProps} />}
+              {activeOverlay === 'field_report' && <FieldReportOverlay {...exportOverlayProps} />}
+              {activeOverlay === 'marquee' && <MarqueeOverlay {...exportOverlayProps} />}
             </div>
           </div>
         )}
@@ -259,7 +254,7 @@ export default function Momento() {
             <ChevronLeft size={16} />
           </button>
           <span className="text-ivory font-body text-xs tracking-widest uppercase min-w-[100px] text-center">
-            {OVERLAYS.find((o) => o.id === activeOverlay)?.label}
+            {OVERLAY_LABELS[activeOverlay]}
           </span>
           <button
             onClick={() => cycleOverlay(1)}

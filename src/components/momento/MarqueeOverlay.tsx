@@ -4,6 +4,7 @@
  * Rendered on top of live camera feed (transparent background).
  */
 import type { Gent } from '@/types/app'
+import { FONT, COLOR } from '@/export/templates/shared/utils'
 
 interface MarqueeOverlayProps {
   city?: string | null
@@ -13,15 +14,8 @@ interface MarqueeOverlayProps {
   gents: Gent[]
 }
 
-const FONT_DISPLAY = "'Playfair Display', Georgia, serif"
-const FONT_BODY = "'Instrument Sans', 'Helvetica Neue', Arial, sans-serif"
-const GOLD = '#C9A84C'
-const GOLD_DIM = 'rgba(201,168,76,0.35)'
-const IVORY = '#F0EDE8'
-const IVORY_DIM = 'rgba(240,237,232,0.6)'
-
 export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOverlayProps) {
-  const location = [city, country].filter(Boolean).join(', ')
+  const hasLocation = !!(city || country)
   const inset = 16
 
   return (
@@ -56,47 +50,18 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
         left: inset,
         right: inset,
         bottom: inset,
-        border: `1px solid ${GOLD_DIM}`,
+        border: `1px solid ${COLOR.goldFaint}`,
         pointerEvents: 'none',
         zIndex: 11,
       }} />
 
       {/* Corner accents — small gold L-shapes at each corner */}
-      {[
-        { top: inset - 1, left: inset - 1 },
-        { top: inset - 1, right: inset - 1 },
-        { bottom: inset - 1, left: inset - 1 },
-        { bottom: inset - 1, right: inset - 1 },
-      ].map((pos, i) => (
-        <div key={i} style={{
-          position: 'absolute',
-          ...pos,
-          width: '20px',
-          height: '20px',
-          zIndex: 12,
-        }}>
-          {/* Horizontal line */}
-          <div style={{
-            position: 'absolute',
-            [('top' in pos && pos.top !== undefined) ? 'top' : 'bottom']: 0,
-            [('left' in pos && pos.left !== undefined) ? 'left' : 'right']: 0,
-            width: '20px',
-            height: '1.5px',
-            backgroundColor: GOLD,
-          }} />
-          {/* Vertical line */}
-          <div style={{
-            position: 'absolute',
-            [('top' in pos && pos.top !== undefined) ? 'top' : 'bottom']: 0,
-            [('left' in pos && pos.left !== undefined) ? 'left' : 'right']: 0,
-            width: '1.5px',
-            height: '20px',
-            backgroundColor: GOLD,
-          }} />
-        </div>
-      ))}
+      <CornerAccent top={inset - 1} left={inset - 1} />
+      <CornerAccent top={inset - 1} right={inset - 1} />
+      <CornerAccent bottom={inset - 1} left={inset - 1} />
+      <CornerAccent bottom={inset - 1} right={inset - 1} />
 
-      {/* Top content — centered */}
+      {/* Top content — logo + time */}
       <div style={{
         position: 'absolute',
         top: inset + 16,
@@ -107,7 +72,6 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
         justifyContent: 'space-between',
         zIndex: 13,
       }}>
-        {/* Logo mark */}
         <img
           src="/logo-gold.webp"
           alt=""
@@ -118,12 +82,10 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
             opacity: 0.75,
           }}
         />
-
-        {/* Time */}
         <span style={{
-          fontFamily: FONT_DISPLAY,
+          fontFamily: FONT.display,
           fontSize: '16px',
-          color: IVORY,
+          color: COLOR.ivory,
           fontWeight: '300',
           letterSpacing: '0.05em',
         }}>
@@ -140,17 +102,14 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
         zIndex: 13,
       }}>
         {/* Location — centered */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '14px',
-        }}>
-          {location && (
+        <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+          {hasLocation && (
             <>
               <p style={{
-                fontFamily: FONT_DISPLAY,
+                fontFamily: FONT.display,
                 fontSize: '20px',
                 fontWeight: '600',
-                color: IVORY,
+                color: COLOR.ivory,
                 margin: 0,
                 lineHeight: 1.2,
               }}>
@@ -158,9 +117,9 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
               </p>
               {city && country && (
                 <p style={{
-                  fontFamily: FONT_BODY,
+                  fontFamily: FONT.body,
                   fontSize: '10px',
-                  color: IVORY_DIM,
+                  color: COLOR.ivoryDim,
                   letterSpacing: '0.2em',
                   textTransform: 'uppercase',
                   margin: '4px 0 0',
@@ -179,19 +138,16 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
           justifyContent: 'space-between',
         }}>
           <span style={{
-            fontFamily: FONT_BODY,
+            fontFamily: FONT.body,
             fontSize: '10px',
-            color: IVORY_DIM,
+            color: COLOR.ivoryDim,
             letterSpacing: '0.15em',
           }}>
             {date}
           </span>
 
           {/* Gent avatars */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             {gents.map((g, i) => (
               <div
                 key={g.id}
@@ -199,7 +155,7 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
                   width: '24px',
                   height: '24px',
                   borderRadius: '50%',
-                  border: `1px solid ${GOLD}`,
+                  border: `1px solid ${COLOR.gold}`,
                   overflow: 'hidden',
                   marginLeft: i > 0 ? '-4px' : 0,
                   position: 'relative',
@@ -221,8 +177,8 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '10px',
-                    color: GOLD,
-                    fontFamily: FONT_BODY,
+                    color: COLOR.gold,
+                    fontFamily: FONT.body,
                     fontWeight: '600',
                   }}>
                     {g.name?.charAt(0)}
@@ -233,6 +189,40 @@ export function MarqueeOverlay({ city, country, date, time, gents }: MarqueeOver
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Corner accent helper ──
+
+function CornerAccent(pos: { top?: number; bottom?: number; left?: number; right?: number }) {
+  const anchorV = pos.top !== undefined ? 'top' : 'bottom'
+  const anchorH = pos.left !== undefined ? 'left' : 'right'
+
+  return (
+    <div style={{
+      position: 'absolute',
+      ...pos,
+      width: '20px',
+      height: '20px',
+      zIndex: 12,
+    }}>
+      <div style={{
+        position: 'absolute',
+        [anchorV]: 0,
+        [anchorH]: 0,
+        width: '20px',
+        height: '1.5px',
+        backgroundColor: COLOR.gold,
+      }} />
+      <div style={{
+        position: 'absolute',
+        [anchorV]: 0,
+        [anchorH]: 0,
+        width: '1.5px',
+        height: '20px',
+        backgroundColor: COLOR.gold,
+      }} />
     </div>
   )
 }

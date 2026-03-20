@@ -4,6 +4,7 @@
  * Also used as the export template overlay on captured photos.
  */
 import type { Gent } from '@/types/app'
+import { FONT, COLOR } from '@/export/templates/shared/utils'
 
 interface FieldReportOverlayProps {
   city?: string | null
@@ -13,16 +14,8 @@ interface FieldReportOverlayProps {
   gents: Gent[]
 }
 
-const FONT_DISPLAY = "'Playfair Display', Georgia, serif"
-const FONT_BODY = "'Instrument Sans', 'Helvetica Neue', Arial, sans-serif"
-const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace"
-const GOLD = '#C9A84C'
-const GOLD_DIM = 'rgba(201,168,76,0.5)'
-const IVORY = '#F0EDE8'
-const IVORY_DIM = 'rgba(240,237,232,0.6)'
-
 export function FieldReportOverlay({ city, country, date, time, gents }: FieldReportOverlayProps) {
-  const location = [city, country].filter(Boolean).join(', ')
+  const hasLocation = !!(city || country)
 
   return (
     <div style={{
@@ -56,13 +49,13 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
               width: '6px',
               height: '6px',
               borderRadius: '50%',
-              backgroundColor: GOLD,
-              boxShadow: `0 0 8px ${GOLD_DIM}`,
+              backgroundColor: COLOR.gold,
+              boxShadow: `0 0 8px ${COLOR.goldDim}`,
             }} />
             <span style={{
-              fontFamily: FONT_MONO,
+              fontFamily: FONT.mono,
               fontSize: '10px',
-              color: GOLD,
+              color: COLOR.gold,
               letterSpacing: '0.25em',
               textTransform: 'uppercase',
             }}>
@@ -70,9 +63,9 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
             </span>
           </div>
           <span style={{
-            fontFamily: FONT_MONO,
+            fontFamily: FONT.mono,
             fontSize: '10px',
-            color: IVORY_DIM,
+            color: COLOR.ivoryDim,
             letterSpacing: '0.1em',
           }}>
             {date}
@@ -81,10 +74,10 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
 
         {/* Time — large display */}
         <div style={{
-          fontFamily: FONT_DISPLAY,
+          fontFamily: FONT.display,
           fontSize: '48px',
           fontWeight: '300',
-          color: IVORY,
+          color: COLOR.ivory,
           letterSpacing: '-0.02em',
           lineHeight: 1,
         }}>
@@ -95,7 +88,7 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
         <div style={{
           height: '1px',
           marginTop: '12px',
-          background: `linear-gradient(to right, ${GOLD_DIM}, transparent)`,
+          background: `linear-gradient(to right, ${COLOR.goldDim}, transparent)`,
           width: '120px',
         }} />
       </div>
@@ -107,13 +100,13 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
         paddingTop: '40px',
       }}>
         {/* Location */}
-        {location && (
+        {hasLocation && (
           <div style={{ marginBottom: '8px' }}>
             <p style={{
-              fontFamily: FONT_DISPLAY,
+              fontFamily: FONT.display,
               fontSize: '22px',
               fontWeight: '600',
-              color: IVORY,
+              color: COLOR.ivory,
               lineHeight: 1.2,
               margin: 0,
             }}>
@@ -121,9 +114,9 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
             </p>
             {city && country && (
               <p style={{
-                fontFamily: FONT_BODY,
+                fontFamily: FONT.body,
                 fontSize: '11px',
-                color: IVORY_DIM,
+                color: COLOR.ivoryDim,
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
                 margin: '2px 0 0',
@@ -152,7 +145,7 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
                   width: '28px',
                   height: '28px',
                   borderRadius: '50%',
-                  border: `1.5px solid ${GOLD}`,
+                  border: `1.5px solid ${COLOR.gold}`,
                   overflow: 'hidden',
                   marginLeft: i > 0 ? '-6px' : 0,
                   position: 'relative',
@@ -174,8 +167,8 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '11px',
-                    color: GOLD,
-                    fontFamily: FONT_BODY,
+                    color: COLOR.gold,
+                    fontFamily: FONT.body,
                     fontWeight: '600',
                   }}>
                     {g.name?.charAt(0)}
@@ -185,9 +178,9 @@ export function FieldReportOverlay({ city, country, date, time, gents }: FieldRe
             ))}
           </div>
           <span style={{
-            fontFamily: FONT_BODY,
+            fontFamily: FONT.body,
             fontSize: '11px',
-            color: IVORY_DIM,
+            color: COLOR.ivoryDim,
             letterSpacing: '0.1em',
           }}>
             The Gents
