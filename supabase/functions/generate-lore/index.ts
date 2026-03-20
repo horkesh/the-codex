@@ -187,7 +187,7 @@ Write the lore in first person plural ("We", "The Gents"). No hashtags, no emoji
         max_tokens: isMultiDay ? 800 : isFullChronicle ? 600 : 400,
         messages: [{ role: 'user', content }],
       }),
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(isMultiDay ? 60000 : 25000),
     })
 
     if (!response.ok) {

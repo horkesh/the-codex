@@ -28,6 +28,7 @@ import { generateCover } from '@/ai/cover'
 import { generateStamp } from '@/ai/stamp'
 import { createMissionStamp, updateStampImage } from '@/data/stamps'
 import { createMissionStory } from '@/data/stories'
+import { formatDayLabel } from '@/lib/dayBoundary'
 import { MissionProcessingOverlay, type ProcessingStage } from '@/components/mission/MissionProcessingOverlay'
 import { clusterIntoScenes } from '@/lib/sceneEngine'
 import { analyzePhotos, enrichScenesWithAnalysis } from '@/ai/missionIntel'
@@ -351,9 +352,22 @@ export default function EntryNew() {
         } catch (err) {
           console.error('Mission intelligence pipeline error:', err)
           setMissionStage(null)
-          // Fallback to legacy lore generation
+          // Fallback to legacy lore generation — derive day labels from date range
           const entryWithParticipants = { ...entry, participants: participantGents }
-          generateLoreFull(entryWithParticipants, uploadedUrls).then(async (result) => {
+          const dateEnd = (formData.metadata as Record<string, unknown>)?.date_end as string | undefined
+          let fallbackDayLabels: string[] | undefined
+          if (dateEnd && dateEnd !== formData.date) {
+            fallbackDayLabels = []
+            const s = new Date(formData.date + 'T12:00:00Z')
+            const e = new Date(dateEnd + 'T12:00:00Z')
+            let dayNum = 1
+            while (s <= e) {
+              fallbackDayLabels.push(formatDayLabel(dayNum, s.toISOString().split('T')[0]))
+              s.setUTCDate(s.getUTCDate() + 1)
+              dayNum++
+            }
+          }
+          generateLoreFull(entryWithParticipants, uploadedUrls, fallbackDayLabels).then(async (result) => {
             if (!result) return
             const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
             const updates: Partial<typeof entry> = { metadata: meta } as Partial<typeof entry>
