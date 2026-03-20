@@ -1,8 +1,9 @@
 /**
  * Extract keyframes from a video file using HTML Canvas.
  * Returns an array of { blob, timestamp } for each extracted frame.
+ *
  * Strategy: Extract 1 frame every `intervalSeconds` (default 3s).
- * Cap at `maxFrames` (default 10).
+ * Cap at `maxFrames` (default 10) to avoid overwhelming the AI pipeline.
  */
 export async function extractKeyframes(
   videoFile: File,
@@ -24,12 +25,17 @@ export async function extractKeyframes(
         return
       }
 
-      const totalFrames = Math.min(Math.floor(duration / intervalSeconds), maxFrames)
+      // Calculate frame times
+      const totalFrames = Math.min(
+        Math.floor(duration / intervalSeconds),
+        maxFrames
+      )
       const times: number[] = []
       for (let i = 0; i < totalFrames; i++) {
-        times.push(i * intervalSeconds + intervalSeconds / 2)
+        times.push(i * intervalSeconds + intervalSeconds / 2) // Center of each interval
       }
 
+      // Set up canvas
       const scale = Math.min(1, maxWidth / video.videoWidth)
       const w = Math.round(video.videoWidth * scale)
       const h = Math.round(video.videoHeight * scale)
@@ -49,7 +55,7 @@ export async function extractKeyframes(
           })
           frames.push({ blob, timestampSeconds: time })
         } catch {
-          // Skip frames that fail
+          // Skip frames that fail to seek/capture
         }
       }
 
@@ -66,26 +72,37 @@ export async function extractKeyframes(
   })
 }
 
+/** Seek video to specific time and wait for frame to be ready */
 function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Seek timeout')), 5000)
-    video.onseeked = () => { clearTimeout(timeout); resolve() }
+    video.onseeked = () => {
+      clearTimeout(timeout)
+      resolve()
+    }
     video.currentTime = time
   })
 }
 
+/**
+ * Get video metadata without extracting frames.
+ * Returns approximate capture date from file modified time.
+ */
 export function getVideoMeta(file: File): { durationEstimate: number | null; date: string | null } {
-  const date = file.lastModified ? new Date(file.lastModified).toISOString().slice(0, 10) : null
+  const date = file.lastModified
+    ? new Date(file.lastModified).toISOString().slice(0, 10)
+    : null
   return { durationEstimate: null, date }
 }
 
+/** Check if a file is a video based on MIME type. */
 export function isVideoFile(file: File): boolean {
   return file.type.startsWith('video/')
 }
 
 /**
  * Extract a short audio clip from a video file.
- * Returns a WAV Blob of the first N seconds of audio.
+ * Returns a WAV Blob of the first `durationSeconds` of audio.
  */
 export async function extractAudioClip(
   videoFile: File,
@@ -110,10 +127,11 @@ export async function extractAudioClip(
 
     return encodeWav(channelData, sampleRate)
   } catch {
-    return null
+    return null // Video may not have audio track
   }
 }
 
+/** Encode Float32Array PCM data as a WAV Blob */
 function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   const buffer = new ArrayBuffer(44 + samples.length * 2)
   const view = new DataView(buffer)
@@ -126,8 +144,8 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   writeString(8, 'WAVE')
   writeString(12, 'fmt ')
   view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, 1, true)
+  view.setUint16(20, 1, true)       // PCM
+  view.setUint16(22, 1, true)       // Mono
   view.setUint32(24, sampleRate, true)
   view.setUint32(28, sampleRate * 2, true)
   view.setUint16(32, 2, true)

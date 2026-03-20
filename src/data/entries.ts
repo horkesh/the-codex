@@ -191,6 +191,7 @@ export async function removeEntryParticipants(entryId: string): Promise<void> {
 
 export async function fetchEntryPhotos(entryId: string): Promise<Array<{
   id: string
+  entry_id: string
   url: string
   caption: string | null
   sort_order: number
@@ -198,18 +199,19 @@ export async function fetchEntryPhotos(entryId: string): Promise<Array<{
   exif_taken_at: string | null
   gps_lat: number | null
   gps_lng: number | null
-  ai_analysis: import('../types/app').PhotoAnalysis | null
+  ai_analysis: unknown | null
   created_at: string
 }>> {
   const { data, error } = await supabase
     .from('entry_photos')
-    .select('id, url, caption, sort_order, taken_by, exif_taken_at, gps_lat, gps_lng, ai_analysis, created_at')
+    .select('id, entry_id, url, caption, sort_order, taken_by, exif_taken_at, gps_lat, gps_lng, ai_analysis, created_at')
     .eq('entry_id', entryId)
     .order('sort_order', { ascending: true })
 
   if (error) throw error
   return (data ?? []) as unknown as Array<{
     id: string
+    entry_id: string
     url: string
     caption: string | null
     sort_order: number
@@ -217,7 +219,7 @@ export async function fetchEntryPhotos(entryId: string): Promise<Array<{
     exif_taken_at: string | null
     gps_lat: number | null
     gps_lng: number | null
-    ai_analysis: import('../types/app').PhotoAnalysis | null
+    ai_analysis: unknown | null
     created_at: string
   }>
 }
@@ -258,10 +260,11 @@ export async function uploadEntryPhoto(
   const exifPromise = import('exifr').then(async (exifr) => {
     try {
       const parsed = await exifr.default.parse(file, ['DateTimeOriginal', 'latitude', 'longitude'])
-      const takenAt = parsed?.DateTimeOriginal instanceof Date ? parsed.DateTimeOriginal.toISOString() : null
-      const gpsLat = typeof parsed?.latitude === 'number' ? parsed.latitude : null
-      const gpsLng = typeof parsed?.longitude === 'number' ? parsed.longitude : null
-      return { takenAt, gpsLat, gpsLng }
+      return {
+        takenAt: parsed?.DateTimeOriginal instanceof Date ? parsed.DateTimeOriginal.toISOString() : null,
+        gpsLat: typeof parsed?.latitude === 'number' ? parsed.latitude : null,
+        gpsLng: typeof parsed?.longitude === 'number' ? parsed.longitude : null,
+      }
     } catch { /* non-critical */ }
     return { takenAt: null, gpsLat: null, gpsLng: null }
   })
@@ -277,7 +280,7 @@ export async function uploadEntryPhoto(
     .getPublicUrl(path)
 
   const publicUrl = urlData.publicUrl
-  const { takenAt: exifTakenAt, gpsLat, gpsLng } = await exifPromise
+  const exif = await exifPromise
 
   // Insert metadata row — non-fatal; storage upload already succeeded so we always return the URL
   await supabase
@@ -288,9 +291,9 @@ export async function uploadEntryPhoto(
       sort_order: sortOrder,
       caption: null,
       taken_by: null,
-      exif_taken_at: exifTakenAt,
-      gps_lat: gpsLat,
-      gps_lng: gpsLng,
+      exif_taken_at: exif.takenAt,
+      gps_lat: exif.gpsLat,
+      gps_lng: exif.gpsLng,
     })
 
   return publicUrl
@@ -427,6 +430,33 @@ export async function fetchCityVisits(city: string, entryId: string): Promise<Ci
     totalVisits: rows.length,
     companions: rows.filter(r => r.id !== entryId),
   }
+}
+
+/** Fetch previous missions to the same city with lore for cross-referencing */
+export async function fetchCrossMissionContext(
+  city: string,
+  currentEntryId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id, title, date, lore, metadata')
+    .eq('type', 'mission')
+    .eq('city', city)
+    .in('status', ['published', 'gathering_post'])
+    .neq('id', currentEntryId)
+    .order('date', { ascending: false })
+    .limit(3)
+
+  if (error || !data?.length) return null
+
+  const lines = data.map(e => {
+    const meta = e.metadata as Record<string, unknown> | null
+    const venues = (meta?.landmarks as string[])?.join(', ') ?? 'unknown venues'
+    const oneliner = (meta?.lore_oneliner as string) ?? ''
+    return `- "${e.title}" (${e.date}): ${oneliner}. Venues: ${venues}`
+  })
+
+  return `Previous missions to ${city}:\n${lines.join('\n')}\nUse these naturally — reference shared venues, compare experiences, note changes.`
 }
 
 export async function fetchRecentEntryIds(days: number): Promise<string[]> {

@@ -27,6 +27,13 @@ import { generateCover } from '@/ai/cover'
 import { generateStamp } from '@/ai/stamp'
 import { createMissionStamp, updateStampImage } from '@/data/stamps'
 import { createMissionStory } from '@/data/stories'
+import { MissionProcessingOverlay, type ProcessingStage } from '@/components/mission/MissionProcessingOverlay'
+import { clusterIntoScenes } from '@/lib/sceneEngine'
+import { analyzePhotos, enrichScenesWithAnalysis } from '@/ai/missionIntel'
+import { generateMissionNarrative } from '@/ai/missionLore'
+import { buildMissionIntel, mergeNarratives } from '@/lib/missionIntelBuilder'
+import { fetchCrossMissionContext, fetchEntryPhotos } from '@/data/entries'
+import type { MissionIntel, EntryPhoto } from '@/types/app'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { fadeUp } from '@/lib/animations'
@@ -80,6 +87,8 @@ export default function EntryNew() {
   const [participants, setParticipants] = useState<string[]>(() => (gent ? [gent.id] : []))
   const [submitting, setSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null)
+  const [missionStage, setMissionStage] = useState<ProcessingStage | null>(null)
+  const [analysisProgress, setAnalysisProgress] = useState({ done: 0, total: 0 })
   const [locationFill, setLocationFill] = useState<LocationFill | undefined>()
   const [savedPlaces, setSavedPlaces] = useState<SavedLocation[]>([])
   const [prospectId, setProspectId] = useState<string | null>(null)
@@ -255,6 +264,7 @@ export default function EntryNew() {
       // 3. Upload pending photos; promote first to cover image
       let uploadedUrls: string[] = []
       if (pendingFiles.length > 0) {
+        if (selectedType === 'mission') setMissionStage('uploading')
         setUploadProgress({ done: 0, total: pendingFiles.length })
         const { urls, firstError } = await uploadAll(entry.id, (done, total) => setUploadProgress({ done, total }))
         uploadedUrls = urls
@@ -268,58 +278,97 @@ export default function EntryNew() {
         }
       }
 
-      // 4. For missions, create story first to get day labels for lore generation
-      let storyDayLabels: string[] | undefined
-      if (selectedType === 'mission' && city && country) {
+      // 4. For missions, run the full intelligence pipeline
+      if (selectedType === 'mission' && city && country && uploadedUrls.length > 0) {
         try {
-          const story = await createMissionStory({
-            id: entry.id,
-            title: formData.title,
-            date: formData.date,
-            cover_image_url: entry.cover_image_url ?? null,
-            created_by: entry.created_by,
-            metadata: entry.metadata as Record<string, unknown>,
-          })
-          if (story?.metadata?.day_episodes && story.metadata.day_episodes.length > 1) {
-            storyDayLabels = story.metadata.day_episodes.map(d => d.label)
-          }
-        } catch { /* non-critical */ }
-      }
+          // Stage: EXIF extraction (photos already uploaded with GPS)
+          setMissionStage('extracting_exif')
+          const freshPhotos = await fetchEntryPhotos(entry.id) as unknown as EntryPhoto[]
 
-      // 4b. Fire generateLoreFull async — saves lore, oneliner, and suggested title
-      const entryWithParticipants = {
-        ...entry,
-        participants: [],
-      }
-      generateLoreFull(entryWithParticipants, uploadedUrls, storyDayLabels).then(async (result) => {
-        if (!result) return
-        try {
-          const meta = {
+          // Stage: Scene clustering
+          setMissionStage('clustering_scenes')
+          const dateEnd = (formData.metadata as Record<string, unknown>)?.date_end as string | undefined
+          const rawScenes = clusterIntoScenes(freshPhotos, formData.date, dateEnd)
+
+          // Stage: AI photo analysis
+          setMissionStage('analyzing_photos')
+          const analyses = await analyzePhotos(
+            freshPhotos, 'mission', city, country,
+            (done, total) => setAnalysisProgress({ done, total }),
+          )
+          const enrichedScenes = enrichScenesWithAnalysis(rawScenes, analyses)
+
+          // Stage: Narrative generation
+          setMissionStage('generating_narrative')
+          const crossContext = await fetchCrossMissionContext(city, entry.id).catch(() => null)
+          const entryForNarrative = { ...entry, participants: [gent] }
+          const soundtrackMood = (formData.metadata as Record<string, unknown>)?.soundtrack as { overall_mood?: string } | undefined
+          const narrativeResult = await generateMissionNarrative(
+            entryForNarrative, enrichedScenes, analyses, uploadedUrls,
+            crossContext, null, soundtrackMood?.overall_mood,
+          )
+
+          // Stage: Build intel
+          setMissionStage('building_intel')
+          const baseIntel = buildMissionIntel(freshPhotos, enrichedScenes, analyses)
+          const fullIntel: MissionIntel = narrativeResult
+            ? mergeNarratives({
+                ...baseIntel,
+                tripArc: null, verdict: null,
+                crossMissionRefs: [], processed_at: new Date().toISOString(),
+              }, narrativeResult)
+            : { ...baseIntel, tripArc: null, verdict: null,
+                crossMissionRefs: [], processed_at: new Date().toISOString() }
+
+          // Save intel + lore
+          const updatedMeta = {
             ...(entry.metadata as Record<string, unknown> ?? {}),
-            lore_oneliner: result.oneliner,
+            mission_intel: fullIntel,
+            lore_oneliner: narrativeResult?.oneliner ?? null,
           }
-          const updates: Partial<typeof entry> = { metadata: meta } as Partial<typeof entry>
-          if (result.suggested_title) updates.title = result.suggested_title
-          await Promise.all([
-            updateEntryLore(entry.id, result.lore),
-            updateEntry(entry.id, updates),
-          ])
-          // Save per-day lore to story
-          if (result.day_lore && storyDayLabels) {
-            const { fetchStoryByEntryId, updateStory } = await import('@/data/stories')
-            const story = await fetchStoryByEntryId(entry.id)
-            if (story?.metadata?.day_episodes) {
-              const episodes = story.metadata.day_episodes.map((ep, i) => ({
-                ...ep,
-                lore: result.day_lore?.[i] || ep.lore,
-              }))
-              await updateStory(story.id, { metadata: { ...story.metadata, day_episodes: episodes } }).catch(() => {})
-            }
+          const titleUpdate = narrativeResult?.titles?.[0]
+          await updateEntry(entry.id, {
+            metadata: updatedMeta,
+            ...(titleUpdate ? { title: titleUpdate } : {}),
+          } as Partial<typeof entry>)
+          if (narrativeResult?.arc) {
+            await updateEntryLore(entry.id, narrativeResult.arc)
           }
-        } catch {
-          // non-critical — lore will be visible on next visit
+
+          // Also create legacy story for backward compat
+          createMissionStory({
+            id: entry.id, title: titleUpdate ?? formData.title,
+            date: formData.date, cover_image_url: entry.cover_image_url ?? null,
+            created_by: entry.created_by, metadata: entry.metadata as Record<string, unknown>,
+          }).catch(() => {})
+
+          setMissionStage('complete')
+        } catch (err) {
+          console.error('Mission intelligence pipeline error:', err)
+          setMissionStage(null)
+          // Fallback to legacy lore generation
+          const entryWithParticipants = { ...entry, participants: [] }
+          generateLoreFull(entryWithParticipants, uploadedUrls).then(async (result) => {
+            if (!result) return
+            const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
+            const updates: Partial<typeof entry> = { metadata: meta } as Partial<typeof entry>
+            if (result.suggested_title) updates.title = result.suggested_title
+            await Promise.all([updateEntryLore(entry.id, result.lore), updateEntry(entry.id, updates)])
+          }).catch(() => {})
         }
-      }).catch(() => {})
+      } else {
+        // Non-mission entries: use existing lore pipeline
+        const entryWithParticipants = { ...entry, participants: [] }
+        generateLoreFull(entryWithParticipants, uploadedUrls).then(async (result) => {
+          if (!result) return
+          try {
+            const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
+            const updates: Partial<typeof entry> = { metadata: meta } as Partial<typeof entry>
+            if (result.suggested_title) updates.title = result.suggested_title
+            await Promise.all([updateEntryLore(entry.id, result.lore), updateEntry(entry.id, updates)])
+          } catch { /* non-critical */ }
+        }).catch(() => {})
+      }
 
       // 5. AI cover only when no photo was uploaded (interlude never gets AI cover)
       if (uploadedUrls.length === 0 && selectedType !== 'interlude') {
@@ -659,8 +708,17 @@ export default function EntryNew() {
 
   return (
     <>
+      {/* Mission intelligence pipeline overlay */}
+      {missionStage && (
+        <MissionProcessingOverlay
+          stage={missionStage}
+          photoProgress={uploadProgress ?? undefined}
+          analysisProgress={analysisProgress}
+        />
+      )}
+
       {/* Upload progress overlay */}
-      {submitting && (
+      {submitting && !missionStage && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-obsidian/90 backdrop-blur-sm">
           <img
             src="/logo-gold.webp"

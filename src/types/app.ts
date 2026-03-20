@@ -379,6 +379,160 @@ export interface Story {
   updated_at: string
 }
 
+// ─── Mission Intelligence ────────────────────────────────────────────────────
+
+/** Photo stored in entry_photos with GPS and AI analysis */
+export interface EntryPhoto {
+  id: string
+  entry_id: string
+  url: string
+  caption: string | null
+  taken_by: string | null
+  sort_order: number
+  exif_taken_at: string | null
+  gps_lat: number | null
+  gps_lng: number | null
+  ai_analysis: PhotoAnalysis | null
+  created_at: string
+}
+
+/** Per-photo AI analysis from Gemini Flash vision */
+export interface PhotoAnalysis {
+  scene_type: 'restaurant' | 'bar' | 'street' | 'landmark' | 'transport' | 'hotel' | 'market' | 'nature' | 'interior' | 'group_shot' | 'food' | 'selfie' | 'other'
+  venue_name: string | null
+  description: string
+  gents_present: string[]
+  food_drinks: string[]
+  ephemera: Ephemera[]
+  mood: 'energetic' | 'relaxed' | 'chaotic' | 'intimate' | 'adventurous' | 'festive' | 'contemplative'
+  time_of_day_visual: 'morning' | 'afternoon' | 'golden_hour' | 'evening' | 'night'
+  quality_score: number
+  highlight_reason: string | null
+  unnamed_characters?: UnnamedCharacter[]
+  audio_intel?: AudioIntelligence
+}
+
+/** Text artifact detected in a photo */
+export interface Ephemera {
+  type: 'menu' | 'sign' | 'ticket' | 'receipt' | 'boarding_pass' | 'label' | 'other'
+  text: string
+  context: string
+}
+
+/** Unnamed person detected in a photo */
+export interface UnnamedCharacter {
+  description: string
+  role: string
+  approximate_age?: string
+  distinguishing: string
+}
+
+/** Audio analysis from video clips */
+export interface AudioIntelligence {
+  has_music: boolean
+  music_genre?: string
+  music_description?: string
+  ambient_noise: 'quiet' | 'moderate' | 'loud' | 'very_loud'
+  languages_detected?: string[]
+  description: string
+}
+
+/** A cluster of photos from the same place/time during a mission */
+export interface Scene {
+  id: string
+  day: string
+  dayIndex: number
+  sceneIndex: number
+  title: string | null
+  startTime: string | null
+  endTime: string | null
+  centroid: { lat: number; lng: number } | null
+  photoIds: string[]
+  heroPhotoId: string | null
+  mood: string | null
+  narrative: string | null
+}
+
+/** Full mission intelligence stored in entry.metadata.mission_intel */
+export interface MissionIntel {
+  version: number
+  scenes: Scene[]
+  days: DayChapter[]
+  route: DayRoute[]
+  highlights: string[]
+  ephemera: Ephemera[]
+  tripArc: string | null
+  verdict: MissionVerdict | null
+  crossMissionRefs: CrossMissionRef[]
+  tempo: TempoPoint[]
+  gent_scene_notes?: GentSceneNote[]
+  processed_at: string
+}
+
+/** Per-day chapter summary */
+export interface DayChapter {
+  day: string
+  dayIndex: number
+  label: string
+  briefing: string | null
+  debrief: string | null
+  narrative: string | null
+  sceneIds: string[]
+  photoIds: string[]
+  route: DayRoute | null
+  stats: DayStats
+}
+
+export interface DayRoute {
+  day: string
+  points: Array<{ lat: number; lng: number; time?: string; label?: string | null; photoId?: string }>
+}
+
+export interface DayStats {
+  photoCount: number
+  sceneCount: number
+  venuesVisited: string[]
+  foodDrinks: string[]
+  firstPhotoTime: string | null
+  lastPhotoTime: string | null
+}
+
+export interface MissionVerdict {
+  best_meal: string | null
+  best_venue: string | null
+  most_chaotic_moment: string | null
+  mvp_scene: string | null
+  would_return: string | null
+  trip_rating: number | null
+}
+
+export interface CrossMissionRef {
+  entryId: string
+  title: string
+  date: string
+  lore: string | null
+}
+
+export interface TempoPoint {
+  time: string
+  intensity: number
+  day: string
+}
+
+export interface GentSceneNote {
+  sceneId: string
+  gentId: string
+  gentAlias: string
+  note: string
+  addedAt: string
+}
+
+export interface MissionSoundtrack {
+  overall_mood?: string
+  per_day?: Record<string, string>
+  playlist_name?: string
+}
+
 // Reaction (gent reaction to an entry)
 export type ReactionType = 'legendary' | 'classic' | 'ruthless' | 'noted'
 export interface Reaction {
