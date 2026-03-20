@@ -217,7 +217,7 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-obsidian">
       {/* Header with search */}
-      <div className="shrink-0 border-b border-white/8 bg-slate-dark">
+      <div className="shrink-0 border-b border-white/8 bg-slate-dark" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             type="button"
