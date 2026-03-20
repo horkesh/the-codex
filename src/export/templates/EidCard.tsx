@@ -20,6 +20,11 @@ const ROOT: React.CSSProperties = {
 const Z2: React.CSSProperties = { position: 'relative', zIndex: 2 }
 
 const EID_GOLD = '#D4A843'
+
+/** Text outline for legibility over photos */
+const TEXT_OUTLINE: React.CSSProperties = {
+  textShadow: '-1px -1px 0 rgba(0,0,0,0.6), 1px -1px 0 rgba(0,0,0,0.6), -1px 1px 0 rgba(0,0,0,0.6), 1px 1px 0 rgba(0,0,0,0.6), 0 0 12px rgba(0,0,0,0.8), 0 2px 6px rgba(0,0,0,0.5)',
+}
 const EID_DIM = 'rgba(212,168,67,0.15)'
 
 /** SVG crescent + star */
@@ -52,24 +57,24 @@ function EidInner({ backgroundUrl }: EidCardProps) {
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GeometricBorder />
 
-      {/* Top: crescent + greeting */}
-      <div style={{ paddingTop: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '28px', ...Z2 }}>
+      {/* Top half: empty — lets photo breathe */}
+      <div style={{ flex: 1, ...Z2 }} />
+
+      {/* Bottom half: crescent + greeting */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '28px', ...Z2 }}>
         <CrescentMark size={72} opacity={0.45} />
         <span style={{ fontFamily: FONT.body, fontSize: '12px', color: EID_GOLD, letterSpacing: '0.5em', textTransform: 'uppercase', fontWeight: '600' }}>Eid Mubarak</span>
         <h1 style={{
           fontFamily: FONT.display, fontSize: '52px', fontWeight: '700', color: COLOR.ivory,
-          textAlign: 'center', lineHeight: '1.15', margin: 0, maxWidth: '860px',
+          textAlign: 'center', lineHeight: '1.15', margin: 0, maxWidth: '860px', ...TEXT_OUTLINE,
         }}>
           Bajram šerif mubarek olsun
         </h1>
         <div style={{ height: '1px', width: '48px', backgroundColor: EID_GOLD, opacity: 0.3 }} />
       </div>
 
-      {/* Spacer */}
-      <div style={{ flex: 1, ...Z2 }} />
-
       {/* Bottom: brand */}
-      <div style={{ paddingBottom: '64px', paddingTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%', ...Z2 }}>
+      <div style={{ paddingBottom: '64px', paddingTop: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%', ...Z2 }}>
         <BrandMark size="md" />
       </div>
     </div>
