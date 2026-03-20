@@ -1,9 +1,8 @@
 import React from 'react'
-import type { Gent } from '@/types/app'
-import { BrandMark, BackgroundLayer, InsetFrame, ParticipantRow, VARIANT_INNER, FONT, COLOR } from '@/export/templates/shared'
+import { BrandMark, BackgroundLayer, InsetFrame, VARIANT_INNER, FONT, COLOR } from '@/export/templates/shared'
 
 interface EidCardProps {
-  entry: { title: string; date: string; location: string | null; lore: string | null; metadata: Record<string, unknown>; participants?: Gent[] }
+  entry: { title: string; date: string; location: string | null; lore: string | null; metadata: Record<string, unknown> }
   backgroundUrl?: string
 }
 
@@ -72,9 +71,8 @@ function EidInner({ entry, backgroundUrl }: EidCardProps) {
       {/* Spacer */}
       <div style={{ flex: 1, ...Z2 }} />
 
-      {/* Bottom: participants + brand */}
+      {/* Bottom: brand */}
       <div style={{ paddingBottom: '64px', paddingTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%', ...Z2 }}>
-        {entry.participants && entry.participants.length > 0 && <ParticipantRow participants={entry.participants} />}
         <BrandMark size="md" />
       </div>
     </div>
