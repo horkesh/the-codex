@@ -54,14 +54,9 @@ function EidInner({ entry, backgroundUrl }: EidCardProps) {
       <BackgroundLayer url={backgroundUrl} gradient="strong" />
       <GeometricBorder />
 
-      {/* Top crescent */}
-      <div style={{ paddingTop: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', ...Z2 }}>
+      {/* Top: crescent + greeting */}
+      <div style={{ paddingTop: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '28px', ...Z2 }}>
         <CrescentMark size={72} opacity={0.45} />
-        <div style={{ height: '1px', width: '56px', backgroundColor: EID_GOLD, marginTop: '32px', opacity: 0.35 }} />
-      </div>
-
-      {/* Greeting */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '28px', ...Z2 }}>
         <span style={{ fontFamily: FONT.body, fontSize: '12px', color: EID_GOLD, letterSpacing: '0.5em', textTransform: 'uppercase', fontWeight: '600' }}>Eid Mubarak</span>
         <h1 style={{
           fontFamily: FONT.display, fontSize: '52px', fontWeight: '700', color: COLOR.ivory,
@@ -80,6 +75,9 @@ function EidInner({ entry, backgroundUrl }: EidCardProps) {
         )}
         <p style={{ fontFamily: FONT.body, fontSize: '14px', color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{formatDate(entry.date)}</p>
       </div>
+
+      {/* Spacer */}
+      <div style={{ flex: 1, ...Z2 }} />
 
       {/* Bottom: participants + brand */}
       <div style={{ paddingBottom: '64px', paddingTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%', ...Z2 }}>
