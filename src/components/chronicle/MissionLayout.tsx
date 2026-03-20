@@ -52,15 +52,6 @@ function SectionDivider({ label }: { label: string }) {
   )
 }
 
-/** Distribute lore paragraphs across N days (round-robin) */
-function splitLoreByDay(paragraphs: string[], dayCount: number): string[][] {
-  const result: string[][] = Array.from({ length: dayCount }, () => [])
-  for (let i = 0; i < paragraphs.length; i++) {
-    result[i % dayCount].push(paragraphs[i])
-  }
-  return result
-}
-
 /* ══════════════════════════════════════════════════════════════════════════ */
 
 export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlot, controlsSlot }: MissionLayoutProps) {
@@ -146,15 +137,17 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
     return map
   }, [photos])
 
-  // Per-day lore: prefer story's day_episodes[].lore, fall back to splitting overall lore
+  // Per-day lore: only show if story day_episodes have explicit per-day lore.
+  // Don't split overall lore across days — it's a continuous narrative and round-robin
+  // distribution misaligns content with day labels. Overall lore is shown in loreSlot below.
   const loreByDay = useMemo(() => {
     if (!isMultiDay) return []
     const hasPerDayLore = dayEpisodes.some(d => d.lore)
     if (hasPerDayLore) {
       return dayEpisodes.map(d => d.lore ? [d.lore] : [])
     }
-    return splitLoreByDay(paragraphs, dayEpisodes.length)
-  }, [isMultiDay, dayEpisodes, paragraphs])
+    return dayEpisodes.map(() => [] as string[])
+  }, [isMultiDay, dayEpisodes])
 
   // Total pages: visa card + day pages + debrief
   const totalPages = isMultiDay ? 1 + dayEpisodes.length + 1 : 0
@@ -394,7 +387,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           {/* PAGE 1: Visa Card */}
-          <div className="snap-center shrink-0 w-full px-4">
+          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 160px)' }}>
             {visaCard}
 
             {/* City timeline */}
@@ -428,7 +421,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
             const dayPhotos = day.photoIds.map(id => photoById.get(id)).filter(Boolean) as EntryPhoto[]
             const dayLore = loreByDay[dayIdx] ?? []
             return (
-              <div key={day.day} className="snap-center shrink-0 w-full px-4">
+              <div key={day.day} className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 160px)' }}>
                 {/* Day header */}
                 <div className="mb-4">
                   <p className="text-[10px] font-body font-semibold tracking-[0.2em] text-gold/50 uppercase mb-1">
@@ -474,7 +467,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
           })}
 
           {/* LAST PAGE: Intelligence Report */}
-          <div className="snap-center shrink-0 w-full px-4">
+          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 160px)' }}>
             <SectionDivider label="Intelligence Report" />
             {debriefSection}
           </div>

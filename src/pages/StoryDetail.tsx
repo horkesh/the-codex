@@ -88,11 +88,19 @@ export default function StoryDetail() {
 
   // ── Derived stats ──
   const { earliest, latest, spanDays, uniquePlaces, uniqueCities } = useMemo(() => {
-    const dates = linkedEntries.map((e) => new Date(e.date)).sort((a, b) => a.getTime() - b.getTime())
-    const earliest = dates[0]
-    const latest = dates[dates.length - 1]
+    // Collect all dates including date_end from mission entries
+    const allDates: Date[] = []
+    for (const e of linkedEntries) {
+      allDates.push(new Date(e.date))
+      const dateEnd = (e.metadata as Record<string, unknown>)?.date_end as string | undefined
+      if (dateEnd) allDates.push(new Date(dateEnd))
+    }
+    allDates.sort((a, b) => a.getTime() - b.getTime())
+    const earliest = allDates[0]
+    const latest = allDates[allDates.length - 1]
+    // Inclusive day count: 11 Dec → 14 Dec = 4 days
     const spanDays = earliest && latest
-      ? Math.round((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.round((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24)) + 1
       : 0
     const uniquePlaces = Array.from(
       new Set(
@@ -224,7 +232,7 @@ export default function StoryDetail() {
                     className="border-l-2 border-gold/40 pl-4 py-1"
                   >
                     <p className="font-display italic text-ivory-muted text-sm leading-relaxed whitespace-pre-wrap">
-                      {story.lore}
+                      {story.lore.replace(/^#+\s+.*\n*/gm, '').trim()}
                     </p>
                   </motion.div>
                 )}
