@@ -7,6 +7,7 @@ import { fadeIn } from '@/lib/animations'
 import { extractLocationFromPhoto, extractExifDate, haversineMetres, getDevicePosition } from '@/lib/geo'
 import type { LocationFill } from '@/lib/geo'
 import { fetchLocations } from '@/data/locations'
+import { isVideoFile, extractKeyframes } from '@/lib/videoKeyframes'
 
 interface PhotoUploadProps {
   entryId: string | null
@@ -50,7 +51,28 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
       const remaining = maxPhotos - photos.length
       const toAdd = files.slice(0, remaining)
 
-      const newPhotos: PendingPhoto[] = toAdd.map((file) => ({
+      // Expand video files into keyframe image files before adding
+      const expandedFiles: File[] = []
+      for (const file of toAdd) {
+        if (isVideoFile(file)) {
+          try {
+            const frames = await extractKeyframes(file, { maxFrames: 5, maxWidth: 1024 })
+            for (const { blob, timestampSeconds } of frames) {
+              const frameName = `${file.name.replace(/\.[^.]+$/, '')}_${Math.round(timestampSeconds)}s.webp`
+              expandedFiles.push(new File([blob], frameName, { type: 'image/webp' }))
+            }
+          } catch {
+            // If extraction fails entirely, skip the video silently
+          }
+        } else {
+          expandedFiles.push(file)
+        }
+      }
+
+      // Re-apply the cap after expansion
+      const finalFiles = expandedFiles.slice(0, maxPhotos - photos.length)
+
+      const newPhotos: PendingPhoto[] = finalFiles.map((file) => ({
         id: crypto.randomUUID(),
         file,
         previewUrl: URL.createObjectURL(file),
@@ -66,12 +88,12 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
       setPhotos((prev) => [...prev, ...newPhotos])
 
       // Try to extract GPS/date from the first photo (only once per session)
-      if (onGeoDetected && !geoFiredRef.current && toAdd.length > 0) {
+      if (onGeoDetected && !geoFiredRef.current && finalFiles.length > 0) {
         // Extract first photo geo + last photo date in parallel
-        const lastPhoto = toAdd.length > 1 ? toAdd[toAdd.length - 1] : null
+        const lastPhoto = finalFiles.length > 1 ? finalFiles[finalFiles.length - 1] : null
         const lastDatePromise = lastPhoto ? extractExifDate(lastPhoto) : Promise.resolve(null)
 
-        Promise.all([extractLocationFromPhoto(toAdd[0]), lastDatePromise]).then(async ([loc, lastPhotoDate]) => {
+        Promise.all([extractLocationFromPhoto(finalFiles[0]), lastDatePromise]).then(async ([loc, lastPhotoDate]) => {
           if (!loc || geoFiredRef.current) return
           geoFiredRef.current = true
 
@@ -127,7 +149,7 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
 
       // If no entryId yet, hand files to the parent for deferred upload
       if (!entryId) {
-        onFilesAdded?.(toAdd)
+        onFilesAdded?.(finalFiles)
         return
       }
 
@@ -321,7 +343,7 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         multiple
         className="hidden"
         onChange={handleFileChange}
