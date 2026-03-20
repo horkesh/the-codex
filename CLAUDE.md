@@ -79,7 +79,7 @@ Client: `src/hooks/useVerdictIntake.ts` — compresses all images to 1024px WebP
 
 **Claude prompt for screenshots**: tightened for private/closed profiles — instructs Claude to examine small profile picture thumbnails closely, extract maximum detail from bio text, highlight covers, and grid previews. Confidence score reflects image quality.
 
-**UI entry point**: FAB on Circle's POI tab opens `ScanActionSheet` (bottom sheet) with two options:
+**UI entry point**: FAB on Circle's POI tab opens `ScanActionSheet` (full-height panel below header/nav/tabs, `top: 136px`) with two options:
 - **Research** — Instagram screenshot analysis → opens `POIModal` in `research` mode
 - **Scan** — Camera or photo from gallery → opens `POIModal` in `scan` mode
 `POIModal` receives a `mode` prop and no longer has an internal toggle. Scan mode file input uses `accept="image/*"` without `capture` attribute — allows both camera and gallery on mobile.
