@@ -108,23 +108,13 @@ html {
 
 /* ── Comfort mode — larger text + tap targets for accessibility ─────────── */
 html.comfort-mode {
-  font-size: 18px;
-  /* Scale all fixed-pixel values (text-[9px], padding, etc.) */
-  zoom: 1.15;
-  -moz-transform: scale(1.15);
-  -moz-transform-origin: top left;
-}
-/* Compensate zoom so viewport still fills the screen */
-html.comfort-mode body {
-  width: calc(100% / 1.15);
-  min-height: calc(100vh / 1.15);
+  font-size: 19px;
 }
 /* Bigger tap targets */
 html.comfort-mode button,
 html.comfort-mode a,
 html.comfort-mode [role="button"] {
   min-height: 44px;
-  min-width: 44px;
 }
 
 body {

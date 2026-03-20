@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth'
 import { NAV_SECTIONS } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
 import { launchToastSession } from '@/ai/toast'
+import { isComfortMode } from '@/hooks/useComfortMode'
 
 const MotionLink = motion(Link)
 
@@ -100,6 +101,7 @@ function SectionCard({ section, featured = false }: { section: Section; featured
 
 export default function Home() {
   const { gent } = useAuthStore()
+  const comfort = gent ? isComfortMode(gent.id) : false
 
   return (
     <>
@@ -143,8 +145,8 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* Section cards — uniform 2 × 3 grid */}
-        <div className="grid grid-cols-2 gap-3 pb-4">
+        {/* Section cards — 2×3 grid, or 3×2 in comfort mode for bigger cards */}
+        <div className={cn('grid gap-3 pb-4', comfort ? 'grid-cols-3' : 'grid-cols-2')}>
           {NAV_SECTIONS.map((section) => (
             <SectionCard key={section.id} section={section} />
           ))}
