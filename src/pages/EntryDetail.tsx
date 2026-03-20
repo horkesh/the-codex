@@ -30,7 +30,7 @@ import { fetchStoryByEntryId, deleteStory } from '@/data/stories'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { staggerContainer, staggerItem } from '@/lib/animations'
-import type { EntryWithParticipants } from '@/types/app'
+import type { EntryWithParticipants, StoryDayEpisode } from '@/types/app'
 
 // ── Options menu ────────────────────────────────────────────────────────────
 
@@ -315,7 +315,7 @@ export default function EntryDetail() {
       let dayLabels: string[] | undefined
       if (entry.type === 'mission') {
         const entryMeta = entryForLore.metadata as Record<string, unknown> | undefined
-        const episodes = entryMeta?.day_episodes as Array<{ label: string; lore?: string; oneliner?: string; photoIds: string[]; day: string }> | undefined
+        const episodes = entryMeta?.day_episodes as StoryDayEpisode[] | undefined
         if (episodes && episodes.length > 1) {
           dayLabels = episodes.map(d => d.label)
         }

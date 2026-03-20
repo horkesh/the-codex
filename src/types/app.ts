@@ -203,6 +203,7 @@ export interface StoryDayEpisode {
   label: string     // "Day 1 — Friday, 14 March"
   photoIds: string[]
   lore?: string     // per-day narrative (optional)
+  oneliner?: string // per-day one-liner for carousel export (optional)
 }
 
 /** Photo stored in entry_photos with GPS and AI analysis */

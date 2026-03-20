@@ -66,10 +66,8 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
 
   // Read day episodes directly from entry metadata (no Story dependency)
   const entryMeta = entry.metadata as Record<string, unknown> | undefined
-  const dayEpisodes = useMemo(() => {
-    const eps = entryMeta?.day_episodes as StoryDayEpisode[] | undefined
-    return (eps && eps.length > 1) ? eps : []
-  }, [entryMeta?.day_episodes])
+  const rawEpisodes = entryMeta?.day_episodes as StoryDayEpisode[] | undefined
+  const dayEpisodes = (rawEpisodes && rawEpisodes.length > 1) ? rawEpisodes : []
 
   // Fetch stamp + city visits on mount
   useEffect(() => {

@@ -35,7 +35,7 @@ import { analyzePhotos, enrichScenesWithAnalysis } from '@/ai/missionIntel'
 import { generateMissionNarrative } from '@/ai/missionLore'
 import { buildMissionIntel, mergeNarratives } from '@/lib/missionIntelBuilder'
 import { fetchCrossMissionContext, fetchEntryPhotos } from '@/data/entries'
-import type { MissionIntel, EntryPhoto } from '@/types/app'
+import type { MissionIntel, EntryPhoto, StoryDayEpisode } from '@/types/app'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { fadeUp } from '@/lib/animations'
@@ -307,7 +307,7 @@ export default function EntryNew() {
           if (dayEps.length > 1) {
             const metaWithDays = { ...(entry.metadata as Record<string, unknown> ?? {}), day_episodes: dayEps }
             await updateEntry(entry.id, { metadata: metaWithDays } as Partial<typeof entry>).catch(() => {})
-            entry.metadata = metaWithDays
+            Object.assign(entry, { metadata: metaWithDays })
           }
 
           // Stage: Scene clustering
@@ -373,7 +373,7 @@ export default function EntryNew() {
           // Fallback to legacy lore generation — use day labels from entry metadata
           const entryWithParticipants = { ...entry, participants: participantGents }
           const fbMeta = entry.metadata as Record<string, unknown> | undefined
-          const fbEpisodes = fbMeta?.day_episodes as Array<{ label: string; lore?: string; oneliner?: string; photoIds: string[]; day: string }> | undefined
+          const fbEpisodes = fbMeta?.day_episodes as StoryDayEpisode[] | undefined
           const fallbackDayLabels = fbEpisodes && fbEpisodes.length > 1
             ? fbEpisodes.map(d => d.label)
             : undefined

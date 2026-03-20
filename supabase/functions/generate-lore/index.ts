@@ -184,7 +184,7 @@ Write the lore in first person plural ("We", "The Gents"). No hashtags, no emoji
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: isMultiDay ? 800 : isFullChronicle ? 600 : 400,
+        max_tokens: isMultiDay ? 1200 : isFullChronicle ? 600 : 400,
         messages: [{ role: 'user', content }],
       }),
       signal: AbortSignal.timeout(isMultiDay ? 60000 : 25000),
