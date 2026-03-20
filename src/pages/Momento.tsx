@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, RefreshCw, Camera, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCamera } from '@/hooks/useCamera'
-import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { fetchAllGents } from '@/data/gents'
 import { getDevicePosition, reverseGeocode } from '@/lib/geo'
@@ -47,7 +46,6 @@ const OVERLAY_IDS: OverlayId[] = ['field_report', 'marquee', 'noir', 'polaroid',
 
 export default function Momento() {
   const navigate = useNavigate()
-  const { gent } = useAuthStore()
   const addToast = useUIStore((s) => s.addToast)
   const camera = useCamera()
 
