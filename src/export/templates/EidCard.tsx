@@ -1,6 +1,5 @@
 import React from 'react'
 import type { Gent } from '@/types/app'
-import { formatDate } from '@/lib/utils'
 import { BrandMark, BackgroundLayer, InsetFrame, ParticipantRow, VARIANT_INNER, FONT, COLOR } from '@/export/templates/shared'
 
 interface EidCardProps {
@@ -68,7 +67,6 @@ function EidInner({ entry, backgroundUrl }: EidCardProps) {
         {entry.location && (
           <p style={{ fontFamily: FONT.body, fontSize: '18px', color: '#A09890', letterSpacing: '0.05em' }}>{entry.location}</p>
         )}
-        <p style={{ fontFamily: FONT.body, fontSize: '14px', color: '#8C8680', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{formatDate(entry.date)}</p>
       </div>
 
       {/* Spacer */}
