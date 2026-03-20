@@ -29,6 +29,7 @@ interface MissionLayoutProps {
   photos: EntryPhoto[]
   isCreator: boolean
   onEntryUpdate: (entry: EntryWithParticipants) => void
+  onSetAsCover?: (url: string) => void
   loreSlot?: React.ReactNode
   controlsSlot?: React.ReactNode
 }
@@ -54,7 +55,7 @@ function SectionDivider({ label }: { label: string }) {
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlot, controlsSlot }: MissionLayoutProps) {
+export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAsCover, loreSlot, controlsSlot }: MissionLayoutProps) {
   const addToast = useUIStore(s => s.addToast)
 
   const [stamp, setStamp] = useState<PassportStamp | null>(null)
@@ -435,19 +436,31 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, loreSlo
 
                 {/* Hero photo */}
                 {heroPhoto && (
-                  <div className="relative rounded-lg overflow-hidden mb-2 shrink-0" style={{ aspectRatio: '16/9' }}>
+                  <button
+                    type="button"
+                    className="relative rounded-lg overflow-hidden mb-2 shrink-0 w-full text-left"
+                    style={{ aspectRatio: '16/9' }}
+                    onClick={() => onSetAsCover?.(heroPhoto.url)}
+                    disabled={!onSetAsCover}
+                  >
                     <img src={heroPhoto.url} alt="" className="w-full h-full object-cover" draggable={false} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                  </div>
+                  </button>
                 )}
 
                 {/* Supporting photos — 3-col row */}
                 {supportingPhotos.length > 0 && (
                   <div className="grid grid-cols-3 gap-1.5 mb-3 shrink-0">
                     {supportingPhotos.map(p => (
-                      <div key={p.id} className="aspect-square rounded-md overflow-hidden border border-gold/10">
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="aspect-square rounded-md overflow-hidden border border-gold/10"
+                        onClick={() => onSetAsCover?.(p.url)}
+                        disabled={!onSetAsCover}
+                      >
                         <img src={p.url} alt="" className="w-full h-full object-cover" draggable={false} />
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}

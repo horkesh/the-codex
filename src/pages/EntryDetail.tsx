@@ -666,6 +666,7 @@ export default function EntryDetail() {
             photos={photos}
             isCreator={isCreator}
             onEntryUpdate={setEntry}
+            onSetAsCover={isCreator ? handleSetAsCover : undefined}
             loreSlot={loreSection}
             controlsSlot={controlsContent}
           />
