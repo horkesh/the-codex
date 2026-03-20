@@ -94,6 +94,7 @@ Client: `src/hooks/useVerdictIntake.ts` — compresses all images to 1024px WebP
 - **Research** — Instagram screenshot analysis → opens `POIModal` in `research` mode
 - **Scan** — Camera or photo from gallery → opens `POIModal` in `scan` mode
 `POIModal` receives a `mode` prop and no longer has an internal toggle. Scan mode file input uses `accept="image/*"` without `capture` attribute — allows both camera and gallery on mobile.
+**Radar empty state**: when POI tab has no people, shows inline Research + Scan cards (same large card style as ScanActionSheet) instead of a placeholder image. Tapping goes directly to POIModal in the correct mode, bypassing the action sheet.
 
 ## ReactFlow canvas height
 Shell uses `min-h-dvh` (not `h-dvh`), so `flex-1` children have no definite height → canvas is 0px (black screen). Always use `style={{ height: 'calc(100dvh - Xpx)' }}` where X = TopBar + SectionNav heights. Current: `calc(100dvh - 96px)` (TopBar 56px + SectionNav 40px).
