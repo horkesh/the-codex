@@ -1,9 +1,16 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { X, Search, MapPin, Loader2 } from 'lucide-react'
+import { X, Search, MapPin, Loader2, Navigation } from 'lucide-react'
 import type { LocationFill } from '@/lib/geo'
+import { getDevicePosition } from '@/lib/geo'
 import type { SavedLocation } from '@/types/app'
 
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string
+
+interface NearbyPlace {
+  placeId: string
+  name: string
+  vicinity: string
+}
 
 interface PlaceResult {
   placeId: string
@@ -29,12 +36,41 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
   const [results, setResults] = useState<PlaceResult[]>([])
   const [loading, setLoading] = useState(false)
   const [resolving, setResolving] = useState<string | null>(null)
+  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([])
+  const [nearbyLoading, setNearbyLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Auto-focus input
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 100)
+  }, [])
+
+  // Fetch nearby places on mount
+  useEffect(() => {
+    if (!GOOGLE_MAPS_KEY) return
+    setNearbyLoading(true)
+    getDevicePosition().then(async (pos) => {
+      if (!pos) { setNearbyLoading(false); return }
+      try {
+        const res = await fetch(
+          `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${pos.lat},${pos.lng}&radius=300&type=restaurant|bar|cafe|night_club|movie_theater|gym|hotel|museum|park|shopping_mall&key=${GOOGLE_MAPS_KEY}`,
+          { signal: AbortSignal.timeout(5000) },
+        )
+        if (!res.ok) { setNearbyLoading(false); return }
+        const data = await res.json()
+        if (data.status === 'OK' && data.results?.length) {
+          setNearbyPlaces(
+            data.results.slice(0, 10).map((p: { place_id: string; name: string; vicinity?: string }) => ({
+              placeId: p.place_id,
+              name: p.name,
+              vicinity: p.vicinity ?? '',
+            }))
+          )
+        }
+      } catch { /* silent */ }
+      setNearbyLoading(false)
+    }).catch(() => setNearbyLoading(false))
   }, [])
 
   const searchPlaces = useCallback(async (text: string) => {
@@ -170,7 +206,13 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
     onClose()
   }
 
+  async function selectNearbyPlace(place: NearbyPlace) {
+    // Reuse the same place details resolution as autocomplete results
+    await selectPlace({ placeId: place.placeId, name: place.name, address: place.vicinity })
+  }
+
   const showSavedPlaces = !query.trim() && savedPlaces && savedPlaces.length > 0
+  const showNearby = !query.trim() && nearbyPlaces.length > 0
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-obsidian">
@@ -235,6 +277,40 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
         {!loading && query.trim() && results.length === 0 && (
           <div className="px-4 py-8 text-center">
             <p className="text-ivory-dim text-sm font-body">No places found</p>
+          </div>
+        )}
+
+        {/* Nearby places (shown when no query) */}
+        {!query.trim() && nearbyLoading && (
+          <div className="flex items-center gap-2 px-4 py-4">
+            <Loader2 size={14} className="animate-spin text-gold/60" />
+            <span className="text-ivory-dim text-xs font-body">Finding nearby places...</span>
+          </div>
+        )}
+        {showNearby && (
+          <div className="flex flex-col">
+            <p className="px-4 pt-4 pb-2 text-ivory-dim text-[10px] uppercase tracking-widest font-body flex items-center gap-1.5">
+              <Navigation size={10} className="text-gold/50" />
+              Nearby
+            </p>
+            {nearbyPlaces.map((place) => (
+              <button
+                key={place.placeId}
+                type="button"
+                onClick={() => selectNearbyPlace(place)}
+                disabled={resolving === place.placeId}
+                className="flex items-start gap-3 px-4 py-3 border-b border-white/5 text-left hover:bg-white/3 active:bg-white/5 transition-colors disabled:opacity-50"
+              >
+                <MapPin size={16} className="text-gold mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-ivory text-sm font-body truncate">{place.name}</p>
+                  <p className="text-ivory-dim text-xs font-body truncate mt-0.5">{place.vicinity}</p>
+                </div>
+                {resolving === place.placeId && (
+                  <Loader2 size={14} className="animate-spin text-gold mt-1 shrink-0" />
+                )}
+              </button>
+            ))}
           </div>
         )}
 
