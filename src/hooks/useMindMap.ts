@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { fetchAllGents } from '@/data/gents'
 import { fetchPeople, fetchAllPersonGents } from '@/data/people'
 import { fetchAllAppearances } from '@/data/personAppearances'
-import { fetchRecentEntryIds } from '@/data/entries'
+import { fetchRecentEntryIds, fetchEntryDates } from '@/data/entries'
 import { computeGraphData, type MindMapFilters } from '@/lib/mindMapLayout'
 import { updatePerson } from '@/data/people'
 import type { Gent, Person, PersonAppearance, PersonTier, GentAlias } from '@/types/app'
@@ -33,9 +33,11 @@ export function useMindMap() {
   const [personGents, setPersonGents] = useState<Array<{ person_id: string; gent_id: string }>>([])
   const [loading, setLoading] = useState(true)
   const [recentEntryIds, setRecentEntryIds] = useState<Set<string>>(new Set())
+  const [entryDates, setEntryDates] = useState<Map<string, string>>(new Map())
 
   const [filters, setFilters] = useState<MindMapFilters>({ tier: 'all', gent: 'all' })
   const [focusedGentId, setFocusedGentId] = useState<string | null>(null)
+  const [focusedPersonId, setFocusedPersonId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [savedPositions, setSavedPositions] = useState<Record<string, { x: number; y: number }>>(loadPositions)
 
@@ -47,7 +49,8 @@ export function useMindMap() {
     const a = fetchAllAppearances().then(setAppearances).catch(() => {})
     const r = fetchRecentEntryIds(7).then(ids => setRecentEntryIds(new Set(ids))).catch(() => {})
     const pg = fetchAllPersonGents().then(rows => { console.debug('[mindmap] person_gents:', rows.length); setPersonGents(rows) }).catch(e => console.error('[mindmap] person_gents failed:', e))
-    Promise.all([g, p, a, r, pg]).finally(() => setLoading(false))
+    const ed = fetchEntryDates().then(setEntryDates).catch(() => {})
+    Promise.all([g, p, a, r, pg, ed]).finally(() => setLoading(false))
   }, [])
 
   const recentlyActivePersonIds = useMemo(() => {
@@ -58,13 +61,33 @@ export function useMindMap() {
     return active
   }, [appearances, recentEntryIds])
 
+  // Per-person recency: days since last appearance (for heat gradient)
+  const personRecency = useMemo(() => {
+    const now = Date.now()
+    const recency = new Map<string, number>()
+    for (const a of appearances) {
+      const dateStr = entryDates.get(a.entry_id)
+      if (!dateStr) continue
+      const daysSince = Math.max(0, Math.floor((now - new Date(dateStr).getTime()) / 86400000))
+      const prev = recency.get(a.person_id)
+      if (prev === undefined || daysSince < prev) recency.set(a.person_id, daysSince)
+    }
+    return recency
+  }, [appearances, entryDates])
+
   const graphData = useMemo(
-    () => computeGraphData(gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds, searchQuery, personGents),
-    [gents, people, appearances, filters, focusedGentId, savedPositions, recentlyActivePersonIds, searchQuery, personGents]
+    () => computeGraphData(gents, people, appearances, filters, focusedGentId, focusedPersonId, savedPositions, recentlyActivePersonIds, searchQuery, personGents, personRecency),
+    [gents, people, appearances, filters, focusedGentId, focusedPersonId, savedPositions, recentlyActivePersonIds, searchQuery, personGents, personRecency]
   )
 
   const toggleGentFocus = useCallback((gentId: string) => {
     setFocusedGentId(prev => prev === gentId ? null : gentId)
+    setFocusedPersonId(null) // clear person focus when gent focused
+  }, [])
+
+  const togglePersonFocus = useCallback((personId: string) => {
+    setFocusedPersonId(prev => prev === personId ? null : personId)
+    setFocusedGentId(null) // clear gent focus when person focused
   }, [])
 
   const setTierFilter = useCallback((tier: MindMapFilters['tier']) => {
@@ -109,12 +132,14 @@ export function useMindMap() {
     loading,
     filters,
     focusedGentId,
+    focusedPersonId,
     nodes: graphData.nodes,
     edges: graphData.edges,
     searchMatchNodeIds: graphData.searchMatchNodeIds,
     gents,
     savedPositions,
     toggleGentFocus,
+    togglePersonFocus,
     setTierFilter,
     setGentFilter,
     updatePersonTier,

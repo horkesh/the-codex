@@ -42,8 +42,8 @@ const DEFAULT_CANVAS_HEIGHT = 'calc(100dvh - 96px)'
 export function MindMapCanvas({ height }: { height?: string }) {
   const canvasHeight = height ?? DEFAULT_CANVAS_HEIGHT
   const {
-    loading, nodes, edges, filters, gents, savedPositions,
-    toggleGentFocus, setTierFilter, setGentFilter, updatePersonTier,
+    loading, nodes, edges, filters, gents, savedPositions, focusedPersonId,
+    toggleGentFocus, togglePersonFocus, setTierFilter, setGentFilter, updatePersonTier,
     handleNodeDragStop, clearPersonPosition, resetLayout, searchQuery, setSearchQuery,
     searchMatchNodeIds,
   } = useMindMap()
@@ -76,10 +76,16 @@ export function MindMapCanvas({ height }: { height?: string }) {
     if (data.type === 'gent') {
       toggleGentFocus(data.gent.id)
     } else if (data.type === 'person') {
-      setSelectedPerson(data.person)
-      setSheetOpen(true)
+      if (focusedPersonId === data.person.id) {
+        // Second tap on focused person → open detail sheet
+        setSelectedPerson(data.person)
+        setSheetOpen(true)
+      } else {
+        // First tap → focus this person (highlight their connections)
+        togglePersonFocus(data.person.id)
+      }
     }
-  }, [toggleGentFocus])
+  }, [toggleGentFocus, togglePersonFocus, focusedPersonId])
 
   const onDragStop = useCallback((_event: React.MouseEvent, node: { id: string; data: Record<string, unknown>; position: { x: number; y: number } }) => {
     const data = node.data as Record<string, unknown>

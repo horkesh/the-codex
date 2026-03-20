@@ -470,3 +470,15 @@ export async function fetchRecentEntryIds(days: number): Promise<string[]> {
   if (error) throw error
   return (data ?? []).map(e => e.id)
 }
+
+/** Returns entry id → date for all published entries (for mind map recency). */
+export async function fetchEntryDates(): Promise<Map<string, string>> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id, date')
+    .in('status', ['published', 'gathering_post'])
+  if (error) throw error
+  const map = new Map<string, string>()
+  for (const e of data ?? []) map.set(e.id, e.date)
+  return map
+}

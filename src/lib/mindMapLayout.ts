@@ -49,6 +49,8 @@ export interface PersonNodeData {
   tier: string
   dimmed: boolean
   recentlyActive: boolean
+  recencyDays: number | null // days since last appearance, null = never seen
+  focused: boolean // true when this person is tap-focused
   [key: string]: unknown
 }
 
@@ -59,10 +61,12 @@ export function computeGraphData(
   appearances: PersonAppearance[],
   filters: MindMapFilters,
   focusedGentId: string | null,
+  focusedPersonId: string | null,
   savedPositions?: Record<string, { x: number; y: number }>,
   recentlyActiveIds?: Set<string>,
   searchQuery?: string,
   personGents?: Array<{ person_id: string; gent_id: string }>,
+  personRecency?: Map<string, number>,
 ): { nodes: Node[]; edges: Edge[]; searchMatchNodeIds: string[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
@@ -91,13 +95,15 @@ export function computeGraphData(
     gentIdToAlias.set(g.id, g.alias)
     gentIds.add(g.id)
     const pos = gentPositions[i] ?? { x: 0, y: 0 }
-    const dimmed = (focusedGentId !== null && focusedGentId !== g.id) || (!!searchQuery && searchMatchIds.size > 0)
+    const gentDimmed = (focusedGentId !== null && focusedGentId !== g.id)
+      || (focusedPersonId !== null && !focusedPersonGentIds.has(g.id))
+      || (!!searchQuery && searchMatchIds.size > 0)
 
     nodes.push({
       id: `gent-${g.id}`,
       type: 'gentNode',
       position: pos,
-      data: { type: 'gent', gent: g, dimmed } satisfies GentNodeData,
+      data: { type: 'gent', gent: g, dimmed: gentDimmed } satisfies GentNodeData,
       draggable: true,
     })
   })
@@ -105,7 +111,7 @@ export function computeGraphData(
   // 2. Gent ↔ Gent edges (always)
   for (let i = 0; i < gents.length; i++) {
     for (let j = i + 1; j < gents.length; j++) {
-      const dimmed = focusedGentId !== null || (!!searchQuery && searchMatchIds.size > 0)
+      const dimmed = focusedGentId !== null || focusedPersonId !== null || (!!searchQuery && searchMatchIds.size > 0)
       edges.push({
         id: `gent-edge-${gents[i].id}-${gents[j].id}`,
         source: `gent-${gents[i].id}`,
@@ -176,15 +182,31 @@ export function computeGraphData(
   }
 
   // 6. Place people on rings
-  const connectedToFocused = new Set<string>()
-
+  const connectedToFocusedGent = new Set<string>()
   if (focusedGentId) {
     for (const p of filtered) {
       const isLinked = personGentMap.get(p.id)?.has(focusedGentId) ?? false
       const isAddedBy = p.added_by === focusedGentId
       const isNotedBy = personNoters.get(p.id)?.has(focusedGentId) ?? false
-      if (isLinked || isAddedBy || isNotedBy) connectedToFocused.add(p.id)
+      if (isLinked || isAddedBy || isNotedBy) connectedToFocusedGent.add(p.id)
     }
+  }
+
+  const filteredIds = new Set(filtered.map(p => p.id))
+
+  // Person-focus: find all people who share entries with the focused person
+  const connectedToFocusedPerson = new Set<string>()
+  const focusedPersonGentIds = new Set<string>()
+  if (focusedPersonId) {
+    connectedToFocusedPerson.add(focusedPersonId)
+    const focusedEntries = personEntries.get(focusedPersonId) ?? new Set()
+    for (const a of appearances) {
+      if (focusedEntries.has(a.entry_id) && filteredIds.has(a.person_id)) {
+        connectedToFocusedPerson.add(a.person_id)
+      }
+    }
+    const linked = personGentMap.get(focusedPersonId)
+    if (linked) for (const gId of linked) focusedPersonGentIds.add(gId)
   }
 
   for (const [ring, ringPeople] of rings) {
@@ -198,7 +220,10 @@ export function computeGraphData(
       const y = radius * Math.sin(angle)
 
       const searchDimmed = searchQuery ? !searchMatchIds.has(person.id) : false
-      const dimmed = (focusedGentId !== null && !connectedToFocused.has(person.id)) || searchDimmed
+      const gentFocusDimmed = focusedGentId !== null && !connectedToFocusedGent.has(person.id)
+      const personFocusDimmed = focusedPersonId !== null && !connectedToFocusedPerson.has(person.id)
+      const dimmed = gentFocusDimmed || personFocusDimmed || searchDimmed
+      const focused = focusedPersonId === person.id
 
       const savedPos = savedPositions?.[person.id]
       const position = savedPos ?? { x, y }
@@ -213,6 +238,8 @@ export function computeGraphData(
           tier: ring,
           dimmed,
           recentlyActive: recentlyActiveIds?.has(person.id) ?? false,
+          recencyDays: personRecency?.get(person.id) ?? null,
+          focused,
         } satisfies PersonNodeData,
         draggable: true,
       })
@@ -226,7 +253,9 @@ export function computeGraphData(
       for (const gId of edgeGentIds) {
         if (!gentIds.has(gId)) continue
         const alias = gentIdToAlias.get(gId) ?? 'lorekeeper'
-        const edgeDimmed = (focusedGentId !== null && focusedGentId !== gId) || searchDimmed
+        const edgeDimmed = (focusedGentId !== null && focusedGentId !== gId)
+          || (focusedPersonId !== null && !connectedToFocusedPerson.has(person.id))
+          || searchDimmed
         const count = (gentPersonCount.get(`${gId}-${person.id}`) ?? 0) + 1
         edges.push({
           id: `edge-gp-${gId}-${person.id}`,
@@ -239,7 +268,6 @@ export function computeGraphData(
   }
 
   // 7. Person ↔ Person edges (shared entries) — thickness scales with shared count
-  const filteredIds = new Set(filtered.map(p => p.id))
   const entryPeople = new Map<string, string[]>()
   for (const a of appearances) {
     if (!filteredIds.has(a.person_id)) continue
@@ -261,14 +289,24 @@ export function computeGraphData(
     const strokeWidth = count >= 4 ? 1.5 : count >= 2 ? 1 : 0.5
     const [idA, idB] = key.split('-')
     const ppSearchDimmed = searchQuery ? (!searchMatchIds.has(idA) || !searchMatchIds.has(idB)) : false
+    const ppPersonFocusDimmed = focusedPersonId !== null
+      && !connectedToFocusedPerson.has(idA) && !connectedToFocusedPerson.has(idB)
+    const ppDimmed = ppSearchDimmed || ppPersonFocusDimmed
+    // Highlight edges involving the focused person
+    const ppHighlighted = focusedPersonId !== null
+      && (idA === focusedPersonId || idB === focusedPersonId)
     edges.push({
       id: `pp-${key}`,
       source: `person-${idA}`,
       target: `person-${idB}`,
+      label: ppHighlighted ? `${count}` : undefined,
+      labelStyle: ppHighlighted ? { fill: '#c9a84c', fontSize: 10, fontFamily: 'Instrument Sans' } : undefined,
+      labelBgStyle: ppHighlighted ? { fill: '#0a0a0f', fillOpacity: 0.8 } : undefined,
+      labelBgPadding: ppHighlighted ? [4, 2] as [number, number] : undefined,
       style: {
-        stroke: 'rgba(255,255,255,0.12)',
-        strokeWidth,
-        opacity: ppSearchDimmed ? 0.05 : 1,
+        stroke: ppHighlighted ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.12)',
+        strokeWidth: ppHighlighted ? Math.max(strokeWidth, 1.5) : strokeWidth,
+        opacity: ppDimmed ? 0.05 : 1,
       },
       className: 'person-person-edge',
     })

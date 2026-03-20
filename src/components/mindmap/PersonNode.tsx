@@ -36,13 +36,23 @@ const TIER_CONFIG: Record<string, {
   },
 }
 
+/** Recency → ring color: warm gold for recent, fading to grey for dormant */
+function recencyRingColor(days: number | null): string {
+  if (days === null) return 'rgba(255,255,255,0.08)' // never seen
+  if (days <= 7) return 'rgba(201,168,76,0.6)'       // last week — warm gold
+  if (days <= 30) return 'rgba(201,168,76,0.35)'     // last month — fading gold
+  if (days <= 90) return 'rgba(201,168,76,0.15)'     // last quarter — dim gold
+  return 'rgba(255,255,255,0.08)'                     // dormant
+}
+
 function PersonNodeInner({ data }: NodeProps) {
-  const { person, tier, dimmed, recentlyActive } = data as unknown as PersonNodeData
+  const { person, tier, dimmed, recentlyActive, recencyDays, focused } = data as unknown as PersonNodeData
   const zoom = useStore(s => s.transform[2])
   const config = TIER_CONFIG[tier] ?? TIER_CONFIG.acquaintance
 
   const showLabel = zoom >= config.showLabelMinZoom
   const isPOI = tier === 'person_of_interest'
+  const ringColor = recencyRingColor(recencyDays)
 
   return (
     <div
@@ -59,7 +69,23 @@ function PersonNodeInner({ data }: NodeProps) {
             }}
           />
         )}
-        <div className={cn(config.borderClass, 'rounded-full relative')}>
+        {/* Focus ring */}
+        {focused && (
+          <div
+            className="absolute rounded-full"
+            style={{
+              inset: '-4px',
+              border: '2px solid rgba(201,168,76,0.7)',
+              boxShadow: '0 0 12px rgba(201,168,76,0.4)',
+            }}
+          />
+        )}
+        <div
+          className="rounded-full relative"
+          style={{
+            boxShadow: `0 0 0 1.5px ${ringColor}`,
+          }}
+        >
           <Avatar
             src={person.portrait_url ?? person.photo_url}
             name={person.name}
@@ -69,9 +95,10 @@ function PersonNodeInner({ data }: NodeProps) {
       </div>
       {showLabel && (
         <span
-          className={`text-[9px] font-body whitespace-nowrap max-w-[70px] truncate text-center ${
-            isPOI ? 'text-ivory-dim/60' : 'text-ivory-dim'
-          }`}
+          className={cn(
+            'text-[9px] font-body whitespace-nowrap max-w-[70px] truncate text-center',
+            focused ? 'text-gold' : isPOI ? 'text-ivory-dim/60' : 'text-ivory-dim'
+          )}
         >
           {person.name}
         </span>
