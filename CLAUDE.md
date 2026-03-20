@@ -286,10 +286,14 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Tier change on drop**: dragging a contact into a different ring zone shows a personality-driven confirmation banner (promotion: "You sure X deserves to be closer to you?", demotion: "You decided X is not worthy enough of the Inner Circle?"). Accepting clears saved position so node snaps to the new ring. POI nodes excluded.
 - **Connection strength**: edge thickness scales with appearance count (1.5px → 2.5px → 3.5px for gent edges).
 - **Activity pulse**: gold breathing glow on person nodes that appeared in entries within the last 7 days. CSS `@keyframes pulse-ring`.
+- **Recency heat**: node ring color scales with days since last appearance — warm gold (≤7d), fading gold (≤30d), dim gold (≤90d), grey (dormant/never seen). Computed from `fetchEntryDates()` + appearances in `useMindMap`. Replaces static border classes with dynamic `box-shadow` rings.
+- **Tap-to-focus**: first tap on a person highlights their network — co-appearing people (via shared entries) + connected gents. Everything else dims to 0.15 opacity. Second tap opens their detail sheet. Tapping a gent or another person clears the focus. Focused person gets a gold ring + glow + gold label. `focusedPersonId` state in `useMindMap`, `connectedToFocusedPerson` computed in `computeGraphData`.
+- **Inter-contact edges**: person↔person edges connect people who co-appeared in entries. Thickness scales with shared count (0.5→1→1.5px). When a person is focused, their edges highlight in gold with appearance count labels.
+- **Edge labels**: shown on person↔person edges only when one end is the focused person. Gold text, dark background, showing the shared appearance count.
 - **Search**: search icon → expandable input, dims non-matching nodes, auto-fits view to 1-3 matches.
 - **Ring guides**: concentric dashed circles with labels (Inner Circle, Outer Circle, Acquaintance, POI) rendered via `RingGuides.tsx`.
 - **Reset Layout**: chip in filter area clears all saved positions from localStorage.
-- Data: `useMindMap` hook in `src/hooks/useMindMap.ts`, layout in `src/lib/mindMapLayout.ts`.
+- Data: `useMindMap` hook in `src/hooks/useMindMap.ts`, layout in `src/lib/mindMapLayout.ts`. `fetchEntryDates()` in `src/data/entries.ts` for recency computation.
 
 ## Circle multi-gent relationships
 - `person_gents` table: many-to-many between people and gents (who "knows" this person). RLS: authenticated users can select/insert/delete.
