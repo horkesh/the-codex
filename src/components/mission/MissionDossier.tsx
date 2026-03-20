@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, type ReactNode } from 'react'
-import type { EntryWithParticipants, EntryPhoto, MissionIntel, PhotoAnalysis, Scene } from '@/types/app'
+import type { EntryWithParticipants, EntryPhoto, MissionIntel, PhotoAnalysis } from '@/types/app'
 import { DayStickyNav } from './DayStickyNav'
 import { DayChapter } from './DayChapter'
 import { TripTempoGraph } from './TripTempoGraph'
@@ -16,7 +16,7 @@ interface Props {
   controlsSlot?: ReactNode
 }
 
-export function MissionDossier({ entry, photos, isCreator, onEntryUpdate, loreSlot, controlsSlot }: Props) {
+export function MissionDossier({ entry, photos, isCreator, onEntryUpdate: _onEntryUpdate, loreSlot, controlsSlot }: Props) {
   const intel = (entry.metadata as Record<string, unknown>)?.mission_intel as MissionIntel | undefined
   const [activeDay, setActiveDay] = useState<string | null>(null)
   const dayRefs = useRef<Record<string, HTMLDivElement | null>>({})

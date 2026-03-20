@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { DayRoute } from '@/types/app'
-import { getGoogleMaps } from '@/lib/geo'
+import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps'
+
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string
 
 interface Props {
   route: DayRoute
@@ -8,7 +10,7 @@ interface Props {
   className?: string
 }
 
-// Dark style for maps (matching existing app style from geo.ts)
+// Dark style for maps (matching existing app style)
 const DARK_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
@@ -20,78 +22,104 @@ const DARK_STYLE = [
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
 ]
 
-export function RouteMap({ route, dayLabel, className }: Props) {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const [error, setError] = useState(false)
+interface RouteOverlayProps {
+  route: DayRoute
+}
+
+function RouteOverlay({ route }: RouteOverlayProps) {
+  const map = useMap()
+  const overlayRef = useRef<{ polyline: google.maps.Polyline; markers: google.maps.Marker[] } | null>(null)
 
   useEffect(() => {
-    if (!mapRef.current || route.points.length < 2) return
+    if (!map) return
 
-    let map: google.maps.Map | undefined
+    // Fit bounds
+    const bounds = new window.google.maps.LatLngBounds()
+    for (const p of route.points) {
+      bounds.extend({ lat: p.lat, lng: p.lng })
+    }
+    map.fitBounds(bounds, 40)
 
-    getGoogleMaps().then(google => {
-      if (!mapRef.current) return
+    // Draw polyline
+    const polyline = new window.google.maps.Polyline({
+      path: route.points.map(p => ({ lat: p.lat, lng: p.lng })),
+      geodesic: true,
+      strokeColor: '#c9a84c',
+      strokeOpacity: 0.6,
+      strokeWeight: 2.5,
+      map,
+    })
 
-      // Create map centered on route midpoint
-      const bounds = new google.maps.LatLngBounds()
-      for (const p of route.points) {
-        bounds.extend({ lat: p.lat, lng: p.lng })
-      }
-
-      map = new google.maps.Map(mapRef.current, {
-        center: bounds.getCenter(),
-        zoom: 14,
-        disableDefaultUI: true,
-        zoomControl: false,
-        styles: DARK_STYLE as google.maps.MapTypeStyle[],
-        backgroundColor: '#1a1a2e',
-      })
-
-      map.fitBounds(bounds, 40)
-
-      // Gold polyline connecting route points
-      new google.maps.Polyline({
-        path: route.points.map(p => ({ lat: p.lat, lng: p.lng })),
-        geodesic: true,
-        strokeColor: '#c9a84c',
-        strokeOpacity: 0.6,
-        strokeWeight: 2.5,
+    // Draw markers
+    const markers = route.points.map(point =>
+      new window.google.maps.Marker({
+        position: { lat: point.lat, lng: point.lng },
         map,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 4,
+          fillColor: '#c9a84c',
+          fillOpacity: 0.8,
+          strokeColor: '#c9a84c',
+          strokeWeight: 1,
+        },
+        title: point.label ?? undefined,
       })
+    )
 
-      // Gold dot markers at each point
-      for (const point of route.points) {
-        new google.maps.Marker({
-          position: { lat: point.lat, lng: point.lng },
-          map,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 4,
-            fillColor: '#c9a84c',
-            fillOpacity: 0.8,
-            strokeColor: '#c9a84c',
-            strokeWeight: 1,
-          },
-          title: point.label ?? undefined,
-        })
-      }
-    }).catch(() => setError(true))
+    overlayRef.current = { polyline, markers }
 
-    return () => { map = undefined }
-  }, [route])
+    return () => {
+      overlayRef.current?.polyline.setMap(null)
+      for (const m of overlayRef.current?.markers ?? []) m.setMap(null)
+      overlayRef.current = null
+    }
+  }, [map, route])
+
+  return null
+}
+
+// Compute midpoint for initial center
+function midpoint(route: DayRoute): { lat: number; lng: number } {
+  const lats = route.points.map(p => p.lat)
+  const lngs = route.points.map(p => p.lng)
+  return {
+    lat: (Math.min(...lats) + Math.max(...lats)) / 2,
+    lng: (Math.min(...lngs) + Math.max(...lngs)) / 2,
+  }
+}
+
+export function RouteMap({ route, dayLabel, className }: Props) {
+  const [error, setError] = useState(false)
 
   if (route.points.length < 2) return null
   if (error) return null
+
+  const center = midpoint(route)
 
   return (
     <div className={className}>
       <p className="text-[9px] font-body uppercase tracking-[0.2em] text-ivory/20 mb-1.5">
         {dayLabel} Route
       </p>
-      <div
-        ref={mapRef}
-        className="w-full h-40 rounded-lg overflow-hidden border border-ivory/5"
-      />
+      <div className="w-full h-40 rounded-lg overflow-hidden border border-ivory/5">
+        <APIProvider
+          apiKey={GOOGLE_MAPS_KEY}
+          onError={() => setError(true)}
+        >
+          <Map
+            defaultCenter={center}
+            defaultZoom={14}
+            disableDefaultUI
+            mapId="route-map"
+            styles={DARK_STYLE as google.maps.MapTypeStyle[]}
+            backgroundColor="#1a1a2e"
+            style={{ width: '100%', height: '100%' }}
+          >
+            <RouteOverlay route={route} />
+          </Map>
+        </APIProvider>
+      </div>
     </div>
   )
 }

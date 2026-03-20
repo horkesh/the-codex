@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Scene, EntryPhoto, PhotoAnalysis, Gent } from '@/types/app'
-import { cn } from '@/lib/utils'
 import { GentPresenceBar } from './GentPresenceBar'
 
 interface Props {

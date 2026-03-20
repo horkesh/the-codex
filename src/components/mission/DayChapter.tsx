@@ -18,8 +18,6 @@ export function DayChapter({
   chapter, scenes, photos, analyses, participants,
   isCreator, onEditScene, onShowPerspectives, perspectiveCounts,
 }: Props) {
-  const dayPhotos = photos.filter(p => chapter.photoIds.includes(p.id))
-
   return (
     <section className="space-y-4">
       {/* Day header */}

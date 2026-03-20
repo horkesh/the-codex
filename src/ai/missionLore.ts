@@ -35,7 +35,6 @@ export async function generateMissionNarrative(
     .sort(([a], [b]) => a - b)
     .map(([dayIndex, dayScenes]) => {
       const allPhotos = dayScenes.flatMap(s => s.photoIds)
-      const allAnalyses = allPhotos.map(id => photoAnalyses.get(id)).filter(Boolean) as PhotoAnalysis[]
 
       return {
         label: formatDayLabel(dayIndex + 1, dayScenes[0].day),

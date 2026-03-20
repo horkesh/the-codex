@@ -209,7 +209,7 @@ export async function fetchEntryPhotos(entryId: string): Promise<Array<{
     .order('sort_order', { ascending: true })
 
   if (error) throw error
-  return (data ?? []) as Array<{
+  return (data ?? []) as unknown as Array<{
     id: string
     entry_id: string
     url: string

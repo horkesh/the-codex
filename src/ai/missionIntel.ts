@@ -79,12 +79,12 @@ export async function analyzePhotos(
 
   // Step 4: Persist ai_analysis to entry_photos rows (fire-and-forget)
   for (const [photoId, analysis] of results) {
-    supabase
-      .from('entry_photos')
-      .update({ ai_analysis: analysis })
-      .eq('id', photoId)
-      .then(() => {})
-      .catch(() => {})
+    void Promise.resolve(
+      supabase
+        .from('entry_photos')
+        .update({ ai_analysis: analysis } as Record<string, unknown>)
+        .eq('id', photoId)
+    ).catch(() => {})
   }
 
   return results
