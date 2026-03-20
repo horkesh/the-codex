@@ -36,7 +36,7 @@ import type { EntryWithParticipants } from '@/types/app'
 
 // Flavour options per entry type
 const FLAVOUR_OPTIONS: Record<string, Array<{ value: string | undefined; label: string }>> = {
-  steak: [{ value: undefined, label: 'Regular' }, { value: 'iftar', label: 'Iftar' }],
+  steak: [{ value: undefined, label: 'Regular' }, { value: 'iftar', label: 'Iftar' }, { value: 'eid', label: 'Eid' }],
   night_out: [{ value: undefined, label: 'Regular' }, { value: 'live_music', label: 'Live Music' }, { value: 'movie_night', label: 'Movie Night' }],
 }
 

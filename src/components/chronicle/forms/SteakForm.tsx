@@ -31,6 +31,7 @@ const CUTS = ['Ribeye', 'Wagyu', 'T-Bone', 'Striploin', 'Fillet', 'Other']
 const TABLE_FLAVOURS = [
   { value: undefined, label: 'Regular' },
   { value: 'iftar', label: 'Iftar' },
+  { value: 'eid', label: 'Eid' },
 ] as const
 
 const empty: SteakFormData = {
