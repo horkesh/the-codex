@@ -59,6 +59,17 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 - **App imagery:** Entry-type images (1–7) in `public/entry-types/*.webp`; empty-state images (8–11) in `public/empty-states/*.webp`. Prompts and paths: `docs/03-architecture/entry_type_image_prompts.md`.
 - **Date format**: DD/MM/YYYY everywhere (European). `formatDate()` in `src/lib/utils.ts` outputs `05/03/2026`. Month+year labels (e.g. photo timeline, visa pages) use `en-GB` long month format ("March 2026").
 
+## Comfort mode (accessibility)
+- **Purpose**: larger text and tap targets for gents with vision difficulties.
+- **Base font-size**: 17px for all users (bumped from 16px). Comfort mode: 20px.
+- **Fixed-pixel text overrides** in `src/styles/globals.css`: `text-[8px]`→11px, `text-[9px]`→12px, `text-[10px]`→13px, `text-[11px]`→14px via `!important` rules on `html.comfort-mode`.
+- **Minimum tap targets**: 44px on all buttons/links in comfort mode.
+- **SectionNav**: wraps to 2 rows of 3 in comfort mode (`flex-wrap`, `flex-[0_0_33.33%]`). Icons 13→20px, labels 8→11px.
+- **Home grid**: switches to `grid-cols-3` (2 rows of 3) in comfort mode for wider, more tappable cards.
+- **Storage**: per-gent preference in localStorage (`codex-comfort-mode` key, JSON object keyed by gent ID).
+- **Hook**: `src/hooks/useComfortMode.ts` — `useComfortMode()` applies the `comfort-mode` class on `<html>` based on logged-in gent's preference. Called in `AppContent` (App.tsx). `toggleComfortMode(gentId)` and `isComfortMode(gentId)` exported for use in components.
+- **Toggle UI**: Profile page — Eye icon with switch, between Push Notifications and Toast Service Record.
+
 ## Portrait generation (`supabase/functions/generate-portrait/`)
 Two-step pipeline (with photo-less fallback):
 1. **Analysis** — `gemini-2.5-flash` with vision: extracts structured `appearance` and `traits`. **Skipped when no photo is provided** — falls back to stored descriptions from `_shared/gent-identities.ts` (`GENT_APPEARANCES`).
