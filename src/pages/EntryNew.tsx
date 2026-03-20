@@ -17,6 +17,7 @@ import { ToastForm } from '@/components/chronicle/forms/ToastForm'
 import { InterludeForm } from '@/components/chronicle/forms/InterludeForm'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { createEntry, addEntryParticipants, addPersonAppearances, updateEntryCover, updateEntryLore, updateEntry } from '@/data/entries'
+import { fetchAllGents } from '@/data/gents'
 import { ContactTagger } from '@/components/chronicle/ContactTagger'
 import { fetchProspectById, updateProspect } from '@/data/prospects'
 import { launchToastSession } from '@/ai/toast'
@@ -256,6 +257,10 @@ export default function EntryNew() {
         await addEntryParticipants(entry.id, allParticipantIds)
       }
 
+      // Fetch all gent objects for participant names in AI narratives
+      const allGents = await fetchAllGents()
+      const participantGents = allGents.filter((g) => allParticipantIds.includes(g.id))
+
       // 2b. Tag people present (person_appearances)
       if (taggedPeople.length > 0) {
         addPersonAppearances(entry.id, taggedPeople, gent.id, allParticipantIds).catch(() => {})
@@ -301,7 +306,7 @@ export default function EntryNew() {
           // Stage: Narrative generation
           setMissionStage('generating_narrative')
           const crossContext = await fetchCrossMissionContext(city, entry.id).catch(() => null)
-          const entryForNarrative = { ...entry, participants: [gent] }
+          const entryForNarrative = { ...entry, participants: participantGents }
           const soundtrackMood = (formData.metadata as Record<string, unknown>)?.soundtrack as { overall_mood?: string } | undefined
           const narrativeResult = await generateMissionNarrative(
             entryForNarrative, enrichedScenes, analyses, uploadedUrls,
@@ -347,7 +352,7 @@ export default function EntryNew() {
           console.error('Mission intelligence pipeline error:', err)
           setMissionStage(null)
           // Fallback to legacy lore generation
-          const entryWithParticipants = { ...entry, participants: [] }
+          const entryWithParticipants = { ...entry, participants: participantGents }
           generateLoreFull(entryWithParticipants, uploadedUrls).then(async (result) => {
             if (!result) return
             const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }
@@ -358,7 +363,7 @@ export default function EntryNew() {
         }
       } else {
         // Non-mission entries: use existing lore pipeline
-        const entryWithParticipants = { ...entry, participants: [] }
+        const entryWithParticipants = { ...entry, participants: participantGents }
         generateLoreFull(entryWithParticipants, uploadedUrls).then(async (result) => {
           if (!result) return
           try {

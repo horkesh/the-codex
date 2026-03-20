@@ -33,7 +33,7 @@ function parseExif(exifTakenAt: string | null): { date: string; time: string; ts
 
 /** Compute centroid of GPS points */
 function centroid(points: { lat: number; lng: number }[]): { lat: number; lng: number } | null {
-  const valid = points.filter(p => p.lat && p.lng)
+  const valid = points.filter(p => p.lat != null && p.lng != null)
   if (valid.length === 0) return null
   return {
     lat: valid.reduce((s, p) => s + p.lat, 0) / valid.length,
