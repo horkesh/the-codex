@@ -200,7 +200,7 @@ export function LoreSection({ entry, photoUrls, readOnly, gentId, onLoreGenerate
             exit="exit"
             className="space-y-2"
           >
-            <p className="text-gold/90 font-display italic text-base leading-relaxed">
+            <p className="text-gold/90 font-display italic text-base leading-relaxed whitespace-pre-wrap">
               {localLore}
             </p>
             {localLoreDate && (
