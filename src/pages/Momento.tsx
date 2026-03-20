@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, RefreshCw, Camera, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Camera, Share2, ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
 import { useCamera } from '@/hooks/useCamera'
 import { useUIStore } from '@/store/ui'
 import { fetchAllGents } from '@/data/gents'
@@ -15,6 +15,7 @@ import { NeonOverlay } from '@/components/momento/NeonOverlay'
 import { PostcardOverlay } from '@/components/momento/PostcardOverlay'
 import { RedactedOverlay } from '@/components/momento/RedactedOverlay'
 import { GlitchOverlay } from '@/components/momento/GlitchOverlay'
+import { LocationSearchModal } from '@/components/places/LocationSearchModal'
 import { exportToPng, shareImage } from '@/export/exporter'
 import type { Gent } from '@/types/app'
 import type { OverlayProps } from '@/components/momento/types'
@@ -87,6 +88,7 @@ export default function Momento() {
   const [capturedTime, setCapturedTime] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [activeFilter, setActiveFilter] = useState<FilterId>('none')
+  const [showLocationPicker, setShowLocationPicker] = useState(false)
 
   const compositeRef = useRef<HTMLDivElement | null>(null)
   const [capturedAspect, setCapturedAspect] = useState<number>(4 / 3) // width/height — default 3:4 portrait
@@ -357,6 +359,26 @@ export default function Momento() {
         className="shrink-0 bg-black/90 backdrop-blur-xl"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
       >
+        {/* Venue / location bar — tappable to change */}
+        <button
+          onClick={() => setShowLocationPicker(true)}
+          className="flex items-center gap-2 mx-4 mt-2 px-3 py-1.5 rounded-full transition-colors"
+          style={{
+            backgroundColor: venue || city ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.06)',
+            border: venue || city ? '1px solid rgba(201,168,76,0.25)' : '1px solid rgba(255,255,255,0.1)',
+          }}
+        >
+          <MapPin size={12} className={venue || city ? 'text-gold' : 'text-ivory-dim'} />
+          <span className={`font-body text-[11px] truncate ${venue || city ? 'text-gold' : 'text-ivory-dim/60'}`}>
+            {venue || city || 'Add location'}
+          </span>
+          {venue && city && (
+            <span className="text-gold/40 font-body text-[10px] truncate shrink-0">
+              {city}
+            </span>
+          )}
+        </button>
+
         {/* Gent selector — tap to toggle who's in the shot */}
         {gents.length > 0 && (
           <div className="flex items-center justify-center gap-3 pt-3 px-4">
@@ -487,6 +509,18 @@ export default function Momento() {
           )}
         </div>
       </div>
+
+      {/* Location picker modal */}
+      {showLocationPicker && (
+        <LocationSearchModal
+          onSelect={(fill) => {
+            if (fill.location) setVenue(fill.location)
+            if (fill.city) setCity(fill.city)
+            if (fill.country) setCountry(fill.country)
+          }}
+          onClose={() => setShowLocationPicker(false)}
+        />
+      )}
     </div>
   )
 }
