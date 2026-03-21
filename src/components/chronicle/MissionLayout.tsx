@@ -415,7 +415,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide"
+          className="flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide items-start"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', height: carouselHeight ? `${carouselHeight}px` : undefined, transition: 'height 0.3s ease' }}
         >
           {/* PAGE 1: Visa Card + Intelligence Report */}
