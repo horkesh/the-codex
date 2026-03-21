@@ -90,9 +90,24 @@ Deno.serve(async (req: Request) => {
     // Cap photos for vision API — too many causes timeouts. Spread evenly across the set.
     const maxPhotos = entry.type === 'mission' ? 8 : entry.type === 'night_out' ? 6 : 4
     const allPhotos: string[] = Array.isArray(photoUrls) ? photoUrls : []
-    const photos: string[] = allPhotos.length <= maxPhotos
-      ? allPhotos
-      : Array.from({ length: maxPhotos }, (_, i) => allPhotos[Math.floor(i * allPhotos.length / maxPhotos)])
+    let photos: string[]
+    let sampledIndexMap: number[] | null = null // maps sampled index → original index
+    if (allPhotos.length <= maxPhotos) {
+      photos = allPhotos
+    } else {
+      sampledIndexMap = Array.from({ length: maxPhotos }, (_, i) => Math.floor(i * allPhotos.length / maxPhotos))
+      photos = sampledIndexMap.map(idx => allPhotos[idx])
+    }
+    // Remap dayPhotoIndices to sampled subset indices
+    const remappedDayPhotoIndices = (isMultiDay && Array.isArray(dayPhotoIndices))
+      ? dayPhotoIndices.map((dayIndices: number[]) =>
+          dayIndices.map(origIdx => {
+            if (!sampledIndexMap) return origIdx // no sampling, indices unchanged
+            const sampledIdx = sampledIndexMap.indexOf(origIdx)
+            return sampledIdx >= 0 ? sampledIdx : -1
+          }).filter(idx => idx >= 0)
+        )
+      : dayPhotoIndices
 
     // Derive day-of-week from date; read stored time-of-day from metadata
     const dateObj = new Date(entry.date + 'T12:00:00Z')
@@ -150,10 +165,10 @@ Deno.serve(async (req: Request) => {
         ? 'Write a full chronicle entry — 4-6 sentences of dense, meaningful narrative. Not longer for the sake of length: every sentence must earn its place with a specific detail, a name, a sensory moment, or an observation that only someone who was there would know. Prefer one vivid, precise image over two vague ones. Cover the arc — how it started, the turning point, and the feeling it left behind.'
         : 'Write exactly 2-3 sentences of narrative lore for their private chronicle.'
 
-    // Build per-day photo mapping info for the prompt
-    const hasDayPhotos = isMultiDay && Array.isArray(dayPhotoIndices) && dayPhotoIndices.length === dayLabels.length
+    // Build per-day photo mapping info for the prompt (using remapped indices)
+    const hasDayPhotos = isMultiDay && Array.isArray(remappedDayPhotoIndices) && remappedDayPhotoIndices.length === dayLabels.length
     const dayPhotoInfo = hasDayPhotos
-      ? `\n\nPhoto-to-day mapping (0-indexed photo numbers):\n${dayLabels.map((_: string, i: number) => `${dayLabels[i]}: photos ${(dayPhotoIndices[i] as number[]).join(', ')}`).join('\n')}`
+      ? `\n\nPhoto-to-day mapping (0-indexed photo numbers matching the ${photos.length} photos provided):\n${dayLabels.map((_: string, i: number) => `${dayLabels[i]}: photos ${(remappedDayPhotoIndices[i] as number[]).join(', ')}`).join('\n')}`
       : ''
 
     const multiDayFormat = isMultiDay
@@ -227,7 +242,11 @@ Write the lore in first person plural ("We", "The Gents"). No hashtags, no emoji
         const olMatch = raw.match(new RegExp(`<day${i + 1}_oneliner>([\\s\\S]*?)<\\/day${i + 1}_oneliner>`))
         day_oneliners.push(olMatch?.[1]?.trim() || '')
         const photoMatch = raw.match(new RegExp(`<day${i + 1}_photos>([\\s\\S]*?)<\\/day${i + 1}_photos>`))
-        const photoIndices = photoMatch?.[1]?.trim().split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n)) ?? []
+        const rawPhotoIndices = photoMatch?.[1]?.trim().split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n)) ?? []
+        // Map sampled indices back to original indices
+        const photoIndices = sampledIndexMap
+          ? rawPhotoIndices.map(si => sampledIndexMap![si]).filter(n => n !== undefined)
+          : rawPhotoIndices
         day_selected_photos.push(photoIndices)
       }
     }
