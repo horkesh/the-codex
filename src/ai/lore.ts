@@ -9,6 +9,8 @@ export interface LoreResult {
   day_lore?: string[]
   /** Per-day one-liners for carousel export (same order as dayLabels) */
   day_oneliners?: string[]
+  /** Per-day AI-selected photo indices (0-indexed into photoUrls) */
+  day_selected_photos?: number[][]
 }
 
 export async function generateLore(entry: EntryWithParticipants, photoUrls?: string[]): Promise<string | null> {
@@ -20,10 +22,11 @@ export async function generateLoreFull(
   entry: EntryWithParticipants,
   photoUrls?: string[],
   dayLabels?: string[],
+  dayPhotoIndices?: number[][],
 ): Promise<LoreResult | null> {
   try {
     const { data, error } = await supabase.functions.invoke('generate-lore', {
-      body: { entry, photoUrls, dayLabels },
+      body: { entry, photoUrls, dayLabels, dayPhotoIndices },
     })
     if (error) throw error
     if (data?.error) {
@@ -37,6 +40,7 @@ export async function generateLoreFull(
       suggested_title: data.suggested_title ?? null,
       day_lore: Array.isArray(data.day_lore) ? data.day_lore : undefined,
       day_oneliners: Array.isArray(data.day_oneliners) ? data.day_oneliners : undefined,
+      day_selected_photos: Array.isArray(data.day_selected_photos) ? data.day_selected_photos : undefined,
     }
   } catch (err) {
     console.error('generate-lore failed:', err)

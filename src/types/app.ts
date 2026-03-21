@@ -204,6 +204,7 @@ export interface StoryDayEpisode {
   photoIds: string[]
   lore?: string     // per-day narrative (optional)
   oneliner?: string // per-day one-liner for carousel export (optional)
+  selectedPhotoIds?: string[] // AI-selected photos for carousel export
 }
 
 /** Photo stored in entry_photos with GPS and AI analysis */

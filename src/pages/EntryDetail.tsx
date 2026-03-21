@@ -319,16 +319,29 @@ export default function EntryDetail() {
         if (episodes && episodes.length > 1) {
           dayLabels = episodes.map(d => d.label)
         }
-        const result = await generateLoreFull(entryForLore, photoUrls, dayLabels)
+        // Build per-day photo index mapping for AI photo selection
+        const dayPhotoIndices = episodes && episodes.length > 1
+          ? episodes.map(ep => ep.photoIds.map(pid => {
+              const idx = photos.findIndex(p => p.id === pid)
+              return idx >= 0 ? idx : -1
+            }).filter(idx => idx >= 0))
+          : undefined
+        const result = await generateLoreFull(entryForLore, photoUrls, dayLabels, dayPhotoIndices)
         if (result) {
           const meta: Record<string, unknown> = { ...(entryMeta ?? {}), lore_oneliner: result.oneliner }
-          // Save per-day lore + one-liners to entry.metadata.day_episodes
+          // Save per-day lore + one-liners + selected photos to entry.metadata.day_episodes
           if (result.day_lore && episodes) {
-            meta.day_episodes = episodes.map((ep, i) => ({
-              ...ep,
-              lore: result.day_lore?.[i] || ep.lore,
-              oneliner: result.day_oneliners?.[i] || ep.oneliner,
-            }))
+            meta.day_episodes = episodes.map((ep, i) => {
+              const selectedIds = result.day_selected_photos?.[i]
+                ?.map(idx => photos[idx]?.id)
+                .filter((id): id is string => !!id) ?? ep.selectedPhotoIds
+              return {
+                ...ep,
+                lore: result.day_lore?.[i] || ep.lore,
+                oneliner: result.day_oneliners?.[i] || ep.oneliner,
+                selectedPhotoIds: selectedIds,
+              }
+            })
           }
           await Promise.all([
             updateEntryLore(entry.id, result.lore),

@@ -210,10 +210,13 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide }: {
             const dayIdx = parseInt(slide.id.split('-')[1])
             const ep = dayEpisodes?.[dayIdx]
             if (!ep) return null
-            const photos = ep.photoIds
+            // Prefer AI-selected photos, fallback to chronological first 3
+            const photoIdsToUse = (ep.selectedPhotoIds && ep.selectedPhotoIds.length > 0)
+              ? ep.selectedPhotoIds
+              : ep.photoIds.slice(0, 3)
+            const photos = photoIdsToUse
               .map(id => carouselPhotos.find(p => p.id === id))
-              .filter(Boolean)
-              .slice(0, 3) as { url: string }[]
+              .filter(Boolean) as { url: string }[]
             return (
               <DayPolaroidSlide
                 dayLabel={ep.label}

@@ -378,16 +378,29 @@ export default function EntryNew() {
           const fallbackDayLabels = fbEpisodes && fbEpisodes.length > 1
             ? fbEpisodes.map(d => d.label)
             : undefined
-          generateLoreFull(entryWithParticipants, uploadedUrls, fallbackDayLabels).then(async (result) => {
+          // Build per-day photo index mapping — map photoIds to indices in uploadedUrls
+          // uploadedUrls corresponds to the same order as the entry photos
+          const allPhotoIds = fbEpisodes?.flatMap(ep => ep.photoIds) ?? []
+          const fbPhotoIndices = fbEpisodes && fbEpisodes.length > 1
+            ? fbEpisodes.map(ep => ep.photoIds.map(pid => allPhotoIds.indexOf(pid)).filter(idx => idx >= 0))
+            : undefined
+          generateLoreFull(entryWithParticipants, uploadedUrls, fallbackDayLabels, fbPhotoIndices).then(async (result) => {
             if (!result) return
             const meta: Record<string, unknown> = { ...(fbMeta ?? {}), lore_oneliner: result.oneliner }
-            // Save per-day lore to entry.metadata.day_episodes
+            // Save per-day lore + selected photos to entry.metadata.day_episodes
             if (result.day_lore && fbEpisodes) {
-              meta.day_episodes = fbEpisodes.map((ep, i) => ({
-                ...ep,
-                lore: result.day_lore?.[i] || ep.lore,
-                oneliner: result.day_oneliners?.[i] || ep.oneliner,
-              }))
+              meta.day_episodes = fbEpisodes.map((ep, i) => {
+                // Map AI-selected photo indices back to photo IDs
+                const selectedIds = result.day_selected_photos?.[i]
+                  ?.map(idx => allPhotoIds[idx])
+                  .filter((id): id is string => !!id) ?? ep.selectedPhotoIds
+                return {
+                  ...ep,
+                  lore: result.day_lore?.[i] || ep.lore,
+                  oneliner: result.day_oneliners?.[i] || ep.oneliner,
+                  selectedPhotoIds: selectedIds,
+                }
+              })
             }
             const updates: Partial<typeof entry> = { metadata: meta } as Partial<typeof entry>
             if (result.suggested_title) updates.title = result.suggested_title
