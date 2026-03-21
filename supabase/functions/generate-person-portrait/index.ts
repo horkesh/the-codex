@@ -32,23 +32,11 @@ Deno.serve(async (req: Request) => {
       const ctrl = new AbortController()
       const t = setTimeout(() => ctrl.abort(), 30_000)
       try {
-        const analysisPrompt = (fresh_analysis || !appearance)
-          ? `Analyze this photo of a person from scratch. Ignore any prior descriptions — describe ONLY what you see in the photo.
+        // Always analyze the photo from scratch — the photo is the single source of truth.
+        const analysisPrompt = `Analyze this photo of a person. Describe ONLY what you see in the photo.
 
 Return a JSON object with one field:
-"appearance": a concise visual description focusing on skin tone, ethnicity, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
-Output PURE JSON only, no markdown.`
-          : `Analyze this photo of a person. A previous analysis described them as:
-"${appearance}"
-
-The previous description may contain errors. The PHOTO is ground truth — trust what you see over what the text says.
-Produce a refined description that:
-- Corrects anything the previous description got wrong (especially ethnicity, skin tone, hair)
-- Adds new details visible in this photo that were missing before
-- Keeps accurate details from the previous description that match the photo
-
-Return a JSON object with one field:
-"appearance": a concise visual description focusing on skin tone, ethnicity, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
+"appearance": a concise visual description focusing on ethnicity, skin tone, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
 Output PURE JSON only, no markdown.`
 
         const resp = await fetch(
