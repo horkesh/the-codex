@@ -377,7 +377,30 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
 
   if (isMultiDay) {
     return (
-      <div className="py-5">
+      <div className="py-5 relative">
+        {/* Swipe hint — fixed on right edge, visible only on first page */}
+        {activePage === 0 && dayEpisodes.length > 0 && (
+          <motion.button
+            type="button"
+            className="absolute right-1 top-1/3 z-20 flex flex-col items-center gap-0.5 px-1 py-3"
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 1.2, duration: 0.4 }}
+            onClick={() => scrollToPage(1)}
+          >
+            <motion.div
+              animate={{ x: [0, 4, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+            >
+              <ChevronRight size={20} className="text-gold/60" />
+            </motion.div>
+            <span className="text-[7px] font-body text-gold/40 tracking-wider uppercase">
+              {dayEpisodes.length} {dayEpisodes.length === 1 ? 'day' : 'days'}
+            </span>
+          </motion.button>
+        )}
+
         {/* Horizontal scroll-snap carousel */}
         <div
           ref={scrollRef}
