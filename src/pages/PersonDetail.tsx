@@ -70,6 +70,7 @@ export default function PersonDetail() {
   const portraitFileRef = useRef<HTMLInputElement>(null)
   const [editAppearance, setEditAppearance] = useState('')
   const [showAppearanceEdit, setShowAppearanceEdit] = useState(false)
+  const [freshAnalysis, setFreshAnalysis] = useState(false)
   const [showGentModal, setShowGentModal] = useState(false)
   const [gentSaving, setGentSaving] = useState(false)
   const [knownByGentIds, setKnownByGentIds] = useState<string[]>([])
@@ -172,6 +173,7 @@ export default function PersonDetail() {
         director_note: portraitNote.trim() || undefined,
         style: portraitStyle,
         photo_base64: photoB64,
+        fresh_analysis: freshAnalysis || undefined,
       })
       // If the user manually edited the appearance, save it back to the scan
       if (editAppearance.trim() && editAppearance.trim() !== scan.appearance_description) {
@@ -276,7 +278,7 @@ export default function PersonDetail() {
                 {scan?.appearance_description && !regeneratingPortrait && (
                   <button
                     type="button"
-                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setShowAppearanceEdit(false); setShowPortraitPanel(true) }}
+                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setShowAppearanceEdit(false); setFreshAnalysis(false); setShowPortraitPanel(true) }}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Regenerate portrait"
                   >
@@ -290,7 +292,7 @@ export default function PersonDetail() {
                 {scan?.appearance_description && !regeneratingPortrait && (
                   <button
                     type="button"
-                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setShowAppearanceEdit(false); setShowPortraitPanel(true) }}
+                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setShowAppearanceEdit(false); setFreshAnalysis(false); setShowPortraitPanel(true) }}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Generate portrait"
                   >
@@ -890,7 +892,24 @@ export default function PersonDetail() {
                 Add a photo for better accuracy
               </button>
             )}
-            <p className="text-[9px] text-ivory-dim/50 font-body mt-1">New photo completely replaces the previous appearance analysis</p>
+            {portraitPhoto && (
+              <button
+                type="button"
+                onClick={() => setFreshAnalysis(!freshAnalysis)}
+                className={cn(
+                  'mt-2 w-full flex items-center justify-between py-2 px-3 rounded-lg border text-xs font-body transition-colors',
+                  freshAnalysis
+                    ? 'border-gold/40 bg-gold/10 text-gold'
+                    : 'border-white/10 text-ivory-dim hover:border-white/20',
+                )}
+              >
+                <span>Start fresh from this photo</span>
+                <span className="text-[10px]">{freshAnalysis ? 'ON' : 'OFF'}</span>
+              </button>
+            )}
+            <p className="text-[9px] text-ivory-dim/50 font-body mt-1">
+              {freshAnalysis ? 'Ignores all previous analysis — builds appearance from scratch' : 'Refines existing appearance with details from the new photo'}
+            </p>
           </div>
 
           {/* Appearance description (editable) */}

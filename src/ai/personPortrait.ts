@@ -15,6 +15,7 @@ export interface PersonPortraitRequest {
   director_note?: string
   style?: PortraitStyle
   photo_base64?: string
+  fresh_analysis?: boolean
 }
 
 export async function generatePersonPortrait(req: PersonPortraitRequest): Promise<{ portrait_url: string }> {

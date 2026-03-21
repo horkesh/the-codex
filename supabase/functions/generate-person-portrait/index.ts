@@ -15,7 +15,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { appearance, traits, scan_id, director_note, style, photo_base64 } = await req.json()
+    const { appearance, traits, scan_id, director_note, style, photo_base64, fresh_analysis } = await req.json()
     const googleApiKey = Deno.env.get('GOOGLE_AI_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -39,13 +39,20 @@ Deno.serve(async (req: Request) => {
               contents: [{
                 parts: [
                   {
-                    text: `Analyze this photo of a person. You have a previous description of this person from an earlier analysis:
+                    text: fresh_analysis
+                      ? `Analyze this photo of a person from scratch. Ignore any prior descriptions — describe ONLY what you see in the photo.
+
+Return a JSON object with one field:
+"appearance": a concise visual description focusing on skin tone, ethnicity, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
+Output PURE JSON only, no markdown.`
+                      : `Analyze this photo of a person. A previous analysis described them as:
 "${appearance}"
 
-Study the photo carefully and produce a REFINED description that:
+The previous description may contain errors. The PHOTO is ground truth — trust what you see over what the text says.
+Produce a refined description that:
 - Corrects anything the previous description got wrong (especially ethnicity, skin tone, hair)
 - Adds new details visible in this photo that were missing before
-- Keeps accurate details from the previous description
+- Keeps accurate details from the previous description that match the photo
 
 Return a JSON object with one field:
 "appearance": a concise visual description focusing on skin tone, ethnicity, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
