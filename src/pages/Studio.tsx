@@ -224,24 +224,22 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onS
     }
   }, [fullEntry])
 
-  // Report state to parent — use ref to avoid render loops
-  const stateRef = useRef<CarouselState | null>(null)
-  const prevManifestLen = useRef(0)
-  const prevExporting = useRef(false)
-
+  // Report manifest + export state to parent once on load and when exporting changes
+  const reportedRef = useRef(false)
   useEffect(() => {
-    const newState: CarouselState | null = manifest.length === 0
-      ? null
-      : { manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting }
-
-    // Only notify parent when manifest size or exporting status changes (not on every activeSlide change)
-    if (manifest.length !== prevManifestLen.current || carouselExporting !== prevExporting.current) {
-      prevManifestLen.current = manifest.length
-      prevExporting.current = carouselExporting
-      stateRef.current = newState
-      onStateReady(newState)
+    if (manifest.length > 0 && !reportedRef.current) {
+      reportedRef.current = true
+      onStateReady({ manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: false })
     }
-  }, [manifest, activeSlide, setActiveSlide, handleExportAll, carouselExporting, onStateReady])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manifest.length])
+
+  // Update parent only when exporting status changes
+  useEffect(() => {
+    if (!reportedRef.current) return
+    onStateReady({ manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carouselExporting])
 
   if (!fullEntry) return <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: 1080, height: 1350, background: '#F5F0E1' }} />
 
