@@ -21,6 +21,7 @@ export interface PersonPortraitRequest {
 export interface PersonPortraitResult {
   portrait_url: string
   updated_appearance?: string | null
+  analysis_debug?: string | null
 }
 
 export async function generatePersonPortrait(req: PersonPortraitRequest): Promise<PersonPortraitResult> {
