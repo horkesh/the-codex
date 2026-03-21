@@ -153,8 +153,8 @@ export default function PersonDetail() {
 
   const handleRegeneratePortrait = async () => {
     if (!person || !scan || regeneratingPortrait) return
-    if (!scan.appearance_description) {
-      addToast('No appearance data available for portrait generation.', 'error')
+    if (!scan.appearance_description && !portraitPhoto) {
+      addToast('Upload a photo or add appearance data first.', 'error')
       return
     }
     setRegeneratingPortrait(true)
@@ -166,7 +166,7 @@ export default function PersonDetail() {
       }
       // If user actively cleared the appearance, respect that (send empty).
       // Only fall back to scan's description if appearance was never edited in this session.
-      const appearanceToSend = showAppearanceEdit ? editAppearance.trim() : (editAppearance.trim() || scan.appearance_description)
+      const appearanceToSend = showAppearanceEdit ? editAppearance.trim() : (editAppearance.trim() || scan.appearance_description || '')
       const result = await generatePersonPortrait({
         appearance: appearanceToSend,
         traits: scan.trait_words ?? [],
@@ -180,11 +180,15 @@ export default function PersonDetail() {
         await updatePerson(person.id, { portrait_url: result.portrait_url })
         setPerson({ ...person, portrait_url: result.portrait_url, private_note: person.private_note } as PersonWithPrivateNote)
         // Sync local scan state with the appearance actually used
-        const newAppearance = result.updated_appearance || editAppearance.trim() || scan.appearance_description
-        if (newAppearance !== scan.appearance_description) {
-          await updatePersonScan(scan.id, { appearance_description: newAppearance } as Partial<PersonScan>).catch(() => {})
+        if (result.updated_appearance) {
+          // Server returned a fresh analysis from the photo — use it
+          setScan({ ...scan, appearance_description: result.updated_appearance })
+        } else if (showAppearanceEdit && editAppearance.trim() !== scan.appearance_description) {
+          // User manually edited the appearance — save their version
+          const edited = editAppearance.trim() || scan.appearance_description
+          await updatePersonScan(scan.id, { appearance_description: edited } as Partial<PersonScan>).catch(() => {})
+          setScan({ ...scan, appearance_description: edited })
         }
-        setScan({ ...scan, appearance_description: newAppearance })
         addToast('Portrait regenerated.', 'success')
       }
     } catch {
