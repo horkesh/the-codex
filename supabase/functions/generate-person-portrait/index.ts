@@ -62,7 +62,7 @@ Output PURE JSON only, no markdown.`
                 { text: analysisPrompt },
                 { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
               ] }],
-              generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 300 },
+              generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1024 },
             }),
           }
         )
