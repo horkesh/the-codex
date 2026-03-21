@@ -112,7 +112,7 @@ export default function PersonDetail() {
   }
 
   // ── Connection handlers ──
-  const linkDebounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const linkDebounceRef = useRef<ReturnType<typeof setTimeout>>(null)
   const connectedIds = useMemo(() => new Set(dossierData.explicitConnections.map(c => c.person.id)), [dossierData.explicitConnections])
 
   const handleLinkSearch = (query: string) => {
