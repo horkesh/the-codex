@@ -288,14 +288,6 @@ export default function PersonDetail() {
               </div>
             )}
 
-            {/* Small photo thumbnail (only when portrait exists) */}
-            {person.portrait_url && person.photo_url && (
-              <div className="flex flex-col items-center gap-1 mb-0.5 shrink-0">
-                <Avatar src={person.photo_url} name={person.name} size="sm" />
-                <span className="text-[9px] text-ivory-dim font-body">Photo</span>
-              </div>
-            )}
-
             {/* Tier stamp — inline in the flex row */}
             {person.category === 'contact' && currentTier && (
               <button
