@@ -71,8 +71,11 @@ Output PURE JSON only, no markdown.`
 
         if (resp.ok) {
           const result = await resp.json()
-          const raw = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
+          let raw = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
           console.log(`[portrait] Gemini raw response: ${raw.slice(0, 200)}`)
+          // Gemini sometimes wraps JSON in prose or markdown — extract the JSON object
+          const jsonMatch = raw.match(/\{[\s\S]*\}/)
+          if (jsonMatch) raw = jsonMatch[0]
           try {
             const parsed = JSON.parse(raw)
             if (parsed.appearance) {
