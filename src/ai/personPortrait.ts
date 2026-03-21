@@ -14,6 +14,7 @@ export interface PersonPortraitRequest {
   scan_id: string
   director_note?: string
   style?: PortraitStyle
+  photo_base64?: string
 }
 
 export async function generatePersonPortrait(req: PersonPortraitRequest): Promise<{ portrait_url: string }> {

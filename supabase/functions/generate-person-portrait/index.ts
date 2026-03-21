@@ -15,7 +15,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { appearance, traits, scan_id, director_note, style } = await req.json()
+    const { appearance, traits, scan_id, director_note, style, photo_base64 } = await req.json()
     const googleApiKey = Deno.env.get('GOOGLE_AI_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -23,16 +23,64 @@ Deno.serve(async (req: Request) => {
     if (!googleApiKey) throw new Error('GOOGLE_AI_API_KEY not set')
     if (!appearance || !traits || !scan_id) throw new Error('appearance, traits, and scan_id required')
 
+    // If a reference photo is provided, analyse it with Gemini for additional appearance details
+    let photoAppearance = ''
+    if (photo_base64) {
+      const ctrl = new AbortController()
+      const t = setTimeout(() => ctrl.abort(), 20_000)
+      try {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: ctrl.signal,
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  {
+                    text: `Analyze this photo of a person. Return a JSON object with one field:
+"appearance": a concise visual description focusing on skin tone, ethnicity, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
+Output PURE JSON only, no markdown.`,
+                  },
+                  { inline_data: { mime_type: 'image/webp', data: photo_base64 } },
+                ],
+              }],
+              generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 300 },
+            }),
+          }
+        )
+        clearTimeout(t)
+        if (resp.ok) {
+          const result = await resp.json()
+          const raw = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
+          try {
+            const parsed = JSON.parse(raw)
+            if (parsed.appearance) photoAppearance = parsed.appearance
+          } catch { /* ignore parse errors */ }
+        }
+      } catch {
+        clearTimeout(t)
+        console.error('Photo analysis failed, proceeding with text-only description')
+      }
+    }
+
     const traitList = (traits as string[]).join(', ')
     const styleDesc = STYLE_VARIANTS[style as string] ?? STYLE_VARIANTS.noir
+
+    // Build appearance: base scan description + photo analysis + director corrections
+    let fullAppearance = appearance
+    if (photoAppearance) {
+      fullAppearance += ` Additional visual reference from a new photo: ${photoAppearance}.`
+    }
     const directorClause = director_note
       ? ` Additional notes (these corrections take priority where they contradict the description above): ${director_note}.`
       : ''
 
-    const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${appearance}.${directorClause} Personality: ${traitList}. Style: ${styleDesc} — while preserving the subject's actual skin tone, hair colour, and facial features. No text or words.`
+    const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${fullAppearance}.${directorClause} Personality: ${traitList}. Style: ${styleDesc} — while preserving the subject's actual skin tone, hair colour, and facial features. No text or words.`
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 20_000)
+    const timeout = setTimeout(() => controller.abort(), 25_000)
     let imageResult
     try {
       const imageResponse = await fetch(

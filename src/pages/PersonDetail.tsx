@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye, RefreshCw, X } from 'lucide-react'
+import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye, RefreshCw, X, Camera } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Avatar, Spinner, Modal } from '@/components/ui'
@@ -12,6 +12,7 @@ import type { PersonFormData } from '@/components/circle/PersonForm'
 import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents, convertPOIToContact } from '@/data/people'
 import { fetchScanByPerson } from '@/data/personScans'
 import { generatePersonPortrait, PORTRAIT_STYLES, type PortraitStyle } from '@/ai/personPortrait'
+import { imageToJpegBase64 } from '@/lib/image'
 import { fetchAllGents } from '@/data/gents'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { useUIStore } from '@/store/ui'
@@ -65,6 +66,8 @@ export default function PersonDetail() {
   const [showPortraitPanel, setShowPortraitPanel] = useState(false)
   const [portraitNote, setPortraitNote] = useState('')
   const [portraitStyle, setPortraitStyle] = useState<PortraitStyle>('noir')
+  const [portraitPhoto, setPortraitPhoto] = useState<File | null>(null)
+  const portraitFileRef = useRef<HTMLInputElement>(null)
   const [showGentModal, setShowGentModal] = useState(false)
   const [gentSaving, setGentSaving] = useState(false)
   const [knownByGentIds, setKnownByGentIds] = useState<string[]>([])
@@ -154,12 +157,17 @@ export default function PersonDetail() {
     setRegeneratingPortrait(true)
     setShowPortraitPanel(false)
     try {
+      let photoB64: string | undefined
+      if (portraitPhoto) {
+        photoB64 = await imageToJpegBase64(portraitPhoto, { maxPx: 512, quality: 0.7 })
+      }
       const result = await generatePersonPortrait({
         appearance: scan.appearance_description,
         traits: scan.trait_words ?? [],
         scan_id: scan.id,
         director_note: portraitNote.trim() || undefined,
         style: portraitStyle,
+        photo_base64: photoB64,
       })
       if (result.portrait_url) {
         await updatePerson(person.id, { portrait_url: result.portrait_url })
@@ -829,6 +837,51 @@ export default function PersonDetail() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Reference photo */}
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-ivory-dim font-body mb-2">Reference Photo</p>
+            <input
+              ref={portraitFileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0]
+                if (f) setPortraitPhoto(f)
+                e.target.value = ''
+              }}
+            />
+            {portraitPhoto ? (
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 rounded-lg overflow-hidden border border-gold/30">
+                  <img
+                    src={URL.createObjectURL(portraitPhoto)}
+                    alt="Reference"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-xs text-ivory-muted font-body flex-1 truncate">{portraitPhoto.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setPortraitPhoto(null)}
+                  className="text-ivory-dim hover:text-ivory"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => portraitFileRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-white/15 text-xs text-ivory-dim font-body hover:border-gold/30 hover:text-gold transition-colors"
+              >
+                <Camera size={14} />
+                Add a photo for better accuracy
+              </button>
+            )}
+            <p className="text-[9px] text-ivory-dim/50 font-body mt-1">Expands the AI's understanding — does not replace the scan description</p>
           </div>
 
           {/* Director's note */}
