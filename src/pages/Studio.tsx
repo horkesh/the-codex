@@ -224,15 +224,24 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onS
     }
   }, [fullEntry])
 
-  // Report state to parent so nav renders with fresh React state
-  const carouselStateObj = useMemo<CarouselState | null>(() => {
-    if (manifest.length === 0) return null
-    return { manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting }
-  }, [manifest, activeSlide, setActiveSlide, handleExportAll, carouselExporting])
+  // Report state to parent — use ref to avoid render loops
+  const stateRef = useRef<CarouselState | null>(null)
+  const prevManifestLen = useRef(0)
+  const prevExporting = useRef(false)
 
   useEffect(() => {
-    onStateReady(carouselStateObj)
-  }, [carouselStateObj, onStateReady])
+    const newState: CarouselState | null = manifest.length === 0
+      ? null
+      : { manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting }
+
+    // Only notify parent when manifest size or exporting status changes (not on every activeSlide change)
+    if (manifest.length !== prevManifestLen.current || carouselExporting !== prevExporting.current) {
+      prevManifestLen.current = manifest.length
+      prevExporting.current = carouselExporting
+      stateRef.current = newState
+      onStateReady(newState)
+    }
+  }, [manifest, activeSlide, setActiveSlide, handleExportAll, carouselExporting, onStateReady])
 
   if (!fullEntry) return <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: 1080, height: 1350, background: '#F5F0E1' }} />
 
