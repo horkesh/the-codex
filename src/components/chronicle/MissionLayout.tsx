@@ -378,11 +378,11 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
   if (isMultiDay) {
     return (
       <div className="py-5 relative">
-        {/* Carousel nav chevrons — dark pill bg, z-10 to stay below modals */}
+        {/* Carousel nav chevrons — fixed to viewport center, z-10 to stay below modals */}
         {activePage > 0 && (
           <button
             type="button"
-            className="absolute left-1 top-1/3 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm border border-gold/20 flex items-center justify-center"
+            className="fixed left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm border border-gold/20 flex items-center justify-center"
             onClick={() => scrollToPage(activePage - 1)}
             aria-label="Previous page"
           >
@@ -392,7 +392,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
         {activePage < totalPages - 1 && (
           <button
             type="button"
-            className="absolute right-1 top-1/3 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm border border-gold/20 flex items-center justify-center"
+            className="fixed right-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm border border-gold/20 flex items-center justify-center"
             onClick={() => scrollToPage(activePage + 1)}
             aria-label="Next page"
           >
