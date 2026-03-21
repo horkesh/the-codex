@@ -93,6 +93,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
       instagram_handle: handle,
       instagram_source_url: null,
       generated_avatar_url: null,
+      portrait_notes: null,
     })
 
     setDossier({

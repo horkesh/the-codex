@@ -185,20 +185,35 @@ export default function PersonDetail() {
       if (result.portrait_url) {
         await updatePerson(person.id, { portrait_url: result.portrait_url })
         setPerson({ ...person, portrait_url: result.portrait_url, private_note: person.private_note } as PersonWithPrivateNote)
-        // Sync local scan state with the appearance actually used
+
+        // Build updated scan fields
+        const scanUpdates: Partial<PersonScan> = {}
+
+        // Save director's note so it persists across sessions
+        const noteToSave = portraitNote.trim()
+        if (noteToSave !== (scan.portrait_notes ?? '')) {
+          scanUpdates.portrait_notes = noteToSave || null
+        }
+
+        // Sync appearance description
         if (result.updated_appearance) {
           // Server returned a fresh analysis from the photo — use it
-          await updatePersonScan(scan.id, { appearance_description: result.updated_appearance } as Partial<PersonScan>).catch(() => {})
-          setScan({ ...scan, appearance_description: result.updated_appearance })
+          scanUpdates.appearance_description = result.updated_appearance
           setEditAppearance(result.updated_appearance)
         } else if (showAppearanceEdit) {
-          // User manually edited the appearance — save exactly what they typed (even if empty)
+          // User manually edited the appearance — save exactly what they typed
           const edited = editAppearance.trim()
           if (edited !== (scan.appearance_description ?? '')) {
-            await updatePersonScan(scan.id, { appearance_description: edited } as Partial<PersonScan>).catch(() => {})
-            setScan({ ...scan, appearance_description: edited })
+            scanUpdates.appearance_description = edited
           }
         }
+
+        // Persist all scan updates in one call
+        if (Object.keys(scanUpdates).length > 0) {
+          await updatePersonScan(scan.id, scanUpdates as Partial<PersonScan>).catch(() => {})
+          setScan({ ...scan, ...scanUpdates } as PersonScan)
+        }
+
         addToast('Portrait regenerated.', 'success')
       }
     } catch {
@@ -294,7 +309,7 @@ export default function PersonDetail() {
                 {scan?.appearance_description && !regeneratingPortrait && (
                   <button
                     type="button"
-                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setShowAppearanceEdit(false); setFreshAnalysis(false); setShowPortraitPanel(true) }}
+                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setPortraitNote(scan?.portrait_notes ?? ''); setShowAppearanceEdit(false); setFreshAnalysis(false); setPortraitPhoto(null); setShowPortraitPanel(true) }}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Regenerate portrait"
                   >
@@ -308,7 +323,7 @@ export default function PersonDetail() {
                 {scan?.appearance_description && !regeneratingPortrait && (
                   <button
                     type="button"
-                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setShowAppearanceEdit(false); setFreshAnalysis(false); setShowPortraitPanel(true) }}
+                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setPortraitNote(scan?.portrait_notes ?? ''); setShowAppearanceEdit(false); setFreshAnalysis(false); setPortraitPhoto(null); setShowPortraitPanel(true) }}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Generate portrait"
                   >

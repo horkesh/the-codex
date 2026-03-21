@@ -537,6 +537,7 @@ export interface PersonScan {
   status: ScanStatus
   created_at: string | null
   updated_at: string | null
+  portrait_notes: string | null
 }
 
 export interface DossierDraft {
