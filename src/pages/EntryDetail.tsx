@@ -1,13 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
-import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, ImagePlay, Edit2, Pin, X as XIcon, Type } from 'lucide-react'
+import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, Edit2, Pin, X as XIcon, Type } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Avatar } from '@/components/ui'
 import { EntryHero } from '@/components/chronicle/EntryHero'
 import { LoreSection } from '@/components/chronicle/LoreSection'
 import { EntryReactions } from '@/components/chronicle/EntryReactions'
-import { generateScene } from '@/ai/scene'
 import { generateLoreFull } from '@/ai/lore'
 import { generateTitleSuggestions } from '@/ai/title'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
@@ -45,8 +44,6 @@ interface OptionsMenuProps {
   onClose: () => void
   isCreator: boolean
   hasLore: boolean
-  canGenerateScene: boolean
-  generatingScene: boolean
   regeneratingLore: boolean
   isPinned: boolean
   entryType?: string
@@ -54,7 +51,6 @@ interface OptionsMenuProps {
   onTogglePin: () => void
   onGenerateLore: () => void
   onRegenerateLore: () => void
-  onGenerateScene: () => void
   onSetFlavour?: (flavour: string | undefined) => void
   onEdit: () => void
   onExport: () => void
@@ -62,9 +58,9 @@ interface OptionsMenuProps {
 }
 
 function OptionsMenu({
-  isOpen, onClose, isCreator, hasLore, canGenerateScene, generatingScene, regeneratingLore,
+  isOpen, onClose, isCreator, hasLore, regeneratingLore,
   isPinned, entryType, currentFlavour, onTogglePin,
-  onGenerateLore, onRegenerateLore, onGenerateScene, onSetFlavour, onEdit, onExport, onDelete,
+  onGenerateLore, onRegenerateLore, onSetFlavour, onEdit, onExport, onDelete,
 }: OptionsMenuProps) {
   const flavourOptions = entryType ? FLAVOUR_OPTIONS[entryType] : undefined
   return (
@@ -112,19 +108,6 @@ function OptionsMenu({
             <RefreshCw size={18} className="text-gold shrink-0" />
             <span className="font-body text-sm">
               {regeneratingLore ? 'Regenerating lore...' : 'Regenerate Lore'}
-            </span>
-          </button>
-        )}
-        {isCreator && canGenerateScene && (
-          <button
-            type="button"
-            disabled={generatingScene}
-            className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors disabled:opacity-40"
-            onClick={() => { onGenerateScene(); onClose() }}
-          >
-            <ImagePlay size={18} className="text-gold shrink-0" />
-            <span className="font-body text-sm">
-              {generatingScene ? 'Generating scene…' : 'Generate Scene'}
             </span>
           </button>
         )}
@@ -286,7 +269,6 @@ export default function EntryDetail() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [generatingScene, setGeneratingScene] = useState(false)
   const [regeneratingLore, setRegeneratingLore] = useState(false)
   const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([])
@@ -414,23 +396,6 @@ export default function EntryDetail() {
       addToast('Cover updated.', 'success')
     } catch {
       addToast('Could not update cover.', 'error')
-    }
-  }
-
-  async function handleGenerateScene() {
-    if (!entry || generatingScene) return
-    setGeneratingScene(true)
-    try {
-      const url = await generateScene(entry, entry.participants ?? [])
-      if (url) {
-        await updateEntry(entry.id, { scene_url: url } as Partial<EntryWithParticipants>)
-        setEntry(prev => prev ? { ...prev, scene_url: url } : prev)
-        addToast('Scene generated.', 'success')
-      }
-    } catch {
-      addToast('Scene generation failed.', 'error')
-    } finally {
-      setGeneratingScene(false)
     }
   }
 
@@ -731,21 +696,6 @@ export default function EntryDetail() {
                   </motion.div>
                 )}
 
-                {/* Scene image */}
-                {entry.scene_url && (
-                  <motion.div variants={staggerItem}>
-                    <div className="px-4 pb-4">
-                      <img
-                        src={entry.scene_url}
-                        alt="AI Scene"
-                        className="w-full rounded-xl border border-white/5 object-cover"
-                        style={{ maxHeight: '320px' }}
-                      />
-                      <p className="text-[10px] tracking-[0.2em] uppercase text-ivory-dim/50 text-center mt-2 font-body">AI Scene</p>
-                    </div>
-                  </motion.div>
-                )}
-
                 {/* Entry reactions */}
                 {entry.status === 'published' && (
                   <motion.div variants={staggerItem}>
@@ -855,8 +805,6 @@ export default function EntryDetail() {
         onClose={() => setMenuOpen(false)}
         isCreator={isCreator}
         hasLore={!!entry.lore}
-        canGenerateScene={['mission', 'night_out', 'toast', 'gathering', 'interlude'].includes(entry.type)}
-        generatingScene={generatingScene}
         regeneratingLore={regeneratingLore}
         isPinned={!!entry.pinned}
         entryType={entry.type}
@@ -864,7 +812,6 @@ export default function EntryDetail() {
         onTogglePin={handleTogglePin}
         onGenerateLore={handleGenerateLoreFromMenu}
         onRegenerateLore={handleRegenerateLore}
-        onGenerateScene={handleGenerateScene}
         onSetFlavour={async (flavour) => {
           const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), flavour: flavour ?? null }
           await updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})

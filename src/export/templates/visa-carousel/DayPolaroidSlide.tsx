@@ -20,8 +20,8 @@ function Polaroid({ url, width, height, rotation, style }: {
   return (
     <div style={{
       background: '#fff',
-      padding: '10px 10px 36px',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.1)',
+      padding: '12px 12px 44px',
+      boxShadow: '0 6px 24px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.1)',
       transform: `rotate(${rotation}deg)`,
       ...style,
     }}>
@@ -39,6 +39,8 @@ export const DayPolaroidSlide = React.forwardRef<HTMLDivElement, DayPolaroidSlid
     const hero = photos[0]
     const support1 = photos[1]
     const support2 = photos[2]
+    const hasThree = !!hero && !!support1 && !!support2
+    const hasTwo = !!hero && !!support1 && !support2
 
     return (
       <div ref={ref} style={{ width: 1080, height: 1350 }}>
@@ -49,55 +51,56 @@ export const DayPolaroidSlide = React.forwardRef<HTMLDivElement, DayPolaroidSlid
             flexDirection: 'column',
             alignItems: 'center',
             position: 'relative',
+            justifyContent: 'center',
           }}>
             {/* Day label */}
             <div style={{
               fontFamily: "'Instrument Sans', sans-serif",
-              fontSize: 18,
+              fontSize: 22,
               fontWeight: 600,
-              letterSpacing: '0.2em',
+              letterSpacing: '0.18em',
               color: '#8B7355',
               textTransform: 'uppercase' as const,
-              marginBottom: 8,
+              marginBottom: 12,
             }}>
               {dayLabel}
             </div>
 
             {/* Gold rule */}
             <div style={{
-              width: 120,
+              width: 140,
               height: 1,
               background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent)',
-              marginBottom: 32,
+              marginBottom: 24,
             }} />
 
             {/* Entry title */}
             <div style={{
               fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: 28,
+              fontSize: 34,
               fontWeight: 700,
               color: '#1B3A5C',
               letterSpacing: '0.02em',
               textAlign: 'center' as const,
-              marginBottom: 36,
+              marginBottom: 32,
               padding: '0 40px',
             }}>
               {entryTitle}
             </div>
 
-            {/* Polaroid collage */}
-            <div style={{
-              position: 'relative',
-              width: 900,
-              height: 700,
-              marginBottom: 24,
-            }}>
-              {/* Hero polaroid — centered, larger */}
-              {hero && (
+            {/* Polaroid collage — 3 photos */}
+            {hasThree && (
+              <div style={{
+                position: 'relative',
+                width: 940,
+                height: 720,
+                marginBottom: 32,
+              }}>
+                {/* Hero polaroid — centered, larger */}
                 <Polaroid
                   url={hero.url}
-                  width={480}
-                  height={360}
+                  width={520}
+                  height={400}
                   rotation={-1.5}
                   style={{
                     position: 'absolute',
@@ -107,52 +110,81 @@ export const DayPolaroidSlide = React.forwardRef<HTMLDivElement, DayPolaroidSlid
                     zIndex: 3,
                   }}
                 />
-              )}
-
-              {/* Supporting polaroid — bottom left, slightly rotated */}
-              {support1 && (
+                {/* Supporting polaroid — bottom left */}
                 <Polaroid
                   url={support1.url}
-                  width={320}
-                  height={260}
+                  width={360}
+                  height={280}
                   rotation={-4}
                   style={{
                     position: 'absolute',
                     bottom: 0,
-                    left: 20,
+                    left: 10,
                     zIndex: 2,
                   }}
                 />
-              )}
-
-              {/* Supporting polaroid — bottom right, slightly rotated other way */}
-              {support2 && (
+                {/* Supporting polaroid — bottom right */}
                 <Polaroid
                   url={support2.url}
-                  width={320}
-                  height={260}
+                  width={360}
+                  height={280}
                   rotation={3.5}
                   style={{
                     position: 'absolute',
                     bottom: 10,
-                    right: 20,
+                    right: 10,
                     zIndex: 1,
                   }}
                 />
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* 2-photo layout — side by side, larger */}
+            {hasTwo && (
+              <div style={{
+                display: 'flex',
+                gap: 24,
+                justifyContent: 'center',
+                marginBottom: 32,
+              }}>
+                <Polaroid
+                  url={hero.url}
+                  width={400}
+                  height={360}
+                  rotation={-2.5}
+                />
+                <Polaroid
+                  url={support1.url}
+                  width={400}
+                  height={360}
+                  rotation={2}
+                />
+              </div>
+            )}
+
+            {/* Single photo — large centered */}
+            {hero && !support1 && (
+              <div style={{ marginBottom: 32 }}>
+                <Polaroid
+                  url={hero.url}
+                  width={600}
+                  height={460}
+                  rotation={-1}
+                />
+              </div>
+            )}
 
             {/* One-liner */}
             {oneliner && (
               <div style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
                 fontStyle: 'italic',
-                fontSize: 24,
+                fontSize: 28,
                 color: '#5A6B7A',
                 textAlign: 'center' as const,
                 lineHeight: 1.5,
                 padding: '0 60px',
-                maxWidth: 900,
+                maxWidth: 920,
               }}>
                 &ldquo;{oneliner}&rdquo;
               </div>
