@@ -400,15 +400,15 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
           </button>
         )}
 
-        {/* Horizontal scroll-snap carousel */}
+        {/* Horizontal scroll-snap carousel — viewport-height, slides scroll independently */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
           className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', height: 'calc(100dvh - 110px)' }}
         >
           {/* PAGE 1: Visa Card + Intelligence Report */}
-          <div className="snap-center shrink-0 w-full px-4">
+          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto scrollbar-hide" style={{ maxHeight: '100%' }}>
             {visaCard}
 
             {/* City timeline */}
@@ -451,7 +451,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
             const supportingPhotos = dayPhotos.slice(1)
             const dayNarrative = dayLore[0] ?? null
             return (
-              <div key={day.day} className="snap-center shrink-0 w-full px-4 flex flex-col">
+              <div key={day.day} className="snap-center shrink-0 w-full px-4 flex flex-col overflow-y-auto scrollbar-hide" style={{ maxHeight: '100%' }}>
                 {/* Day header */}
                 <div className="mb-3 shrink-0">
                   <p className="text-[10px] font-body font-semibold tracking-[0.2em] text-gold/50 uppercase mb-1">
