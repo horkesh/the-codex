@@ -3,13 +3,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const STYLE_VARIANTS: Record<string, string> = {
+  noir: "Minimalist geometric noir — abstract angular forms, cinematic noir lighting with dramatic shadows and highlights, moody desaturated palette with deep blacks and subtle warm accents, sophisticated high-end digital art composition",
+  chiaroscuro: "Deep chiaroscuro lighting inspired by Caravaggio — intense directional light carving the face from near-total darkness, dramatic shadow play, rich warm undertones in the highlights, oil-painting texture with visible brushwork energy",
+  gilded: "Gilded art-deco aesthetic — warm amber and burnished gold tones, geometric patterns framing the subject, ornamental symmetry, gatsby-era opulence, soft diffused lighting with a luxurious golden hour glow",
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { appearance, traits, scan_id } = await req.json()
+    const { appearance, traits, scan_id, director_note, style } = await req.json()
     const googleApiKey = Deno.env.get('GOOGLE_AI_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -18,7 +24,12 @@ Deno.serve(async (req: Request) => {
     if (!appearance || !traits || !scan_id) throw new Error('appearance, traits, and scan_id required')
 
     const traitList = (traits as string[]).join(', ')
-    const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${appearance}. Personality: ${traitList}. Style: Minimalist geometric forms, cinematic noir lighting, moody desaturated color palette, high-end digital art, dramatic shadows and highlights, sophisticated composition — while preserving the subject's actual skin tone, hair colour, and facial features. No text or words.`
+    const styleDesc = STYLE_VARIANTS[style as string] ?? STYLE_VARIANTS.noir
+    const directorClause = director_note
+      ? ` IMPORTANT — the following corrections override any other appearance details: ${director_note}.`
+      : ''
+
+    const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${appearance}.${directorClause} Personality: ${traitList}. Style: ${styleDesc} — while preserving the subject's actual skin tone, hair colour, and facial features. No text or words.`
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 20_000)

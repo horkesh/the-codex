@@ -11,7 +11,7 @@ import { PersonForm } from '@/components/circle/PersonForm'
 import type { PersonFormData } from '@/components/circle/PersonForm'
 import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents, convertPOIToContact } from '@/data/people'
 import { fetchScanByPerson } from '@/data/personScans'
-import { generatePersonPortrait } from '@/ai/personPortrait'
+import { generatePersonPortrait, PORTRAIT_STYLES, type PortraitStyle } from '@/ai/personPortrait'
 import { fetchAllGents } from '@/data/gents'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { useUIStore } from '@/store/ui'
@@ -62,6 +62,9 @@ export default function PersonDetail() {
   const [showTierModal, setShowTierModal] = useState(false)
   const [tierSaving, setTierSaving] = useState(false)
   const [regeneratingPortrait, setRegeneratingPortrait] = useState(false)
+  const [showPortraitPanel, setShowPortraitPanel] = useState(false)
+  const [portraitNote, setPortraitNote] = useState('')
+  const [portraitStyle, setPortraitStyle] = useState<PortraitStyle>('noir')
   const [showGentModal, setShowGentModal] = useState(false)
   const [gentSaving, setGentSaving] = useState(false)
   const [knownByGentIds, setKnownByGentIds] = useState<string[]>([])
@@ -149,11 +152,14 @@ export default function PersonDetail() {
       return
     }
     setRegeneratingPortrait(true)
+    setShowPortraitPanel(false)
     try {
       const result = await generatePersonPortrait({
         appearance: scan.appearance_description,
         traits: scan.trait_words ?? [],
         scan_id: scan.id,
+        director_note: portraitNote.trim() || undefined,
+        style: portraitStyle,
       })
       if (result.portrait_url) {
         await updatePerson(person.id, { portrait_url: result.portrait_url })
@@ -253,7 +259,7 @@ export default function PersonDetail() {
                 {scan?.appearance_description && !regeneratingPortrait && (
                   <button
                     type="button"
-                    onClick={handleRegeneratePortrait}
+                    onClick={() => setShowPortraitPanel(true)}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Regenerate portrait"
                   >
@@ -267,7 +273,7 @@ export default function PersonDetail() {
                 {scan?.appearance_description && !regeneratingPortrait && (
                   <button
                     type="button"
-                    onClick={handleRegeneratePortrait}
+                    onClick={() => setShowPortraitPanel(true)}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Generate portrait"
                   >
@@ -804,6 +810,55 @@ export default function PersonDetail() {
               {opt.label}
             </button>
           ))}
+        </div>
+      </Modal>
+
+      {/* Portrait regeneration panel */}
+      <Modal isOpen={showPortraitPanel} onClose={() => setShowPortraitPanel(false)} title="Regenerate Portrait">
+        <div className="flex flex-col gap-4">
+          {/* Style picker */}
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-ivory-dim font-body mb-2">Style</p>
+            <div className="flex gap-2">
+              {PORTRAIT_STYLES.map(s => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setPortraitStyle(s.id)}
+                  className={cn(
+                    'flex-1 py-2 px-3 rounded-lg border text-xs font-body transition-colors',
+                    portraitStyle === s.id
+                      ? 'border-gold bg-gold/10 text-gold'
+                      : 'border-white/10 text-ivory-dim hover:border-white/20',
+                  )}
+                >
+                  <span className="font-semibold block">{s.label}</span>
+                  <span className="text-[10px] opacity-60">{s.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Director's note */}
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-ivory-dim font-body mb-2">Director's Note</p>
+            <textarea
+              value={portraitNote}
+              onChange={e => setPortraitNote(e.target.value)}
+              placeholder="Corrections or style notes — e.g. 'she has lighter skin', 'always wears glasses', 'short curly hair'..."
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim/40 resize-none focus:outline-none focus:border-gold/30"
+              rows={3}
+            />
+          </div>
+
+          <Button
+            variant="outline"
+            fullWidth
+            onClick={handleRegeneratePortrait}
+            loading={regeneratingPortrait}
+          >
+            Generate Portrait
+          </Button>
         </div>
       </Modal>
 

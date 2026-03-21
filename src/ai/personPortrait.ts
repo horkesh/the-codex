@@ -1,9 +1,19 @@
 import { supabase } from '@/lib/supabase'
 
+export type PortraitStyle = 'noir' | 'chiaroscuro' | 'gilded'
+
+export const PORTRAIT_STYLES: { id: PortraitStyle; label: string; description: string }[] = [
+  { id: 'noir', label: 'Noir', description: 'Geometric noir, cinematic shadows' },
+  { id: 'chiaroscuro', label: 'Chiaroscuro', description: 'Caravaggio lighting, oil-painting warmth' },
+  { id: 'gilded', label: 'Gilded', description: 'Art-deco gold, gatsby opulence' },
+]
+
 export interface PersonPortraitRequest {
   appearance: string
   traits: string[]
   scan_id: string
+  director_note?: string
+  style?: PortraitStyle
 }
 
 export async function generatePersonPortrait(req: PersonPortraitRequest): Promise<{ portrait_url: string }> {
