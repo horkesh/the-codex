@@ -45,7 +45,8 @@ export async function createMissionStamp(entry: {
   country_code: string
   date: string
 }): Promise<PassportStamp> {
-  const { data, error } = await supabase
+  // Try upsert first (inserts if not exists, ignores if duplicate)
+  await supabase
     .from('passport_stamps')
     .upsert({
       entry_id: entry.id,
@@ -56,7 +57,13 @@ export async function createMissionStamp(entry: {
       country_code: entry.country_code,
       date_earned: entry.date,
     }, { onConflict: 'entry_id,type', ignoreDuplicates: true })
+
+  // Then fetch the row (handles both insert and existing cases)
+  const { data, error } = await supabase
+    .from('passport_stamps')
     .select()
+    .eq('entry_id', entry.id)
+    .eq('type', 'mission')
     .single()
 
   if (error) throw error

@@ -27,7 +27,6 @@ import { notifyOthers } from '@/hooks/usePushNotifications'
 import { generateCover } from '@/ai/cover'
 import { generateStamp } from '@/ai/stamp'
 import { createMissionStamp, updateStampImage } from '@/data/stamps'
-import { createMissionStory } from '@/data/stories'
 import { groupIntoDays } from '@/lib/dayBoundary'
 import { MissionProcessingOverlay, type ProcessingStage } from '@/components/mission/MissionProcessingOverlay'
 import { clusterIntoScenes } from '@/lib/sceneEngine'
@@ -304,7 +303,7 @@ export default function EntryNew() {
             return { id: p.id, exifDate, exifTime }
           })
           const dayEps = groupIntoDays(photoData, formData.date, dateEnd)
-          if (dayEps.length > 1) {
+          if (dayEps.length >= 1) {
             const metaWithDays = { ...(entry.metadata as Record<string, unknown> ?? {}), day_episodes: dayEps }
             await updateEntry(entry.id, { metadata: metaWithDays } as Partial<typeof entry>).catch(() => {})
             Object.assign(entry, { metadata: metaWithDays })
@@ -367,13 +366,6 @@ export default function EntryNew() {
           if (narrativeResult?.arc) {
             await updateEntryLore(entry.id, narrativeResult.arc)
           }
-
-          // Also create legacy story for backward compat
-          createMissionStory({
-            id: entry.id, title: titleUpdate ?? formData.title,
-            date: formData.date, cover_image_url: entry.cover_image_url ?? null,
-            created_by: entry.created_by, metadata: entry.metadata as Record<string, unknown>,
-          }).catch(() => {})
 
           setMissionStage('complete')
         } catch (err) {
