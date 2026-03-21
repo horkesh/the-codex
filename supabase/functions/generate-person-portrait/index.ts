@@ -39,7 +39,15 @@ Deno.serve(async (req: Request) => {
               contents: [{
                 parts: [
                   {
-                    text: `Analyze this photo of a person. Return a JSON object with one field:
+                    text: `Analyze this photo of a person. You have a previous description of this person from an earlier analysis:
+"${appearance}"
+
+Study the photo carefully and produce a REFINED description that:
+- Corrects anything the previous description got wrong (especially ethnicity, skin tone, hair)
+- Adds new details visible in this photo that were missing before
+- Keeps accurate details from the previous description
+
+Return a JSON object with one field:
 "appearance": a concise visual description focusing on skin tone, ethnicity, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
 Output PURE JSON only, no markdown.`,
                   },
