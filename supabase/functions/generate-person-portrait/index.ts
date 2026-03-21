@@ -43,7 +43,7 @@ Deno.serve(async (req: Request) => {
 "appearance": a concise visual description focusing on skin tone, ethnicity, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
 Output PURE JSON only, no markdown.`,
                   },
-                  { inline_data: { mime_type: 'image/webp', data: photo_base64 } },
+                  { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
                 ],
               }],
               generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 300 },

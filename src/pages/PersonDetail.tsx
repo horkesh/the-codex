@@ -10,7 +10,7 @@ import { PrivateNoteSection } from '@/components/circle/PrivateNoteSection'
 import { PersonForm } from '@/components/circle/PersonForm'
 import type { PersonFormData } from '@/components/circle/PersonForm'
 import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents, convertPOIToContact } from '@/data/people'
-import { fetchScanByPerson } from '@/data/personScans'
+import { fetchScanByPerson, updatePersonScan } from '@/data/personScans'
 import { generatePersonPortrait, PORTRAIT_STYLES, type PortraitStyle } from '@/ai/personPortrait'
 import { imageToJpegBase64 } from '@/lib/image'
 import { fetchAllGents } from '@/data/gents'
@@ -68,6 +68,8 @@ export default function PersonDetail() {
   const [portraitStyle, setPortraitStyle] = useState<PortraitStyle>('noir')
   const [portraitPhoto, setPortraitPhoto] = useState<File | null>(null)
   const portraitFileRef = useRef<HTMLInputElement>(null)
+  const [editAppearance, setEditAppearance] = useState('')
+  const [showAppearanceEdit, setShowAppearanceEdit] = useState(false)
   const [showGentModal, setShowGentModal] = useState(false)
   const [gentSaving, setGentSaving] = useState(false)
   const [knownByGentIds, setKnownByGentIds] = useState<string[]>([])
@@ -161,14 +163,21 @@ export default function PersonDetail() {
       if (portraitPhoto) {
         photoB64 = await imageToJpegBase64(portraitPhoto, { maxPx: 512, quality: 0.7 })
       }
+      // Use edited appearance if the user modified it, otherwise use the scan's original
+      const appearanceToSend = editAppearance.trim() || scan.appearance_description
       const result = await generatePersonPortrait({
-        appearance: scan.appearance_description,
+        appearance: appearanceToSend,
         traits: scan.trait_words ?? [],
         scan_id: scan.id,
         director_note: portraitNote.trim() || undefined,
         style: portraitStyle,
         photo_base64: photoB64,
       })
+      // If the user manually edited the appearance, save it back to the scan
+      if (editAppearance.trim() && editAppearance.trim() !== scan.appearance_description) {
+        await updatePersonScan(scan.id, { appearance_description: editAppearance.trim() } as Partial<PersonScan>).catch(() => {})
+        setScan({ ...scan, appearance_description: editAppearance.trim() })
+      }
       if (result.portrait_url) {
         await updatePerson(person.id, { portrait_url: result.portrait_url })
         setPerson({ ...person, portrait_url: result.portrait_url, private_note: person.private_note } as PersonWithPrivateNote)
@@ -267,7 +276,7 @@ export default function PersonDetail() {
                 {scan?.appearance_description && !regeneratingPortrait && (
                   <button
                     type="button"
-                    onClick={() => setShowPortraitPanel(true)}
+                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setShowAppearanceEdit(false); setShowPortraitPanel(true) }}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Regenerate portrait"
                   >
@@ -281,7 +290,7 @@ export default function PersonDetail() {
                 {scan?.appearance_description && !regeneratingPortrait && (
                   <button
                     type="button"
-                    onClick={() => setShowPortraitPanel(true)}
+                    onClick={() => { setEditAppearance(scan?.appearance_description ?? ''); setShowAppearanceEdit(false); setShowPortraitPanel(true) }}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Generate portrait"
                   >
@@ -881,7 +890,33 @@ export default function PersonDetail() {
                 Add a photo for better accuracy
               </button>
             )}
-            <p className="text-[9px] text-ivory-dim/50 font-body mt-1">Expands the AI's understanding — does not replace the scan description</p>
+            <p className="text-[9px] text-ivory-dim/50 font-body mt-1">New photo completely replaces the previous appearance analysis</p>
+          </div>
+
+          {/* Appearance description (editable) */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] uppercase tracking-widest text-ivory-dim font-body">Appearance Intel</p>
+              <button
+                type="button"
+                onClick={() => setShowAppearanceEdit(!showAppearanceEdit)}
+                className="text-[10px] text-gold/60 hover:text-gold font-body transition-colors"
+              >
+                {showAppearanceEdit ? 'Hide' : 'Edit'}
+              </button>
+            </div>
+            {showAppearanceEdit ? (
+              <textarea
+                value={editAppearance}
+                onChange={e => setEditAppearance(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-ivory font-body resize-none focus:outline-none focus:border-gold/30"
+                rows={4}
+              />
+            ) : (
+              <p className="text-[11px] text-ivory-dim/70 font-body leading-relaxed line-clamp-3">
+                {editAppearance || 'No appearance data'}
+              </p>
+            )}
           </div>
 
           {/* Director's note */}
