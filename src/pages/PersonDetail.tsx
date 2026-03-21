@@ -188,12 +188,16 @@ export default function PersonDetail() {
         // Sync local scan state with the appearance actually used
         if (result.updated_appearance) {
           // Server returned a fresh analysis from the photo — use it
+          await updatePersonScan(scan.id, { appearance_description: result.updated_appearance } as Partial<PersonScan>).catch(() => {})
           setScan({ ...scan, appearance_description: result.updated_appearance })
-        } else if (showAppearanceEdit && editAppearance.trim() !== (scan.appearance_description ?? '')) {
-          // User manually edited the appearance — save their version
-          const edited = editAppearance.trim() || scan.appearance_description || ''
-          await updatePersonScan(scan.id, { appearance_description: edited } as Partial<PersonScan>).catch(() => {})
-          setScan({ ...scan, appearance_description: edited })
+          setEditAppearance(result.updated_appearance)
+        } else if (showAppearanceEdit) {
+          // User manually edited the appearance — save exactly what they typed (even if empty)
+          const edited = editAppearance.trim()
+          if (edited !== (scan.appearance_description ?? '')) {
+            await updatePersonScan(scan.id, { appearance_description: edited } as Partial<PersonScan>).catch(() => {})
+            setScan({ ...scan, appearance_description: edited })
+          }
         }
         addToast('Portrait regenerated.', 'success')
       }
