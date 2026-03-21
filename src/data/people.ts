@@ -64,7 +64,7 @@ export async function fetchPersonWithNote(
     .select('note')
     .eq('gent_id', gentId)
     .eq('person_id', id)
-    .single()
+    .maybeSingle()
 
   if (noteError && noteError.code !== 'PGRST116') throw noteError
 
