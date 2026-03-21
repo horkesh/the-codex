@@ -87,7 +87,7 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
         </div>
 
         {/* ── Photo band ── */}
-        <div style={{ position: 'relative', width: '100%', height: 480, overflow: 'hidden', flexShrink: 0 }}>
+        <div style={{ position: 'relative', width: '100%', height: 600, overflow: 'hidden', flexShrink: 0 }}>
           {coverPhoto ? (
             <img
               src={coverPhoto}
@@ -130,7 +130,7 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
         </div>
 
         {/* ── Content area ── */}
-        <div style={{ position: 'relative', zIndex: 2, padding: '16px 55px 0', display: 'flex', flexDirection: 'column', flex: 1, boxSizing: 'border-box' }}>
+        <div style={{ position: 'relative', zIndex: 2, padding: '16px 55px 0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
 
           {/* Destination + epithet + month/duration */}
           <div style={{ marginBottom: 16 }}>
@@ -267,8 +267,8 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
             )}
           </div>
 
-          {/* BrandMark — pushed to bottom */}
-          <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12, marginTop: 'auto' }}>
+          {/* BrandMark */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12, marginTop: 24 }}>
             <BrandMark size="sm" />
           </div>
         </div>
