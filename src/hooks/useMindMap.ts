@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { fetchAllGents } from '@/data/gents'
-import { fetchPeople, fetchAllPersonGents } from '@/data/people'
+import { fetchPeople, fetchAllPersonGents, fetchAllPersonConnections } from '@/data/people'
 import { fetchAllAppearances } from '@/data/personAppearances'
 import { fetchRecentEntryIds, fetchEntryDates } from '@/data/entries'
 import { computeGraphData, type MindMapFilters } from '@/lib/mindMapLayout'
 import { updatePerson } from '@/data/people'
-import type { Gent, Person, PersonAppearance, PersonTier, GentAlias } from '@/types/app'
+import type { Gent, Person, PersonAppearance, PersonTier, GentAlias, PersonConnection } from '@/types/app'
 import type { Node } from '@xyflow/react'
 
 // ── localStorage persistence for dragged node positions ─────────────────────
@@ -34,6 +34,7 @@ export function useMindMap() {
   const [loading, setLoading] = useState(true)
   const [recentEntryIds, setRecentEntryIds] = useState<Set<string>>(new Set())
   const [entryDates, setEntryDates] = useState<Map<string, string>>(new Map())
+  const [personConnections, setPersonConnections] = useState<PersonConnection[]>([])
 
   const [filters, setFilters] = useState<MindMapFilters>({ tier: 'all', gent: 'all' })
   const [focusedGentId, setFocusedGentId] = useState<string | null>(null)
@@ -50,7 +51,8 @@ export function useMindMap() {
     const r = fetchRecentEntryIds(7).then(ids => setRecentEntryIds(new Set(ids))).catch(() => {})
     const pg = fetchAllPersonGents().then(rows => { console.debug('[mindmap] person_gents:', rows.length); setPersonGents(rows) }).catch(e => console.error('[mindmap] person_gents failed:', e))
     const ed = fetchEntryDates().then(setEntryDates).catch(() => {})
-    Promise.all([g, p, a, r, pg, ed]).finally(() => setLoading(false))
+    const pc = fetchAllPersonConnections().then(setPersonConnections).catch(() => {})
+    Promise.all([g, p, a, r, pg, ed, pc]).finally(() => setLoading(false))
   }, [])
 
   const recentlyActivePersonIds = useMemo(() => {
@@ -76,8 +78,8 @@ export function useMindMap() {
   }, [appearances, entryDates])
 
   const graphData = useMemo(
-    () => computeGraphData(gents, people, appearances, filters, focusedGentId, focusedPersonId, savedPositions, recentlyActivePersonIds, searchQuery, personGents, personRecency),
-    [gents, people, appearances, filters, focusedGentId, focusedPersonId, savedPositions, recentlyActivePersonIds, searchQuery, personGents, personRecency]
+    () => computeGraphData(gents, people, appearances, filters, focusedGentId, focusedPersonId, savedPositions, recentlyActivePersonIds, searchQuery, personGents, personRecency, personConnections),
+    [gents, people, appearances, filters, focusedGentId, focusedPersonId, savedPositions, recentlyActivePersonIds, searchQuery, personGents, personRecency, personConnections]
   )
 
   const toggleGentFocus = useCallback((gentId: string) => {

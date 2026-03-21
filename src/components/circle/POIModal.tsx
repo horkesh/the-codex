@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ImagePlus, Camera } from 'lucide-react'
 import { Modal, Button, Input } from '@/components/ui'
@@ -30,6 +30,23 @@ export function POIModal({ open, mode, onClose, onSaved }: ProspectIntakeModalPr
   useEffect(() => {
     if (open) setMode(mode)
   }, [open, mode, setMode])
+
+  // Global paste listener so Ctrl+V works without clicking the drop zone first
+  const handleGlobalPaste = useCallback((e: ClipboardEvent) => {
+    if (!open || step !== 'input') return
+    const item = Array.from(e.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'))
+    if (!item) return
+    const f = item.getAsFile()
+    if (f) {
+      e.preventDefault()
+      handleAnalyzeFile(f, mode === 'research' ? 'instagram_screenshot' : 'photo')
+    }
+  }, [open, step, mode, handleAnalyzeFile])
+
+  useEffect(() => {
+    document.addEventListener('paste', handleGlobalPaste)
+    return () => document.removeEventListener('paste', handleGlobalPaste)
+  }, [handleGlobalPaste])
 
   const handleClose = () => {
     reset()

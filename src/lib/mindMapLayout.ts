@@ -1,5 +1,5 @@
 import type { Node, Edge } from '@xyflow/react'
-import type { Gent, Person, PersonAppearance, PersonTier, GentAlias } from '@/types/app'
+import type { Gent, Person, PersonAppearance, PersonTier, GentAlias, PersonConnection } from '@/types/app'
 
 // ── Ring radii ───────────────────────────────────────────────────────────────
 type RingKey = PersonTier | 'person_of_interest'
@@ -67,6 +67,7 @@ export function computeGraphData(
   searchQuery?: string,
   personGents?: Array<{ person_id: string; gent_id: string }>,
   personRecency?: Map<string, number>,
+  personConnections?: PersonConnection[],
 ): { nodes: Node[]; edges: Edge[]; searchMatchNodeIds: string[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
@@ -201,7 +202,7 @@ export function computeGraphData(
 
   const filteredIds = new Set(filtered.map(p => p.id))
 
-  // Person-focus: find all people who share entries with the focused person
+  // Person-focus: find all people who share entries OR have explicit connections with the focused person
   const connectedToFocusedPerson = new Set<string>()
   if (focusedPersonId) {
     connectedToFocusedPerson.add(focusedPersonId)
@@ -209,6 +210,16 @@ export function computeGraphData(
     for (const a of appearances) {
       if (focusedEntries.has(a.entry_id) && filteredIds.has(a.person_id)) {
         connectedToFocusedPerson.add(a.person_id)
+      }
+    }
+    // Include explicitly connected people
+    if (personConnections) {
+      for (const conn of personConnections) {
+        if (conn.person_a === focusedPersonId && filteredIds.has(conn.person_b)) {
+          connectedToFocusedPerson.add(conn.person_b)
+        } else if (conn.person_b === focusedPersonId && filteredIds.has(conn.person_a)) {
+          connectedToFocusedPerson.add(conn.person_a)
+        }
       }
     }
   }
@@ -314,6 +325,54 @@ export function computeGraphData(
       },
       className: 'person-person-edge',
     })
+  }
+
+  // 8. Explicit person ↔ person connections (from person_connections table)
+  if (personConnections) {
+    // Track which pairs already have a co-appearance edge
+    const existingPairs = new Set(personPairCount.keys())
+
+    for (const conn of personConnections) {
+      if (!filteredIds.has(conn.person_a) || !filteredIds.has(conn.person_b)) continue
+      const key = [conn.person_a, conn.person_b].sort().join('-')
+      // If there's already a co-appearance edge, upgrade it with the label
+      if (existingPairs.has(key)) {
+        if (conn.label) {
+          const existing = edges.find(e => e.id === `pp-${key}`)
+          if (existing) {
+            existing.label = conn.label
+            existing.labelStyle = { fill: '#c9a84c', fontSize: 10, fontFamily: 'Instrument Sans' }
+            existing.labelBgStyle = { fill: '#0a0a0f', fillOpacity: 0.8 }
+            existing.labelBgPadding = [4, 2] as [number, number]
+            existing.style = { ...existing.style, strokeDasharray: '6 3' }
+          }
+        }
+        continue
+      }
+      // New edge for explicit-only connections (no shared entries)
+      const pcSearchDimmed = searchQuery ? (!searchMatchIds.has(conn.person_a) || !searchMatchIds.has(conn.person_b)) : false
+      const pcPersonFocusDimmed = focusedPersonId !== null
+        && !connectedToFocusedPerson.has(conn.person_a) && !connectedToFocusedPerson.has(conn.person_b)
+      const pcDimmed = pcSearchDimmed || pcPersonFocusDimmed
+      const pcHighlighted = focusedPersonId !== null
+        && (conn.person_a === focusedPersonId || conn.person_b === focusedPersonId)
+
+      edges.push({
+        id: `pc-${conn.id}`,
+        source: `person-${conn.person_a}`,
+        target: `person-${conn.person_b}`,
+        label: conn.label || undefined,
+        labelStyle: conn.label ? { fill: '#c9a84c', fontSize: 10, fontFamily: 'Instrument Sans' } : undefined,
+        labelBgStyle: conn.label ? { fill: '#0a0a0f', fillOpacity: 0.8 } : undefined,
+        labelBgPadding: conn.label ? [4, 2] as [number, number] : undefined,
+        style: {
+          stroke: pcHighlighted ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.2)',
+          strokeWidth: pcHighlighted ? 1.5 : 1,
+          strokeDasharray: '6 3',
+          opacity: pcDimmed ? 0.05 : 1,
+        },
+      })
+    }
   }
 
   return {
