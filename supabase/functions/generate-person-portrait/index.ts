@@ -147,7 +147,7 @@ Output PURE JSON only, no markdown.`,
       await db.from('person_scans').update({ appearance_description: photoAppearance }).eq('id', scan_id).catch(() => {})
     }
 
-    return new Response(JSON.stringify({ portrait_url: publicUrl }), {
+    return new Response(JSON.stringify({ portrait_url: publicUrl, updated_appearance: photoAppearance || null }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {

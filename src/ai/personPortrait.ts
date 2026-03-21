@@ -18,11 +18,16 @@ export interface PersonPortraitRequest {
   fresh_analysis?: boolean
 }
 
-export async function generatePersonPortrait(req: PersonPortraitRequest): Promise<{ portrait_url: string }> {
+export interface PersonPortraitResult {
+  portrait_url: string
+  updated_appearance?: string | null
+}
+
+export async function generatePersonPortrait(req: PersonPortraitRequest): Promise<PersonPortraitResult> {
   const { data, error } = await supabase.functions.invoke('generate-person-portrait', {
     body: req,
   })
   if (error) throw error
   if (data?.error) throw new Error(data.error)
-  return data as { portrait_url: string }
+  return data as PersonPortraitResult
 }
