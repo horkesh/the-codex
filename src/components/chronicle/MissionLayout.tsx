@@ -408,7 +408,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           {/* PAGE 1: Visa Card + Intelligence Report */}
-          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 96px)' }}>
+          <div className="snap-center shrink-0 w-full px-4">
             {visaCard}
 
             {/* City timeline */}
@@ -451,7 +451,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
             const supportingPhotos = dayPhotos.slice(1)
             const dayNarrative = dayLore[0] ?? null
             return (
-              <div key={day.day} className="snap-center shrink-0 w-full px-4 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(100dvh - 96px)' }}>
+              <div key={day.day} className="snap-center shrink-0 w-full px-4 flex flex-col">
                 {/* Day header */}
                 <div className="mb-3 shrink-0">
                   <p className="text-[10px] font-body font-semibold tracking-[0.2em] text-gold/50 uppercase mb-1">
