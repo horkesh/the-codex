@@ -156,7 +156,7 @@ Output PURE JSON only, no markdown.`
       await db.from('person_scans').update({ appearance_description: photoAppearance }).eq('id', scan_id).catch(() => {})
     }
 
-    console.log(`[portrait] Done. photoAppearance=${photoAppearance ? 'set' : 'empty'}, fullAppearance=${fullAppearance.slice(0, 60)}`)
+    console.log(`[portrait] Done. photoAppearance=${photoAppearance ? 'set' : 'empty'}, subject=${subjectDesc.slice(0, 60)}`)
     return new Response(JSON.stringify({ portrait_url: publicUrl, updated_appearance: photoAppearance || null, analysis_debug: analysisDebug || null }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
