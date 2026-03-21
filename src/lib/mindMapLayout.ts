@@ -80,7 +80,23 @@ export function computeGraphData(
     }
   }
 
-  // 1. Place gents in equilateral triangle at center
+  // 1. Build person→gent connections (needed before gent node dimming)
+  const personGentMap = new Map<string, Set<string>>()
+  if (personGents) {
+    for (const pg of personGents) {
+      if (!personGentMap.has(pg.person_id)) personGentMap.set(pg.person_id, new Set())
+      personGentMap.get(pg.person_id)!.add(pg.gent_id)
+    }
+  }
+
+  // Pre-compute focused person's gent connections (for gent dimming)
+  const focusedPersonGentIds = new Set<string>()
+  if (focusedPersonId) {
+    const linked = personGentMap.get(focusedPersonId)
+    if (linked) for (const gId of linked) focusedPersonGentIds.add(gId)
+  }
+
+  // 2. Place gents in equilateral triangle at center
   const gentPositions: Array<{ x: number; y: number }> = [
     { x: 0, y: -80 },
     { x: -69, y: 40 },
@@ -108,7 +124,7 @@ export function computeGraphData(
     })
   })
 
-  // 2. Gent ↔ Gent edges (always)
+  // 3. Gent ↔ Gent edges (always)
   for (let i = 0; i < gents.length; i++) {
     for (let j = i + 1; j < gents.length; j++) {
       const dimmed = focusedGentId !== null || focusedPersonId !== null || (!!searchQuery && searchMatchIds.size > 0)
@@ -119,15 +135,6 @@ export function computeGraphData(
         style: { stroke: '#C9A84C', strokeWidth: 3, opacity: dimmed ? 0.05 : 1 },
         animated: false,
       })
-    }
-  }
-
-  // 3. Build person→gent connections from person_gents table (authoritative)
-  const personGentMap = new Map<string, Set<string>>()
-  if (personGents) {
-    for (const pg of personGents) {
-      if (!personGentMap.has(pg.person_id)) personGentMap.set(pg.person_id, new Set())
-      personGentMap.get(pg.person_id)!.add(pg.gent_id)
     }
   }
 
@@ -196,7 +203,6 @@ export function computeGraphData(
 
   // Person-focus: find all people who share entries with the focused person
   const connectedToFocusedPerson = new Set<string>()
-  const focusedPersonGentIds = new Set<string>()
   if (focusedPersonId) {
     connectedToFocusedPerson.add(focusedPersonId)
     const focusedEntries = personEntries.get(focusedPersonId) ?? new Set()
@@ -205,8 +211,6 @@ export function computeGraphData(
         connectedToFocusedPerson.add(a.person_id)
       }
     }
-    const linked = personGentMap.get(focusedPersonId)
-    if (linked) for (const gId of linked) focusedPersonGentIds.add(gId)
   }
 
   for (const [ring, ringPeople] of rings) {
