@@ -45,11 +45,11 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
     const isReturn = (cityVisit?.visitNumber ?? 1) > 1
 
     return (
-      <div ref={ref} style={{ width: 1080, height: 1350, backgroundColor: '#F5F0E1', position: 'relative', overflow: 'hidden', fontFamily: "Georgia, 'Times New Roman', serif" }}>
+      <div ref={ref} style={{ width: 1080, height: 1350, backgroundColor: '#F5F0E1', position: 'relative', overflow: 'hidden', fontFamily: "Georgia, 'Times New Roman', serif", display: 'flex', flexDirection: 'column' }}>
         <GuillocheFrame />
 
         {/* ── Photo band ── */}
-        <div style={{ position: 'relative', width: '100%', height: 520, overflow: 'hidden' }}>
+        <div style={{ position: 'relative', width: '100%', height: 640, overflow: 'hidden', flexShrink: 0 }}>
           {coverPhoto ? (
             <img
               src={coverPhoto}
@@ -108,7 +108,7 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
         </div>
 
         {/* ── Content area ── */}
-        <div style={{ position: 'relative', zIndex: 2, padding: '28px 55px 0', display: 'flex', flexDirection: 'column', height: 830, boxSizing: 'border-box' }}>
+        <div style={{ position: 'relative', zIndex: 2, padding: '28px 55px 0', display: 'flex', flexDirection: 'column', flex: 1, boxSizing: 'border-box' }}>
 
           {/* Destination */}
           <div style={{ marginBottom: 24 }}>
@@ -212,7 +212,7 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
           )}
 
           {/* One-liner + stamp row */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               {oneliner && (
                 <div style={{
@@ -250,8 +250,8 @@ export const VisaCardSlide = React.forwardRef<HTMLDivElement, VisaCardSlideProps
             )}
           </div>
 
-          {/* BrandMark */}
-          <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 16, paddingTop: 12 }}>
+          {/* BrandMark — pushed to bottom of card */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 16, marginTop: 'auto' }}>
             <BrandMark size="md" />
           </div>
         </div>
