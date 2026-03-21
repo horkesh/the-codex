@@ -41,7 +41,7 @@ import { AchievementCard } from '@/export/templates/AchievementCard'
 import { YearInReview } from '@/export/templates/YearInReview'
 import { fetchEarnedAchievements } from '@/data/achievements'
 import type { EarnedAchievement } from '@/data/achievements'
-import { VisaCardSlide, HeroLoreSlide, PhotoGridSlide, DebriefSlide, StampSlide, buildVisaCarouselManifest } from '@/export/templates/visa-carousel'
+import { VisaCardSlide, HeroLoreSlide, PhotoGridSlide, DebriefSlide, StampSlide, DayPolaroidSlide, buildVisaCarouselManifest } from '@/export/templates/visa-carousel'
 import { ToastCarouselPreview } from '@/export/templates/toast-carousel'
 import { fetchStampByEntryId } from '@/data/stamps'
 import { exportMultipleToPng, shareMultipleImages } from '@/export/exporter'
@@ -186,14 +186,15 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onS
   onStateReady: (state: CarouselState | null) => void
 }) {
   const [fullEntry, setFullEntry] = useState<import('@/types/app').EntryWithParticipants | null>(null)
-  const [carouselPhotos, setCarouselPhotos] = useState<Array<{ url: string; caption: string | null }>>([])
+  const [carouselPhotos, setCarouselPhotos] = useState<Array<{ id: string; url: string; caption: string | null }>>([])
+
   const [carouselStamp, setCarouselStamp] = useState<import('@/types/app').PassportStamp | null>(null)
   const slideRefs = useRef<Array<HTMLDivElement | null>>([])
   const [carouselExporting, setCarouselExporting] = useState(false)
 
   useEffect(() => {
     fetchEntryFull(entry.id).then(setFullEntry).catch(() => {})
-    fetchEntryPhotos(entry.id).then(p => setCarouselPhotos(p.map(x => ({ url: x.url, caption: x.caption })))).catch(() => {})
+    fetchEntryPhotos(entry.id).then(p => setCarouselPhotos(p.map(x => ({ id: x.id, url: x.url, caption: x.caption })))).catch(() => {})
     fetchStampByEntryId(entry.id).then(setCarouselStamp).catch(() => {})
   }, [entry.id])
 
@@ -236,11 +237,32 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onS
   if (!fullEntry) return <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: 1080, height: 1350, background: '#F5F0E1' }} />
 
   const meta = fullEntry.metadata as Record<string, unknown>
+  const dayEpisodes = meta?.day_episodes as import('@/types/app').StoryDayEpisode[] | undefined
 
+  // Build photo lookup by ID for day slides
+  const photoById = useMemo(() => {
+    const map = new Map<string, { url: string }>()
+    for (const p of carouselPhotos) map.set(p.id, p)
+    return map
+  }, [carouselPhotos])
+
+  // Legacy photo grid chunks (fallback for non-day entries)
   const gridPhotos = carouselPhotos.slice(1)
   const photoChunks: Array<typeof carouselPhotos> = []
   for (let i = 0; i < gridPhotos.length && photoChunks.length < 3; i += 4) {
     photoChunks.push(gridPhotos.slice(i, i + 4))
+  }
+
+  /** Pick best 3 photos for a day — evenly sample from the day's photos */
+  function bestPhotosForDay(photoIds: string[]): { url: string }[] {
+    const available = photoIds.map(id => photoById.get(id)).filter(Boolean) as { url: string }[]
+    if (available.length <= 3) return available
+    // Sample: first, middle, last for variety
+    return [
+      available[0],
+      available[Math.floor(available.length / 2)],
+      available[available.length - 1],
+    ]
   }
 
   const setSlideRef = (idx: number) => (el: HTMLDivElement | null) => { slideRefs.current[idx] = el }
@@ -255,6 +277,20 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onS
           {slide.id === 'hero-lore' && (
             <HeroLoreSlide ref={setSlideRef(i)} entry={fullEntry} />
           )}
+          {slide.id.startsWith('day-') && (() => {
+            const dayIdx = parseInt(slide.id.split('-')[1])
+            const ep = dayEpisodes?.[dayIdx]
+            if (!ep) return null
+            return (
+              <DayPolaroidSlide
+                ref={setSlideRef(i)}
+                dayLabel={ep.label}
+                oneliner={ep.oneliner ?? null}
+                photos={bestPhotosForDay(ep.photoIds)}
+                entryTitle={fullEntry.title}
+              />
+            )
+          })()}
           {slide.id.startsWith('photo-grid-') && (() => {
             const chunkIdx = parseInt(slide.id.split('-')[2])
             return (
