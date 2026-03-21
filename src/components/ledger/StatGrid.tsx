@@ -81,10 +81,12 @@ export function StatGrid({ stats }: StatGridProps) {
       }, () => {})
   }, [])
 
-  const totalMissions = sum(stats, 'missions')
-  const totalCountries = sum(stats, 'countries_visited')
-  const totalPeople = sum(stats, 'people_met')
-  const totalNightsOut = sum(stats, 'nights_out')
+  // Use max (not sum) for group stats — all gents share the same missions/nights out,
+  // so summing would double/triple-count shared entries.
+  const totalMissions = Math.max(0, ...stats.map(s => s.missions))
+  const totalCountries = Math.max(0, ...stats.map(s => s.countries_visited))
+  const totalPeople = Math.max(0, ...stats.map(s => s.people_met))
+  const totalNightsOut = Math.max(0, ...stats.map(s => s.nights_out))
 
   return (
     <section className="mb-10">
