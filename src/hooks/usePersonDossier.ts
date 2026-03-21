@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { fetchAppearancesByPerson, fetchAppearancesByEntries } from '@/data/personAppearances'
 import { fetchEntries, fetchEntriesPhotos } from '@/data/entries'
-import { fetchPeopleByIds } from '@/data/people'
+import { fetchPeopleByIds, fetchPersonConnections } from '@/data/people'
 import type { EntryWithParticipants, Person } from '@/types/app'
 
 export interface DossierAppearance {
@@ -14,18 +14,41 @@ interface DossierPhoto {
   entryId: string
 }
 
+export interface ExplicitConnection {
+  connectionId: string
+  person: Person
+  label: string | null
+}
+
 export interface PersonDossierData {
   appearances: DossierAppearance[]
   coAppearing: Person[]
+  explicitConnections: ExplicitConnection[]
   photos: DossierPhoto[]
   loading: boolean
+  refreshConnections: () => void
 }
 
 export function usePersonDossier(personId: string | undefined): PersonDossierData {
   const [appearances, setAppearances] = useState<DossierAppearance[]>([])
   const [coAppearing, setCoAppearing] = useState<Person[]>([])
+  const [explicitConnections, setExplicitConnections] = useState<ExplicitConnection[]>([])
   const [photos, setPhotos] = useState<DossierPhoto[]>([])
   const [loading, setLoading] = useState(true)
+
+  const loadConnections = useCallback(async () => {
+    if (!personId) return
+    try {
+      const conns = await fetchPersonConnections(personId)
+      setExplicitConnections(conns.map(c => ({
+        connectionId: c.id,
+        person: c.other,
+        label: c.label,
+      })))
+    } catch {
+      // non-fatal
+    }
+  }, [personId])
 
   useEffect(() => {
     if (!personId) {
@@ -37,8 +60,11 @@ export function usePersonDossier(personId: string | undefined): PersonDossierDat
 
     async function load() {
       try {
-        // 1. Get all appearances for this person
-        const rawAppearances = await fetchAppearancesByPerson(personId!)
+        // 1. Get all appearances for this person + explicit connections in parallel
+        const [rawAppearances] = await Promise.all([
+          fetchAppearancesByPerson(personId!),
+          loadConnections(),
+        ])
         if (cancelled) return
         if (rawAppearances.length === 0) {
           setLoading(false)
@@ -102,7 +128,7 @@ export function usePersonDossier(personId: string | undefined): PersonDossierDat
 
     load()
     return () => { cancelled = true }
-  }, [personId])
+  }, [personId, loadConnections])
 
-  return { appearances, coAppearing, photos, loading }
+  return { appearances, coAppearing, explicitConnections, photos, loading, refreshConnections: loadConnections }
 }

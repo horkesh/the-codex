@@ -540,6 +540,15 @@ export interface PersonScan {
   portrait_notes: string | null
 }
 
+export interface PersonConnection {
+  id: string
+  person_a: string
+  person_b: string
+  label: string | null
+  created_by: string
+  created_at: string
+}
+
 export interface DossierDraft {
   display_name: string
   instagram: string

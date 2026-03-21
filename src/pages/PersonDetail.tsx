@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye, RefreshCw, X, Camera } from 'lucide-react'
+import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye, RefreshCw, X, Camera, Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Avatar, Spinner, Modal } from '@/components/ui'
@@ -9,13 +9,14 @@ import { usePersonDossier } from '@/hooks/usePersonDossier'
 import { PrivateNoteSection } from '@/components/circle/PrivateNoteSection'
 import { PersonForm } from '@/components/circle/PersonForm'
 import type { PersonFormData } from '@/components/circle/PersonForm'
-import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents, convertPOIToContact } from '@/data/people'
+import { deletePerson, updatePerson, fetchPersonGents, updatePersonGents, convertPOIToContact, addPersonConnection, removePersonConnection, fetchPeopleQuick } from '@/data/people'
 import { fetchScanByPerson, updatePersonScan } from '@/data/personScans'
 import { generatePersonPortrait, PORTRAIT_STYLES, type PortraitStyle } from '@/ai/personPortrait'
 import { imageToJpegBase64 } from '@/lib/image'
 import { fetchAllGents } from '@/data/gents'
 import { ENTRY_TYPE_META } from '@/lib/entryTypes'
 import { useUIStore } from '@/store/ui'
+import { useAuthStore } from '@/store/auth'
 import { cn, formatDate } from '@/lib/utils'
 import { getZodiacSign } from '@/lib/horoscope'
 import type { Gent, PersonScan, PersonWithPrivateNote, PersonTier, VerdictLabel } from '@/types/app'
@@ -51,6 +52,7 @@ export default function PersonDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { addToast } = useUIStore()
+  const gent = useAuthStore((s) => s.gent)
   const { person, setPerson, loading, notFound } = usePerson(id)
   const dossierData = usePersonDossier(id)
   const lastSeen = dossierData.appearances[0] ?? null
@@ -75,6 +77,11 @@ export default function PersonDetail() {
   const [knownByGentIds, setKnownByGentIds] = useState<string[]>([])
   const [promoting, setPromoting] = useState(false)
   const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; entryId: string } | null>(null)
+  const [showLinkModal, setShowLinkModal] = useState(false)
+  const [linkSearch, setLinkSearch] = useState('')
+  const [linkSearchResults, setLinkSearchResults] = useState<Array<{ id: string; name: string; photo_url: string | null; instagram?: string | null }>>([])
+  const [linkLabel, setLinkLabel] = useState('')
+  const [linkSaving, setLinkSaving] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -102,6 +109,44 @@ export default function PersonDetail() {
     setPerson({ ...updated, private_note: person.private_note } as PersonWithPrivateNote)
     addToast('Contact updated', 'success')
     setShowEditForm(false)
+  }
+
+  // ── Connection handlers ──
+  const handleLinkSearch = async (query: string) => {
+    setLinkSearch(query)
+    if (query.length < 2) { setLinkSearchResults([]); return }
+    const results = await fetchPeopleQuick(query)
+    // Exclude self and already-connected people
+    const connectedIds = new Set(dossierData.explicitConnections.map(c => c.person.id))
+    setLinkSearchResults(results.filter(p => p.id !== id && !connectedIds.has(p.id)))
+  }
+
+  const handleAddConnection = async (targetId: string) => {
+    if (!person || !gent || linkSaving) return
+    setLinkSaving(true)
+    try {
+      await addPersonConnection(person.id, targetId, linkLabel.trim() || null, gent.id)
+      dossierData.refreshConnections()
+      setShowLinkModal(false)
+      setLinkSearch('')
+      setLinkSearchResults([])
+      setLinkLabel('')
+      addToast('Connection added', 'success')
+    } catch {
+      addToast('Failed to add connection', 'error')
+    } finally {
+      setLinkSaving(false)
+    }
+  }
+
+  const handleRemoveConnection = async (connectionId: string) => {
+    try {
+      await removePersonConnection(connectionId)
+      dossierData.refreshConnections()
+      addToast('Connection removed', 'success')
+    } catch {
+      addToast('Failed to remove connection', 'error')
+    }
   }
 
   const handleDelete = async () => {
@@ -623,11 +668,37 @@ export default function PersonDetail() {
             )}
 
             {/* ── KNOWN ASSOCIATIONS ── */}
-            {dossierData.coAppearing.length > 0 && (
+            {(dossierData.explicitConnections.length > 0 || dossierData.coAppearing.length > 0) && (
               <>
                 <DossierSectionHeader label="Known Associations" />
                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                  {dossierData.coAppearing.map((p) => (
+                  {/* Explicit connections first */}
+                  {dossierData.explicitConnections.map((c) => (
+                    <div key={c.connectionId} className="flex flex-col items-center gap-1 shrink-0 relative group">
+                      <button type="button" onClick={() => navigate(`/circle/${c.person.id}`)}>
+                        <Avatar src={c.person.photo_url} name={c.person.name} size="md" />
+                      </button>
+                      <span className="text-[11px] text-ivory font-body truncate max-w-[64px]">
+                        {c.person.name.split(' ')[0]}
+                      </span>
+                      {c.label && (
+                        <span className="text-[9px] text-gold/70 font-body truncate max-w-[64px]">
+                          {c.label}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveConnection(c.connectionId)}
+                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-obsidian border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={8} className="text-ivory-dim" />
+                      </button>
+                    </div>
+                  ))}
+                  {/* Implicit co-appearances (no remove button) */}
+                  {dossierData.coAppearing
+                    .filter(p => !dossierData.explicitConnections.some(c => c.person.id === p.id))
+                    .map((p) => (
                     <button
                       key={p.id}
                       type="button"
@@ -640,7 +711,32 @@ export default function PersonDetail() {
                       </span>
                     </button>
                   ))}
+                  {/* Add connection button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowLinkModal(true)}
+                    className="flex flex-col items-center gap-1.5 shrink-0"
+                  >
+                    <div className="w-10 h-10 rounded-full border border-dashed border-gold/30 flex items-center justify-center hover:border-gold/60 transition-colors">
+                      <Plus size={14} className="text-gold/50" />
+                    </div>
+                    <span className="text-[9px] text-ivory-dim/50 font-body">Link</span>
+                  </button>
                 </div>
+              </>
+            )}
+            {/* Show Link button even when no associations yet */}
+            {dossierData.explicitConnections.length === 0 && dossierData.coAppearing.length === 0 && (
+              <>
+                <DossierSectionHeader label="Known Associations" />
+                <button
+                  type="button"
+                  onClick={() => setShowLinkModal(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-dashed border-gold/20 text-xs text-ivory-dim font-body hover:border-gold/40 transition-colors"
+                >
+                  <Plus size={14} className="text-gold/40" />
+                  Link to another contact
+                </button>
               </>
             )}
 
@@ -973,6 +1069,51 @@ export default function PersonDetail() {
           >
             Generate Portrait
           </Button>
+        </div>
+      </Modal>
+
+      {/* Link contact modal */}
+      <Modal isOpen={showLinkModal} onClose={() => { setShowLinkModal(false); setLinkSearch(''); setLinkSearchResults([]); setLinkLabel('') }} title="Link Contact">
+        <div className="flex flex-col gap-3">
+          <input
+            type="text"
+            value={linkSearch}
+            onChange={e => handleLinkSearch(e.target.value)}
+            placeholder="Search contacts..."
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim/40 focus:outline-none focus:border-gold/30"
+            autoFocus
+          />
+          <input
+            type="text"
+            value={linkLabel}
+            onChange={e => setLinkLabel(e.target.value)}
+            placeholder="Label (optional) — e.g. friends, colleagues, sisters"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-ivory font-body placeholder:text-ivory-dim/40 focus:outline-none focus:border-gold/30"
+          />
+          {linkSearchResults.length > 0 && (
+            <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+              {linkSearchResults.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleAddConnection(p.id)}
+                  disabled={linkSaving}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-left"
+                >
+                  <Avatar src={p.photo_url} name={p.name} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-ivory font-body truncate">{p.name}</p>
+                    {p.instagram && (
+                      <p className="text-[10px] text-ivory-dim font-body">@{p.instagram}</p>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          {linkSearch.length >= 2 && linkSearchResults.length === 0 && (
+            <p className="text-xs text-ivory-dim/50 font-body text-center py-2">No contacts found</p>
+          )}
         </div>
       </Modal>
 

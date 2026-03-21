@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { Person, PersonWithPrivateNote } from '@/types/app'
+import type { Person, PersonWithPrivateNote, PersonConnection } from '@/types/app'
 
 const PERSON_COLUMNS = 'id, name, instagram, photo_url, portrait_url, instagram_source_url, met_at_entry, met_date, met_location, notes, labels, added_by, category, tier, poi_source_url, poi_intel, poi_source_gent, poi_visibility, birthday'
 
@@ -342,4 +342,72 @@ export async function updatePersonGents(personId: string, gentIds: string[]): Pr
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: insError } = await (supabase.from('person_gents' as never) as any).insert(rows)
   if (insError) throw insError
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Person-to-Person Connections
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+export async function fetchPersonConnections(
+  personId: string,
+): Promise<Array<PersonConnection & { other: Person }>> {
+  // Fetch connections where person is on either side
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('person_connections' as never) as any)
+    .select('*')
+    .or(`person_a.eq.${personId},person_b.eq.${personId}`)
+  if (error) throw error
+  if (!data || data.length === 0) return []
+
+  // Collect the "other" person IDs
+  const otherIds = (data as PersonConnection[]).map(c =>
+    c.person_a === personId ? c.person_b : c.person_a,
+  )
+
+  // Fetch those people
+  const { data: people, error: pError } = await supabase
+    .from('people')
+    .select(PERSON_COLUMNS)
+    .in('id', otherIds)
+  if (pError) throw pError
+
+  const peopleMap = new Map((people as unknown as Person[]).map(p => [p.id, p]))
+
+  return (data as PersonConnection[]).map(c => {
+    const otherId = c.person_a === personId ? c.person_b : c.person_a
+    return { ...c, other: peopleMap.get(otherId)! }
+  }).filter(c => c.other)
+}
+
+export async function addPersonConnection(
+  personAId: string,
+  personBId: string,
+  label: string | null,
+  gentId: string,
+): Promise<PersonConnection> {
+  // Canonical ordering: smaller UUID first
+  const [a, b] = personAId < personBId ? [personAId, personBId] : [personBId, personAId]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('person_connections' as never) as any)
+    .insert({ person_a: a, person_b: b, label: label || null, created_by: gentId })
+    .select()
+    .single()
+  if (error) throw error
+  return data as PersonConnection
+}
+
+export async function removePersonConnection(connectionId: string): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('person_connections' as never) as any)
+    .delete()
+    .eq('id', connectionId)
+  if (error) throw error
+}
+
+export async function fetchAllPersonConnections(): Promise<PersonConnection[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('person_connections' as never) as any)
+    .select('*')
+  if (error) throw error
+  return (data ?? []) as PersonConnection[]
 }
