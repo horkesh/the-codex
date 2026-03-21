@@ -74,8 +74,26 @@ export function useCamera(): UseCameraReturn {
         canvasRef.current = document.createElement('canvas')
       }
       const canvas = canvasRef.current
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
+
+      // Crop to 9:16 (Instagram Story) from the center of the video feed
+      const vw = video.videoWidth
+      const vh = video.videoHeight
+      const targetRatio = 9 / 16
+      const videoRatio = vw / vh
+
+      let sx = 0, sy = 0, sw = vw, sh = vh
+      if (videoRatio > targetRatio) {
+        // Video is wider than 9:16 — crop sides
+        sw = Math.round(vh * targetRatio)
+        sx = Math.round((vw - sw) / 2)
+      } else {
+        // Video is taller than 9:16 — crop top/bottom
+        sh = Math.round(vw / targetRatio)
+        sy = Math.round((vh - sh) / 2)
+      }
+
+      canvas.width = sw
+      canvas.height = sh
       const ctx = canvas.getContext('2d')
       if (!ctx) { resolve(null); return }
 
@@ -84,7 +102,7 @@ export function useCamera(): UseCameraReturn {
         ctx.translate(canvas.width, 0)
         ctx.scale(-1, 1)
       }
-      ctx.drawImage(video, 0, 0)
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh)
       ctx.setTransform(1, 0, 0, 1, 0, 0)
 
       canvas.toBlob(

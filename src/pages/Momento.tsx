@@ -451,7 +451,7 @@ export default function Momento() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            style={{ position: 'absolute', inset: 0, paddingTop: 'env(safe-area-inset-top, 0px)' }}
+            style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 'env(safe-area-inset-top, 0px)' }}
           >
             <ActiveOverlay {...liveOverlayProps} />
           </motion.div>
