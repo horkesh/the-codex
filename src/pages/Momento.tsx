@@ -487,7 +487,7 @@ export default function Momento() {
               ref={compositeRef}
               style={{
                 width: '1080px',
-                height: `${Math.round(1080 / capturedAspect)}px`,
+                height: '1920px', // 9:16 Instagram Story format
                 position: 'relative',
                 overflow: 'hidden',
                 backgroundColor: '#000',
