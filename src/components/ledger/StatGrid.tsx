@@ -27,9 +27,6 @@ const PER_GENT_ROWS: Array<{ key: keyof GentStats; label: string }> = [
   { key: 'stamps_collected', label: 'Stamps' },
 ]
 
-function sum(stats: GentStats[], key: keyof GentStats): number {
-  return stats.reduce((acc, s) => acc + (s[key] as number), 0)
-}
 
 interface BigStatCardProps {
   value: number
