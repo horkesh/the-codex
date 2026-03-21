@@ -176,6 +176,12 @@ export default function PersonDetail() {
         photo_base64: photoB64,
         fresh_analysis: freshAnalysis || undefined,
       })
+      // Log debug info from photo analysis
+      // eslint-disable-next-line no-console
+      if (result.analysis_debug) console.log('[portrait] analysis:', result.analysis_debug)
+      // eslint-disable-next-line no-console
+      console.log('[portrait] updated_appearance:', result.updated_appearance ? 'set' : 'null')
+
       if (result.portrait_url) {
         await updatePerson(person.id, { portrait_url: result.portrait_url })
         setPerson({ ...person, portrait_url: result.portrait_url, private_note: person.private_note } as PersonWithPrivateNote)
@@ -183,9 +189,9 @@ export default function PersonDetail() {
         if (result.updated_appearance) {
           // Server returned a fresh analysis from the photo — use it
           setScan({ ...scan, appearance_description: result.updated_appearance })
-        } else if (showAppearanceEdit && editAppearance.trim() !== scan.appearance_description) {
+        } else if (showAppearanceEdit && editAppearance.trim() !== (scan.appearance_description ?? '')) {
           // User manually edited the appearance — save their version
-          const edited = editAppearance.trim() || scan.appearance_description
+          const edited = editAppearance.trim() || scan.appearance_description || ''
           await updatePersonScan(scan.id, { appearance_description: edited } as Partial<PersonScan>).catch(() => {})
           setScan({ ...scan, appearance_description: edited })
         }

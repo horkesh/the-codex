@@ -24,29 +24,21 @@ Deno.serve(async (req: Request) => {
     if (!traits || !scan_id) throw new Error('traits and scan_id required')
     if (!appearance && !photo_base64) throw new Error('appearance or photo_base64 required')
 
-    // If a reference photo is provided, analyse it with Gemini for additional appearance details
+    // If a reference photo is provided, analyse it with Gemini for appearance details
     let photoAppearance = ''
+    let analysisDebug = ''
     if (photo_base64) {
+      console.log(`[portrait] Photo provided, ${photo_base64.length} chars base64. fresh=${fresh_analysis}, appearance empty=${!appearance}`)
       const ctrl = new AbortController()
-      const t = setTimeout(() => ctrl.abort(), 20_000)
+      const t = setTimeout(() => ctrl.abort(), 30_000)
       try {
-        const resp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: ctrl.signal,
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  {
-                    text: (fresh_analysis || !appearance)
-                      ? `Analyze this photo of a person from scratch. Ignore any prior descriptions — describe ONLY what you see in the photo.
+        const analysisPrompt = (fresh_analysis || !appearance)
+          ? `Analyze this photo of a person from scratch. Ignore any prior descriptions — describe ONLY what you see in the photo.
 
 Return a JSON object with one field:
 "appearance": a concise visual description focusing on skin tone, ethnicity, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
 Output PURE JSON only, no markdown.`
-                      : `Analyze this photo of a person. A previous analysis described them as:
+          : `Analyze this photo of a person. A previous analysis described them as:
 "${appearance}"
 
 The previous description may contain errors. The PHOTO is ground truth — trust what you see over what the text says.
@@ -57,27 +49,53 @@ Produce a refined description that:
 
 Return a JSON object with one field:
 "appearance": a concise visual description focusing on skin tone, ethnicity, hair colour/style, eye colour, facial structure, facial hair, approximate age, build, and distinctive features.
-Output PURE JSON only, no markdown.`,
-                  },
-                  { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
-                ],
-              }],
+Output PURE JSON only, no markdown.`
+
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: ctrl.signal,
+            body: JSON.stringify({
+              contents: [{ parts: [
+                { text: analysisPrompt },
+                { inline_data: { mime_type: 'image/jpeg', data: photo_base64 } },
+              ] }],
               generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 300 },
             }),
           }
         )
         clearTimeout(t)
+        console.log(`[portrait] Gemini response status: ${resp.status}`)
+
         if (resp.ok) {
           const result = await resp.json()
           const raw = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
+          console.log(`[portrait] Gemini raw response: ${raw.slice(0, 200)}`)
           try {
             const parsed = JSON.parse(raw)
-            if (parsed.appearance) photoAppearance = parsed.appearance
-          } catch { /* ignore parse errors */ }
+            if (parsed.appearance) {
+              photoAppearance = parsed.appearance
+              analysisDebug = 'success'
+              console.log(`[portrait] Photo analysis success: ${photoAppearance.slice(0, 100)}`)
+            } else {
+              analysisDebug = `parsed but no appearance field: ${JSON.stringify(Object.keys(parsed))}`
+              console.error(`[portrait] ${analysisDebug}`)
+            }
+          } catch (parseErr) {
+            analysisDebug = `JSON parse failed: ${(parseErr as Error).message}. Raw: ${raw.slice(0, 100)}`
+            console.error(`[portrait] ${analysisDebug}`)
+          }
+        } else {
+          const errText = await resp.text()
+          analysisDebug = `Gemini ${resp.status}: ${errText.slice(0, 200)}`
+          console.error(`[portrait] ${analysisDebug}`)
         }
-      } catch {
+      } catch (e) {
         clearTimeout(t)
-        console.error('Photo analysis failed, proceeding with text-only description')
+        analysisDebug = `fetch error: ${(e as Error).message}`
+        console.error(`[portrait] Photo analysis failed: ${(e as Error).message}`)
       }
     }
 
@@ -147,7 +165,8 @@ Output PURE JSON only, no markdown.`,
       await db.from('person_scans').update({ appearance_description: photoAppearance }).eq('id', scan_id).catch(() => {})
     }
 
-    return new Response(JSON.stringify({ portrait_url: publicUrl, updated_appearance: photoAppearance || null }), {
+    console.log(`[portrait] Done. photoAppearance=${photoAppearance ? 'set' : 'empty'}, fullAppearance=${fullAppearance.slice(0, 60)}`)
+    return new Response(JSON.stringify({ portrait_url: publicUrl, updated_appearance: photoAppearance || null, analysis_debug: analysisDebug || null }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
