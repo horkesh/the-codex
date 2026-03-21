@@ -68,10 +68,13 @@ Output PURE JSON only, no markdown.`,
     const traitList = (traits as string[]).join(', ')
     const styleDesc = STYLE_VARIANTS[style as string] ?? STYLE_VARIANTS.noir
 
-    // Build appearance: base scan description + photo analysis + director corrections
-    let fullAppearance = appearance
+    // When a new photo is provided, its analysis is the PRIMARY appearance source.
+    // The old scan description becomes fallback context only.
+    let fullAppearance: string
     if (photoAppearance) {
-      fullAppearance += ` Additional visual reference from a new photo: ${photoAppearance}.`
+      fullAppearance = photoAppearance
+    } else {
+      fullAppearance = appearance
     }
     const directorClause = director_note
       ? ` Additional notes (these corrections take priority where they contradict the description above): ${director_note}.`
@@ -121,6 +124,12 @@ Output PURE JSON only, no markdown.`,
     if (uploadError) throw new Error(`Storage upload error: ${uploadError.message}`)
 
     const { data: { publicUrl } } = db.storage.from('portraits').getPublicUrl(fileName)
+
+    // If we got a fresh appearance from the new photo, persist it to the scan
+    // so future regenerations (without photo) use the updated description
+    if (photoAppearance && scan_id) {
+      await db.from('person_scans').update({ appearance_description: photoAppearance }).eq('id', scan_id).catch(() => {})
+    }
 
     return new Response(JSON.stringify({ portrait_url: publicUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
