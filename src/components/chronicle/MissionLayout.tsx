@@ -426,7 +426,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
             const dayPhotos = day.photoIds.map(id => photoById.get(id)).filter(Boolean) as EntryPhoto[]
             const dayLore = loreByDay[dayIdx] ?? []
             const heroPhoto = dayPhotos[0] ?? null
-            const supportingPhotos = dayPhotos.slice(1, 4) // max 3 supporting
+            const supportingPhotos = dayPhotos.slice(1)
             const dayNarrative = dayLore[0] ?? null
             return (
               <div key={day.day} className="snap-center shrink-0 w-full px-4 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(100dvh - 96px)' }}>
@@ -437,6 +437,15 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
                   </p>
                   <div className="h-px bg-gradient-to-r from-gold/30 to-transparent" />
                 </div>
+
+                {/* Per-day lore — above photos */}
+                {dayNarrative && (
+                  <div className="pb-3 shrink-0">
+                    <p className="font-display italic text-ivory/80 text-[14px] leading-relaxed px-1">
+                      {dayNarrative}
+                    </p>
+                  </div>
+                )}
 
                 {/* Hero photo */}
                 {heroPhoto && (
@@ -452,7 +461,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
                   </button>
                 )}
 
-                {/* Supporting photos — 3-col row */}
+                {/* Supporting photos — 3-col grid */}
                 {supportingPhotos.length > 0 && (
                   <div className="grid grid-cols-3 gap-1.5 mb-3 shrink-0">
                     {supportingPhotos.map(p => (
@@ -466,15 +475,6 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
                         <img src={p.url} alt="" className="w-full h-full object-cover" draggable={false} />
                       </button>
                     ))}
-                  </div>
-                )}
-
-                {/* Per-day lore */}
-                {dayNarrative && (
-                  <div className="pt-3 pb-1 shrink-0">
-                    <p className="font-display italic text-ivory/80 text-[14px] leading-relaxed px-1">
-                      {dayNarrative}
-                    </p>
                   </div>
                 )}
 

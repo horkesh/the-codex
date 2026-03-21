@@ -59,6 +59,6 @@ export function groupIntoDays(
 export function formatDayLabel(num: number, date: string): string {
   const d = new Date(date + 'T12:00:00Z')
   const weekday = d.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' })
-  const dayMonth = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' })
-  return `Day ${num} — ${weekday}, ${dayMonth}`
+  const dayMonthYear = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  return `Day ${num} — ${weekday}, ${dayMonthYear}`
 }
