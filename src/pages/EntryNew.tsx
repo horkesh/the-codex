@@ -344,11 +344,20 @@ export default function EntryNew() {
             : { ...baseIntel, tripArc: null, verdict: null,
                 crossMissionRefs: [], processed_at: new Date().toISOString() }
 
-          // Save intel + lore
-          const updatedMeta = {
-            ...(entry.metadata as Record<string, unknown> ?? {}),
+          // Save intel + lore — also populate day_episodes with per-day narratives
+          const prevMeta = entry.metadata as Record<string, unknown> ?? {}
+          const existingEpisodes = prevMeta.day_episodes as StoryDayEpisode[] | undefined
+          const updatedMeta: Record<string, unknown> = {
+            ...prevMeta,
             mission_intel: fullIntel,
             lore_oneliner: narrativeResult?.oneliner ?? null,
+          }
+          // Copy per-day narratives from mission_intel.days to day_episodes
+          if (existingEpisodes && fullIntel.days) {
+            updatedMeta.day_episodes = existingEpisodes.map((ep, i) => ({
+              ...ep,
+              lore: fullIntel.days[i]?.narrative ?? ep.lore,
+            }))
           }
           const titleUpdate = narrativeResult?.titles?.[0]
           await updateEntry(entry.id, {
