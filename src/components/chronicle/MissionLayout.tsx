@@ -62,7 +62,9 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
   const [generatingDebrief, setGeneratingDebrief] = useState(false)
   const [controlsExpanded, setControlsExpanded] = useState(false)
   const [activePage, setActivePage] = useState(0)
+  const [carouselHeight, setCarouselHeight] = useState<number | undefined>(undefined)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const slideRefs = useRef<(HTMLDivElement | null)[]>([])
 
   // Read day episodes directly from entry metadata (no Story dependency)
   const entryMeta = entry.metadata as Record<string, unknown> | undefined
@@ -163,7 +165,16 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
     const el = scrollRef.current
     const page = Math.round(el.scrollLeft / el.offsetWidth)
     setActivePage(page)
+    // Match container height to active slide
+    const activeSlide = slideRefs.current[page]
+    if (activeSlide) setCarouselHeight(activeSlide.scrollHeight)
   }
+
+  // Set initial height from first slide
+  useEffect(() => {
+    const firstSlide = slideRefs.current[0]
+    if (firstSlide) setCarouselHeight(firstSlide.scrollHeight)
+  }, [dayEpisodes])
 
   /* ══════════════════════════════════════════════════════════════════════════
      VISA CARD — shared between single-day and multi-day
@@ -400,15 +411,15 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
           </button>
         )}
 
-        {/* Horizontal scroll-snap carousel — viewport-height, slides scroll independently */}
+        {/* Horizontal scroll-snap carousel — height matches active slide */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', height: 'calc(100dvh - 110px)' }}
+          className="flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide"
+          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', height: carouselHeight ? `${carouselHeight}px` : undefined, transition: 'height 0.3s ease' }}
         >
           {/* PAGE 1: Visa Card + Intelligence Report */}
-          <div className="snap-center shrink-0 w-full px-4 overflow-y-auto scrollbar-hide" style={{ maxHeight: '100%' }}>
+          <div ref={el => { slideRefs.current[0] = el }} className="snap-center shrink-0 w-full px-4">
             {visaCard}
 
             {/* City timeline */}
@@ -451,7 +462,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
             const supportingPhotos = dayPhotos.slice(1)
             const dayNarrative = dayLore[0] ?? null
             return (
-              <div key={day.day} className="snap-center shrink-0 w-full px-4 flex flex-col overflow-y-auto scrollbar-hide" style={{ maxHeight: '100%' }}>
+              <div key={day.day} ref={el => { slideRefs.current[dayIdx + 1] = el }} className="snap-center shrink-0 w-full px-4 flex flex-col">
                 {/* Day header */}
                 <div className="mb-3 shrink-0">
                   <p className="text-[10px] font-body font-semibold tracking-[0.2em] text-gold/50 uppercase mb-1">
