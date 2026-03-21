@@ -26,7 +26,7 @@ Deno.serve(async (req: Request) => {
     const traitList = (traits as string[]).join(', ')
     const styleDesc = STYLE_VARIANTS[style as string] ?? STYLE_VARIANTS.noir
     const directorClause = director_note
-      ? ` IMPORTANT — the following corrections override any other appearance details: ${director_note}.`
+      ? ` Additional notes (these corrections take priority where they contradict the description above): ${director_note}.`
       : ''
 
     const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${appearance}.${directorClause} Personality: ${traitList}. Style: ${styleDesc} — while preserving the subject's actual skin tone, hair colour, and facial features. No text or words.`
