@@ -427,7 +427,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
             const dayLore = loreByDay[dayIdx] ?? []
             const heroPhoto = dayPhotos[0] ?? null
             const supportingPhotos = dayPhotos.slice(1, 4) // max 3 supporting
-            const dayOneliner = dayLore[0] ?? null
+            const dayNarrative = dayLore[0] ?? null
             return (
               <div key={day.day} className="snap-center shrink-0 w-full px-4 overflow-y-auto flex flex-col" style={{ maxHeight: 'calc(100dvh - 96px)' }}>
                 {/* Day header */}
@@ -470,15 +470,15 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
                 )}
 
                 {/* Per-day lore */}
-                {dayOneliner && (
+                {dayNarrative && (
                   <div className="pt-3 pb-1 shrink-0">
                     <p className="font-display italic text-ivory/80 text-[14px] leading-relaxed px-1">
-                      {dayOneliner}
+                      {dayNarrative}
                     </p>
                   </div>
                 )}
 
-                {dayPhotos.length === 0 && !dayOneliner && (
+                {dayPhotos.length === 0 && !dayNarrative && (
                   <p className="text-xs text-ivory-dim/40 font-body italic text-center py-8">No records for this day</p>
                 )}
               </div>
@@ -490,9 +490,10 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
         {/* Dot navigation */}
         {dotNav}
 
-        {/* Director's notes + controls (always below carousel) */}
+        {/* Director's notes + controls below carousel */}
         <div className="px-4">
-          {loreSlot && <div className="mt-2">{loreSlot}</div>}
+          {/* Only show overall lore below carousel if no per-day lore exists */}
+          {!dayEpisodes.some(d => d.lore) && loreSlot && <div className="mt-2">{loreSlot}</div>}
           {controlsSection}
         </div>
 
