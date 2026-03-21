@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Avatar } from '@/components/ui'
 import { fetchStampByEntryId } from '@/data/stamps'
 import { fetchCityVisits, type CityVisit } from '@/data/entries'
 import { flagEmoji, cn, getCoverCrop } from '@/lib/utils'
 import { generateMissionDebrief } from '@/ai/debrief'
-import { Sparkles, RefreshCw, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Sparkles, RefreshCw, ChevronDown, ChevronLeft, ChevronRight, Move, Check, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { useUIStore } from '@/store/ui'
 import { updateEntry } from '@/data/entries'
 import {
@@ -66,6 +66,14 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
   const scrollRef = useRef<HTMLDivElement>(null)
   const slideRefs = useRef<(HTMLDivElement | null)[]>([])
 
+  // Cover photo adjust state
+  const [coverEditing, setCoverEditing] = useState(false)
+  const [coverPos, setCoverPos] = useState({ x: 50, y: 50 })
+  const [coverScale, setCoverScale] = useState(1)
+  const coverDragging = useRef(false)
+  const coverLastTouch = useRef({ x: 0, y: 0 })
+  const coverContainerRef = useRef<HTMLDivElement>(null)
+
   // Read day episodes directly from entry metadata (no Story dependency)
   const entryMeta = entry.metadata as Record<string, unknown> | undefined
   const rawEpisodes = entryMeta?.day_episodes as StoryDayEpisode[] | undefined
@@ -107,6 +115,44 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
       setGeneratingDebrief(false)
     }
   }
+
+  /* ── Cover adjust handlers ── */
+
+  function startCoverEdit() {
+    const crop = getCoverCrop(entry)
+    setCoverPos({ x: crop.x, y: crop.y })
+    setCoverScale(crop.scale)
+    setCoverEditing(true)
+  }
+
+  async function saveCoverEdit() {
+    setCoverEditing(false)
+    const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), cover_pos_x: coverPos.x, cover_pos_y: coverPos.y, cover_scale: coverScale }
+    const updated = { ...entry, metadata: meta }
+    onEntryUpdate?.(updated)
+    await updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {})
+  }
+
+  const handleCoverPointerDown = useCallback((e: React.PointerEvent) => {
+    if (!coverEditing) return
+    coverDragging.current = true
+    coverLastTouch.current = { x: e.clientX, y: e.clientY }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }, [coverEditing])
+
+  const handleCoverPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!coverDragging.current || !coverEditing || !coverContainerRef.current) return
+    const rect = coverContainerRef.current.getBoundingClientRect()
+    const dx = ((e.clientX - coverLastTouch.current.x) / rect.width) * -100
+    const dy = ((e.clientY - coverLastTouch.current.y) / rect.height) * -100
+    coverLastTouch.current = { x: e.clientX, y: e.clientY }
+    setCoverPos(prev => ({
+      x: Math.max(0, Math.min(100, prev.x + dx)),
+      y: Math.max(0, Math.min(100, prev.y + dy)),
+    }))
+  }, [coverEditing])
+
+  const handleCoverPointerUp = useCallback(() => { coverDragging.current = false }, [])
 
   /* ── Derived data ── */
 
@@ -206,24 +252,85 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
         </div>
       </div>
 
-      {/* Photo band */}
-      {coverPhoto && (
-        <div className="relative z-[2] h-40 overflow-hidden">
-          <img src={coverPhoto} alt="" className="w-full h-full object-cover" style={{ objectPosition: `${coverCrop.x}% ${coverCrop.y}%`, transform: coverCrop.scale !== 1 ? `scale(${coverCrop.scale})` : undefined, filter: seasonFilter }} draggable={false} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(245,240,225,0.2) 0%, transparent 25%, transparent 55%, rgba(245,240,225,0.95) 100%)' }} />
-          <div className="absolute bottom-2 left-5 flex items-center gap-2.5 z-[3]">
-            {cc && <span className="text-[28px] leading-none" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))' }}>{flagEmoji(cc)}</span>}
-            <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '38px', fontWeight: 700, color: '#1B3A5C', letterSpacing: '0.06em', lineHeight: 1, textShadow: '0 1px 3px rgba(245,240,225,0.8)' }}>
-              {isReturn ? 'RETURN' : visaWord(cc)}
-            </span>
-            {isReturn && cityVisit && (
-              <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '10px', fontWeight: 600, color: '#1B3A5C', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'rgba(245,240,225,0.7)', padding: '2px 8px', borderRadius: '3px', textShadow: 'none' }}>
-                Mission {toRoman(cityVisit.visitNumber)}
-              </span>
+      {/* Photo band — adjustable */}
+      {coverPhoto && (() => {
+        const dispPos = coverEditing ? coverPos : { x: coverCrop.x, y: coverCrop.y }
+        const dispScale = coverEditing ? coverScale : coverCrop.scale
+        return (
+          <div
+            ref={coverContainerRef}
+            className="relative z-[2] h-56 overflow-hidden"
+            onPointerDown={handleCoverPointerDown}
+            onPointerMove={handleCoverPointerMove}
+            onPointerUp={handleCoverPointerUp}
+            style={{ touchAction: coverEditing ? 'none' : 'auto', cursor: coverEditing ? 'grab' : 'auto' }}
+          >
+            <img src={coverPhoto} alt="" className="w-full h-full object-cover" style={{
+              objectPosition: `${dispPos.x}% ${dispPos.y}%`,
+              transform: `scale(${dispScale})`,
+              transformOrigin: `${dispPos.x}% ${dispPos.y}%`,
+              filter: seasonFilter,
+            }} draggable={false} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(245,240,225,0.2) 0%, transparent 25%, transparent 55%, rgba(245,240,225,0.95) 100%)' }} />
+
+            {/* Edit mode overlay */}
+            {coverEditing && (
+              <>
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gold/20" />
+                  <div className="absolute top-1/2 left-0 right-0 h-px bg-gold/20" />
+                </div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                  <div className="flex items-center gap-2 bg-obsidian/70 backdrop-blur-sm rounded-full px-3 py-1.5 border border-gold/20">
+                    <Move size={14} className="text-gold" />
+                    <span className="text-xs text-ivory-muted font-body">Drag to pan</span>
+                  </div>
+                </div>
+                <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-obsidian/70 backdrop-blur-sm rounded-full px-2 py-1 border border-white/10 z-10">
+                  <button type="button" className="p-1 text-ivory-muted hover:text-ivory transition-colors" onClick={() => setCoverScale(s => Math.max(1, +(s - 0.1).toFixed(1)))}>
+                    <ZoomOut size={14} />
+                  </button>
+                  <input type="range" min="1" max="2" step="0.05" value={coverScale} onChange={e => setCoverScale(parseFloat(e.target.value))} className="w-24 h-1 accent-gold" />
+                  <button type="button" className="p-1 text-ivory-muted hover:text-ivory transition-colors" onClick={() => setCoverScale(s => Math.min(2, +(s + 0.1).toFixed(1)))}>
+                    <ZoomIn size={14} />
+                  </button>
+                </div>
+                <div className="absolute top-3 right-3 flex gap-2 z-10">
+                  <button type="button" onClick={() => setCoverEditing(false)} className="flex items-center gap-1.5 bg-obsidian/70 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/10 text-ivory-muted hover:text-ivory transition-colors">
+                    <X size={14} /><span className="text-xs font-body">Cancel</span>
+                  </button>
+                  <button type="button" onClick={saveCoverEdit} className="flex items-center gap-1.5 bg-gold/90 rounded-full px-3 py-1.5 text-obsidian hover:bg-gold transition-colors">
+                    <Check size={14} /><span className="text-xs font-body font-semibold">Save</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Normal overlays */}
+            {!coverEditing && (
+              <>
+                <div className="absolute bottom-2 left-5 flex items-center gap-2.5 z-[3]">
+                  {cc && <span className="text-[28px] leading-none" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))' }}>{flagEmoji(cc)}</span>}
+                  <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '38px', fontWeight: 700, color: '#1B3A5C', letterSpacing: '0.06em', lineHeight: 1, textShadow: '0 1px 3px rgba(245,240,225,0.8)' }}>
+                    {isReturn ? 'RETURN' : visaWord(cc)}
+                  </span>
+                  {isReturn && cityVisit && (
+                    <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '10px', fontWeight: 600, color: '#1B3A5C', letterSpacing: '0.15em', textTransform: 'uppercase', background: 'rgba(245,240,225,0.7)', padding: '2px 8px', borderRadius: '3px', textShadow: 'none' }}>
+                      Mission {toRoman(cityVisit.visitNumber)}
+                    </span>
+                  )}
+                </div>
+                {isCreator && (
+                  <button type="button" onClick={startCoverEdit} className="absolute top-3 right-3 flex items-center gap-1.5 bg-obsidian/50 backdrop-blur-sm rounded-full px-2.5 py-1 border border-white/10 text-ivory-muted hover:text-ivory hover:border-white/20 transition-colors z-[4]">
+                    <Move size={12} />
+                    <span className="text-[10px] font-body tracking-wide uppercase">Adjust</span>
+                  </button>
+                )}
+              </>
             )}
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Card body */}
       <div className="relative z-[2] px-5 pb-5 pt-3">
