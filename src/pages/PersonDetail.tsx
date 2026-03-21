@@ -79,7 +79,7 @@ export default function PersonDetail() {
   const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; entryId: string } | null>(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkSearch, setLinkSearch] = useState('')
-  const [linkSearchResults, setLinkSearchResults] = useState<Array<{ id: string; name: string; photo_url: string | null; instagram?: string | null }>>([])
+  const [linkSearchResults, setLinkSearchResults] = useState<Array<{ id: string; name: string; photo_url: string | null; portrait_url: string | null; instagram: string | null }>>([])
   const [linkLabel, setLinkLabel] = useState('')
   const [linkSaving, setLinkSaving] = useState(false)
 
@@ -680,7 +680,7 @@ export default function PersonDetail() {
                   {dossierData.explicitConnections.map((c) => (
                     <div key={c.connectionId} className="flex flex-col items-center gap-1 shrink-0 relative group">
                       <button type="button" onClick={() => navigate(`/circle/${c.person.id}`)}>
-                        <Avatar src={c.person.photo_url} name={c.person.name} size="md" />
+                        <Avatar src={c.person.portrait_url || c.person.photo_url} name={c.person.name} size="md" />
                       </button>
                       <span className="text-[11px] text-ivory font-body truncate max-w-[64px]">
                         {c.person.name.split(' ')[0]}
@@ -692,10 +692,10 @@ export default function PersonDetail() {
                       )}
                       <button
                         type="button"
-                        onClick={() => handleRemoveConnection(c.connectionId)}
-                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-obsidian border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); handleRemoveConnection(c.connectionId) }}
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-obsidian border border-white/20 flex items-center justify-center"
                       >
-                        <X size={8} className="text-ivory-dim" />
+                        <X size={10} className="text-ivory-dim" />
                       </button>
                     </div>
                   ))}
@@ -709,7 +709,7 @@ export default function PersonDetail() {
                       onClick={() => navigate(`/circle/${p.id}`)}
                       className="flex flex-col items-center gap-1.5 shrink-0 group"
                     >
-                      <Avatar src={p.photo_url} name={p.name} size="md" />
+                      <Avatar src={p.portrait_url || p.photo_url} name={p.name} size="md" />
                       <span className="text-[11px] text-ivory-dim font-body truncate max-w-[64px] group-hover:text-ivory transition-colors">
                         {p.name.split(' ')[0]}
                       </span>
@@ -1104,7 +1104,7 @@ export default function PersonDetail() {
                   disabled={linkSaving}
                   className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-left"
                 >
-                  <Avatar src={p.photo_url} name={p.name} size="sm" />
+                  <Avatar src={p.portrait_url || p.photo_url} name={p.name} size="sm" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-ivory font-body truncate">{p.name}</p>
                     {p.instagram && (

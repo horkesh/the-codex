@@ -291,10 +291,10 @@ export async function convertPOIToContact(id: string): Promise<void> {
   if (error) throw error
 }
 
-export async function fetchPeopleQuick(query?: string): Promise<Array<{ id: string; name: string; photo_url: string | null }>> {
+export async function fetchPeopleQuick(query?: string): Promise<Array<{ id: string; name: string; photo_url: string | null; portrait_url: string | null; instagram: string | null }>> {
   let q = supabase
     .from('people')
-    .select('id, name, photo_url')
+    .select('id, name, photo_url, portrait_url, instagram')
     .order('name', { ascending: true })
     .limit(20)
 
@@ -304,7 +304,7 @@ export async function fetchPeopleQuick(query?: string): Promise<Array<{ id: stri
 
   const { data, error } = await q
   if (error) throw error
-  return (data ?? []) as Array<{ id: string; name: string; photo_url: string | null }>
+  return (data ?? []) as Array<{ id: string; name: string; photo_url: string | null; portrait_url: string | null; instagram: string | null }>
 }
 
 // ── Person–Gent relationships ───────────────────────────────────────────────

@@ -47,7 +47,8 @@ Private lifestyle chronicle app for three friends (The Gents). Deployed at https
 **Critical model notes:**
 - `gemini-2.0-flash` is deprecated for new API keys (404 "no longer available to new users"). Use `gemini-2.5-flash`.
 - Claude refuses prompts that ask for appearance scoring, social categorisation ("Immediate Interest"), or openers for meeting someone. Do not send photo analysis to Claude.
-- All Gemini `fetch()` calls in Edge Functions must use an `AbortController` with a 20s timeout — Supabase free tier kills functions at ~25s at the infrastructure level, which returns a non-2xx that our catch block cannot intercept.
+- All Gemini `fetch()` calls in Edge Functions should use an `AbortController` with a reasonable timeout (55s for Imagen/Gemini). Supabase is on the **Pro plan** — edge functions can run up to 150s (not the 25s free-tier limit).
+- **Edge function deployment**: GitHub Actions `supabase functions deploy` can SKIP functions with "No change found" even when code changed. Verify edge function changes deployed; if skipped, manually deploy: `npx supabase functions deploy <function-name> --project-ref <ref> --no-verify-jwt`.
 - **Edge function JWT**: All edge functions have `verify_jwt = false` in `supabase/config.toml`. Deploy workflow uses `--no-verify-jwt` flag. New edge functions MUST be added to config.toml or they'll reject app requests with 401 Invalid JWT.
 - **Edge function photo URLs**: Claude API sometimes can't fetch Supabase Storage URLs (400 "Unable to download"). Edge functions that accept photo URLs should retry text-only on 400 failure (see `generate-mission-debrief` pattern).
 

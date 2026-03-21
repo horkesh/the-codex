@@ -195,7 +195,7 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide }: {
   const activeIdx = activeSlide ?? 0
 
   return (
-    <div ref={innerRef as React.RefObject<HTMLDivElement>}>
+    <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: 1080, height: 1350, overflow: 'hidden', position: 'relative' }}>
       {manifest.map((slide, i) => (
         <div key={slide.id} style={{ display: i === activeIdx ? 'block' : 'none', width: 1080, height: 1350 }}>
           {slide.id === 'visa-card' && (
@@ -1005,27 +1005,24 @@ export default function Studio() {
               </div>
 
               {/* Hidden full-size render for export — no transforms, no overflow clip */}
-              {/* Skip for visa_carousel — it handles its own export via slideRefs + handleExportAll */}
-              {selectedTemplate !== 'visa_carousel' && (
-                <div style={{ position: 'fixed', left: -9999, top: 0, zIndex: -1, pointerEvents: 'none' }}>
-                  <PhotoFilterContext.Provider value={filterContextValue}>
-                    <TemplateRenderer
-                      templateId={selectedTemplate}
-                      entry={selectedEntry ?? ({ participants: [] } as unknown as EntryWithParticipants)}
-                      innerRef={exportRef}
-                      backgroundUrl={bgUrl ?? undefined}
-                      rewardKeys={rewardKeys}
-                      comparisonParam={comparisonParam ?? undefined}
-                      achievementData={achievementData}
-                      gent={gentData}
-                      carouselActiveSlide={carouselActiveSlide}
-                      carouselSetActiveSlide={setCarouselActiveSlide}
-                      onCarouselStateReady={() => {}}
-                      trackOfNight={trackOfNight}
-                    />
-                  </PhotoFilterContext.Provider>
-                </div>
-              )}
+              <div style={{ position: 'fixed', left: -9999, top: 0, zIndex: -1, pointerEvents: 'none' }}>
+                <PhotoFilterContext.Provider value={filterContextValue}>
+                  <TemplateRenderer
+                    templateId={selectedTemplate}
+                    entry={selectedEntry ?? ({ participants: [] } as unknown as EntryWithParticipants)}
+                    innerRef={exportRef}
+                    backgroundUrl={bgUrl ?? undefined}
+                    rewardKeys={rewardKeys}
+                    comparisonParam={comparisonParam ?? undefined}
+                    achievementData={achievementData}
+                    gent={gentData}
+                    carouselActiveSlide={carouselActiveSlide}
+                    carouselSetActiveSlide={setCarouselActiveSlide}
+                    onCarouselStateReady={() => {}}
+                    trackOfNight={trackOfNight}
+                  />
+                </PhotoFilterContext.Provider>
+              </div>
 
               {/* Carousel nav — rendered outside the scaled preview container */}
               {selectedTemplate === 'visa_carousel' && carouselState && carouselState.manifest.length >= 2 && (
