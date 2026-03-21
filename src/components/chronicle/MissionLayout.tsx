@@ -349,7 +349,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
      ══════════════════════════════════════════════════════════════════════════ */
 
   const dotNav = isMultiDay && (
-    <div className="flex items-center justify-center gap-1.5 py-4">
+    <div className="sticky bottom-0 z-10 flex items-center justify-center gap-1.5 py-3 bg-gradient-to-t from-obsidian via-obsidian/95 to-transparent">
       <button type="button" onClick={() => scrollToPage(Math.max(0, activePage - 1))} className="text-ivory-dim/40 hover:text-gold transition-colors p-1" aria-label="Previous page">
         <ChevronLeft size={14} />
       </button>
