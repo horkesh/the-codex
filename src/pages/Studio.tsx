@@ -173,13 +173,11 @@ function previewContainerHeight(dims: string): number {
 function VisaCarouselPreview({ entry, innerRef, activeSlide }: {
   entry: Entry
   innerRef: React.Ref<HTMLDivElement>
-  activeSlide: number
+  activeSlide?: number
 }) {
   const [fullEntry, setFullEntry] = useState<import('@/types/app').EntryWithParticipants | null>(null)
   const [carouselPhotos, setCarouselPhotos] = useState<Array<{ id: string; url: string; caption: string | null }>>([])
-
   const [carouselStamp, setCarouselStamp] = useState<import('@/types/app').PassportStamp | null>(null)
-  const slideRefs = useRef<Array<HTMLDivElement | null>>([])
 
   useEffect(() => {
     fetchEntryFull(entry.id).then(setFullEntry).catch(() => {})
@@ -192,94 +190,64 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide }: {
     return buildVisaCarouselManifest(fullEntry, carouselPhotos.length, carouselStamp)
   }, [fullEntry, carouselPhotos.length, carouselStamp])
 
-  // Expose active slide ref as innerRef for single-slide export
-  useEffect(() => {
-    const activeEl = slideRefs.current[activeSlide]
-    if (activeEl && typeof innerRef === 'function') innerRef(activeEl)
-    else if (activeEl && innerRef && typeof innerRef === 'object') (innerRef as React.MutableRefObject<HTMLDivElement | null>).current = activeEl
-  }, [activeSlide, innerRef, manifest])
-
-  // Parent computes its own manifest — no callback needed
-
   if (!fullEntry) return <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: 1080, height: 1350, background: '#F5F0E1' }} />
 
-  const meta = fullEntry.metadata as Record<string, unknown>
-  const dayEpisodes = meta?.day_episodes as import('@/types/app').StoryDayEpisode[] | undefined
-
-  // Build photo lookup by ID for day slides
-  const photoById = useMemo(() => {
-    const map = new Map<string, { url: string }>()
-    for (const p of carouselPhotos) map.set(p.id, p)
-    return map
-  }, [carouselPhotos])
-
-  // Legacy photo grid chunks (fallback for non-day entries)
-  const gridPhotos = carouselPhotos.slice(1)
-  const photoChunks: Array<typeof carouselPhotos> = []
-  for (let i = 0; i < gridPhotos.length && photoChunks.length < 3; i += 4) {
-    photoChunks.push(gridPhotos.slice(i, i + 4))
-  }
-
-  /** Pick best 3 photos for a day — evenly sample from the day's photos */
-  function bestPhotosForDay(photoIds: string[]): { url: string }[] {
-    const available = photoIds.map(id => photoById.get(id)).filter(Boolean) as { url: string }[]
-    if (available.length <= 3) return available
-    // Sample: first, middle, last for variety
-    return [
-      available[0],
-      available[Math.floor(available.length / 2)],
-      available[available.length - 1],
-    ]
-  }
-
-  const setSlideRef = (idx: number) => (el: HTMLDivElement | null) => { slideRefs.current[idx] = el }
+  const activeIdx = activeSlide ?? 0
 
   return (
-    <div>
+    <div ref={innerRef as React.RefObject<HTMLDivElement>}>
       {manifest.map((slide, i) => (
-        <div key={slide.id} style={{ display: i === activeSlide ? 'block' : 'none' }}>
+        <div key={slide.id} style={{ display: i === activeIdx ? 'block' : 'none', width: 1080, height: 1350 }}>
           {slide.id === 'visa-card' && (
-            <VisaCardSlide ref={setSlideRef(i)} entry={fullEntry} stamp={carouselStamp} />
+            <VisaCardSlide entry={fullEntry} stamp={carouselStamp} />
           )}
           {slide.id === 'hero-lore' && (
-            <HeroLoreSlide ref={setSlideRef(i)} entry={fullEntry} />
+            <HeroLoreSlide entry={fullEntry} />
           )}
           {slide.id.startsWith('day-') && (() => {
+            const meta = fullEntry.metadata as Record<string, unknown>
+            const dayEpisodes = meta?.day_episodes as import('@/types/app').StoryDayEpisode[] | undefined
             const dayIdx = parseInt(slide.id.split('-')[1])
             const ep = dayEpisodes?.[dayIdx]
             if (!ep) return null
+            const photos = ep.photoIds
+              .map(id => carouselPhotos.find(p => p.id === id))
+              .filter(Boolean)
+              .slice(0, 3) as { url: string }[]
             return (
               <DayPolaroidSlide
-                ref={setSlideRef(i)}
                 dayLabel={ep.label}
                 oneliner={ep.oneliner ?? null}
-                photos={bestPhotosForDay(ep.photoIds)}
+                photos={photos}
                 entryTitle={fullEntry.title}
               />
             )
           })()}
           {slide.id.startsWith('photo-grid-') && (() => {
             const chunkIdx = parseInt(slide.id.split('-')[2])
+            const gridPhotos = carouselPhotos.slice(1)
+            const chunk = gridPhotos.slice(chunkIdx * 4, chunkIdx * 4 + 4)
             return (
               <PhotoGridSlide
-                ref={setSlideRef(i)}
-                photos={photoChunks[chunkIdx] ?? []}
+                photos={chunk}
                 entryTitle={fullEntry.title}
                 entryDate={fullEntry.date}
               />
             )
           })()}
-          {slide.id === 'debrief' && (
-            <DebriefSlide
-              ref={setSlideRef(i)}
-              debrief={(meta?.mission_debrief as string) ?? ''}
-              landmarks={(meta?.landmarks as string[]) ?? []}
-              highlights={(meta?.debrief_highlights as string[]) ?? []}
-              riskAssessment={(meta?.risk_assessment as string) ?? null}
-            />
-          )}
+          {slide.id === 'debrief' && (() => {
+            const meta = fullEntry.metadata as Record<string, unknown>
+            return (
+              <DebriefSlide
+                debrief={(meta?.mission_debrief as string) ?? ''}
+                landmarks={(meta?.landmarks as string[]) ?? []}
+                highlights={(meta?.debrief_highlights as string[]) ?? []}
+                riskAssessment={(meta?.risk_assessment as string) ?? null}
+              />
+            )
+          })()}
           {slide.id === 'stamp' && carouselStamp && (
-            <StampSlide ref={setSlideRef(i)} stamp={carouselStamp} entryTitle={fullEntry.title} />
+            <StampSlide stamp={carouselStamp} entryTitle={fullEntry.title} />
           )}
         </div>
       ))}
