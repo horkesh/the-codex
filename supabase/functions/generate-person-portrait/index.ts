@@ -106,18 +106,18 @@ Output PURE JSON only, no markdown.`
     const styleDesc = STYLE_VARIANTS[style as string] ?? STYLE_VARIANTS.noir
 
     // When a new photo is provided, its analysis is the PRIMARY appearance source.
-    // The old scan description becomes fallback context only.
-    let fullAppearance: string
-    if (photoAppearance) {
-      fullAppearance = photoAppearance
-    } else {
-      fullAppearance = appearance
-    }
-    const directorClause = director_note
-      ? ` Additional notes (these corrections take priority where they contradict the description above): ${director_note}.`
-      : ''
+    let baseAppearance = photoAppearance || appearance
 
-    const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${fullAppearance}.${directorClause} Personality: ${traitList}. Style: ${styleDesc} — while preserving the subject's actual skin tone, hair colour, and facial features. No text or words.`
+    // Director's note goes FIRST in the subject — Imagen weighs early tokens more.
+    // This ensures corrections like "NOT Asian" override conflicting details.
+    let subjectDesc: string
+    if (director_note) {
+      subjectDesc = `${director_note}. ${baseAppearance}`
+    } else {
+      subjectDesc = baseAppearance
+    }
+
+    const imagePrompt = `Abstract artistic portrait avatar of a real person. Subject: ${subjectDesc}. Personality: ${traitList}. Style: ${styleDesc} — while faithfully preserving the described skin tone, ethnicity, hair colour, and facial features. No text or words.`
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 25_000)
