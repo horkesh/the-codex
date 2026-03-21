@@ -44,7 +44,7 @@ import type { EarnedAchievement } from '@/data/achievements'
 import { VisaCardSlide, HeroLoreSlide, PhotoGridSlide, DebriefSlide, StampSlide, DayPolaroidSlide, buildVisaCarouselManifest } from '@/export/templates/visa-carousel'
 import { ToastCarouselPreview } from '@/export/templates/toast-carousel'
 import { fetchStampByEntryId } from '@/data/stamps'
-import { exportMultipleToPng, shareMultipleImages } from '@/export/exporter'
+// import { exportMultipleToPng, shareMultipleImages } from '@/export/exporter'
 import { useAuthStore } from '@/store/auth'
 import { useToastSession } from '@/hooks/useToastSession'
 
@@ -170,27 +170,16 @@ function previewContainerHeight(dims: string): number {
 // Visa Carousel Preview — renders all slides, shows one at a time
 // ---------------------------------------------------------------------------
 
-interface CarouselState {
-  manifest: Array<{ id: string; label: string }>
-  activeSlide: number
-  setActiveSlide: (n: number) => void
-  exportAll: () => Promise<void>
-  exporting: boolean
-}
-
-function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onStateReady }: {
+function VisaCarouselPreview({ entry, innerRef, activeSlide }: {
   entry: Entry
   innerRef: React.Ref<HTMLDivElement>
   activeSlide: number
-  setActiveSlide: (n: number) => void
-  onStateReady: (state: CarouselState | null) => void
 }) {
   const [fullEntry, setFullEntry] = useState<import('@/types/app').EntryWithParticipants | null>(null)
   const [carouselPhotos, setCarouselPhotos] = useState<Array<{ id: string; url: string; caption: string | null }>>([])
 
   const [carouselStamp, setCarouselStamp] = useState<import('@/types/app').PassportStamp | null>(null)
   const slideRefs = useRef<Array<HTMLDivElement | null>>([])
-  const [carouselExporting, setCarouselExporting] = useState(false)
 
   useEffect(() => {
     fetchEntryFull(entry.id).then(setFullEntry).catch(() => {})
@@ -210,30 +199,7 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onS
     else if (activeEl && innerRef && typeof innerRef === 'object') (innerRef as React.MutableRefObject<HTMLDivElement | null>).current = activeEl
   }, [activeSlide, innerRef, manifest])
 
-  const handleExportAll = useCallback(async () => {
-    if (!fullEntry) return
-    setCarouselExporting(true)
-    try {
-      const els = slideRefs.current.filter(Boolean) as HTMLElement[]
-      const blobs = await exportMultipleToPng(els)
-      await shareMultipleImages(blobs, `visa-${fullEntry.city ?? 'mission'}`)
-    } catch (e) {
-      console.error('Carousel export failed:', e)
-    } finally {
-      setCarouselExporting(false)
-    }
-  }, [fullEntry])
-
-  // Report manifest to parent via a layout-safe setTimeout to avoid render loops.
-  // Only fires when manifest first becomes non-empty or exporting status changes.
-  const lastReportedLen = useRef(0)
-  const lastReportedExporting = useRef(false)
-  if (manifest.length > 0 && (manifest.length !== lastReportedLen.current || carouselExporting !== lastReportedExporting.current)) {
-    lastReportedLen.current = manifest.length
-    lastReportedExporting.current = carouselExporting
-    // Defer to avoid setState-during-render
-    setTimeout(() => onStateReady({ manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting }), 0)
-  }
+  // Parent computes its own manifest — no callback needed
 
   if (!fullEntry) return <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: 1080, height: 1350, background: '#F5F0E1' }} />
 
@@ -336,7 +302,7 @@ interface TemplateRendererProps {
   gent?: { display_name: string; alias: string; full_alias: string; avatar_url: string | null }
   carouselActiveSlide?: number
   carouselSetActiveSlide?: (n: number) => void
-  onCarouselStateReady?: (state: CarouselState | null) => void
+  onCarouselStateReady?: () => void
   trackOfNight?: { name: string; artist: string } | null
 }
 
@@ -369,7 +335,7 @@ function RivalryCardWrapper({
   return <RivalryCard ref={innerRef} gentA={statA} gentB={statB} backgroundUrl={backgroundUrl} />
 }
 
-function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData, gent, carouselActiveSlide, carouselSetActiveSlide, onCarouselStateReady, trackOfNight }: TemplateRendererProps) {
+function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKeys, comparisonParam, achievementData, gent, carouselActiveSlide, trackOfNight }: TemplateRendererProps) {
   switch (templateId) {
     case 'night_out_card':
       return <NightOutCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} variant={1} />
@@ -446,7 +412,7 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
     case 'interlude_card':
       return <InterludeCard ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'visa_carousel':
-      return <VisaCarouselPreview entry={entry} innerRef={innerRef} activeSlide={carouselActiveSlide ?? 0} setActiveSlide={carouselSetActiveSlide ?? (() => {})} onStateReady={onCarouselStateReady ?? (() => {})} />
+      return <VisaCarouselPreview entry={entry} innerRef={innerRef} activeSlide={carouselActiveSlide ?? 0} />
     case 'debrief_page':
       return <DebriefPage ref={innerRef} entry={entry} />
     case 'passport_id_page':
@@ -621,8 +587,17 @@ export default function Studio() {
 
   // Carousel state — lifted so nav renders with fresh React state
   const [carouselActiveSlide, setCarouselActiveSlide] = useState(0)
-  const [carouselState, setCarouselState] = useState<CarouselState | null>(null)
-  const handleCarouselStateReady = useCallback((state: CarouselState | null) => setCarouselState(state), [])
+
+  // Compute carousel manifest directly in parent — avoids render loops from child→parent state callbacks
+  // Pass large photoCount + fake stamp so legacy fallback path always generates slides
+  const carouselManifest = useMemo(() => {
+    if (!selectedEntry || selectedTemplate !== 'visa_carousel') return []
+    return buildVisaCarouselManifest(selectedEntry, 40, { image_url: 'placeholder' } as import('@/types/app').PassportStamp)
+  }, [selectedEntry, selectedTemplate])
+
+  // Stub for backward compat — carouselState drives nav UI
+  const carouselState = carouselManifest.length > 0 ? { manifest: carouselManifest } : null
+  const handleCarouselStateReady = useCallback(() => {}, [])
 
   // Toast session data for track of the night on export templates
   const { session: toastSession } = useToastSession(selectedEntry?.type === 'toast' ? selectedEntry?.id : undefined)
@@ -709,7 +684,6 @@ export default function Studio() {
   function handleSelectTemplate(templateId: TemplateId) {
     setSelectedTemplate(templateId)
     setCarouselActiveSlide(0)
-    setCarouselState(null)
   }
 
   async function handleGenerateBg() {
@@ -1173,30 +1147,17 @@ export default function Studio() {
 
               {/* Export buttons */}
               {selectedTemplate === 'visa_carousel' && carouselState && carouselState.manifest.length > 1 ? (
-                    <div className="flex gap-2 mb-2">
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        fullWidth
-                        loading={exporting}
-                        onClick={handleExport}
-                        className="gap-2"
-                      >
-                        {!exporting && <Share2 size={16} strokeWidth={2} />}
-                        {exporting ? 'Exporting…' : 'Export Slide'}
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        fullWidth
-                        loading={carouselState.exporting}
-                        onClick={carouselState.exportAll}
-                        className="gap-2"
-                      >
-                        {!carouselState.exporting && <Share2 size={16} strokeWidth={2} />}
-                        {carouselState.exporting ? 'Exporting…' : `Export All (${carouselState.manifest.length})`}
-                      </Button>
-                    </div>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      loading={exporting}
+                      onClick={handleExport}
+                      className="gap-2 mb-2"
+                    >
+                      {!exporting && <Share2 size={16} strokeWidth={2} />}
+                      {exporting ? 'Exporting…' : 'Export & Share'}
+                    </Button>
               ) : (
                 <Button
                   variant="primary"
