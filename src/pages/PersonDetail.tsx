@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { Instagram, MapPin, Calendar, Cake, Trash2, Edit2, Link2, Eye, RefreshCw, X, Camera, Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -112,13 +112,17 @@ export default function PersonDetail() {
   }
 
   // ── Connection handlers ──
-  const handleLinkSearch = async (query: string) => {
+  const linkDebounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const connectedIds = useMemo(() => new Set(dossierData.explicitConnections.map(c => c.person.id)), [dossierData.explicitConnections])
+
+  const handleLinkSearch = (query: string) => {
     setLinkSearch(query)
+    if (linkDebounceRef.current) clearTimeout(linkDebounceRef.current)
     if (query.length < 2) { setLinkSearchResults([]); return }
-    const results = await fetchPeopleQuick(query)
-    // Exclude self and already-connected people
-    const connectedIds = new Set(dossierData.explicitConnections.map(c => c.person.id))
-    setLinkSearchResults(results.filter(p => p.id !== id && !connectedIds.has(p.id)))
+    linkDebounceRef.current = setTimeout(async () => {
+      const results = await fetchPeopleQuick(query)
+      setLinkSearchResults(results.filter(p => p.id !== id && !connectedIds.has(p.id)))
+    }, 250)
   }
 
   const handleAddConnection = async (targetId: string) => {
@@ -697,7 +701,7 @@ export default function PersonDetail() {
                   ))}
                   {/* Implicit co-appearances (no remove button) */}
                   {dossierData.coAppearing
-                    .filter(p => !dossierData.explicitConnections.some(c => c.person.id === p.id))
+                    .filter(p => !connectedIds.has(p.id))
                     .map((p) => (
                     <button
                       key={p.id}
