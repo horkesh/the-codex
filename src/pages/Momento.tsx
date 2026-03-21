@@ -99,7 +99,6 @@ export default function Momento() {
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const touchStart = useRef<{ x: number; y: number } | null>(null)
-  const [capturedAspect, setCapturedAspect] = useState<number>(4 / 3) // width/height — default 3:4 portrait
   const [filteredExportUrl, setFilteredExportUrl] = useState<string | null>(null)
 
   const filterCss = FILTER_REGISTRY[activeFilter].css
@@ -201,8 +200,7 @@ export default function Momento() {
     img.src = capturedUrl
   }, [capturedUrl, filterCss, showGrain])
 
-  const commitCapture = useCallback((url: string, aspect: number) => {
-    setCapturedAspect(aspect)
+  const commitCapture = useCallback((url: string, _aspect?: number) => {
     setCapturedTime(timeNow())
     setCapturedUrl(url)
     camera.stop()
@@ -453,7 +451,7 @@ export default function Momento() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            style={{ position: 'absolute', inset: 0 }}
+            style={{ position: 'absolute', inset: 0, paddingTop: 'env(safe-area-inset-top, 0px)' }}
           >
             <ActiveOverlay {...liveOverlayProps} />
           </motion.div>
