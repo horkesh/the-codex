@@ -164,8 +164,9 @@ export default function PersonDetail() {
       if (portraitPhoto) {
         photoB64 = await imageToJpegBase64(portraitPhoto, { maxPx: 512, quality: 0.7 })
       }
-      // Use edited appearance if the user modified it, otherwise use the scan's original
-      const appearanceToSend = editAppearance.trim() || scan.appearance_description
+      // If user actively cleared the appearance, respect that (send empty).
+      // Only fall back to scan's description if appearance was never edited in this session.
+      const appearanceToSend = showAppearanceEdit ? editAppearance.trim() : (editAppearance.trim() || scan.appearance_description)
       const result = await generatePersonPortrait({
         appearance: appearanceToSend,
         traits: scan.trait_words ?? [],

@@ -21,7 +21,8 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     if (!googleApiKey) throw new Error('GOOGLE_AI_API_KEY not set')
-    if (!appearance || !traits || !scan_id) throw new Error('appearance, traits, and scan_id required')
+    if (!traits || !scan_id) throw new Error('traits and scan_id required')
+    if (!appearance && !photo_base64) throw new Error('appearance or photo_base64 required')
 
     // If a reference photo is provided, analyse it with Gemini for additional appearance details
     let photoAppearance = ''
@@ -39,7 +40,7 @@ Deno.serve(async (req: Request) => {
               contents: [{
                 parts: [
                   {
-                    text: fresh_analysis
+                    text: (fresh_analysis || !appearance)
                       ? `Analyze this photo of a person from scratch. Ignore any prior descriptions — describe ONLY what you see in the photo.
 
 Return a JSON object with one field:
