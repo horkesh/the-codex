@@ -153,7 +153,8 @@ Output PURE JSON only, no markdown.`
     // If we got a fresh appearance from the new photo, persist it to the scan
     // so future regenerations (without photo) use the updated description
     if (photoAppearance && scan_id) {
-      await db.from('person_scans').update({ appearance_description: photoAppearance }).eq('id', scan_id).catch(() => {})
+      const { error: scanErr } = await db.from('person_scans').update({ appearance_description: photoAppearance }).eq('id', scan_id)
+      if (scanErr) console.error('[portrait] scan update error:', scanErr.message)
     }
 
     console.log(`[portrait] Done. photoAppearance=${photoAppearance ? 'set' : 'empty'}, subject=${subjectDesc.slice(0, 60)}`)
