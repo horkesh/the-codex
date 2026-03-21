@@ -224,22 +224,16 @@ function VisaCarouselPreview({ entry, innerRef, activeSlide, setActiveSlide, onS
     }
   }, [fullEntry])
 
-  // Report manifest + export state to parent once on load and when exporting changes
-  const reportedRef = useRef(false)
-  useEffect(() => {
-    if (manifest.length > 0 && !reportedRef.current) {
-      reportedRef.current = true
-      onStateReady({ manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: false })
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manifest.length])
-
-  // Update parent only when exporting status changes
-  useEffect(() => {
-    if (!reportedRef.current) return
-    onStateReady({ manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carouselExporting])
+  // Report manifest to parent via a layout-safe setTimeout to avoid render loops.
+  // Only fires when manifest first becomes non-empty or exporting status changes.
+  const lastReportedLen = useRef(0)
+  const lastReportedExporting = useRef(false)
+  if (manifest.length > 0 && (manifest.length !== lastReportedLen.current || carouselExporting !== lastReportedExporting.current)) {
+    lastReportedLen.current = manifest.length
+    lastReportedExporting.current = carouselExporting
+    // Defer to avoid setState-during-render
+    setTimeout(() => onStateReady({ manifest, activeSlide, setActiveSlide, exportAll: handleExportAll, exporting: carouselExporting }), 0)
+  }
 
   if (!fullEntry) return <div ref={innerRef as React.RefObject<HTMLDivElement>} style={{ width: 1080, height: 1350, background: '#F5F0E1' }} />
 
