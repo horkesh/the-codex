@@ -198,8 +198,10 @@ export default function PublicInvite() {
   useEffect(() => {
     if (!eventDate) return
     const target = new Date(eventDate + 'T00:00:00').getTime()
+    let intervalId: ReturnType<typeof setInterval>
     function tick() {
       const diff = Math.max(0, target - Date.now())
+      if (diff === 0 && intervalId) clearInterval(intervalId)
       setTimeLeft({
         d: Math.floor(diff / 86400000),
         h: Math.floor((diff % 86400000) / 3600000),
@@ -208,8 +210,8 @@ export default function PublicInvite() {
       })
     }
     tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
+    intervalId = setInterval(tick, 1000)
+    return () => clearInterval(intervalId)
   }, [eventDate])
 
   const countdownActive =

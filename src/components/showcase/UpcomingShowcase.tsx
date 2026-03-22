@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { fadeUp } from '@/lib/animations'
-import { formatDate, daysUntil } from '@/lib/utils'
+import { formatDate, daysUntil, countdownLabel as formatCountdown } from '@/lib/utils'
 import { MapPin, Calendar } from 'lucide-react'
 import type { Entry, GatheringMetadata } from '@/types/app'
 
@@ -62,7 +62,7 @@ export function UpcomingShowcase({ gatherings, prospects }: UpcomingShowcaseProp
       <div className="flex flex-col gap-4 max-w-lg mx-auto">
         {upcoming.map((item, i) => {
           const days = daysUntil(item.date)
-          const countdownLabel = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`
+          const cdLabel = formatCountdown(days)
 
           return (
             <motion.div
@@ -99,7 +99,7 @@ export function UpcomingShowcase({ gatherings, prospects }: UpcomingShowcaseProp
                   {formatDate(item.date)}
                 </p>
                 <span className="text-xs font-body font-medium" style={{ color: '#C9A84C' }}>
-                  {countdownLabel}
+                  {cdLabel}
                 </span>
               </div>
             </motion.div>

@@ -6,7 +6,7 @@ import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { PizzaSvg } from '@/lib/pizzaSvg'
 import { supabase } from '@/lib/supabase'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
-import { daysUntil, formatDate } from '@/lib/utils'
+import { daysUntil, countdownLabel, formatDate } from '@/lib/utils'
 import type { Entry, GatheringMetadata } from '@/types/app'
 
 export default function UpcomingGatherings() {
@@ -49,7 +49,7 @@ export default function UpcomingGatherings() {
               const meta = entry.metadata as unknown as GatheringMetadata
               const isPizza = meta.flavour === 'pizza_party'
               const days = daysUntil(meta.event_date)
-              const countdownLabel = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days > 0 ? `In ${days} days` : 'Past'
+              const label = countdownLabel(days)
               return (
                 <motion.button key={entry.id} variants={staggerItem} type="button"
                   onClick={() => navigate(`/gathering/${entry.id}`)}
@@ -74,7 +74,7 @@ export default function UpcomingGatherings() {
                       <p className="text-[10px] text-gold/60 font-body mt-1">{meta.pizza_menu.length} pizzas</p>
                     )}
                   </div>
-                  <span className="text-xs text-gold font-body shrink-0">{countdownLabel}</span>
+                  <span className="text-xs text-gold font-body shrink-0">{label}</span>
                 </motion.button>
               )
             })}

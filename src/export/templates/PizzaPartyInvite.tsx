@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, FONT } from '@/export/templates/shared'
+import { BrandMark, GoldRule, BackgroundLayer, InsetFrame, FONT, COLOR } from '@/export/templates/shared'
 import { buildStaticMapUrl } from '@/export/templates/shared/utils'
 import { formatDate } from '@/lib/utils'
 import type { EntryWithParticipants, GatheringMetadata } from '@/types/app'
@@ -10,7 +10,7 @@ interface Props {
   gent?: { display_name: string; alias: string; full_alias: string; avatar_url: string | null }
 }
 
-const BRICK = '#D4843A'
+const BRICK = COLOR.brick
 
 const PizzaPartyInvite = React.forwardRef<HTMLDivElement, Props>(({ entry, backgroundUrl, gent }, ref) => {
   const meta = (entry.metadata ?? {}) as unknown as GatheringMetadata

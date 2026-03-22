@@ -53,7 +53,7 @@ export default function GatheringNew() {
   const [lng, setLng] = useState<number | undefined>()
   const [savedPlaces, setSavedPlaces] = useState<SavedLocation[]>([])
 
-  useEffect(() => { fetchLocations().then(setSavedPlaces) }, [])
+  useEffect(() => { fetchLocations().then(setSavedPlaces).catch(() => {}) }, [])
 
   // Photos
   const { pendingFiles, addFiles, removeFile } = usePendingPhotos(10)

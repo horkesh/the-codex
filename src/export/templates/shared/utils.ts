@@ -22,6 +22,12 @@ export const COLOR = {
   white: '#FFFFFF',
   muted: 'rgba(255,255,255,0.5)',
   mutedLight: 'rgba(255,255,255,0.35)',
+  // Pizza party theme
+  brick: '#D4843A',
+  brickDim: 'rgba(212,132,58,0.35)',
+  cream: '#F5F0E1',
+  ink: '#2A1F14',
+  inkDim: 'rgba(42,31,20,0.55)',
 } as const
 
 /** Extract lore one-liner from metadata, falling back to first sentence of lore */

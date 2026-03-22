@@ -20,6 +20,13 @@ export function daysUntil(date: string | Date): number {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 }
 
+export function countdownLabel(days: number): string {
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Tomorrow'
+  if (days < 0) return `${Math.abs(days)}d ago`
+  return `In ${days} days`
+}
+
 export function flagEmoji(countryCode: string): string {
   return countryCode
     .toUpperCase()

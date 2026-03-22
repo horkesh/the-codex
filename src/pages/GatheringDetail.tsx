@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download, Image, Camera, Pencil, ShoppingBag, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -268,17 +268,18 @@ export default function GatheringDetail() {
     setPushPromptShown(true)
   }, [entry, gent, pushSupported, pushSubscribed])
 
-  // Reset unseen RSVP count for creator (once per mount)
-  const [unseenReset, setUnseenReset] = useState(false)
+  // Reset unseen RSVP count for creator (once per gathering)
+  const unseenResetRef = useRef<string | null>(null)
   useEffect(() => {
-    if (unseenReset || !id || !entry || !gent) return
+    if (!id || !entry || !gent) return
+    if (unseenResetRef.current === id) return
     if (entry.created_by !== gent.id) return
     const m = entry.metadata as Record<string, unknown>
     if (m?.rsvp_unseen_count && (m.rsvp_unseen_count as number) > 0) {
-      setUnseenReset(true)
+      unseenResetRef.current = id
       updateGatheringMetadata(id, { rsvp_unseen_count: 0 }).catch(() => {})
     }
-  }, [id, entry?.id, gent?.id, unseenReset])
+  }, [id, entry, gent])
 
   const rsvpCounts = useMemo(() => ({
     attendingCount: rsvps.filter(r => r.response === 'attending').length,

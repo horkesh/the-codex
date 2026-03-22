@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrandMark, GoldRule, FONT } from '@/export/templates/shared'
+import { BrandMark, GoldRule, FONT, COLOR } from '@/export/templates/shared'
 import { formatDate, daysUntil } from '@/lib/utils'
 import type { EntryWithParticipants, GatheringMetadata, PizzaMenuItem } from '@/types/app'
 
@@ -8,8 +8,8 @@ interface Props {
   gent?: { display_name: string; alias: string; full_alias: string; avatar_url: string | null }
 }
 
-const BRICK = '#D4843A'
-const BRICK_DIM = 'rgba(212,132,58,0.35)'
+const BRICK = COLOR.brick
+const BRICK_DIM = COLOR.brickDim
 
 const PizzaPartyCountdown = React.forwardRef<HTMLDivElement, Props>(({ entry, gent }, ref) => {
   const meta = (entry.metadata ?? {}) as unknown as GatheringMetadata

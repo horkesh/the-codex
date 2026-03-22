@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrandMark, GoldRule, FONT } from '@/export/templates/shared'
+import { BrandMark, GoldRule, FONT, COLOR } from '@/export/templates/shared'
 import { PizzaSvg, TOPPING_REGISTRY } from '@/lib/pizzaSvg'
 import { buildStaticMapUrl } from '@/export/templates/shared/utils'
 import { formatDate } from '@/lib/utils'
@@ -10,11 +10,7 @@ interface Props {
   gent?: { display_name: string; alias: string; full_alias: string; avatar_url: string | null }
 }
 
-const CREAM = '#F5F0E1'
-const INK = '#2A1F14'
-const INK_DIM = 'rgba(42,31,20,0.55)'
-const BRICK = '#D4843A'
-const BRICK_DIM = 'rgba(212,132,58,0.35)'
+const { cream: CREAM, ink: INK, inkDim: INK_DIM, brick: BRICK, brickDim: BRICK_DIM } = COLOR
 
 const PizzaPartyCarta = React.forwardRef<HTMLDivElement, Props>(({ entry, gent }, ref) => {
   const meta = (entry.metadata ?? {}) as unknown as GatheringMetadata
