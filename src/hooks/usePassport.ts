@@ -2,8 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { fetchStamps, backfillMissionStamps } from '@/data/stamps'
 import type { PassportStamp } from '@/types/app'
 
-const BACKFILL_KEY = 'codex_stamps_backfilled'
-
 export function usePassport() {
   const [stamps, setStamps] = useState<PassportStamp[]>([])
   const [loading, setLoading] = useState(true)
@@ -11,11 +9,8 @@ export function usePassport() {
   useEffect(() => {
     async function load() {
       try {
-        // Backfill only once per session
-        if (!sessionStorage.getItem(BACKFILL_KEY)) {
-          await backfillMissionStamps()
-          sessionStorage.setItem(BACKFILL_KEY, '1')
-        }
+        // Always backfill — idempotent (upsert with ignoreDuplicates)
+        await backfillMissionStamps()
         const data = await fetchStamps()
         setStamps(data)
       } catch (err) {
