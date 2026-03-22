@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { setGlobalAudio, stopGlobalAudio } from '@/lib/audioManager'
 
 /** @param cacheKey — unique key for storage caching (e.g. entryId, entryId-day-0, entryId-debrief) */
 export function useNarration(cacheKey: string) {
@@ -8,12 +9,11 @@ export function useNarration(cacheKey: string) {
   const [playing, setPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Clean up audio on unmount
+  // Stop audio on unmount
   useEffect(() => {
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
-        audioRef.current.currentTime = 0
         audioRef.current.onended = null
         audioRef.current.onerror = null
         audioRef.current = null
@@ -21,18 +21,14 @@ export function useNarration(cacheKey: string) {
     }
   }, [])
 
-  /** Replace the current Audio object, cleaning up the old one */
-  function setAudio(url: string): HTMLAudioElement {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.onended = null
-      audioRef.current.onerror = null
-    }
-    const audio = new Audio(url)
+  function startPlaying(audio: HTMLAudioElement) {
+    audioRef.current = audio
     audio.onended = () => setPlaying(false)
     audio.onerror = () => setPlaying(false)
-    audioRef.current = audio
-    return audio
+    // Register globally — stops any other narration
+    setGlobalAudio(audio, () => setPlaying(false))
+    audio.play()
+    setPlaying(true)
   }
 
   const generate = useCallback(async (text: string) => {
@@ -44,9 +40,8 @@ export function useNarration(cacheKey: string) {
       if (error) throw error
       if (data?.audio_url) {
         setAudioUrl(data.audio_url)
-        const audio = setAudio(data.audio_url)
-        audio.play()
-        setPlaying(true)
+        const audio = new Audio(data.audio_url)
+        startPlaying(audio)
       }
     } catch (err) {
       console.error('Narration generation failed:', err)
@@ -58,21 +53,17 @@ export function useNarration(cacheKey: string) {
   const play = useCallback(() => {
     if (!audioUrl) return
     if (playing) {
-      audioRef.current?.pause()
+      stopGlobalAudio()
       setPlaying(false)
     } else {
-      if (!audioRef.current) setAudio(audioUrl)
-      audioRef.current!.play()
-      setPlaying(true)
+      const audio = new Audio(audioUrl)
+      startPlaying(audio)
     }
   }, [audioUrl, playing])
 
   const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      setPlaying(false)
-    }
+    stopGlobalAudio()
+    setPlaying(false)
   }, [])
 
   return { audioUrl, generating, playing, generate, play, stop }

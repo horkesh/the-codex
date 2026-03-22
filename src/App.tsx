@@ -1,9 +1,10 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router'
 import { AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '@/store/auth'
 import { useAuthListener } from '@/hooks/useAuth'
 import { useComfortMode } from '@/hooks/useComfortMode'
+import { stopGlobalAudio } from '@/lib/audioManager'
 import { Shell } from '@/components/layout'
 import { Spinner } from '@/components/ui'
 
@@ -112,9 +113,15 @@ function AnimatedRoutes() {
 }
 
 // Single auth listener — mounted once for the entire app lifetime
+function useStopAudioOnNavigate() {
+  const location = useLocation()
+  useEffect(() => { stopGlobalAudio() }, [location.pathname])
+}
+
 function AppContent() {
   useAuthListener()
   useComfortMode()
+  useStopAudioOnNavigate()
   return <AnimatedRoutes />
 }
 
