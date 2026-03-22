@@ -23,7 +23,7 @@ const PizzaPartyCarta = React.forwardRef<HTMLDivElement, Props>(({ entry }, ref)
   const lat = meta.lat
   const lng = meta.lng
   const visible = pizzas.slice(0, 6)
-  const overflow = pizzas.length - 6
+  const overflow = Math.max(0, pizzas.length - 6)
 
   return (
     <div

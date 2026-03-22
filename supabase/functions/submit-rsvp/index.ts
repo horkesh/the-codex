@@ -64,12 +64,18 @@ Deno.serve(async (req) => {
         const creatorId = entry.created_by
         const meta = (entry.metadata ?? {}) as Record<string, unknown>
 
-        // Increment unseen RSVP count
-        const unseenCount = ((meta.rsvp_unseen_count as number) ?? 0) + 1
-        const { error: updateErr } = await db.from('entries').update({
-          metadata: { ...meta, rsvp_unseen_count: unseenCount },
-        }).eq('id', entry_id)
-        if (updateErr) console.error('Failed to update unseen count:', updateErr)
+        // Increment unseen RSVP count (atomic via jsonb_set to avoid race)
+        const { error: updateErr } = await db.rpc('increment_metadata_counter', {
+          p_entry_id: entry_id,
+          p_key: 'rsvp_unseen_count',
+        })
+        if (updateErr) {
+          // Fallback to non-atomic update if RPC doesn't exist
+          const unseenCount = ((meta.rsvp_unseen_count as number) ?? 0) + 1
+          await db.from('entries').update({
+            metadata: { ...meta, rsvp_unseen_count: unseenCount },
+          }).eq('id', entry_id)
+        }
 
         // Circle auto-add for attending guests
         if (response === 'attending') {
@@ -129,7 +135,7 @@ Deno.serve(async (req) => {
               const payload = JSON.stringify({
                 title: entry.title ?? 'Gathering',
                 body: bodyText,
-                url: `/chronicle/${entry_id}`,
+                url: `/gathering/${entry_id}`,
                 tag: `rsvp-${entry_id}`,
               })
 

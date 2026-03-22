@@ -64,7 +64,7 @@ export function PizzaMenuBuilder({ pizzas, onChange, max = 8 }: PizzaMenuBuilder
               <PizzaSvg
                 toppings={pizza.toppings}
                 size={48}
-                seed={pizza.name || `pizza-${index}`}
+                seed={`${index}-${pizza.name || 'pizza'}`}
               />
               <div className="flex-1 min-w-0">
                 <input

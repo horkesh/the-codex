@@ -87,6 +87,7 @@ export default function GatheringNew() {
     if (!title.trim()) errs.title = 'Title is required'
     if (!eventDate) errs.eventDate = 'Event date is required'
     if (!venue && !location.trim()) errs.location = 'Location is required'
+    if (flavour === 'pizza_party' && pizzaMenu.length === 0) errs.title = 'Add at least one pizza'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
