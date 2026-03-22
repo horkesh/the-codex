@@ -14,6 +14,7 @@ interface ParticipantSelectorProps {
 export function ParticipantSelector({ selectedIds, onChange }: ParticipantSelectorProps) {
   const [gents, setGents] = useState<Gent[]>([])
   const [loading, setLoading] = useState(true)
+  const [showRetired, setShowRetired] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -34,10 +35,14 @@ export function ParticipantSelector({ selectedIds, onChange }: ParticipantSelect
     }
   }
 
+  const activeGents = gents.filter(g => !g.retired)
+  const retiredGents = gents.filter(g => g.retired)
+  const visibleGents = showRetired ? gents : activeGents
+
   if (loading) {
     return (
       <div className="flex gap-3">
-        {[0, 1, 2, 3].map((i) => (
+        {[0, 1, 2].map((i) => (
           <div
             key={i}
             className="flex flex-col items-center gap-2 flex-1 animate-pulse"
@@ -52,14 +57,28 @@ export function ParticipantSelector({ selectedIds, onChange }: ParticipantSelect
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-ivory-muted text-xs uppercase tracking-widest font-body">Who was there?</p>
+      <div className="flex items-center justify-between">
+        <p className="text-ivory-muted text-xs uppercase tracking-widest font-body">Who was there?</p>
+        {retiredGents.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowRetired(!showRetired)}
+            className={cn(
+              'text-[10px] font-body transition-colors',
+              showRetired ? 'text-gold' : 'text-ivory-dim/40 hover:text-ivory-dim',
+            )}
+          >
+            {showRetired ? 'Hide retired' : 'Show retired'}
+          </button>
+        )}
+      </div>
       <motion.div
         variants={staggerContainer}
         initial="initial"
         animate="animate"
         className="flex gap-3"
       >
-        {gents.map((gent) => {
+        {visibleGents.map((gent) => {
           const isSelected = selectedIds.includes(gent.id)
           return (
             <motion.button
@@ -83,6 +102,7 @@ export function ParticipantSelector({ selectedIds, onChange }: ParticipantSelect
                   name={gent.display_name}
                   size="md"
                   active={isSelected}
+                  className={gent.retired ? 'saturate-[0.3]' : undefined}
                 />
                 {gent.retired && (
                   <span className="absolute -top-1 -right-1 text-[7px] font-body text-gold/70 bg-obsidian border border-gold/30 rounded px-1 py-0.5 uppercase tracking-wider">
