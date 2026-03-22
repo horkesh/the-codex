@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visa Page — Approach A: Stamped Passport Page</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    color: #f5f0e8;
+    font-family: 'Instrument Sans', sans-serif;
+    min-height: 100vh;
+    padding: 20px 16px 80px;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  /* ── Back button ── */
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #c9a84c;
+    font-size: 13px;
+    text-decoration: none;
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ══════════════════════════════════════════════
+     VISA CARD — The Artifact
+     ══════════════════════════════════════════════ */
+  .visa-card {
+    position: relative;
+    background: #F5F0E1;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow:
+      0 8px 40px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(201,168,76,0.15),
+      inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  /* Guilloche border overlay */
+  .visa-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 8px solid transparent;
+    border-image: repeating-linear-gradient(
+      45deg,
+      rgba(27,58,92,0.06) 0px,
+      rgba(27,58,92,0.03) 2px,
+      transparent 2px,
+      transparent 6px
+    ) 8;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Europe map watermark */
+  .visa-card::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 80%;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cpath d='M100,30 C85,35 75,40 72,50 C70,55 68,62 65,68 C60,72 55,70 50,72 C45,75 42,80 44,85 C46,90 50,92 48,98 C45,105 40,108 42,115 C44,120 50,122 55,125 C60,128 62,135 68,138 C72,140 78,142 85,140 C90,138 95,135 100,138 C105,140 110,145 115,142 C120,138 125,135 128,130 C132,125 135,118 138,112 C140,105 142,98 140,90 C138,82 135,78 130,72 C125,65 120,58 115,50 C112,42 108,35 100,30Z' fill='rgba(27,58,92,0.03)'/%3E%3C/svg%3E") center/contain no-repeat;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── Header strip with multi-language text ── */
+  .visa-header {
+    background: linear-gradient(180deg, rgba(27,58,92,0.08) 0%, transparent 100%);
+    padding: 10px 20px 6px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+  .visa-header-text {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    color: #1B3A5C;
+    text-transform: uppercase;
+  }
+
+  /* ── Cinematic photo band ── */
+  .photo-band {
+    position: relative;
+    height: 160px;
+    overflow: hidden;
+    z-index: 2;
+  }
+  .photo-band img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+    filter: sepia(0.1) contrast(1.05);
+  }
+  .photo-band-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(245,240,225,0.3) 0%,
+      transparent 30%,
+      transparent 60%,
+      rgba(245,240,225,0.95) 100%
+    );
+  }
+  /* Flag + VIZA overlaid on photo */
+  .photo-band-title {
+    position: absolute;
+    bottom: 12px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 3;
+  }
+  .flag-emoji {
+    font-size: 32px;
+    line-height: 1;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+  }
+  .viza-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: #1B3A5C;
+    letter-spacing: 0.06em;
+    text-shadow: 0 1px 3px rgba(245,240,225,0.8);
+  }
+
+  /* ── Card body ── */
+  .visa-body {
+    position: relative;
+    padding: 16px 20px 20px;
+    z-index: 2;
+  }
+
+  /* City + date typography (no labels) */
+  .destination-block {
+    margin-bottom: 14px;
+  }
+  .destination-city {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1B3A5C;
+    letter-spacing: 0.03em;
+    line-height: 1.1;
+  }
+  .destination-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .destination-date {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 12px;
+    color: #5A6B7A;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .destination-duration {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: #8B7355;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(139,115,85,0.1);
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+
+  /* ── Bearer / Delegation row ── */
+  .bearer-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(27,58,92,0.08);
+    border-bottom: 1px solid rgba(27,58,92,0.08);
+    margin-bottom: 14px;
+  }
+  .bearer-label {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: #8B7355;
+    text-transform: uppercase;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+  }
+  .bearer-gents {
+    display: flex;
+    gap: 14px;
+    flex: 1;
+  }
+  .bearer-gent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bearer-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(27,58,92,0.12);
+    background: #d4cfc4;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #1B3A5C;
+    font-weight: 600;
+  }
+  .bearer-info {
+    display: flex;
+    flex-direction: column;
+  }
+  .bearer-name {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: #2C2C2C;
+    line-height: 1.2;
+  }
+  .bearer-alias {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 9px;
+    color: #8B7355;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* ── One-liner quote ── */
+  .oneliner {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-size: 13px;
+    color: #5A6B7A;
+    text-align: center;
+    line-height: 1.55;
+    padding: 0 8px;
+    margin-bottom: 8px;
+  }
+
+  /* ── Stamp overlay ── */
+  .stamp-overlay {
+    position: absolute;
+    bottom: 30px;
+    right: 16px;
+    width: 100px;
+    height: 100px;
+    border: 3px solid #8B4513;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-12deg);
+    opacity: 0.55;
+    z-index: 5;
+    text-align: center;
+    padding: 8px;
+  }
+  .stamp-overlay .stamp-city {
+    font-family: Georgia, serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: #8B4513;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.15;
+  }
+  .stamp-overlay .stamp-date {
+    font-family: Georgia, serif;
+    font-size: 7px;
+    color: #8B4513;
+    letter-spacing: 0.12em;
+    margin-top: 3px;
+  }
+
+  /* ══════════════════════════════════════════════
+     BELOW THE CARD — Magazine Story
+     ══════════════════════════════════════════════ */
+
+  .story-section {
+    margin-top: 28px;
+  }
+
+  /* ── Participant strip ── */
+  .participants-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 0;
+  }
+  .participant-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 20px;
+    padding: 4px 10px 4px 4px;
+  }
+  .participant-chip .avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #1a1a22;
+    border: 1px solid rgba(201,168,76,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #c9a84c;
+  }
+  .participant-chip .name {
+    font-size: 11px;
+    color: #f5f0e8;
+    opacity: 0.8;
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 16px;
+  }
+  .section-header-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(201,168,76,0.3), transparent);
+  }
+  .section-header-line.right {
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.3));
+  }
+  .section-header-text {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    color: rgba(201,168,76,0.6);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* ── Hero photo ── */
+  .hero-photo {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .hero-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .hero-photo-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 14px 10px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.6));
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    font-style: italic;
+  }
+
+  /* ── Lore narrative ── */
+  .lore-text {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 15px;
+    color: rgba(245,240,232,0.85);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+  .lore-text .drop-cap::first-letter {
+    font-size: 48px;
+    float: left;
+    line-height: 1;
+    margin: 0 8px 0 0;
+    color: #c9a84c;
+    font-weight: 700;
+  }
+
+  /* ── Inline photo pair ── */
+  .photo-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 20px 0;
+  }
+  .photo-pair img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid rgba(201,168,76,0.1);
+  }
+
+  /* ── Classified debrief ── */
+  .debrief-card {
+    background: rgba(201,168,76,0.04);
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 24px;
+  }
+  .classified-badge {
+    display: inline-block;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: #c9a84c;
+    text-transform: uppercase;
+    border: 1px solid rgba(201,168,76,0.3);
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-bottom: 14px;
+  }
+  .debrief-text {
+    font-size: 13px;
+    color: rgba(245,240,232,0.7);
+    line-height: 1.65;
+    margin-bottom: 16px;
+  }
+
+  /* Landmarks */
+  .landmarks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .landmark-tag {
+    font-size: 10px;
+    color: #c9a84c;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.15);
+    padding: 3px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.03em;
+  }
+
+  /* Key moments */
+  .moments-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .moment-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(245,240,232,0.65);
+    line-height: 1.4;
+  }
+  .moment-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(201,168,76,0.5);
+    min-width: 18px;
+  }
+
+  /* Risk assessment */
+  .risk-box {
+    background: rgba(245,158,11,0.06);
+    border: 1px solid rgba(245,158,11,0.15);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .risk-icon {
+    font-size: 14px;
+    opacity: 0.7;
+  }
+  .risk-text {
+    font-size: 11px;
+    color: rgba(245,158,11,0.8);
+    line-height: 1.4;
+  }
+
+  /* ── View full entry button ── */
+  .view-entry-btn {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 8px;
+    color: #c9a84c;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .view-entry-btn:hover {
+    background: rgba(201,168,76,0.08);
+    border-color: rgba(201,168,76,0.4);
+  }
+
+  /* ── Comparison label ── */
+  .mockup-label {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background: #c9a84c;
+    color: #0a0a0f;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    z-index: 100;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-label">Approach A Mockup</div>
+
+<a class="back-btn" href="#">&larr; Passport</a>
+
+<!-- ══════════════════════════════════════════════
+     VISA CARD
+     ══════════════════════════════════════════════ -->
+<div class="visa-card">
+
+  <!-- Header -->
+  <div class="visa-header">
+    <span class="visa-header-text">Vize &middot; &#1042;&#1080;&#1079;&#1077; &middot; Visas</span>
+  </div>
+
+  <!-- Cinematic photo band -->
+  <div class="photo-band">
+    <img src="https://images.unsplash.com/photo-1549421263-6064833b071b?w=800&q=80" alt="Budapest Parliament at night" />
+    <div class="photo-band-overlay"></div>
+    <div class="photo-band-title">
+      <span class="flag-emoji">&#127469;&#127482;</span>
+      <span class="viza-title">VIZA</span>
+    </div>
+  </div>
+
+  <!-- Card body -->
+  <div class="visa-body">
+
+    <!-- Destination — typographic, no labels -->
+    <div class="destination-block">
+      <div class="destination-city">BUDAPEST, HUNGARY</div>
+      <div class="destination-meta">
+        <span class="destination-date">December 2025</span>
+        <span class="destination-duration">5 Days</span>
+      </div>
+    </div>
+
+    <!-- Bearer section -->
+    <div class="bearer-section">
+      <span class="bearer-label">Bearers</span>
+      <div class="bearer-gents">
+        <div class="bearer-gent">
+          <div class="bearer-avatar">H</div>
+          <div class="bearer-info">
+            <span class="bearer-name">Haris</span>
+            <span class="bearer-alias">Lorekeeper</span>
+          </div>
+        </div>
+        <div class="bearer-gent">
+          <div class="bearer-avatar">V</div>
+          <div class="bearer-info">
+            <span class="bearer-name">Vedad</span>
+            <span class="bearer-alias">Beard &amp; Bass</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- One-liner -->
+    <p class="oneliner">
+      &ldquo;Budapest received us like a city that had been expecting us &mdash; Haris in his flat cap and aviators, conspiratorial at every turn.&rdquo;
+    </p>
+
+    <!-- Stamp overlay -->
+    <div class="stamp-overlay">
+      <span class="stamp-city">Budapest<br/>Hungary</span>
+      <span class="stamp-date">DEC 2025</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BELOW THE CARD — Magazine Story
+     ══════════════════════════════════════════════ -->
+<div class="story-section">
+
+  <!-- Section: The Mission -->
+  <div class="section-header">
+    <div class="section-header-line right"></div>
+    <span class="section-header-text">The Mission</span>
+    <div class="section-header-line"></div>
+  </div>
+
+  <!-- Hero photo -->
+  <div class="hero-photo">
+    <img src="https://images.unsplash.com/photo-1565426873118-a17ed65d74b9?w=800&q=80" alt="Budapest bridge at night" />
+    <span class="hero-photo-caption">Chain Bridge, first night</span>
+  </div>
+
+  <!-- Lore narrative with drop cap -->
+  <div class="lore-text">
+    <p class="drop-cap">Budapest received us like a city that had been expecting us &mdash; Haris in his flat cap and aviators, conspiratorial at every turn, and Vedad grinning beside bronze statues and barbershop signs as though the city had been arranged specifically for his amusement.</p>
+  </div>
+
+  <!-- Inline photos -->
+  <div class="photo-pair">
+    <img src="https://images.unsplash.com/photo-1577395356592-cd764faba592?w=400&q=80" alt="Ruin bar" />
+    <img src="https://images.unsplash.com/photo-1504618223053-559bdef9dd5a?w=400&q=80" alt="Thermal bath" />
+  </div>
+
+  <div class="lore-text">
+    <p>The thermal baths became a recurring motif &mdash; steam rising from turquoise pools while they debated whether the city's cafe culture rivalled Vienna's. Spoiler: it did, at half the price and twice the charm. The ruin bars sealed the verdict before the second night was out.</p>
+  </div>
+
+  <!-- Section: Intelligence Report -->
+  <div class="section-header">
+    <div class="section-header-line right"></div>
+    <span class="section-header-text">Intelligence Report</span>
+    <div class="section-header-line"></div>
+  </div>
+
+  <div class="debrief-card">
+    <div class="classified-badge">Classified</div>
+
+    <p class="debrief-text">
+      Operation Budapest unfolded across five days of calculated reconnaissance through the Hungarian capital. The operatives demonstrated exceptional adaptability, navigating thermal bath protocols, ruin bar social dynamics, and late-night goulash procurement with minimal friction.
+    </p>
+
+    <!-- Landmarks -->
+    <div class="landmarks">
+      <span class="landmark-tag">Sz&eacute;chenyi Baths</span>
+      <span class="landmark-tag">Szimpla Kert</span>
+      <span class="landmark-tag">Chain Bridge</span>
+      <span class="landmark-tag">Central Market Hall</span>
+      <span class="landmark-tag">Fisherman's Bastion</span>
+    </div>
+
+    <!-- Key Moments -->
+    <ul class="moments-list">
+      <li class="moment-item">
+        <span class="moment-num">1.</span>
+        <span>The flat cap incident at the Parliament building that nearly started an international fashion crisis</span>
+      </li>
+      <li class="moment-item">
+        <span class="moment-num">2.</span>
+        <span>Discovery of the 24-hour langos stand that became unofficial mission HQ</span>
+      </li>
+      <li class="moment-item">
+        <span class="moment-num">3.</span>
+        <span>Vedad's spontaneous barbershop detour that added 40 minutes and zero regret</span>
+      </li>
+    </ul>
+
+    <!-- Risk Assessment -->
+    <div class="risk-box">
+      <span class="risk-icon">&#9888;&#65039;</span>
+      <span class="risk-text">Moderate risk of repeat visit. The operatives showed signs of premature nostalgia before clearing customs.</span>
+    </div>
+  </div>
+
+  <!-- View Full Entry -->
+  <button class="view-entry-btn">View Full Entry</button>
+
+</div>
+
+</body>
+</html>

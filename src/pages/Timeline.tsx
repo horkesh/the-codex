@@ -1,106 +1,128 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  ReactFlow,
-  ReactFlowProvider,
-  Background,
-  useReactFlow,
-  type NodeMouseHandler,
-} from '@xyflow/react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router'
-import { TopBar, SectionNav } from '@/components/layout'
+import { motion } from 'framer-motion'
+import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Spinner } from '@/components/ui'
-import { TimelineEntryNode } from '@/components/timeline/TimelineEntryNode'
-import { TimelineMonthNode } from '@/components/timeline/TimelineMonthNode'
-import { computeTimelineGraph, type TimelineEntryData } from '@/lib/timelineLayout'
+import { ENTRY_TYPE_META, ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
 import { fetchTimelineEntries } from '@/data/entries'
-import '@xyflow/react/dist/style.css'
+import { formatDate } from '@/lib/utils'
+import { staggerContainer, staggerItem } from '@/lib/animations'
+import type { EntryType } from '@/types/app'
 
-const nodeTypes = {
-  timelineEntry: TimelineEntryNode,
-  timelineMonth: TimelineMonthNode,
-}
-
-const CANVAS_HEIGHT = 'calc(100dvh - 96px)'
-
-function TimelineCanvas() {
+export default function Timeline() {
   const navigate = useNavigate()
-  const { fitView } = useReactFlow()
   const [entries, setEntries] = useState<Array<{ id: string; type: string; title: string; date: string; cover_image_url: string | null }>>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     fetchTimelineEntries()
-      .then((data) => {
-        if (!cancelled) {
-          setEntries(data)
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        console.error('Timeline: failed to fetch entries:', err)
-        if (!cancelled) setLoading(false)
-      })
+      .then(data => { if (!cancelled) setEntries(data) })
+      .catch(err => console.error('Timeline:', err))
+      .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [])
 
-  const { nodes, edges } = useMemo(() => {
-    if (entries.length === 0) return { nodes: [], edges: [] }
-    return computeTimelineGraph(entries)
+  // Group by month, newest first
+  const groups = useMemo(() => {
+    const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date))
+    const map = new Map<string, typeof entries>()
+    for (const e of sorted) {
+      const key = e.date.slice(0, 7)
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(e)
+    }
+    return [...map.entries()].map(([key, items]) => {
+      const [year, month] = key.split('-')
+      const label = new Date(+year, +month - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+      return { key, label, items }
+    })
   }, [entries])
 
-  useEffect(() => {
-    if (nodes.length > 0) {
-      setTimeout(() => fitView({ padding: 0.3, duration: 600 }), 100)
-    }
-  }, [nodes.length, fitView])
-
-  const handleNodeClick: NodeMouseHandler = useCallback(
-    (_event, node) => {
-      if (node.type === 'timelineEntry') {
-        const data = node.data as TimelineEntryData
-        navigate(`/chronicle/${data.entry.id}`)
-      }
-    },
-    [navigate],
-  )
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center" style={{ height: CANVAS_HEIGHT }}>
-        <Spinner size="md" />
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ height: CANVAS_HEIGHT }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodeClick={handleNodeClick}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-        minZoom={0.1}
-        maxZoom={2}
-        proOptions={{ hideAttribution: true }}
-        defaultEdgeOptions={{ type: 'smoothstep' }}
-      >
-        <Background color="#C9A84C" gap={40} size={0.5} style={{ opacity: 0.05 }} />
-      </ReactFlow>
-    </div>
-  )
-}
-
-export default function Timeline() {
   return (
     <>
       <TopBar title="Timeline" back />
       <SectionNav />
-      <ReactFlowProvider>
-        <TimelineCanvas />
-      </ReactFlowProvider>
+
+      <PageWrapper padded scrollable>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Spinner size="md" />
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="flex flex-col items-center py-20 gap-2">
+            <p className="text-sm text-ivory-dim/50 font-body">No entries yet</p>
+          </div>
+        ) : (
+          <div className="relative pb-8 pt-2">
+            {/* Golden thread — vertical line */}
+            <div className="absolute left-[23px] top-0 bottom-0 w-px bg-gradient-to-b from-gold/40 via-gold/20 to-transparent" />
+
+            {groups.map((group) => (
+              <div key={group.key} className="mb-6">
+                {/* Month label */}
+                <div className="relative flex items-center gap-3 mb-3">
+                  <div className="w-[47px] flex justify-center shrink-0">
+                    <div className="w-3 h-3 rounded-full bg-gold/60 border-2 border-obsidian" />
+                  </div>
+                  <p className="text-[10px] font-body text-gold uppercase tracking-[0.2em]">{group.label}</p>
+                </div>
+
+                {/* Entries */}
+                <motion.div
+                  variants={staggerContainer}
+                  initial="initial"
+                  whileInView="animate"
+                  viewport={{ once: true }}
+                  className="flex flex-col gap-2"
+                >
+                  {group.items.map((entry) => {
+                    const meta = ENTRY_TYPE_META[entry.type as EntryType]
+                    const Icon = meta?.Icon
+                    const coverSrc = entry.cover_image_url || ENTRY_TYPE_IMAGES[entry.type as EntryType]
+
+                    return (
+                      <motion.button
+                        key={entry.id}
+                        variants={staggerItem}
+                        type="button"
+                        onClick={() => navigate(`/chronicle/${entry.id}`)}
+                        className="relative flex items-center gap-3 pl-[47px] pr-2 py-2 text-left hover:bg-white/3 rounded-lg transition-colors group"
+                      >
+                        {/* Thread dot */}
+                        <div className="absolute left-[20px] w-[7px] h-[7px] rounded-full bg-white/20 group-hover:bg-gold/50 transition-colors" />
+
+                        {/* Cover thumbnail */}
+                        <div className="relative shrink-0">
+                          <img
+                            src={coverSrc}
+                            alt=""
+                            className="w-11 h-11 rounded-lg object-cover border border-white/10 group-hover:border-gold/30 transition-colors"
+                          />
+                          {Icon && (
+                            <div
+                              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border border-white/20"
+                              style={{ backgroundColor: meta.borderColor }}
+                            >
+                              <Icon size={8} className="text-ivory/80" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-display text-ivory truncate">{entry.title}</p>
+                          <p className="text-[10px] font-body text-ivory-dim/40 mt-0.5">{formatDate(entry.date)}</p>
+                        </div>
+                      </motion.button>
+                    )
+                  })}
+                </motion.div>
+              </div>
+            ))}
+          </div>
+        )}
+      </PageWrapper>
     </>
   )
 }
