@@ -7,6 +7,7 @@ import type { EntryWithParticipants, GatheringMetadata, PizzaMenuItem } from '@/
 
 interface Props {
   entry: EntryWithParticipants
+  gent?: { display_name: string; alias: string; full_alias: string; avatar_url: string | null }
 }
 
 const CREAM = '#F5F0E1'
@@ -15,7 +16,7 @@ const INK_DIM = 'rgba(42,31,20,0.55)'
 const BRICK = '#D4843A'
 const BRICK_DIM = 'rgba(212,132,58,0.35)'
 
-const PizzaPartyCarta = React.forwardRef<HTMLDivElement, Props>(({ entry }, ref) => {
+const PizzaPartyCarta = React.forwardRef<HTMLDivElement, Props>(({ entry, gent }, ref) => {
   const meta = (entry.metadata ?? {}) as unknown as GatheringMetadata
   const pizzas: PizzaMenuItem[] = meta.pizza_menu ?? []
   const eventDate = meta.event_date || entry.date
@@ -42,29 +43,61 @@ const PizzaPartyCarta = React.forwardRef<HTMLDivElement, Props>(({ entry }, ref)
       }}
     >
       {/* Decorative top border */}
-      <div style={{ width: '100%', height: '3px', background: `linear-gradient(to right, transparent, ${BRICK_DIM}, transparent)`, marginBottom: '56px' }} />
+      <div style={{ width: '100%', height: '3px', background: `linear-gradient(to right, transparent, ${BRICK_DIM}, transparent)`, marginBottom: '56px', flexShrink: 0 }} />
 
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-        <p style={{ fontFamily: FONT.body, fontSize: '13px', letterSpacing: '0.4em', textTransform: 'uppercase', color: BRICK, marginBottom: '24px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '16px', flexShrink: 0 }}>
+        <p style={{
+          fontFamily: FONT.body,
+          fontSize: '16px',
+          letterSpacing: '0.4em',
+          textTransform: 'uppercase',
+          color: BRICK,
+          marginBottom: '24px',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}>
           La Carta
         </p>
-        <h1 style={{ fontFamily: FONT.display, fontSize: '56px', color: INK, fontWeight: 400, lineHeight: 1.15, margin: 0 }}>
+        <h1 style={{
+          fontFamily: FONT.display,
+          fontSize: '72px',
+          color: INK,
+          fontWeight: 400,
+          lineHeight: 1.15,
+          margin: 0,
+          maxWidth: '936px',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}>
           {entry.title}
         </h1>
       </div>
 
-      <div style={{ width: '100%', margin: '32px 0' }}><GoldRule /></div>
+      <div style={{ width: '100%', margin: '32px 0', flexShrink: 0 }}><GoldRule /></div>
 
       {/* Pizza list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', flex: 1 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', flex: 1, overflow: 'hidden' }}>
         {visible.map((pizza, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
             <div style={{ flexShrink: 0 }}>
-              <PizzaSvg toppings={pizza.toppings} size={80} seed={`carta-${i}`} />
+              <PizzaSvg toppings={pizza.toppings} size={100} seed={`carta-${i}`} />
             </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontFamily: FONT.display, fontSize: '28px', color: INK, fontWeight: 400, margin: '0 0 8px 0', lineHeight: 1.2 }}>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <p style={{
+                fontFamily: FONT.display,
+                fontSize: '36px',
+                color: INK,
+                fontWeight: 400,
+                margin: '0 0 8px 0',
+                lineHeight: 1.2,
+                maxWidth: '780px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
                 {pizza.name}
               </p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -74,13 +107,14 @@ const PizzaPartyCarta = React.forwardRef<HTMLDivElement, Props>(({ entry }, ref)
                     <span
                       key={t}
                       style={{
-                        fontSize: '12px',
+                        fontSize: '16px',
                         letterSpacing: '0.05em',
                         color: INK_DIM,
                         border: `1px solid ${BRICK_DIM}`,
                         borderRadius: '999px',
-                        padding: '4px 14px',
+                        padding: '8px 20px',
                         fontFamily: FONT.body,
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {def?.label ?? t}
@@ -100,32 +134,73 @@ const PizzaPartyCarta = React.forwardRef<HTMLDivElement, Props>(({ entry }, ref)
       </div>
 
       {/* Bottom section */}
-      <div style={{ marginTop: '40px' }}>
+      <div style={{ marginTop: '40px', flexShrink: 0 }}>
         <div style={{ width: '100%', marginBottom: '32px' }}><GoldRule /></div>
+
+        {/* Host */}
+        {gent && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+            {gent.avatar_url && (
+              <img src={gent.avatar_url} alt="" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(212,132,58,0.4)' }} />
+            )}
+            <div>
+              <p style={{ fontFamily: FONT.body, fontSize: '14px', color: '#8C8680', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 4px 0', whiteSpace: 'nowrap' }}>Hosted by</p>
+              <p style={{
+                fontFamily: FONT.display,
+                fontSize: '28px',
+                color: BRICK,
+                margin: 0,
+                fontWeight: 400,
+                maxWidth: '700px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>{gent.alias}</p>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           {/* Map */}
           {lat && lng && (
             <img
-              src={buildStaticMapUrl(lat, lng, { width: 200, height: 140, zoom: 14 })}
+              src={buildStaticMapUrl(lat, lng, { width: 260, height: 170, zoom: 14 })}
               alt="Map"
-              style={{ width: '180px', height: '120px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+              style={{ width: '240px', height: '150px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
             />
           )}
-          <div style={{ flex: 1, textAlign: lat && lng ? 'left' : 'center' }}>
+          <div style={{ flex: 1, textAlign: lat && lng ? 'left' : 'center', overflow: 'hidden' }}>
             {venue && (
-              <p style={{ fontFamily: FONT.display, fontSize: '22px', color: BRICK, margin: '0 0 8px 0', fontWeight: 400 }}>
+              <p style={{
+                fontFamily: FONT.display,
+                fontSize: '28px',
+                color: BRICK,
+                margin: '0 0 8px 0',
+                fontWeight: 400,
+                maxWidth: '600px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
                 {venue}
               </p>
             )}
-            <p style={{ fontFamily: FONT.body, fontSize: '16px', color: INK_DIM, margin: 0 }}>
+            <p style={{
+              fontFamily: FONT.body,
+              fontSize: '20px',
+              color: INK_DIM,
+              margin: 0,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
               {formatDate(eventDate)}
             </p>
           </div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
-          <BrandMark size="md" />
+          <BrandMark size="lg" />
         </div>
       </div>
     </div>

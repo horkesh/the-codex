@@ -5,12 +5,13 @@ import type { EntryWithParticipants, GatheringMetadata, PizzaMenuItem } from '@/
 
 interface Props {
   entry: EntryWithParticipants
+  gent?: { display_name: string; alias: string; full_alias: string; avatar_url: string | null }
 }
 
 const BRICK = '#D4843A'
 const BRICK_DIM = 'rgba(212,132,58,0.35)'
 
-const PizzaPartyCountdown = React.forwardRef<HTMLDivElement, Props>(({ entry }, ref) => {
+const PizzaPartyCountdown = React.forwardRef<HTMLDivElement, Props>(({ entry, gent }, ref) => {
   const meta = (entry.metadata ?? {}) as unknown as GatheringMetadata
   const pizzas: PizzaMenuItem[] = meta.pizza_menu ?? []
   const eventDate = meta.event_date || entry.date
@@ -55,31 +56,67 @@ const PizzaPartyCountdown = React.forwardRef<HTMLDivElement, Props>(({ entry }, 
       }}
     >
       {/* INCOMING label */}
-      <p style={{ fontFamily: FONT.body, fontSize: '14px', letterSpacing: '0.5em', textTransform: 'uppercase', color: BRICK, marginBottom: '48px' }}>
+      <p style={{
+        fontFamily: FONT.body,
+        fontSize: '18px',
+        letterSpacing: '0.5em',
+        textTransform: 'uppercase',
+        color: BRICK,
+        marginBottom: '48px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}>
         Incoming
       </p>
 
       {/* Giant count */}
       <div style={{
         fontFamily: FONT.display,
-        fontSize: isToday ? '140px' : '180px',
+        fontSize: isToday ? '180px' : '220px',
         fontWeight: 400,
         color: '#F0EDE8',
         lineHeight: 1,
         marginBottom: subtitle ? '8px' : '32px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        maxWidth: '936px',
       }}>
         {countDisplay}
       </div>
 
       {/* Subtitle */}
       {subtitle && (
-        <p style={{ fontFamily: FONT.body, fontSize: '24px', letterSpacing: '0.4em', color: '#8C8680', marginBottom: '32px' }}>
+        <p style={{
+          fontFamily: FONT.body,
+          fontSize: '32px',
+          letterSpacing: '0.4em',
+          color: '#8C8680',
+          marginBottom: '32px',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}>
           {subtitle}
         </p>
       )}
 
       {/* "until pizza night at [venue]" */}
-      <p style={{ fontFamily: FONT.display, fontSize: '28px', color: '#C8C0B0', textAlign: 'center', fontStyle: 'italic', maxWidth: '700px', lineHeight: 1.5, marginBottom: '56px' }}>
+      <p style={{
+        fontFamily: FONT.display,
+        fontSize: '34px',
+        color: '#C8C0B0',
+        textAlign: 'center',
+        fontStyle: 'italic',
+        maxWidth: '900px',
+        lineHeight: 1.5,
+        marginBottom: '56px',
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical' as const,
+        overflow: 'hidden',
+      }}>
         {days >= 0 ? 'until pizza night' : 'since pizza night'}{venue ? ` at ${venue}` : ''}
       </p>
 
@@ -88,18 +125,22 @@ const PizzaPartyCountdown = React.forwardRef<HTMLDivElement, Props>(({ entry }, 
 
       {/* Pizza name pills */}
       {pizzas.length > 0 && (
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '800px', marginBottom: '56px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '900px', marginBottom: '56px' }}>
           {pizzas.map((p, i) => (
             <span
               key={i}
               style={{
                 border: `1px solid ${BRICK_DIM}`,
                 borderRadius: '999px',
-                padding: '10px 24px',
+                padding: '14px 30px',
                 fontFamily: FONT.body,
-                fontSize: '16px',
+                fontSize: '20px',
                 color: BRICK,
                 letterSpacing: '0.03em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '400px',
               }}
             >
               {p.name}
@@ -109,18 +150,59 @@ const PizzaPartyCountdown = React.forwardRef<HTMLDivElement, Props>(({ entry }, 
       )}
 
       {/* Date + city */}
-      <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-        <p style={{ fontFamily: FONT.body, fontSize: '18px', color: '#8C8680', margin: '0 0 4px 0' }}>
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <p style={{
+          fontFamily: FONT.body,
+          fontSize: '22px',
+          color: '#8C8680',
+          margin: '0 0 4px 0',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: '900px',
+        }}>
           {formatDate(eventDate)}
         </p>
         {city && (
-          <p style={{ fontFamily: FONT.body, fontSize: '16px', color: '#6E6860', margin: 0 }}>
+          <p style={{
+            fontFamily: FONT.body,
+            fontSize: '20px',
+            color: '#6E6860',
+            margin: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '900px',
+          }}>
             {city}
           </p>
         )}
       </div>
 
-      <BrandMark size="md" />
+      {/* Host */}
+      {gent && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '40px' }}>
+          {gent.avatar_url && (
+            <img src={gent.avatar_url} alt="" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(212,132,58,0.4)' }} />
+          )}
+          <div>
+            <p style={{ fontFamily: FONT.body, fontSize: '14px', color: '#8C8680', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 4px 0', whiteSpace: 'nowrap' }}>Hosted by</p>
+            <p style={{
+              fontFamily: FONT.display,
+              fontSize: '28px',
+              color: BRICK,
+              margin: 0,
+              fontWeight: 400,
+              maxWidth: '700px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>{gent.alias}</p>
+          </div>
+        </div>
+      )}
+
+      <BrandMark size="lg" />
     </div>
   )
 })

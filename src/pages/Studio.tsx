@@ -404,13 +404,13 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
     case 'gathering_recap':
       return <GatheringRecap ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
     case 'pizza_party_carta':
-      return <PizzaPartyCarta ref={innerRef} entry={entry} />
+      return <PizzaPartyCarta ref={innerRef} entry={entry} gent={gent} />
     case 'pizza_party_invite':
-      return <PizzaPartyInvite ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+      return <PizzaPartyInvite ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} gent={gent} />
     case 'pizza_party_forno':
-      return <PizzaPartyForno ref={innerRef} entry={entry} />
+      return <PizzaPartyForno ref={innerRef} entry={entry} gent={gent} />
     case 'pizza_party_countdown':
-      return <PizzaPartyCountdown ref={innerRef} entry={entry} />
+      return <PizzaPartyCountdown ref={innerRef} entry={entry} gent={gent} />
     case 'wrapped_card':
       return (
         <WrappedCard
