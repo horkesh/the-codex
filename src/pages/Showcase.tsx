@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuthStore } from '@/store/auth'
-import { fetchPublicEntries, fetchPublicGents, fetchPublicStats, fetchPublicMissionCities } from '@/data/public'
+import { fetchPublicEntries, fetchPublicGents, fetchPublicStats, fetchPublicMissionCities, fetchPublicUpcomingGatherings, fetchPublicProspects } from '@/data/public'
 import { ShowcaseHero } from '@/components/showcase/ShowcaseHero'
 import { GentCards } from '@/components/showcase/GentCards'
 import { FeaturedChronicle } from '@/components/showcase/FeaturedChronicle'
+import { UpcomingShowcase } from '@/components/showcase/UpcomingShowcase'
 import { TravelMap } from '@/components/showcase/TravelMap'
 import { ShowcaseFooter } from '@/components/showcase/ShowcaseFooter'
-import type { EntryWithParticipants, Gent, GentStats } from '@/types/app'
+import type { Entry, EntryWithParticipants, Gent, GentStats } from '@/types/app'
 
 export default function Showcase() {
   const navigate = useNavigate()
@@ -22,6 +23,8 @@ export default function Showcase() {
   const [gents, setGents] = useState<Gent[]>([])
   const [stats, setStats] = useState<GentStats[]>([])
   const [missionCities, setMissionCities] = useState<Array<{ city: string; country: string; countryCode: string }>>([])
+  const [upcomingGatherings, setUpcomingGatherings] = useState<Entry[]>([])
+  const [upcomingProspects, setUpcomingProspects] = useState<Array<{ id: string; event_name: string | null; venue_name: string | null; city: string | null; event_date: string | null }>>([])
 
   // Only fetch public data if not logged in — avoids wasted API calls during redirect
   useEffect(() => {
@@ -30,6 +33,8 @@ export default function Showcase() {
     fetchPublicGents().then(setGents).catch(() => {})
     fetchPublicStats().then(setStats).catch(() => {})
     fetchPublicMissionCities().then(setMissionCities).catch(() => {})
+    fetchPublicUpcomingGatherings().then(setUpcomingGatherings).catch(() => {})
+    fetchPublicProspects().then(setUpcomingProspects).catch(() => {})
   }, [gent])
 
   return (
@@ -37,6 +42,7 @@ export default function Showcase() {
       <ShowcaseHero />
       {gents.length > 0 && <GentCards gents={gents} stats={stats} />}
       <FeaturedChronicle entries={entries} />
+      <UpcomingShowcase gatherings={upcomingGatherings} prospects={upcomingProspects} />
       <TravelMap cities={missionCities} />
       <ShowcaseFooter />
     </div>

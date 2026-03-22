@@ -78,3 +78,30 @@ export async function fetchPublicMissionCities(): Promise<Array<{ city: string; 
   }
   return cities
 }
+
+/** Fetch upcoming public gatherings (shared, pre-event) */
+export async function fetchPublicUpcomingGatherings(): Promise<Entry[]> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id, title, date, city, metadata')
+    .eq('type', 'gathering')
+    .eq('status', 'gathering_pre')
+    .eq('visibility', 'shared')
+    .order('date', { ascending: true })
+    .limit(5)
+  if (error || !data) return []
+  return data as unknown as Entry[]
+}
+
+/** Fetch upcoming public scouting events (status=prospect) */
+export async function fetchPublicProspects(): Promise<Array<{ id: string; event_name: string | null; venue_name: string | null; city: string | null; event_date: string | null }>> {
+  const { data, error } = await supabase
+    .from('prospects')
+    .select('id, event_name, venue_name, city, event_date')
+    .eq('status', 'prospect')
+    .not('event_date', 'is', null)
+    .order('event_date', { ascending: true })
+    .limit(5)
+  if (error || !data) return []
+  return data as Array<{ id: string; event_name: string | null; venue_name: string | null; city: string | null; event_date: string | null }>
+}
