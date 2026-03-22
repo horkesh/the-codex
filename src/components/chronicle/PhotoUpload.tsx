@@ -9,6 +9,46 @@ import type { LocationFill } from '@/lib/geo'
 import { fetchLocations } from '@/data/locations'
 import { isVideoFile, extractKeyframes } from '@/lib/videoKeyframes'
 
+/** Fallback: grab a single frame from time 0 when keyframe extraction fails (HEVC etc.) */
+async function grabPosterFrame(file: File): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const video = document.createElement('video')
+    video.muted = true
+    video.playsInline = true
+    video.preload = 'auto'
+    video.setAttribute('playsinline', '')
+
+    const timeout = setTimeout(() => { URL.revokeObjectURL(url); resolve(null) }, 10000)
+
+    video.onloadeddata = () => {
+      clearTimeout(timeout)
+      try {
+        const vw = video.videoWidth || 640
+        const vh = video.videoHeight || 480
+        const scale = Math.min(1, 1024 / vw)
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(vw * scale)
+        canvas.height = Math.round(vh * scale)
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        canvas.toBlob(
+          blob => { URL.revokeObjectURL(url); resolve(blob) },
+          'image/jpeg',
+          0.85,
+        )
+      } catch {
+        URL.revokeObjectURL(url)
+        resolve(null)
+      }
+    }
+
+    video.onerror = () => { clearTimeout(timeout); URL.revokeObjectURL(url); resolve(null) }
+    video.src = url
+    video.load()
+  })
+}
+
 interface PhotoUploadProps {
   entryId: string | null
   maxPhotos?: number
@@ -54,7 +94,6 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
 
       // Expand video files into keyframe image files before adding
       const expandedFiles: File[] = []
-      let videoProcessed = false
       for (const file of toAdd) {
         if (isVideoFile(file)) {
           try {
@@ -66,21 +105,27 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
                 const frameName = `${file.name.replace(/\.[^.]+$/, '')}_${Math.round(timestampSeconds)}s.${ext}`
                 expandedFiles.push(new File([blob], frameName, { type: blob.type }))
               }
-              videoProcessed = true
             } else {
-              console.warn('Video keyframe extraction returned 0 frames:', file.name)
+              // HEVC/unsupported codec — try grabbing a single poster frame at time 0
+              console.warn('Keyframe extraction returned 0 frames, trying poster grab:', file.name)
+              setProcessingLabel(`Grabbing thumbnail from ${file.name}...`)
+              const poster = await grabPosterFrame(file)
+              if (poster) {
+                const ext = poster.type === 'image/webp' ? 'webp' : 'jpg'
+                const frameName = `${file.name.replace(/\.[^.]+$/, '')}_poster.${ext}`
+                expandedFiles.push(new File([poster], frameName, { type: poster.type }))
+              } else {
+                console.warn('Could not extract any frame from video:', file.name)
+              }
             }
           } catch (err) {
-            console.error('Video keyframe extraction failed:', file.name, err)
+            console.error('Video processing failed:', file.name, err)
           }
         } else {
           expandedFiles.push(file)
         }
       }
       setProcessingLabel(null)
-      if (videoProcessed && expandedFiles.length > 0) {
-        console.log(`Extracted ${expandedFiles.length} frames from video(s)`)
-      }
 
       // Re-apply the cap after expansion
       const finalFiles = expandedFiles.slice(0, maxPhotos - photos.length)
