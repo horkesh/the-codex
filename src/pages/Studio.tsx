@@ -35,6 +35,10 @@ import { LiveMusicCard } from '@/export/templates/LiveMusicCard'
 import { DebriefPage } from '@/export/templates/DebriefPage'
 import { PassportIdPage } from '@/export/templates/PassportIdPage'
 import { GatheringRecap } from '@/export/templates/GatheringRecap'
+import { PizzaPartyCarta } from '@/export/templates/PizzaPartyCarta'
+import { PizzaPartyInvite } from '@/export/templates/PizzaPartyInvite'
+import { PizzaPartyForno } from '@/export/templates/PizzaPartyForno'
+import { PizzaPartyCountdown } from '@/export/templates/PizzaPartyCountdown'
 import { WrappedCard } from '@/export/templates/WrappedCard'
 import { RivalryCard } from '@/export/templates/RivalryCard'
 import { AchievementCard } from '@/export/templates/AchievementCard'
@@ -69,6 +73,10 @@ type TemplateId =
   | 'debrief_page'
   | 'passport_id_page'
   | 'gathering_recap'
+  | 'pizza_party_carta'
+  | 'pizza_party_invite'
+  | 'pizza_party_forno'
+  | 'pizza_party_countdown'
   | 'wrapped_card'
   | 'rivalry_card'
   | 'achievement_card'
@@ -129,6 +137,10 @@ const TEMPLATES_BY_TYPE: Record<string, TemplateConfig[]> = {
     { id: 'gathering_invite', label: 'Invite Card',    dims: '1080×1350', bgAspect: '3:4' },
     { id: 'countdown',        label: 'Countdown',      dims: '1080×1350', bgAspect: '3:4' },
     { id: 'gathering_recap',  label: 'Recap',          dims: '1080×1350', bgAspect: '3:4' },
+    { id: 'pizza_party_carta',     label: 'La Carta',       dims: '1080×1920', bgAspect: '9:16', requiresFlavour: 'pizza_party' },
+    { id: 'pizza_party_invite',    label: 'The Invitation', dims: '1080×1920', bgAspect: '9:16', requiresFlavour: 'pizza_party' },
+    { id: 'pizza_party_forno',     label: 'Il Forno',       dims: '1080×1920', bgAspect: '9:16', requiresFlavour: 'pizza_party' },
+    { id: 'pizza_party_countdown', label: 'Slice & Dice',   dims: '1080×1920', bgAspect: '9:16', requiresFlavour: 'pizza_party' },
   ],
   toast: [
     { id: 'toast_card',       label: 'Classic',        dims: '1080×1350', bgAspect: '3:4' },
@@ -391,6 +403,14 @@ function TemplateRenderer({ templateId, entry, innerRef, backgroundUrl, rewardKe
       return <PassportIdPage ref={innerRef} gent={gent} />
     case 'gathering_recap':
       return <GatheringRecap ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+    case 'pizza_party_carta':
+      return <PizzaPartyCarta ref={innerRef} entry={entry} />
+    case 'pizza_party_invite':
+      return <PizzaPartyInvite ref={innerRef} entry={entry} backgroundUrl={backgroundUrl} />
+    case 'pizza_party_forno':
+      return <PizzaPartyForno ref={innerRef} entry={entry} />
+    case 'pizza_party_countdown':
+      return <PizzaPartyCountdown ref={innerRef} entry={entry} />
     case 'wrapped_card':
       return (
         <WrappedCard
