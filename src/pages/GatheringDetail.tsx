@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2 } from 'lucide-react'
+import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal } from '@/components/ui'
 import { CountdownBadge } from '@/components/gathering/CountdownBadge'
-import { fetchGathering, fetchRsvps, fetchGuestBookMessages, markGatheringComplete } from '@/data/gatherings'
+import { fetchGathering, fetchRsvps, fetchGuestBookMessages, markGatheringComplete, updateGatheringMetadata } from '@/data/gatherings'
+import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { supabase } from '@/lib/supabase'
 import { formatDate, cn } from '@/lib/utils'
+import { PizzaSvg, TOPPING_REGISTRY } from '@/lib/pizzaSvg'
+import { buildStaticMapUrl } from '@/export/templates/shared/utils'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import type { Entry, GatheringRsvp, GuestBookMessage, GatheringMetadata } from '@/types/app'
 
@@ -68,6 +71,7 @@ function RsvpBadge({ response }: { response: GatheringRsvp['response'] }) {
 export default function GatheringDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { gent } = useAuthStore()
   const { addToast } = useUIStore()
 
   const [entry, setEntry] = useState<Entry | null>(null)
@@ -129,6 +133,16 @@ export default function GatheringDetail() {
       supabase.removeChannel(channel)
     }
   }, [id])
+
+  // Reset unseen RSVP count for creator
+  useEffect(() => {
+    if (!id || !entry || !gent) return
+    if (entry.created_by !== gent.id) return
+    const m = entry.metadata as Record<string, unknown>
+    if (m?.rsvp_unseen_count && (m.rsvp_unseen_count as number) > 0) {
+      updateGatheringMetadata(id, { rsvp_unseen_count: 0 }).catch(() => {})
+    }
+  }, [id, entry, gent])
 
   async function handleMarkComplete() {
     if (!id) return
@@ -227,6 +241,14 @@ export default function GatheringDetail() {
                   {entry.city ? `, ${entry.city}` : ''}
                 </span>
               </div>
+              {meta.lat && meta.lng && (
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${meta.lat},${meta.lng}`}
+                   target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden mt-2">
+                  <img src={buildStaticMapUrl(meta.lat, meta.lng, { width: 400, height: 160 })}
+                       alt="Map" className="w-full h-28 object-cover" />
+                </a>
+              )}
+              {meta.address && <p className="text-[11px] text-ivory-dim/60 font-body mt-1">{meta.address}</p>}
             </motion.div>
 
             {/* Description */}
@@ -236,8 +258,29 @@ export default function GatheringDetail() {
               </motion.div>
             )}
 
+            {/* Pizza menu */}
+            {meta.flavour === 'pizza_party' && meta.pizza_menu && meta.pizza_menu.length > 0 && (
+              <motion.div variants={staggerItem} className="flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <UtensilsCrossed size={15} className="text-gold shrink-0" />
+                  <h2 className="font-display text-base text-ivory">The Menu</h2>
+                </div>
+                {meta.pizza_menu.map((pizza, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+                    <PizzaSvg toppings={pizza.toppings} size={64} seed={pizza.name || `p-${i}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gold font-display">{pizza.name}</p>
+                      <p className="text-[10px] text-ivory-dim/60 font-body mt-0.5">
+                        {pizza.toppings.map(t => TOPPING_REGISTRY[t]?.label ?? t).join(' · ')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
             {/* Cocktail menu */}
-            {meta.cocktail_menu && meta.cocktail_menu.length > 0 && (
+            {meta.flavour !== 'pizza_party' && meta.cocktail_menu && meta.cocktail_menu.length > 0 && (
               <motion.div variants={staggerItem} className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <Wine size={15} className="text-gold shrink-0" />
@@ -415,6 +458,14 @@ export default function GatheringDetail() {
                 {entry.city ? `, ${entry.city}` : ''}
               </span>
             </div>
+            {meta.lat && meta.lng && (
+              <a href={`https://www.google.com/maps/dir/?api=1&destination=${meta.lat},${meta.lng}`}
+                 target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden mt-2">
+                <img src={buildStaticMapUrl(meta.lat, meta.lng, { width: 400, height: 160 })}
+                     alt="Map" className="w-full h-28 object-cover" />
+              </a>
+            )}
+            {meta.address && <p className="text-[11px] text-ivory-dim/60 font-body mt-1">{meta.address}</p>}
           </motion.div>
 
           {/* Guest book messages */}
