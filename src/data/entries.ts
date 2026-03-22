@@ -87,6 +87,17 @@ export async function fetchEntries(filters?: {
   }))
 }
 
+/** Lightweight fetch for timeline — only the columns needed for display */
+export async function fetchTimelineEntries(): Promise<Array<{ id: string; type: string; title: string; date: string; cover_image_url: string | null }>> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('id, type, title, date, cover_image_url')
+    .in('status', ['published', 'gathering_post'])
+    .order('date', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as Array<{ id: string; type: string; title: string; date: string; cover_image_url: string | null }>
+}
+
 export async function fetchEntry(id: string): Promise<EntryWithParticipants | null> {
   const { data: rawEntry, error } = await supabase
     .from('entries')

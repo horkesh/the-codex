@@ -1,9 +1,17 @@
 import type { Node, Edge } from '@xyflow/react'
-import type { EntryWithParticipants } from '@/types/app'
+
+/** Minimal entry shape needed for the timeline */
+export interface TimelineEntry {
+  id: string
+  type: string
+  title: string
+  date: string
+  cover_image_url: string | null
+}
 
 export interface TimelineEntryData {
   type: 'timelineEntry'
-  entry: EntryWithParticipants
+  entry: TimelineEntry
   [key: string]: unknown
 }
 
@@ -15,17 +23,15 @@ export interface TimelineMonthData {
 
 export type TimelineNodeData = TimelineEntryData | TimelineMonthData
 
-export function computeTimelineGraph(entries: EntryWithParticipants[]): {
+export function computeTimelineGraph(entries: TimelineEntry[]): {
   nodes: Node<TimelineNodeData>[]
   edges: Edge[]
 } {
-  // Sort by date ascending
   const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date))
 
-  // Group by YYYY-MM
-  const groups = new Map<string, EntryWithParticipants[]>()
+  const groups = new Map<string, TimelineEntry[]>()
   for (const e of sorted) {
-    const key = e.date.slice(0, 7) // YYYY-MM
+    const key = e.date.slice(0, 7)
     if (!groups.has(key)) groups.set(key, [])
     groups.get(key)!.push(e)
   }
@@ -36,10 +42,9 @@ export function computeTimelineGraph(entries: EntryWithParticipants[]): {
   let monthX = 0
   let prevNodeId: string | null = null
   const MONTH_WIDTH = 300
-  const ENTRY_VERTICAL_GAP = 100
+  const ENTRY_GAP = 100
 
   for (const [monthKey, monthEntries] of groups) {
-    // Month label node
     const [year, month] = monthKey.split('-')
     const monthDate = new Date(+year, +month - 1)
     const monthLabel = monthDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
@@ -53,11 +58,10 @@ export function computeTimelineGraph(entries: EntryWithParticipants[]): {
       selectable: false,
     })
 
-    // Entry nodes within this month
     monthEntries.forEach((entry, i) => {
       const nodeId = `entry-${entry.id}`
-      const y = i * ENTRY_VERTICAL_GAP
-      const x = monthX + (i % 2 === 0 ? 40 : 160) // zigzag within month
+      const y = i * ENTRY_GAP
+      const x = monthX + (i % 2 === 0 ? 40 : 160)
 
       nodes.push({
         id: nodeId,
@@ -67,7 +71,6 @@ export function computeTimelineGraph(entries: EntryWithParticipants[]): {
         draggable: false,
       })
 
-      // Edge from previous entry (golden thread)
       if (prevNodeId) {
         edges.push({
           id: `thread-${prevNodeId}-${nodeId}`,

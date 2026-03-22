@@ -5,10 +5,10 @@ import { formatDate } from '@/lib/utils'
 import type { TimelineEntryData } from '@/lib/timelineLayout'
 
 export const TimelineEntryNode = memo(function TimelineEntryNode({ data }: NodeProps) {
-  const { entry } = data as unknown as TimelineEntryData
-  const coverSrc = entry.cover_image_url || ENTRY_TYPE_IMAGES[entry.type]
-  const meta = ENTRY_TYPE_META[entry.type]
-  const Icon = meta.Icon
+  const { entry } = data as TimelineEntryData
+  const coverSrc = entry.cover_image_url || ENTRY_TYPE_IMAGES[entry.type as keyof typeof ENTRY_TYPE_IMAGES]
+  const meta = ENTRY_TYPE_META[entry.type as keyof typeof ENTRY_TYPE_META]
+  const Icon = meta?.Icon
 
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer group">
@@ -19,12 +19,14 @@ export const TimelineEntryNode = memo(function TimelineEntryNode({ data }: NodeP
           alt=""
           className="w-14 h-14 rounded-lg object-cover border-2 border-white/10 group-hover:border-gold/50 transition-colors shadow-lg"
         />
-        <div
-          className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center border border-gold/30"
-          style={{ backgroundColor: meta.borderColor }}
-        >
-          <Icon size={10} className="text-ivory/80" />
-        </div>
+        {Icon && (
+          <div
+            className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center border border-gold/30"
+            style={{ backgroundColor: meta.borderColor }}
+          >
+            <Icon size={10} className="text-ivory/80" />
+          </div>
+        )}
       </div>
       <p className="text-[9px] font-display text-ivory text-center max-w-[100px] truncate leading-tight">
         {entry.title}

@@ -11,9 +11,8 @@ import { TopBar, SectionNav } from '@/components/layout'
 import { Spinner } from '@/components/ui'
 import { TimelineEntryNode } from '@/components/timeline/TimelineEntryNode'
 import { TimelineMonthNode } from '@/components/timeline/TimelineMonthNode'
-import { computeTimelineGraph } from '@/lib/timelineLayout'
-import { fetchEntries } from '@/data/entries'
-import type { EntryWithParticipants } from '@/types/app'
+import { computeTimelineGraph, type TimelineEntryData } from '@/lib/timelineLayout'
+import { fetchTimelineEntries } from '@/data/entries'
 import '@xyflow/react/dist/style.css'
 
 const nodeTypes = {
@@ -26,16 +25,23 @@ const CANVAS_HEIGHT = 'calc(100dvh - 96px)'
 function TimelineCanvas() {
   const navigate = useNavigate()
   const { fitView } = useReactFlow()
-  const [entries, setEntries] = useState<EntryWithParticipants[]>([])
+  const [entries, setEntries] = useState<Array<{ id: string; type: string; title: string; date: string; cover_image_url: string | null }>>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchEntries({})
+    let cancelled = false
+    fetchTimelineEntries()
       .then((data) => {
-        setEntries(data)
-        setLoading(false)
+        if (!cancelled) {
+          setEntries(data)
+          setLoading(false)
+        }
       })
-      .catch(() => setLoading(false))
+      .catch((err) => {
+        console.error('Timeline: failed to fetch entries:', err)
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
   }, [])
 
   const { nodes, edges } = useMemo(() => {
@@ -43,7 +49,6 @@ function TimelineCanvas() {
     return computeTimelineGraph(entries)
   }, [entries])
 
-  // Fit view after nodes render
   useEffect(() => {
     if (nodes.length > 0) {
       setTimeout(() => fitView({ padding: 0.3, duration: 600 }), 100)
@@ -53,7 +58,7 @@ function TimelineCanvas() {
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
       if (node.type === 'timelineEntry') {
-        const data = node.data as unknown as { entry: EntryWithParticipants }
+        const data = node.data as TimelineEntryData
         navigate(`/chronicle/${data.entry.id}`)
       }
     },
