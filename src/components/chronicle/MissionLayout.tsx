@@ -384,7 +384,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
             <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#2C2C2C', fontWeight: 600 }}>{dateEnd ? new Date(dateEnd + 'T12:00:00Z').toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }) : cityInfo?.portName ?? entry.city ?? '\u2014'}</span>
           </div>
           <div className="text-right">
-            <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '7px', fontWeight: 600, letterSpacing: '0.15em', color: '#8B7355', textTransform: 'uppercase', display: 'block' }}>Type</span>
+            <span style={{ fontFamily: "'Instrument Sans', sans-serif", fontSize: '7px', fontWeight: 600, letterSpacing: '0.15em', color: '#8B7355', textTransform: 'uppercase', display: 'block' }}>Duration</span>
             <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#2C2C2C', fontWeight: 600 }}>{duration ?? 'TRANSIT'}</span>
           </div>
         </div>
