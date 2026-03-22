@@ -105,10 +105,11 @@ export function computeGraphData(
     { x: -69, y: 40 },   // bottom-left
     { x: 69, y: 40 },    // bottom-right
   ]
-  const retiredGentPosition = { x: 0, y: 280 } // far below, outer edge
+  const retiredGentPosition = { x: 0, y: 380 } // outermost circle, completely isolated
 
   // Map of gent id → alias for quick lookup
   const gentIdToAlias = new Map<string, GentAlias>()
+  const retiredGentIds = new Set<string>()
   const gentIds = new Set<string>()
 
   // Track active gent index for triangle position assignment
@@ -117,6 +118,7 @@ export function computeGraphData(
   gents.forEach((g) => {
     gentIdToAlias.set(g.id, g.alias)
     gentIds.add(g.id)
+    if (g.retired) retiredGentIds.add(g.id)
 
     const isRetired = g.retired === true
     const pos = isRetired
@@ -137,9 +139,11 @@ export function computeGraphData(
     })
   })
 
-  // 3. Gent ↔ Gent edges (always)
+  // 3. Gent ↔ Gent edges (skip retired — they are orphaned)
   for (let i = 0; i < gents.length; i++) {
+    if (gents[i].retired) continue
     for (let j = i + 1; j < gents.length; j++) {
+      if (gents[j].retired) continue
       const dimmed = focusedGentId !== null || focusedPersonId !== null || (!!searchQuery && searchMatchIds.size > 0)
       edges.push({
         id: `gent-edge-${gents[i].id}-${gents[j].id}`,
@@ -279,6 +283,7 @@ export function computeGraphData(
 
       for (const gId of edgeGentIds) {
         if (!gentIds.has(gId)) continue
+        if (retiredGentIds.has(gId)) continue
         const alias = gentIdToAlias.get(gId) ?? 'lorekeeper'
         const edgeDimmed = (focusedGentId !== null && focusedGentId !== gId)
           || (focusedPersonId !== null && !connectedToFocusedPerson.has(person.id))
