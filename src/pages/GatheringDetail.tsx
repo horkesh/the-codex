@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed } from 'lucide-react'
+import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal } from '@/components/ui'
@@ -83,6 +83,7 @@ export default function GatheringDetail() {
 
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [completing, setCompleting] = useState(false)
+  const [showQrModal, setShowQrModal] = useState(false)
 
   // Push notification prompt for creator
   const { supported: pushSupported, subscribed: pushSubscribed, subscribe: pushSubscribe } = usePushNotifications()
@@ -373,15 +374,18 @@ export default function GatheringDetail() {
                   <p className="text-[10px] text-ivory-dim font-body mt-0.5">Copy to clipboard</p>
                 </button>
               </div>
-              {/* QR code for guestbook */}
-              <div className="flex flex-col items-center gap-2 bg-white rounded-lg p-4">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/g/${entry.id}/guestbook`)}&bgcolor=FFFFFF&color=0a0a0f`}
-                  alt="Guestbook QR Code"
-                  className="w-48 h-48"
-                />
-                <p className="text-xs text-slate-600 font-body">Scan to open guestbook</p>
-              </div>
+              {/* QR code thumbnail — tap to open modal */}
+              <button
+                type="button"
+                onClick={() => setShowQrModal(true)}
+                className="flex items-center gap-3 bg-slate-mid border border-white/8 rounded-lg px-4 py-3 hover:border-white/15 transition-colors"
+              >
+                <QrCode size={20} className="text-gold shrink-0" />
+                <div className="flex-1 text-left">
+                  <p className="text-xs text-ivory font-body">Guestbook QR Code</p>
+                  <p className="text-[10px] text-ivory-dim/60 font-body mt-0.5">Tap to view & download</p>
+                </div>
+              </button>
             </motion.div>
 
             {/* RSVP section */}
@@ -472,6 +476,30 @@ export default function GatheringDetail() {
           onMarkComplete={handleMarkComplete}
           completing={completing}
         />
+
+        {/* QR Code modal */}
+        <Modal isOpen={showQrModal} onClose={() => setShowQrModal(false)} title="Guestbook QR Code">
+          <div className="flex flex-col items-center gap-4 py-2">
+            <div className="bg-white rounded-xl p-5">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(`${window.location.origin}/g/${entry.id}/guestbook`)}&bgcolor=FFFFFF&color=0a0a0f`}
+                alt="Guestbook QR Code"
+                className="w-64 h-64"
+              />
+            </div>
+            <p className="text-xs text-ivory-dim font-body text-center">
+              Guests scan this to sign the guestbook
+            </p>
+            <a
+              href={`https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(`${window.location.origin}/g/${entry.id}/guestbook`)}&bgcolor=FFFFFF&color=0a0a0f&format=png`}
+              download={`${entry.title.replace(/[^a-zA-Z0-9]/g, '-')}-qr.png`}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gold text-obsidian text-sm font-body font-semibold hover:bg-gold/90 transition-colors"
+            >
+              <Download size={16} />
+              Download QR
+            </a>
+          </div>
+        </Modal>
       </>
     )
   }
