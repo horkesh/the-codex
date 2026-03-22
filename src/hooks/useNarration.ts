@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
-export function useNarration(entryId: string) {
+/** @param cacheKey — unique key for storage caching (e.g. entryId, entryId-day-0, entryId-debrief) */
+export function useNarration(cacheKey: string) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -21,7 +22,7 @@ export function useNarration(entryId: string) {
     setGenerating(true)
     try {
       const { data, error } = await supabase.functions.invoke('generate-narration', {
-        body: { text, entry_id: entryId },
+        body: { text, entry_id: cacheKey },
       })
       if (error) throw error
       if (data?.audio_url) {
@@ -39,7 +40,7 @@ export function useNarration(entryId: string) {
     } finally {
       setGenerating(false)
     }
-  }, [entryId])
+  }, [cacheKey])
 
   const play = useCallback(() => {
     if (!audioUrl) return

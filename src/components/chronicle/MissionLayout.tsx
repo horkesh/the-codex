@@ -7,6 +7,7 @@ import { flagEmoji, cn, getCoverCrop } from '@/lib/utils'
 import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw, ChevronDown, ChevronLeft, ChevronRight, Move, Check, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { SoundtrackSection } from '@/components/mission/SoundtrackSection'
+import { ListenButton } from '@/components/ui/ListenButton'
 import { useUIStore } from '@/store/ui'
 import { updateEntry } from '@/data/entries'
 import {
@@ -434,7 +435,10 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
     <>
       {missionDebrief ? (
         <div className="rounded-xl border border-gold/[0.12] bg-gold/[0.04] p-5">
-          <span className="inline-block text-[9px] font-body font-semibold tracking-[0.2em] text-gold uppercase border border-gold/30 px-2.5 py-1 rounded mb-4">Classified</span>
+          <div className="flex items-center justify-between mb-4">
+            <span className="inline-block text-[9px] font-body font-semibold tracking-[0.2em] text-gold uppercase border border-gold/30 px-2.5 py-1 rounded">Classified</span>
+            <ListenButton cacheKey={`${entry.id}-debrief`} text={missionDebrief} size="sm" />
+          </div>
           <p className="text-[13px] text-ivory/70 font-body leading-relaxed whitespace-pre-wrap mb-4">{missionDebrief}</p>
           {landmarks.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-4">
@@ -612,9 +616,12 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
                 {/* Per-day lore — above photos */}
                 {dayNarrative && (
                   <div className="pb-3 shrink-0">
-                    <p className="font-display italic text-ivory/80 text-[14px] leading-relaxed px-1">
-                      {dayNarrative}
-                    </p>
+                    <div className="flex items-start justify-between gap-2 px-1">
+                      <p className="font-display italic text-ivory/80 text-[14px] leading-relaxed flex-1">
+                        {dayNarrative}
+                      </p>
+                      <ListenButton cacheKey={`${entry.id}-day-${dayIdx}`} text={dayNarrative} size="sm" />
+                    </div>
                   </div>
                 )}
 

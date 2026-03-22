@@ -24,7 +24,8 @@ const ENTRY_TYPES: EntryType[] = [
 ]
 
 const currentYear = new Date().getFullYear()
-const YEARS = [currentYear, currentYear - 1]
+const START_YEAR = 2020
+const YEARS = Array.from({ length: currentYear - START_YEAR + 1 }, (_, i) => currentYear - i)
 
 export function ChronicleFilters({ filters, onChange }: ChronicleFiltersProps) {
   const setType = (type: EntryType | undefined) => {
