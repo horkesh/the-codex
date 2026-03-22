@@ -65,6 +65,8 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
   const [carouselHeight, setCarouselHeight] = useState<number | undefined>(undefined)
   const scrollRef = useRef<HTMLDivElement>(null)
   const slideRefs = useRef<(HTMLDivElement | null)[]>([])
+  const touchRef = useRef<{ x: number; y: number; t: number } | null>(null)
+  const isScrollingRef = useRef(false)
 
   // Cover photo adjust state
   const [coverEditing, setCoverEditing] = useState(false)
@@ -201,19 +203,45 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
 
   function scrollToPage(page: number) {
     if (!scrollRef.current) return
+    isScrollingRef.current = true
     const el = scrollRef.current
     const width = el.offsetWidth
     el.scrollTo({ left: page * width, behavior: 'smooth' })
+    setActivePage(page)
+    const activeSlide = slideRefs.current[page]
+    if (activeSlide) setCarouselHeight(activeSlide.scrollHeight)
+    // Clear scrolling flag after animation completes
+    setTimeout(() => { isScrollingRef.current = false }, 400)
   }
 
   function handleScroll() {
-    if (!scrollRef.current) return
+    // Only update page from scroll position when not programmatically scrolling
+    if (isScrollingRef.current || !scrollRef.current) return
     const el = scrollRef.current
     const page = Math.round(el.scrollLeft / el.offsetWidth)
-    setActivePage(page)
-    // Match container height to active slide
-    const activeSlide = slideRefs.current[page]
-    if (activeSlide) setCarouselHeight(activeSlide.scrollHeight)
+    if (page !== activePage) {
+      setActivePage(page)
+      const activeSlide = slideRefs.current[page]
+      if (activeSlide) setCarouselHeight(activeSlide.scrollHeight)
+    }
+  }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() }
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (!touchRef.current) return
+    const dx = e.changedTouches[0].clientX - touchRef.current.x
+    const dy = e.changedTouches[0].clientY - touchRef.current.y
+    const dt = Date.now() - touchRef.current.t
+    touchRef.current = null
+    // Must be more horizontal than vertical, and meaningful distance or fast
+    if (Math.abs(dx) < Math.abs(dy) * 1.2) return
+    const fast = Math.abs(dx) / dt > 0.3
+    if (Math.abs(dx) < 40 && !fast) return
+    if (dx < 0 && activePage < totalPages - 1) scrollToPage(activePage + 1)
+    else if (dx > 0 && activePage > 0) scrollToPage(activePage - 1)
   }
 
   // Set initial height from first slide
@@ -522,11 +550,13 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide items-start"
-          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', height: carouselHeight ? `${carouselHeight}px` : undefined, transition: 'height 0.3s ease' }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="flex overflow-x-auto overflow-y-hidden scrollbar-hide items-start"
+          style={{ scrollbarWidth: 'none', height: carouselHeight ? `${carouselHeight}px` : undefined, transition: 'height 0.3s ease', touchAction: 'pan-y' }}
         >
           {/* PAGE 1: Visa Card + Intelligence Report */}
-          <div ref={el => { slideRefs.current[0] = el }} className="snap-center shrink-0 w-full px-4">
+          <div ref={el => { slideRefs.current[0] = el }} className="shrink-0 w-full px-4">
             {visaCard}
 
             {/* City timeline */}
@@ -569,7 +599,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
             const supportingPhotos = dayPhotos.slice(1)
             const dayNarrative = dayLore[0] ?? null
             return (
-              <div key={day.day} ref={el => { slideRefs.current[dayIdx + 1] = el }} className="snap-center shrink-0 w-full px-4 flex flex-col">
+              <div key={day.day} ref={el => { slideRefs.current[dayIdx + 1] = el }} className="shrink-0 w-full px-4 flex flex-col">
                 {/* Day header */}
                 <div className="mb-3 shrink-0">
                   <p className="text-[10px] font-body font-semibold tracking-[0.2em] text-gold/50 uppercase mb-1">
