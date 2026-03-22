@@ -43,6 +43,11 @@ Private lifestyle chronicle app for The Gents. Deployed at https://the-codex-sep
 | Mission photo analysis | `gemini-2.5-flash` | Per-photo vision: scene type, venue, food, gents, ephemera, mood, quality score |
 | Mission narrative generation | `claude-sonnet-4-6` | Multi-stage: per-scene, per-day (briefing/narrative/debrief), trip arc, verdict. Soundtrack-aware prose. |
 | Mission single-scene regen | `claude-sonnet-4-6` | Director's Cut: regenerate one scene narrative with director's note context |
+| Noir narrator rewrite | `claude-haiku-4-5-20251001` | Rewrites lore in 1940s hardboiled voice before TTS |
+| Text-to-speech narration | OpenAI `tts-1` (`onyx` voice) | Deep male narrator for lore/debrief audio |
+| Soundtrack suggestion | `claude-haiku-4-5-20251001` | Suggests real Spotify track from lore mood/context |
+| Spotify search | Spotify Web API (Client Credentials) | Track search for mission soundtrack selection |
+| PS5 trash talk | `claude-haiku-4-5-20251001` | Personality-aware match commentary + roast + rivalry arc |
 
 **Critical model notes:**
 - `gemini-2.0-flash` is deprecated for new API keys (404 "no longer available to new users"). Use `gemini-2.5-flash`.
@@ -574,10 +579,33 @@ User-toggleable CSS filters applied to video feed, captured image, and export co
 - CSS scanline overlay + pulsing red "LIVE" indicator for broadcast aesthetic.
 - Linked from Ledger page.
 
-## Planned features (need API keys)
-- **AI Narrator Voice**: TTS for lore (needs `OPENAI_API_KEY` or ElevenLabs key in Supabase secrets)
-- **Memory Mixtape**: Spotify-linked playlists from entries (needs Spotify OAuth credentials)
-- **Annual Film**: Auto-generated year-in-review video from photos + lore
+## AI Narrator Voice
+- **Listen button** on every entry with lore (via `ListenButton` component) + per-section on missions (debrief + each day).
+- **Noir rewrite**: Before TTS, Claude Haiku rewrites lore in 1940s hardboiled noir detective voice. Original lore unchanged — only spoken narration gets noir treatment. Enabled by default (`noir=true` param).
+- **OpenAI TTS**: `tts-1` model, `onyx` voice (deep male narrator). Edge function: `generate-narration`.
+- **Caching**: MP3s stored in `narrations` Supabase Storage bucket. Cache key per section (`{entryId}`, `{entryId}-debrief`, `{entryId}-day-0`).
+- **Hook**: `useNarration(cacheKey)` — manages generation, caching, play/stop, cleanup on unmount.
+
+## Mission Soundtrack
+- Each mission gets a theme song. Auto-suggested by Claude Haiku after lore generation, searchable via Spotify.
+- **Edge functions**: `spotify-search` (Client Credentials flow, cached token), `suggest-soundtrack` (Claude Haiku suggests song from lore).
+- **Data**: `entry.metadata.soundtrack` — `{ name, artist, album, spotify_url, album_art, suggested_by }`.
+- **UI**: `SoundtrackSection` on MissionLayout — album art, song name, artist, Spotify link, "Change" button, search modal with AI suggest.
+- **Spotify keys**: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` in Supabase secrets.
+
+## PS5 Rivalry Broadcast (upgraded)
+- **ELO system** (`src/lib/elo.ts`): K=32, dynamic ratings from match history.
+- **Match Commentary**: 2-3 sentence ESPN-style broadcast + devastating trash talk roast + rivalry arc narrative.
+- **Memory**: Last 5 trash talk lines stored in localStorage, passed to Claude to avoid repetition. Full context: H2H record, streak, ELO, recent results, season context.
+- **Audio**: "Play Commentary" button reads commentary + trash talk aloud via TTS narrator.
+- **Season Awards**: Quarterly MVP + Biggest Choker computed from match data.
+- **Wall of Shame**: Gent with worst current form (lowest ELO or longest losing streak).
+- **News Ticker**: Auto-generated headlines from data (streak records, dominance stats).
+- **Personality-aware**: Claude knows each gent's traits (Keys=strategic, Bass=aggressive, Lorekeeper=tactical).
+
+## Planned features
+- **Memory Mixtape**: Spotify-linked playlists from entries (infrastructure built, needs playlist creation flow)
+- **Annual Film**: Auto-generated year-in-review video from photos + lore (client-side Canvas/MediaRecorder)
 
 ## Related projects (for reference)
 - `C:\...\Tonight` — Social game app. Source of avatar prompt patterns.
