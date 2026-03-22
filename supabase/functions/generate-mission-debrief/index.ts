@@ -45,7 +45,7 @@ ${GENT_VISUAL_ID}
 
 ${photoSection}
 
-IMPORTANT: NEVER describe the operatives' physical appearances — no bald heads, mustaches, beards, builds, hair. The visual guide is ONLY for identifying who is in photos. Write about what they DID, not what they look like.
+IMPORTANT: NEVER describe the operatives' physical appearances — no bald heads, mustaches, beards, builds, hair, clothing as identifiers. The visual guide is ONLY for photo identification. If scene data mentions physical descriptions, replace with first names. Only refer to operatives by name or codename.
 
 Your task:
 1. Write a 2-3 paragraph CLASSIFIED MISSION DEBRIEF in formal diplomatic language. Write as if you are an intelligence analyst filing a report. Use phrases like "Operatives deployed to...", "Surveillance confirmed...", "Field intelligence suggests...", "Subject was observed...". Reference specific details from the photos or lore.

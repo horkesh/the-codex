@@ -99,7 +99,7 @@ ${GENT_VISUAL_ID}
 For EACH photo (identified by its [Photo ID]), return a JSON object with these fields:
 - scene_type: one of "restaurant", "bar", "street", "landmark", "transport", "hotel", "market", "nature", "interior", "group_shot", "food", "selfie", "other"
 - venue_name: name of venue/place if visible from signage, menus, or context (null if unknown). Use the [Nearby] hint if it matches what you see.
-- description: one sentence describing what's happening in the photo
+- description: one sentence describing what's happening in the photo. IMPORTANT: if you identify any Gents, use their FIRST NAMES in the description — never describe them by physical features ("the bald man", "the bearded one"). Write "Haris taking a selfie" not "the bald man taking a selfie". The readers are the Gents themselves.
 - gents_present: array of first names of identified Gents (from the visual guide above). Empty array if none visible.
 - food_drinks: array of specific items visible (e.g. "wagyu tataki", "gin & tonic", "Turkish coffee"). Empty array if none.
 - ephemera: array of objects {type, text, context} for any readable text — menus, signs, tickets, receipts, boarding passes, labels. type is one of "menu", "sign", "ticket", "receipt", "boarding_pass", "label", "other".
