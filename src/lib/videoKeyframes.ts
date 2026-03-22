@@ -14,10 +14,20 @@ export async function extractKeyframes(
   const url = URL.createObjectURL(videoFile)
   const video = document.createElement('video')
   video.muted = true
+  video.playsInline = true
   video.preload = 'auto'
+  // iOS requires a brief play() before seeking is allowed
+  video.setAttribute('playsinline', '')
 
   return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      URL.revokeObjectURL(url)
+      console.warn('Video metadata load timed out:', videoFile.name)
+      resolve([])
+    }, 15000)
+
     video.onloadedmetadata = async () => {
+      clearTimeout(timeout)
       const duration = video.duration
       if (!duration || !isFinite(duration)) {
         URL.revokeObjectURL(url)
@@ -25,20 +35,37 @@ export async function extractKeyframes(
         return
       }
 
+      // iOS: must play briefly before seeking works
+      try {
+        await video.play()
+        video.pause()
+      } catch {
+        // play() may fail silently — seeking might still work
+      }
+
       // Calculate frame times
       const totalFrames = Math.min(
         Math.floor(duration / intervalSeconds),
         maxFrames
       )
+      if (totalFrames === 0) {
+        // Video shorter than interval — grab one frame from the middle
+        URL.revokeObjectURL(url)
+        resolve([])
+        return
+      }
+
       const times: number[] = []
       for (let i = 0; i < totalFrames; i++) {
-        times.push(i * intervalSeconds + intervalSeconds / 2) // Center of each interval
+        times.push(i * intervalSeconds + intervalSeconds / 2)
       }
 
       // Set up canvas
-      const scale = Math.min(1, maxWidth / video.videoWidth)
-      const w = Math.round(video.videoWidth * scale)
-      const h = Math.round(video.videoHeight * scale)
+      const vw = video.videoWidth || 640
+      const vh = video.videoHeight || 480
+      const scale = Math.min(1, maxWidth / vw)
+      const w = Math.round(vw * scale)
+      const h = Math.round(vh * scale)
       const canvas = document.createElement('canvas')
       canvas.width = w
       canvas.height = h
@@ -46,16 +73,21 @@ export async function extractKeyframes(
 
       const frames: { blob: Blob; timestampSeconds: number }[] = []
 
+      // Detect WebP support for toBlob
+      const supportsWebP = canvas.toDataURL('image/webp').startsWith('data:image/webp')
+      const mimeType = supportsWebP ? 'image/webp' : 'image/jpeg'
+      const quality = supportsWebP ? 0.75 : 0.85
+
       for (const time of times) {
         try {
           await seekTo(video, time)
           ctx.drawImage(video, 0, 0, w, h)
           const blob = await new Promise<Blob>((res, rej) => {
-            canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/webp', 0.75)
+            canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), mimeType, quality)
           })
           frames.push({ blob, timestampSeconds: time })
-        } catch {
-          // Skip frames that fail to seek/capture
+        } catch (err) {
+          console.warn(`Frame extraction failed at ${time}s:`, err)
         }
       }
 
@@ -64,21 +96,25 @@ export async function extractKeyframes(
     }
 
     video.onerror = () => {
+      clearTimeout(timeout)
       URL.revokeObjectURL(url)
-      reject(new Error('Failed to load video'))
+      reject(new Error(`Failed to load video: ${videoFile.name}`))
     }
 
     video.src = url
+    // iOS: force load
+    video.load()
   })
 }
 
 /** Seek video to specific time and wait for frame to be ready */
 function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Seek timeout')), 5000)
+    const timeout = setTimeout(() => reject(new Error(`Seek timeout at ${time}s`)), 8000)
     video.onseeked = () => {
       clearTimeout(timeout)
-      resolve()
+      // Small delay for frame to render on canvas
+      setTimeout(resolve, 50)
     }
     video.currentTime = time
   })
@@ -127,7 +163,7 @@ export async function extractAudioClip(
 
     return encodeWav(channelData, sampleRate)
   } catch {
-    return null // Video may not have audio track
+    return null
   }
 }
 
@@ -144,8 +180,8 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   writeString(8, 'WAVE')
   writeString(12, 'fmt ')
   view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)       // PCM
-  view.setUint16(22, 1, true)       // Mono
+  view.setUint16(20, 1, true)
+  view.setUint16(22, 1, true)
   view.setUint32(24, sampleRate, true)
   view.setUint32(28, sampleRate * 2, true)
   view.setUint16(32, 2, true)

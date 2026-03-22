@@ -62,8 +62,9 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
             const frames = await extractKeyframes(file, { maxFrames: 5, maxWidth: 1024 })
             if (frames.length > 0) {
               for (const { blob, timestampSeconds } of frames) {
-                const frameName = `${file.name.replace(/\.[^.]+$/, '')}_${Math.round(timestampSeconds)}s.webp`
-                expandedFiles.push(new File([blob], frameName, { type: 'image/webp' }))
+                const ext = blob.type === 'image/webp' ? 'webp' : 'jpg'
+                const frameName = `${file.name.replace(/\.[^.]+$/, '')}_${Math.round(timestampSeconds)}s.${ext}`
+                expandedFiles.push(new File([blob], frameName, { type: blob.type }))
               }
               videoProcessed = true
             } else {
