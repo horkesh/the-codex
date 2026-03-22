@@ -65,38 +65,27 @@ export default function Chronicle() {
 
   return (
     <>
-      <TopBar
-        title="Chronicle"
-        right={
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => navigate('/chronicle/timeline')}
-              className="flex items-center justify-center w-8 h-8 text-ivory-muted hover:text-ivory transition-colors"
-              aria-label="Timeline"
-            >
-              <GitBranch size={18} strokeWidth={1.75} />
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/chronicle/photos')}
-              className="flex items-center justify-center w-8 h-8 text-ivory-muted hover:text-ivory transition-colors"
-              aria-label="Photo timeline"
-            >
-              <Images size={18} strokeWidth={1.75} />
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/dossier')}
-              className="flex items-center justify-center w-8 h-8 text-ivory-muted hover:text-ivory transition-colors"
-              aria-label="Dossier map"
-            >
-              <Globe size={18} strokeWidth={1.75} />
-            </button>
-          </div>
-        }
-      />
+      <TopBar title="Chronicle" />
       <SectionNav />
+
+      {/* Sub-menu bar */}
+      <nav className="flex items-stretch border-b border-white/6" style={{ background: 'rgba(20, 16, 25, 0.88)' }}>
+        {[
+          { icon: GitBranch, label: 'Timeline', path: '/chronicle/timeline' },
+          { icon: Images, label: 'Photos', path: '/chronicle/photos' },
+          { icon: Globe, label: 'Map', path: '/dossier' },
+        ].map(s => (
+          <button
+            key={s.path}
+            type="button"
+            onClick={() => navigate(s.path)}
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-ivory-dim hover:text-gold transition-colors"
+          >
+            <s.icon size={16} />
+            <span className="text-[9px] font-body uppercase tracking-wider">{s.label}</span>
+          </button>
+        ))}
+      </nav>
 
       <PageWrapper padded={false} className="flex flex-col">
         <OnboardingTip
