@@ -8,6 +8,7 @@ import { extractLocationFromPhoto, extractExifDate, haversineMetres, getDevicePo
 import type { LocationFill } from '@/lib/geo'
 import { fetchLocations } from '@/data/locations'
 import { isVideoFile, extractKeyframes } from '@/lib/videoKeyframes'
+import { useUIStore } from '@/store/ui'
 
 /** Check if a canvas has any non-transparent pixels (detects blank HEVC renders) */
 function isCanvasBlank(canvas: HTMLCanvasElement): boolean {
@@ -149,8 +150,10 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
       }
       setProcessingLabel(null)
       if (skippedVideos.length > 0) {
-        const { addToast } = await import('@/store/ui').then(m => ({ addToast: m.useUIStore.getState().addToast }))
-        addToast(`${skippedVideos.length} video${skippedVideos.length > 1 ? 's' : ''} skipped (unsupported format). Try converting to MP4/H.264.`, 'error')
+        useUIStore.getState().addToast(
+          `${skippedVideos.length} video${skippedVideos.length > 1 ? 's' : ''} skipped (unsupported format). Try converting to MP4/H.264.`,
+          'error',
+        )
       }
 
       // Re-apply the cap after expansion
