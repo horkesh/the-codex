@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download } from 'lucide-react'
+import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download, Image } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal } from '@/components/ui'
@@ -385,6 +385,22 @@ export default function GatheringDetail() {
                   <p className="text-xs text-ivory font-body">Guestbook QR Code</p>
                   <p className="text-[10px] text-ivory-dim/60 font-body mt-0.5">Tap to view & download</p>
                 </div>
+              </button>
+            </motion.div>
+
+            {/* Export to Studio */}
+            <motion.div variants={staggerItem}>
+              <button
+                type="button"
+                onClick={() => navigate(`/studio?entry=${entry.id}`)}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-slate-mid border border-gold/20 hover:border-gold/40 transition-colors"
+              >
+                <Image size={18} className="text-gold shrink-0" />
+                <div className="flex-1 text-left">
+                  <p className="text-xs text-ivory font-body font-medium">Export to Studio</p>
+                  <p className="text-[10px] text-ivory-dim/60 font-body mt-0.5">Create a shareable invite card</p>
+                </div>
+                <ChevronRight size={14} className="text-gold/50 shrink-0" />
               </button>
             </motion.div>
 
