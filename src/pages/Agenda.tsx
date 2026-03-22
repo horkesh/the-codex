@@ -20,6 +20,13 @@ const SUB_SECTIONS = [
     path: '/agenda/scouting',
     image: '/images/sections/scouting.webp',
   },
+  {
+    id: 'upcoming',
+    label: 'Upcoming',
+    subtitle: 'Gatherings on the calendar',
+    path: '/agenda/upcoming',
+    image: '/images/sections/bucket-list.webp',
+  },
 ]
 
 export default function Agenda() {

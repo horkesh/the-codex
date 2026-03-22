@@ -33,6 +33,7 @@ const StoryDetail = lazy(() => import('@/pages/StoryDetail'))
 const DossierMap = lazy(() => import('@/pages/DossierMap'))
 const BucketList = lazy(() => import('@/pages/BucketList'))
 const Agenda = lazy(() => import('@/pages/Agenda'))
+const UpcomingGatherings = lazy(() => import('@/pages/UpcomingGatherings'))
 const GentProfile = lazy(() => import('@/pages/GentProfile'))
 const PhotoTimeline = lazy(() => import('@/pages/PhotoTimeline'))
 const ToastDraftReview = lazy(() => import('@/pages/ToastDraftReview'))
@@ -77,6 +78,7 @@ function AnimatedRoutes() {
           <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
           <Route path="/agenda/wishlist" element={<ProtectedRoute><BucketList /></ProtectedRoute>} />
           <Route path="/agenda/scouting" element={<ProtectedRoute><Prospects /></ProtectedRoute>} />
+          <Route path="/agenda/upcoming" element={<ProtectedRoute><UpcomingGatherings /></ProtectedRoute>} />
           {/* Legacy redirects */}
           <Route path="/bucket-list" element={<Navigate to="/agenda/wishlist" replace />} />
           <Route path="/prospects" element={<Navigate to="/agenda/scouting" replace />} />
