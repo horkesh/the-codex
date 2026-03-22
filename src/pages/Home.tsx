@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { motion } from 'framer-motion'
-import { Wine, Camera, Lock } from 'lucide-react'
+import { Wine, Camera, Lock, Sparkles } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { useAuthStore } from '@/store/auth'
 import { NAV_SECTIONS } from '@/lib/navigation'
@@ -158,6 +158,16 @@ export default function Home() {
 
         {/* Quick actions */}
         <div className="pb-6 flex flex-col gap-3">
+          <Link
+            to="/codex-ai"
+            className="w-full bg-slate-dark rounded-xl p-4 border border-gold/20 text-left flex items-center gap-3 active:scale-[0.98] transition-transform no-underline"
+          >
+            <Sparkles size={20} className="text-gold shrink-0" />
+            <div>
+              <p className="text-ivory font-body text-sm font-semibold">Ask The Codex</p>
+              <p className="text-ivory-dim font-body text-xs">AI-powered chronicle intelligence</p>
+            </div>
+          </Link>
           <Link
             to="/momento"
             className="w-full bg-slate-dark rounded-xl p-4 border border-gold/20 text-left flex items-center gap-3 active:scale-[0.98] transition-transform no-underline"

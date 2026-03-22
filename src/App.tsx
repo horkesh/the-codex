@@ -41,6 +41,7 @@ const Timeline = lazy(() => import('@/pages/Timeline'))
 const ToastDraftReview = lazy(() => import('@/pages/ToastDraftReview'))
 const Momento = lazy(() => import('@/pages/Momento'))
 const Vaults = lazy(() => import('@/pages/Vaults'))
+const CodexAI = lazy(() => import('@/pages/CodexAI'))
 const RivalryDashboard = lazy(() => import('@/pages/RivalryDashboard'))
 const VisaRedirect = lazy(() => import('@/pages/VisaRedirect'))
 const PublicInvite = lazy(() => import('@/pages/public/PublicInvite'))
@@ -99,6 +100,7 @@ function AnimatedRoutes() {
           <Route path="/circle/:id" element={<ProtectedRoute><PersonDetail /></ProtectedRoute>} />
           <Route path="/momento" element={<ProtectedRoute><Momento /></ProtectedRoute>} />
           <Route path="/vaults" element={<ProtectedRoute><Vaults /></ProtectedRoute>} />
+          <Route path="/codex-ai" element={<ProtectedRoute><CodexAI /></ProtectedRoute>} />
           <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
           <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
           <Route path="/ledger/rivalry" element={<ProtectedRoute><RivalryDashboard /></ProtectedRoute>} />
