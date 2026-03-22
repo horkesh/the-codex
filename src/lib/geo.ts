@@ -14,6 +14,8 @@ export interface LocationFill {
   lng?: number
   /** Set when the GPS coords matched a saved Place within 200m. */
   matchedPlaceName?: string
+  /** Full street address from Google Places formattedAddress */
+  address?: string
   /** Date from the last photo's EXIF (for mission end-date auto-fill) */
   lastPhotoDate?: string
   /** If true, overwrite existing form values. If false/undefined, only fill empty fields. */

@@ -137,6 +137,13 @@ export interface PS5Match {
   winner: GentAlias | null
 }
 
+// Pizza menu item for pizza party gatherings
+export type PizzaMenuItem = {
+  name: string
+  toppings: string[]
+  [key: string]: string | string[]
+}
+
 // Gathering metadata
 export interface GatheringMetadata {
   event_date: string
@@ -148,6 +155,13 @@ export interface GatheringMetadata {
   qr_code_url: string | null
   guest_book_count: number
   phase: 'pre' | 'post'
+  flavour?: 'pizza_party'
+  pizza_menu?: PizzaMenuItem[]
+  venue?: string
+  address?: string
+  lat?: number
+  lng?: number
+  rsvp_unseen_count?: number
 }
 
 // Person tiers for mind map
