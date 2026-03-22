@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { formatDate, daysUntil } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import { PizzaSvg, TOPPING_REGISTRY } from '@/lib/pizzaSvg'
 import { buildStaticMapUrl } from '@/export/templates/shared/utils'
 
@@ -17,6 +17,151 @@ interface Entry {
 
 type RsvpResponse = 'attending' | 'maybe' | 'not_attending'
 
+/* ── animation helpers ── */
+function fadeUp(delay: number) {
+  return {
+    initial: { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.5, delay, ease: 'easeOut' as const },
+  }
+}
+
+function fadeIn(delay: number) {
+  return {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    transition: { duration: 0.5, delay, ease: 'easeOut' as const },
+  }
+}
+
+/* ── countdown digit with scale pulse ── */
+function CountdownDigit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div
+        className="w-14 h-14 flex items-center justify-center rounded-lg border"
+        style={{
+          background: 'rgba(255,255,255,0.05)',
+          borderColor: 'rgba(212,132,58,0.3)',
+          boxShadow: '0 0 12px rgba(212,132,58,0.08)',
+        }}
+      >
+        <AnimatePresence mode="popLayout">
+          <motion.span
+            key={value}
+            initial={{ scale: 1.15, opacity: 0.6 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.85, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="text-2xl font-semibold tabular-nums"
+            style={{ color: '#F0EDE8', fontFamily: 'var(--font-display)' }}
+          >
+            {value}
+          </motion.span>
+        </AnimatePresence>
+      </div>
+      <span
+        className="text-[9px] uppercase tracking-widest"
+        style={{ color: 'rgba(140,134,128,0.7)', fontFamily: 'var(--font-body)' }}
+      >
+        {label}
+      </span>
+    </div>
+  )
+}
+
+/* ── flip pizza card ── */
+function FlipPizzaCard({
+  pizza,
+  index,
+  flipped,
+  onFlip,
+}: {
+  pizza: { name: string; toppings: string[] }
+  index: number
+  flipped: boolean
+  onFlip: () => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -30, rotate: -3 }}
+      animate={{ opacity: 1, x: 0, rotate: 0 }}
+      transition={{ duration: 0.5, delay: 0.9 + index * 0.1, ease: 'easeOut' }}
+    >
+      <div
+        onClick={onFlip}
+        style={{ perspective: '800px', cursor: 'pointer' }}
+      >
+        <motion.div
+          animate={{ rotateY: flipped ? 180 : 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          style={{ transformStyle: 'preserve-3d', position: 'relative' }}
+          className="rounded-xl"
+        >
+          {/* Front face */}
+          <div
+            className="rounded-xl p-4 flex flex-col items-center justify-center"
+            style={{
+              backfaceVisibility: 'hidden',
+              background: 'rgba(255,255,255,0.04)',
+              minHeight: 80,
+              display: flipped ? 'none' : 'flex',
+            }}
+          >
+            <p
+              className="text-base text-center"
+              style={{ color: '#F0EDE8', fontFamily: 'var(--font-display)' }}
+            >
+              {pizza.name}
+            </p>
+            <p
+              className="text-[10px] mt-1.5"
+              style={{ color: 'rgba(140,134,128,0.4)', fontFamily: 'var(--font-body)' }}
+            >
+              Tap to reveal
+            </p>
+          </div>
+
+          {/* Back face */}
+          <div
+            className="rounded-xl p-3 flex items-center gap-3"
+            style={{
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+              background: 'rgba(255,255,255,0.04)',
+              minHeight: 80,
+              display: flipped ? 'flex' : 'none',
+            }}
+          >
+            <PizzaSvg toppings={pizza.toppings} size={64} seed={pizza.name || `p-${index}`} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm" style={{ color: '#F0EDE8', fontFamily: 'var(--font-display)' }}>
+                {pizza.name}
+              </p>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {pizza.toppings.map((t) => (
+                  <span
+                    key={t}
+                    className="text-[9px] px-1.5 py-0.5 rounded-full"
+                    style={{
+                      background: 'rgba(212,132,58,0.12)',
+                      color: '#D4843A',
+                      fontFamily: 'var(--font-body)',
+                    }}
+                  >
+                    {TOPPING_REGISTRY[t]?.label ?? t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
+  )
+}
+
+/* ── main component ── */
 export default function PublicInvite() {
   const { slug } = useParams<{ slug: string }>()
 
@@ -31,6 +176,46 @@ export default function PublicInvite() {
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  const [flipped, setFlipped] = useState<Set<number>>(new Set())
+
+  const metadata = (entry?.metadata ?? {}) as Record<string, unknown>
+  const eventDate = metadata.event_date as string | undefined
+  const metaLocation = metadata.location as string | undefined
+
+  const isPizzaParty = metadata?.flavour === 'pizza_party'
+  const pizzaMenu = isPizzaParty
+    ? ((metadata?.pizza_menu as Array<{ name: string; toppings: string[] }>) ?? [])
+    : []
+  const lat = metadata?.lat as number | undefined
+  const lng = metadata?.lng as number | undefined
+  const venue = metadata?.venue as string | undefined
+  const address = metadata?.address as string | undefined
+
+  /* ── live countdown ── */
+  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 })
+
+  useEffect(() => {
+    if (!eventDate) return
+    const target = new Date(eventDate + 'T00:00:00').getTime()
+    function tick() {
+      const diff = Math.max(0, target - Date.now())
+      setTimeLeft({
+        d: Math.floor(diff / 86400000),
+        h: Math.floor((diff % 86400000) / 3600000),
+        m: Math.floor((diff % 3600000) / 60000),
+        s: Math.floor((diff % 60000) / 1000),
+      })
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [eventDate])
+
+  const countdownActive =
+    eventDate != null &&
+    timeLeft.d + timeLeft.h + timeLeft.m + timeLeft.s > 0
+
+  /* ── data fetch ── */
   useEffect(() => {
     if (!slug) return
 
@@ -55,6 +240,7 @@ export default function PublicInvite() {
     fetchEntry()
   }, [slug])
 
+  /* ── RSVP handler ── */
   async function handleRsvp(e: React.FormEvent) {
     e.preventDefault()
     if (!response || submitting) return
@@ -79,24 +265,34 @@ export default function PublicInvite() {
     }
   }
 
-  const metadata = (entry?.metadata ?? {}) as Record<string, unknown>
-  const eventDate = metadata.event_date as string | undefined
-  const metaLocation = metadata.location as string | undefined
-  const countdown = eventDate ? daysUntil(eventDate) : null
-
-  const isPizzaParty = metadata?.flavour === 'pizza_party'
-  const pizzaMenu = isPizzaParty ? (metadata?.pizza_menu as Array<{ name: string; toppings: string[] }>) ?? [] : []
-  const lat = metadata?.lat as number | undefined
-  const lng = metadata?.lng as number | undefined
-  const venue = metadata?.venue as string | undefined
-  const address = metadata?.address as string | undefined
+  function toggleFlip(i: number) {
+    setFlipped((prev) => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
 
   const inputClass =
     'w-full bg-[#1A1A1A] border border-white/10 rounded-lg px-4 py-3 text-[#F0EDE8] placeholder-[#8C8680] text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors'
 
+  /* pizza menu card delay end — used to offset map and rsvp */
+  const menuEndDelay = isPizzaParty && pizzaMenu.length > 0
+    ? 0.9 + pizzaMenu.length * 0.1 + 0.2
+    : 0.9
+  const mapDelay = menuEndDelay
+  const rsvpDelay = mapDelay + 0.15
+
   return (
-    <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-start px-4 py-12"
-      style={isPizzaParty ? { background: 'linear-gradient(180deg, #0D0D0D 0%, #1a1510 60%, #0D0D0D 100%)' } : undefined}>
+    <div
+      className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-start px-4 py-12"
+      style={
+        isPizzaParty
+          ? { background: 'linear-gradient(180deg, #0D0D0D 0%, #1a1510 60%, #0D0D0D 100%)' }
+          : undefined
+      }
+    >
       {/* Wordmark */}
       <div
         className="text-xs tracking-[0.3em] uppercase mb-10"
@@ -121,79 +317,99 @@ export default function PublicInvite() {
 
       {/* Invite card */}
       {!loading && entry && (
-        <motion.div
-          className="w-full max-w-sm"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        >
+        <div className="w-full max-w-sm">
           {/* Gold decorative rule */}
-          <div className="h-px bg-gradient-to-r from-transparent via-[#C9A84C] to-transparent" />
+          <motion.div {...fadeIn(0.3)} className="h-px bg-gradient-to-r from-transparent via-[#C9A84C] to-transparent" />
 
           {/* Title */}
-          <h1
+          <motion.h1
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
             className="text-3xl text-[#F0EDE8] text-center mt-6"
             style={{ fontFamily: 'var(--font-display)', fontWeight: 600 }}
           >
             {entry.title}
-          </h1>
+          </motion.h1>
 
           {/* Date + Location */}
-          <p className="text-center text-[#8C8680] text-sm mt-2">
+          <motion.p {...fadeUp(0.6)} className="text-center text-[#8C8680] text-sm mt-2">
             {eventDate ? formatDate(eventDate) : formatDate(entry.date)}
             {metaLocation ? ` · ${metaLocation}` : entry.location ? ` · ${entry.location}` : ''}
-          </p>
+          </motion.p>
 
-          {/* Countdown */}
-          {countdown !== null && countdown > 0 && (
-            <div className="text-center text-[#C9A84C] text-sm mt-1">
-              In {countdown} {countdown === 1 ? 'day' : 'days'}
-            </div>
+          {/* Live countdown */}
+          {countdownActive && (
+            <motion.div {...fadeIn(0.7)} className="flex justify-center gap-3 mt-4">
+              <CountdownDigit value={timeLeft.d} label="days" />
+              <CountdownDigit value={timeLeft.h} label="hrs" />
+              <CountdownDigit value={timeLeft.m} label="min" />
+              <CountdownDigit value={timeLeft.s} label="sec" />
+            </motion.div>
           )}
 
           {/* Description */}
           {entry.description && (
-            <p className="text-[#8C8680] text-sm text-center mt-4 leading-relaxed">
+            <motion.p {...fadeUp(0.8)} className="text-[#8C8680] text-sm text-center mt-4 leading-relaxed">
               {entry.description}
-            </p>
+            </motion.p>
           )}
 
-          {/* Pizza menu */}
+          {/* Pizza menu — flip cards */}
           {isPizzaParty && pizzaMenu.length > 0 && (
             <div className="flex flex-col gap-3 mt-6 w-full">
-              <h3 className="text-xs uppercase tracking-widest text-center" style={{ color: '#D4843A', fontFamily: 'var(--font-body)', letterSpacing: '0.3em' }}>The Menu</h3>
+              <motion.h3
+                {...fadeIn(0.85)}
+                className="text-xs uppercase tracking-widest text-center"
+                style={{ color: '#D4843A', fontFamily: 'var(--font-body)', letterSpacing: '0.3em' }}
+              >
+                The Menu
+              </motion.h3>
               {pizzaMenu.map((pizza, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                  <PizzaSvg toppings={pizza.toppings} size={48} seed={pizza.name || `p-${i}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm" style={{ color: '#F0EDE8', fontFamily: 'var(--font-display)' }}>{pizza.name}</p>
-                    <p className="text-[10px] mt-0.5" style={{ color: 'rgba(140,134,128,0.6)', fontFamily: 'var(--font-body)' }}>
-                      {pizza.toppings.map(t => TOPPING_REGISTRY[t]?.label ?? t).join(' \u00b7 ')}
-                    </p>
-                  </div>
-                </div>
+                <FlipPizzaCard
+                  key={i}
+                  pizza={pizza}
+                  index={i}
+                  flipped={flipped.has(i)}
+                  onFlip={() => toggleFlip(i)}
+                />
               ))}
             </div>
           )}
 
           {/* Map */}
           {lat && lng && (
-            <a href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
-               target="_blank" rel="noopener noreferrer"
-               className="block rounded-lg overflow-hidden mt-4 w-full">
-              <img src={buildStaticMapUrl(lat, lng, { width: 400, height: 160 })}
-                   alt="Map" className="w-full h-28 object-cover" />
-            </a>
+            <motion.a
+              {...fadeIn(mapDelay)}
+              href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-lg overflow-hidden mt-4 w-full"
+            >
+              <img
+                src={buildStaticMapUrl(lat, lng, { width: 400, height: 160 })}
+                alt="Map"
+                className="w-full h-28 object-cover"
+              />
+            </motion.a>
           )}
           {venue && (
-            <p className="text-xs text-center mt-1" style={{ color: 'rgba(140,134,128,0.6)', fontFamily: 'var(--font-body)' }}>
+            <motion.p
+              {...fadeIn(mapDelay + 0.05)}
+              className="text-xs text-center mt-1"
+              style={{ color: 'rgba(140,134,128,0.6)', fontFamily: 'var(--font-body)' }}
+            >
               {venue}{address ? ` \u00b7 ${address}` : ''}
-            </p>
+            </motion.p>
           )}
 
           {/* RSVP Form */}
           {!submitted ? (
-            <form onSubmit={handleRsvp} className="mt-8 flex flex-col gap-3">
+            <motion.form
+              {...fadeUp(rsvpDelay)}
+              onSubmit={handleRsvp}
+              className="mt-8 flex flex-col gap-3"
+            >
               <input
                 name="name"
                 placeholder="Your name"
@@ -257,7 +473,7 @@ export default function PublicInvite() {
               >
                 {submitting ? 'Sending...' : 'Send RSVP'}
               </button>
-            </form>
+            </motion.form>
           ) : (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -272,18 +488,21 @@ export default function PublicInvite() {
           )}
 
           {/* Link to guest book */}
-          <p className="text-center text-xs text-[#8C8680] mt-6">
+          <motion.p {...fadeIn(rsvpDelay + 0.1)} className="text-center text-xs text-[#8C8680] mt-6">
             <a
               href={`/g/${slug}/guestbook`}
               className="hover:text-[#C9A84C] transition-colors"
             >
               Sign the guest book →
             </a>
-          </p>
+          </motion.p>
 
           {/* Bottom gold rule */}
-          <div className="h-px bg-gradient-to-r from-transparent via-[#C9A84C]/30 to-transparent mt-8" />
-        </motion.div>
+          <motion.div
+            {...fadeIn(rsvpDelay + 0.15)}
+            className="h-px bg-gradient-to-r from-transparent via-[#C9A84C]/30 to-transparent mt-8"
+          />
+        </div>
       )}
     </div>
   )
