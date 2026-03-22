@@ -114,6 +114,8 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
         setQuery(suggestion)
         await search(suggestion)
       }
+    } catch (err) {
+      console.error('AI soundtrack suggest failed:', err)
     } finally {
       setSuggesting(false)
     }
@@ -180,7 +182,7 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
         <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
           {results.map((track, i) => (
             <button
-              key={`${track.spotify_url}-${i}`}
+              key={track.spotify_url || `track-${i}`}
               type="button"
               onClick={() => onSelect(track)}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left"

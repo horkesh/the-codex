@@ -17,11 +17,13 @@ export function useSpotifySearch() {
     if (!query.trim()) { setResults([]); return }
     setSearching(true)
     try {
-      const { data } = await supabase.functions.invoke('spotify-search', {
+      const { data, error } = await supabase.functions.invoke('spotify-search', {
         body: { query, limit: 8 },
       })
+      if (error) throw error
       setResults(data?.tracks ?? [])
-    } catch {
+    } catch (err) {
+      console.error('spotify-search failed:', err)
       setResults([])
     } finally {
       setSearching(false)

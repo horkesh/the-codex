@@ -7,11 +7,13 @@ export async function suggestSoundtrack(
   country: string,
 ): Promise<string | null> {
   try {
-    const { data } = await supabase.functions.invoke('suggest-soundtrack', {
+    const { data, error } = await supabase.functions.invoke('suggest-soundtrack', {
       body: { lore, title, city, country },
     })
+    if (error) throw error
     return data?.suggestion ?? null
-  } catch {
+  } catch (err) {
+    console.error('suggest-soundtrack failed:', err)
     return null
   }
 }
