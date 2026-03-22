@@ -8,6 +8,7 @@ import { staggerItem } from '@/lib/animations'
 import { ENTRY_TYPE_IMAGES } from '@/lib/entryTypes'
 import { getFilter } from '@/lib/photoFilters'
 import { getStoredFilter } from '@/hooks/useEntryFilter'
+import { useAuthStore } from '@/store/auth'
 import type { EntryWithParticipants } from '@/types/app'
 
 interface EntryCardProps {
@@ -18,7 +19,12 @@ interface EntryCardProps {
 
 export function EntryCard({ entry, onClick, onTogglePin }: EntryCardProps) {
   const [pinning, setPinning] = useState(false)
+  const gent = useAuthStore((s) => s.gent)
   const filter = getFilter(getStoredFilter(entry.id))
+
+  const isGathering = entry.type === 'gathering'
+  const unseenCount = isGathering ? ((entry.metadata as Record<string, unknown>)?.rsvp_unseen_count as number) ?? 0 : 0
+  const isCreator = gent?.id === entry.created_by
 
   const locationLabel = (() => {
     if (entry.city) {
@@ -109,6 +115,13 @@ export function EntryCard({ entry, onClick, onTogglePin }: EntryCardProps) {
             </button>
           )}
         </div>
+
+        {/* RSVP unseen badge — creator only */}
+        {isGathering && isCreator && unseenCount > 0 && (
+          <span className="absolute top-12 right-3 min-w-[20px] h-5 rounded-full bg-gold flex items-center justify-center text-[10px] font-body text-obsidian font-bold px-1.5">
+            {unseenCount > 9 ? '9+' : unseenCount}
+          </span>
+        )}
       </div>
 
       {/* Card body */}
