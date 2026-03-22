@@ -54,11 +54,18 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // Check cache
+    // Ensure bucket exists (idempotent — no-op if already created)
+    await db.storage.createBucket('narrations', { public: true }).catch(() => {})
+
+    // Check cache — use public URL for public bucket
     const filePath = `${entry_id}.mp3`
-    const { data: existing } = await db.storage.from('narrations').createSignedUrl(filePath, 3600)
-    if (existing?.signedUrl) {
-      return new Response(JSON.stringify({ audio_url: existing.signedUrl }), {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/narrations/${filePath}`
+
+    // Check if file exists by HEAD request
+    const headRes = await fetch(publicUrl, { method: 'HEAD' }).catch(() => null)
+    if (headRes?.ok) {
+      return new Response(JSON.stringify({ audio_url: publicUrl }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -105,10 +112,7 @@ Deno.serve(async (req) => {
       })
     if (uploadErr) console.error('Upload error:', uploadErr)
 
-    // Get signed URL
-    const { data: signed } = await db.storage.from('narrations').createSignedUrl(filePath, 3600)
-
-    return new Response(JSON.stringify({ audio_url: signed?.signedUrl ?? '' }), {
+    return new Response(JSON.stringify({ audio_url: publicUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
