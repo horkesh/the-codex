@@ -177,7 +177,7 @@ async function handleFullMission(body: {
     const hasRetiredOperative = participants.some(p => p.toLowerCase() === 'mirza')
     const gentCount = participants.length === 4 ? 'four' : participants.length === 3 ? 'three' : String(participants.length)
     const retiredDirective = hasRetiredOperative
-      ? `\nRETIRED OPERATIVE: Mirza ("Retired Operative") is present in this mission. He is a former member of The Gents who has since retired from active duty. Write about him with warmth and a hint of nostalgia — acknowledge his presence as special, like a returning legend. A subtle nod is more powerful than a eulogy. He was there. That is what matters.`
+      ? `\nTHE FOURTH MAN: Mirza is present in this mission. At the time of this mission he was still an active member of The Gents — he would later retire from the group. Write about him as a full, active participant. Do NOT treat him as a guest or a returning legend. He was one of them. If you want subtle foreshadowing, you may hint at impermanence — "four at the table, as it was then" or "before the formation would change" — but ONLY once, lightly, and never explicitly mention retirement or leaving. He was there, fully present. Write him that way.`
       : ""
 
     const systemPrompt = `You are the Lorekeeper of The Gents Chronicles — a private lifestyle chronicle of ${gentCount} gentlemen (${participants.join(", ")}). You write in the voice of an intimate, literary narrator who was at every scene.

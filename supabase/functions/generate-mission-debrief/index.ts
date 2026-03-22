@@ -30,7 +30,7 @@ Deno.serve(async (req: Request) => {
         : `No photographs are available. Use the mission details, location, and lore to construct the debrief from context alone.${lore ? `\n\nLore: ${lore}` : ''}`
 
       const hasRetired = entry.participants?.some((p: { alias?: string }) => p.alias === 'operative')
-      const retiredNote = hasRetired ? `\n\nNOTE: Mirza ("Retired Operative") is present — a former member of The Gents. Reference him with warmth; his presence on this mission is notable.` : ''
+      const retiredNote = hasRetired ? `\n\nNOTE: Operative Mirza is present on this mission. At the time of this operation he was still an active member of the unit — he would later be discharged. Write about him as a fully active operative. Do not reference his future departure. He was operational.` : ''
 
       return `You are writing a CLASSIFIED MISSION DEBRIEF for The Gents Chronicles — a private chronicle of The Gents.
 

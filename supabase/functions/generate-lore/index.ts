@@ -179,7 +179,7 @@ Deno.serve(async (req: Request) => {
     const participants = Array.isArray(entry.participants) ? entry.participants : []
     const hasRetiredOperative = participants.some((p: { alias?: string }) => p.alias === 'operative')
     const retiredOperativeDirective = hasRetiredOperative
-      ? `\n\nIMPORTANT CONTEXT: Mirza ("Retired Operative") is present in this entry. He is a former member of The Gents who has since retired from active duty. Write about him with warmth and a hint of nostalgia — acknowledge his presence as special, like a returning legend. Do not be heavy-handed; a subtle nod is more powerful than a eulogy. He was there. That's what matters.`
+      ? `\n\nTHE FOURTH MAN: Mirza is present. At the time of this entry he was still an active member of The Gents — he would later retire from the group. Write about him as a full, active participant. Do NOT treat him as a guest or returning legend. If you want subtle foreshadowing, you may hint at impermanence once — "four at the table, as it was then" — but never mention retirement explicitly. He was there, fully present.`
       : ''
 
     const prompt = `You are the chronicler of The Gents — three sophisticated gentlemen who document their lives together with style and wit. ${lengthInstruction} The prose should be eloquent, slightly self-aware, warm, and feel like an entry in a very exclusive private journal.
