@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Volume2, VolumeX, Loader2 } from 'lucide-react'
 import { Link } from 'react-router'
 import { fetchPS5HeadToHead, fetchPS5Streaks, fetchPS5AllMatches } from '@/data/stats'
 import type { PS5Streak, PS5MatchFlat } from '@/data/stats'
@@ -11,6 +11,85 @@ import type { GentAlias } from '@/types/app'
 import { Spinner } from '@/components/ui'
 import { supabase } from '@/lib/supabase'
 import { fadeIn } from '@/lib/animations'
+
+// ─── Commentary types & localStorage memory ─────────────────────────────────
+
+interface Commentary {
+  commentary: string
+  trash_talk: string
+  arc_narrative: string
+}
+
+const TRASH_TALK_STORAGE_KEY = 'codex_rivalry_trash_talk'
+
+function getPreviousLines(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(TRASH_TALK_STORAGE_KEY) ?? '[]')
+  } catch { return [] }
+}
+
+function saveLine(line: string) {
+  const prev = getPreviousLines()
+  const updated = [line, ...prev].slice(0, 5)
+  localStorage.setItem(TRASH_TALK_STORAGE_KEY, JSON.stringify(updated))
+}
+
+// ─── Season Awards ──────────────────────────────────────────────────────────
+
+function computeSeasonAwards(
+  matches: PS5MatchFlat[],
+): Array<{ title: string; winner: string; description: string }> {
+  const awards: Array<{ title: string; winner: string; description: string }> = []
+
+  const now = new Date()
+  const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
+  const quarterMatches = matches.filter(m => new Date(m.date) >= quarterStart && m.winner)
+
+  if (quarterMatches.length < 3) return []
+
+  const wins: Record<string, number> = {}
+  const losses: Record<string, number> = {}
+  for (const m of quarterMatches) {
+    if (!m.winner) continue
+    wins[m.winner] = (wins[m.winner] ?? 0) + 1
+    const loser = m.winner === m.p1 ? m.p2 : m.p1
+    losses[loser] = (losses[loser] ?? 0) + 1
+  }
+
+  const mvpEntry = Object.entries(wins).sort(([, a], [, b]) => b - a)[0]
+  if (mvpEntry) {
+    awards.push({ title: 'MVP', winner: mvpEntry[0], description: `${mvpEntry[1]} wins this quarter` })
+  }
+
+  const chokerEntry = Object.entries(losses).sort(([, a], [, b]) => b - a)[0]
+  if (chokerEntry && chokerEntry[1] >= 3) {
+    awards.push({ title: 'Biggest Choker', winner: chokerEntry[0], description: `${chokerEntry[1]} losses this quarter` })
+  }
+
+  return awards
+}
+
+// ─── Wall of Shame ──────────────────────────────────────────────────────────
+
+function getWallOfShame(
+  streaks: PS5Streak[],
+  ratings: EloRatings,
+): { alias: string; reason: string } | null {
+  // Find gent on a losing streak (lastResult === 'loss' and currentStreak === 0 means just lost)
+  const losers = streaks.filter(s => s.lastResult === 'loss')
+  if (losers.length > 0) {
+    // Pick the one with the lowest ELO among current losers
+    const sorted = losers.sort((a, b) => (ratings[a.alias] ?? 1200) - (ratings[b.alias] ?? 1200))
+    const worst = sorted[0]
+    return { alias: worst.alias, reason: `Lowest ELO among active losers: ${ratings[worst.alias] ?? 1200}` }
+  }
+
+  // Fall back to lowest ELO overall
+  const entries = Object.entries(ratings)
+  if (entries.length === 0) return null
+  const lowest = entries.sort(([, a], [, b]) => a - b)[0]
+  return { alias: lowest[0], reason: `Lowest ELO rating: ${lowest[1]}` }
+}
 
 // ─── Scanline overlay (CSS) ──────────────────────────────────────────────────
 
@@ -330,7 +409,7 @@ function NewsTicker({ headlines }: { headlines: string[] }) {
 
 // ─── Match Log ───────────────────────────────────────────────────────────────
 
-function RecentMatches({ matches, trashTalk }: { matches: PS5MatchFlat[]; trashTalk: string | null }) {
+function RecentMatches({ matches, trashTalk }: { matches: PS5MatchFlat[]; trashTalk: string | null | undefined }) {
   const recent = useMemo(() => [...matches].reverse().slice(0, 8), [matches])
 
   if (recent.length === 0) return null
@@ -395,7 +474,10 @@ export default function RivalryDashboard() {
   const [streaks, setStreaks] = useState<PS5Streak[]>([])
   const [matches, setMatches] = useState<PS5MatchFlat[]>([])
   const [loading, setLoading] = useState(true)
-  const [trashTalk, setTrashTalk] = useState<string | null>(null)
+  const [commentary, setCommentary] = useState<Commentary | null>(null)
+  const [generatingAudio, setGeneratingAudio] = useState(false)
+  const [playingAudio, setPlayingAudio] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     Promise.all([fetchPS5HeadToHead(), fetchPS5Streaks(), fetchPS5AllMatches()])
@@ -408,27 +490,116 @@ export default function RivalryDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Generate trash talk for the most recent match
+  // Generate commentary for the most recent match
   const trashTalkFetched = useRef(false)
   useEffect(() => {
-    if (matches.length === 0 || trashTalkFetched.current) return
+    if (matches.length === 0 || trashTalkFetched.current || Object.keys(h2h).length === 0) return
     const reversed = [...matches].reverse()
     const latest = reversed[0]
     if (!latest?.winner) return
     trashTalkFetched.current = true
-    const winnerLabel = GENT_LABELS[latest.winner as GentAlias] ?? latest.winner
+
+    const winnerAlias = latest.winner
     const loserAlias = latest.winner === latest.p1 ? latest.p2 : latest.p1
+    const winnerLabel = GENT_LABELS[winnerAlias as GentAlias] ?? winnerAlias
     const loserLabel = GENT_LABELS[loserAlias as GentAlias] ?? loserAlias
+
+    // Compute context for richer prompt
+    const winsVsLoser = h2h[winnerAlias]?.[loserAlias] ?? 0
+    const lossesVsLoser = h2h[loserAlias]?.[winnerAlias] ?? 0
+    const h2hRecord = `${winnerLabel} leads ${winsVsLoser}-${lossesVsLoser} all time`
+    const totalBetween = winsVsLoser + lossesVsLoser
+
+    // Compute streak
+    let streak = 0
+    for (let i = reversed.length - 1; i >= 0; i--) {
+      const m = reversed[i]
+      if ((m.p1 === winnerAlias && m.p2 === loserAlias) || (m.p1 === loserAlias && m.p2 === winnerAlias)) {
+        if (m.winner === winnerAlias) streak++
+        else break
+      }
+    }
+
+    // Recent results
+    const recentResults = reversed
+      .filter(m => (m.p1 === winnerAlias && m.p2 === loserAlias) || (m.p1 === loserAlias && m.p2 === winnerAlias))
+      .slice(0, 5)
+      .map(m => {
+        const w = m.winner ? (GENT_LABELS[m.winner as GentAlias] ?? m.winner) : 'Draw'
+        const l = m.winner === m.p1 ? m.p2 : m.p1
+        return m.winner ? `${w} beat ${GENT_LABELS[l as GentAlias] ?? l}` : 'Draw'
+      })
+
+    // ELO ratings
+    const currentRatings = computeElo(matches.map(m => ({ p1: m.p1, p2: m.p2, winner: m.winner })))
+
+    // Season context
+    const now = new Date()
+    const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
+    const quarterMatches = matches.filter(m => new Date(m.date) >= quarterStart)
+    const seasonContext = `${quarterMatches.length} matches played this quarter`
+
     supabase.functions.invoke('generate-trash-talk', {
       body: {
         winner: winnerLabel,
         loser: loserLabel,
         game: 'PS5',
+        streak,
+        h2h_record: h2hRecord,
+        winner_elo: currentRatings[winnerAlias] ?? 1200,
+        loser_elo: currentRatings[loserAlias] ?? 1200,
+        recent_results: recentResults,
+        previous_lines: getPreviousLines(),
+        total_matches: totalBetween,
+        season_context: seasonContext,
       },
     }).then(({ data }) => {
-      if (data?.trash_talk) setTrashTalk(data.trash_talk)
+      if (data?.trash_talk) {
+        setCommentary({
+          commentary: data.commentary ?? '',
+          trash_talk: data.trash_talk,
+          arc_narrative: data.arc_narrative ?? '',
+        })
+        saveLine(data.trash_talk)
+      }
     }).catch(() => {})
-  }, [matches])
+  }, [matches, h2h])
+
+  // TTS playback
+  async function handlePlayCommentary() {
+    if (!commentary) return
+
+    if (audioRef.current && playingAudio) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setPlayingAudio(false)
+      return
+    }
+
+    if (audioRef.current) {
+      audioRef.current.play()
+      setPlayingAudio(true)
+      return
+    }
+
+    setGeneratingAudio(true)
+    try {
+      const text = `${commentary.commentary} ${commentary.trash_talk}`
+      const { data } = await supabase.functions.invoke('generate-narration', {
+        body: { text, entry_id: `rivalry-${Date.now()}`, voice: 'onyx' },
+      })
+      if (data?.audio_url) {
+        audioRef.current = new Audio(data.audio_url)
+        audioRef.current.onended = () => setPlayingAudio(false)
+        audioRef.current.play()
+        setPlayingAudio(true)
+      }
+    } catch (err) {
+      console.error('Commentary audio failed:', err)
+    } finally {
+      setGeneratingAudio(false)
+    }
+  }
 
   const ratings = useMemo<EloRatings>(
     () => computeElo(matches.map((m) => ({ p1: m.p1, p2: m.p2, winner: m.winner }))),
@@ -441,6 +612,9 @@ export default function RivalryDashboard() {
   )
 
   const totalMatches = matches.filter((m) => m.winner).length
+
+  const seasonAwards = useMemo(() => computeSeasonAwards(matches), [matches])
+  const wallOfShame = useMemo(() => getWallOfShame(streaks, ratings), [streaks, ratings])
 
   return (
     <div
@@ -522,7 +696,83 @@ export default function RivalryDashboard() {
           <HeadToHeadGrid h2h={h2h} />
           <WinProbabilityBar h2h={h2h} ratings={ratings} />
           <StreaksPanel streaks={streaks} />
-          <RecentMatches matches={matches} trashTalk={trashTalk} />
+          <RecentMatches matches={matches} trashTalk={commentary?.trash_talk ?? null} />
+
+          {/* Match Commentary */}
+          {commentary && (
+            <section className="mb-8">
+              <h3 className="text-[10px] tracking-[0.25em] text-gold/60 uppercase font-body font-semibold mb-3">
+                Match Commentary
+              </h3>
+
+              {/* Commentary */}
+              {commentary.commentary && (
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 mb-3">
+                  <p className="text-sm font-body text-ivory/80 leading-relaxed">{commentary.commentary}</p>
+                </div>
+              )}
+
+              {/* Trash talk */}
+              <div className="border-l-2 border-red-500/40 pl-4 py-2 mb-3">
+                <p className="text-sm font-display text-red-400/80 italic">&ldquo;{commentary.trash_talk}&rdquo;</p>
+              </div>
+
+              {/* Arc narrative */}
+              {commentary.arc_narrative && (
+                <div className="border-l-2 border-gold/30 pl-4 py-2">
+                  <p className="text-xs font-body text-ivory-dim/60 italic">{commentary.arc_narrative}</p>
+                </div>
+              )}
+
+              {/* Play commentary button — TTS */}
+              <button
+                type="button"
+                onClick={handlePlayCommentary}
+                disabled={generatingAudio}
+                className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/10 border border-gold/20 text-xs font-body text-gold hover:bg-gold/15 transition-colors disabled:opacity-40"
+              >
+                {generatingAudio ? (
+                  <><Loader2 size={12} className="animate-spin" /> Generating...</>
+                ) : playingAudio ? (
+                  <><VolumeX size={12} /> Stop</>
+                ) : (
+                  <><Volume2 size={12} /> Play Commentary</>
+                )}
+              </button>
+            </section>
+          )}
+
+          {/* Season Awards */}
+          {seasonAwards.length > 0 && (
+            <section className="mb-8">
+              <h3 className="text-[10px] tracking-[0.25em] text-gold/60 uppercase font-body font-semibold mb-3">
+                Season Awards
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {seasonAwards.map(a => (
+                  <div key={a.title} className="bg-white/[0.03] border border-gold/15 rounded-xl p-3 text-center">
+                    <p className="text-[9px] font-body text-gold/50 uppercase tracking-widest">{a.title}</p>
+                    <p className="text-sm font-display text-gold mt-1">{GENT_LABELS[a.winner as GentAlias] ?? a.winner}</p>
+                    <p className="text-[10px] font-body text-ivory-dim/40 mt-0.5">{a.description}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Wall of Shame */}
+          {wallOfShame && (
+            <section className="mb-8">
+              <h3 className="text-[10px] tracking-[0.25em] text-red-400/60 uppercase font-body font-semibold mb-3">
+                Wall of Shame
+              </h3>
+              <div className="bg-red-950/20 border border-red-500/15 rounded-xl p-4 text-center">
+                <p className="text-2xl font-display text-red-400/80">{GENT_LABELS[wallOfShame.alias as GentAlias] ?? wallOfShame.alias}</p>
+                <p className="text-xs font-body text-red-400/40 mt-1">{wallOfShame.reason}</p>
+                <p className="text-[10px] font-body text-ivory-dim/30 mt-2 italic">May they find peace in their next session.</p>
+              </div>
+            </section>
+          )}
         </motion.div>
       )}
     </div>

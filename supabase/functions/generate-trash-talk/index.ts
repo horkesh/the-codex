@@ -7,7 +7,20 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { winner, loser, game, streak, h2h_record } = await req.json()
+    const {
+      winner,
+      loser,
+      game,
+      streak,
+      h2h_record,
+      winner_elo,
+      loser_elo,
+      recent_results,
+      previous_lines,
+      total_matches,
+      season_context,
+    } = await req.json()
+
     if (!winner || !loser) {
       return new Response(JSON.stringify({ error: 'winner and loser required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -17,24 +30,42 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
 
-    let context = ''
-    if (streak && streak > 1) context += `\nThe winner is on a ${streak}-game win streak.`
-    if (h2h_record) context += `\nHead-to-head record: ${h2h_record}.`
+    const recentResultsStr = Array.isArray(recent_results)
+      ? recent_results.join(', ')
+      : 'No recent results'
+    const previousLinesStr = Array.isArray(previous_lines) && previous_lines.length > 0
+      ? previous_lines.map((l: string, i: number) => `${i + 1}. "${l}"`).join('\n')
+      : 'None yet'
 
-    const prompt = `You are the official trash talk commentator for The Gents — a group of three friends who have a fierce PS5 rivalry.
+    const prompt = `You are the official sports commentator and trash talk broadcaster for The Gents PS5 Rivalry — a fierce gaming competition between three friends.
 
-The gents and their personalities:
-- Keys (Almedin, "Keys & Cocktails"): The oldest, sophisticated, thinks he's the best. Plays strategically.
-- Bass (Vedad, "Beard & Bass"): The biggest, competitive, hates losing. Plays aggressively.
-- Lorekeeper (Haris, "Lorekeeper"): The tactical one, analytical. Keeps records of everything.
+THE COMPETITORS:
+- Keys (Almedin, "Keys & Cocktails"): The oldest. Sophisticated, strategic, thinks he's above everyone. When he wins, it's "calculated." When he loses, it's "the controller was lagging."
+- Bass (Vedad, "Beard & Bass"): The biggest. Pure aggression, hates losing more than anything. Will blame the game, the TV, the alignment of the planets — anything but himself.
+- Lorekeeper (Haris, "Lorekeeper"): The tactician. Keeps spreadsheets of results. Will remind you of a loss from 18 months ago. Plays mind games before the match even starts.
 
-Generate ONE devastating, funny, personalized trash talk line about this match result. Be savage but friendly — like roasting your best friend. Reference their known personality traits, past rivalries, and gaming style. Keep it to 1-2 sentences max.
-
-Make it specific to the game, the players involved, and any streak/record context provided.
-
+MATCH RESULT:
 Winner: ${winner}
 Loser: ${loser}
-Game: ${game || 'PS5'}${context}`
+Game: ${game || 'PS5'}
+
+RIVALRY CONTEXT:
+- Head-to-head: ${h2h_record || 'Unknown'}
+- Winner's current streak: ${streak ?? 0} wins in a row against ${loser}
+- ELO ratings: ${winner} (${winner_elo ?? '?'}) vs ${loser} (${loser_elo ?? '?'})
+- Recent results: ${recentResultsStr}
+- Season: ${season_context || 'Unknown'}
+- Total matches between them: ${total_matches ?? '?'}
+
+PREVIOUS COMMENTARY (DO NOT repeat themes or structures from these):
+${previousLinesStr}
+
+Generate THREE things:
+1. COMMENTARY: A 2-3 sentence sports-broadcast-style match report. Dramatic, vivid, reference the specific context. Like ESPN SportsCenter covering this match.
+2. TRASH_TALK: ONE devastating, personalized roast of the loser. Savage but friendly. Reference their known personality. Make it hurt (lovingly).
+3. ARC: ONE sentence describing where this rivalry is heading. Is this a dynasty? A comeback? A collapse? A changing of the guard?
+
+Return as JSON: { "commentary": "...", "trash_talk": "...", "arc_narrative": "..." }`
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -45,7 +76,7 @@ Game: ${game || 'PS5'}${context}`
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 150,
+        max_tokens: 500,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
@@ -56,9 +87,23 @@ Game: ${game || 'PS5'}${context}`
     }
 
     const data = await res.json()
-    const trashTalk = data.content?.[0]?.text?.trim() ?? ''
+    const raw = data.content?.[0]?.text?.trim() ?? ''
 
-    return new Response(JSON.stringify({ trash_talk: trashTalk }), {
+    // Parse JSON from response (may be wrapped in markdown code block)
+    let parsed: { commentary?: string; trash_talk?: string; arc_narrative?: string }
+    try {
+      const jsonStr = raw.replace(/^```json?\s*/i, '').replace(/\s*```$/, '')
+      parsed = JSON.parse(jsonStr)
+    } catch {
+      // Fallback: treat whole response as trash_talk for backward compat
+      parsed = { commentary: '', trash_talk: raw, arc_narrative: '' }
+    }
+
+    return new Response(JSON.stringify({
+      commentary: parsed.commentary ?? '',
+      trash_talk: parsed.trash_talk ?? '',
+      arc_narrative: parsed.arc_narrative ?? '',
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
