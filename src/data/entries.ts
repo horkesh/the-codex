@@ -30,12 +30,14 @@ export async function fetchEntries(filters?: {
   year?: number
   ids?: string[]
   currentGentId?: string
+  includeStatuses?: string[]
 }): Promise<EntryWithParticipants[]> {
   // Build the entries query
+  const statuses = filters?.includeStatuses ?? ['published', 'gathering_post']
   let query = supabase
     .from('entries')
     .select(ENTRY_COLUMNS)
-    .in('status', ['published', 'gathering_post'])
+    .in('status', statuses)
     .order('pinned', { ascending: false })
     .order('date', { ascending: false })
 

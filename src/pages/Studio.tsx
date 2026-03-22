@@ -636,7 +636,7 @@ export default function Studio() {
       return
     }
     let cancelled = false
-    fetchEntries({})
+    fetchEntries({ includeStatuses: ['published', 'gathering_post', 'gathering_pre'] })
       .then((fetched) => {
         if (cancelled) return
         setEntries(fetched)
