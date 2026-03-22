@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { X, Plus } from 'lucide-react'
+import { X, Plus, MapPin } from 'lucide-react'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Input, DatePicker } from '@/components/ui'
+import { PizzaMenuBuilder } from '@/components/gathering/PizzaMenuBuilder'
+import { LocationSearchModal } from '@/components/places/LocationSearchModal'
+import { buildStaticMapUrl } from '@/export/templates/shared/utils'
 import { createEntry, updateEntry } from '@/data/entries'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { cn } from '@/lib/utils'
-import type { GatheringMetadata } from '@/types/app'
+import type { GatheringMetadata, PizzaMenuItem } from '@/types/app'
+import type { LocationFill } from '@/lib/geo'
 
 export default function GatheringNew() {
   const navigate = useNavigate()
@@ -28,6 +32,17 @@ export default function GatheringNew() {
   // Guest list
   const [guestInput, setGuestInput] = useState('')
   const [guests, setGuests] = useState<string[]>([])
+
+  // Pizza party
+  const [flavour, setFlavour] = useState<'pizza_party' | undefined>(undefined)
+  const [pizzaMenu, setPizzaMenu] = useState<PizzaMenuItem[]>([])
+
+  // Location modal
+  const [showLocationModal, setShowLocationModal] = useState(false)
+  const [venue, setVenue] = useState('')
+  const [address, setAddress] = useState('')
+  const [lat, setLat] = useState<number | undefined>()
+  const [lng, setLng] = useState<number | undefined>()
 
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<{ title?: string; eventDate?: string; location?: string }>({})
@@ -58,11 +73,20 @@ export default function GatheringNew() {
     setGuests(prev => prev.filter(g => g !== name))
   }
 
+  function handleLocationSelect(fill: LocationFill) {
+    if (fill.location) { setLocation(fill.location); setVenue(fill.location) }
+    if (fill.address) setAddress(fill.address)
+    if (fill.city) setCity(fill.city)
+    if (fill.lat) setLat(fill.lat)
+    if (fill.lng) setLng(fill.lng)
+    setShowLocationModal(false)
+  }
+
   function validate(): boolean {
     const errs: typeof errors = {}
     if (!title.trim()) errs.title = 'Title is required'
     if (!eventDate) errs.eventDate = 'Event date is required'
-    if (!location.trim()) errs.location = 'Location is required'
+    if (!venue && !location.trim()) errs.location = 'Location is required'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -77,25 +101,31 @@ export default function GatheringNew() {
     try {
       const metadata: GatheringMetadata = {
         event_date: eventDate,
-        location: location.trim(),
+        location: (venue || location).trim(),
         guest_list: guests.map(name => ({
           name,
           person_id: null,
           rsvp_status: 'pending' as const,
         })),
-        cocktail_menu: cocktails,
+        cocktail_menu: flavour === 'pizza_party' ? [] : cocktails,
         invite_image_url: null,
         rsvp_link: null,
         qr_code_url: null,
         guest_book_count: 0,
         phase: 'pre',
+        flavour,
+        pizza_menu: flavour === 'pizza_party' ? pizzaMenu : undefined,
+        venue: venue || undefined,
+        address: address || undefined,
+        lat,
+        lng,
       }
 
       const entry = await createEntry({
         type: 'gathering',
         title: title.trim(),
         date: eventDate,
-        location: location.trim() || undefined,
+        location: (venue || location).trim() || undefined,
         city: city.trim() || undefined,
         description: description.trim() || undefined,
         metadata: metadata as unknown as Record<string, unknown>,
@@ -130,6 +160,21 @@ export default function GatheringNew() {
             error={errors.title}
           />
 
+          {/* Flavour */}
+          <div className="flex gap-2">
+            {([undefined, 'pizza_party'] as const).map(f => (
+              <button key={f ?? 'regular'} type="button"
+                onClick={() => { setFlavour(f); if (f !== 'pizza_party') setPizzaMenu([]) }}
+                className={cn(
+                  'flex-1 py-2 rounded-lg text-xs font-body transition-all border',
+                  flavour === f ? 'bg-gold/15 border-gold/50 text-gold' : 'bg-white/5 border-white/10 text-ivory-dim hover:border-white/20',
+                )}
+              >
+                {f === 'pizza_party' ? 'Pizza Party' : 'Regular'}
+              </button>
+            ))}
+          </div>
+
           {/* Event Date */}
           <DatePicker
             label="Event Date"
@@ -139,13 +184,39 @@ export default function GatheringNew() {
           />
 
           {/* Location */}
-          <Input
-            label="Location"
-            placeholder="Bar Dupont"
-            value={location}
-            onChange={e => setLocation(e.target.value)}
-            error={errors.location}
-          />
+          <div className="flex flex-col gap-2">
+            <label className="text-ivory-muted text-xs uppercase tracking-widest font-body">
+              Location
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowLocationModal(true)}
+              className={cn(
+                'flex items-center gap-2 h-10 bg-slate-mid border text-sm font-body',
+                'rounded-[--radius-md] px-3 transition-colors text-left',
+                venue || location.trim()
+                  ? 'border-white/10 text-ivory'
+                  : 'border-white/10 text-ivory-dim/50',
+                errors.location && 'border-red-500/50',
+              )}
+            >
+              <MapPin size={14} className="text-gold shrink-0" />
+              <span className="truncate">{venue || location.trim() || 'Select a venue'}</span>
+            </button>
+            {address && (
+              <p className="text-[10px] text-ivory-dim/60 font-body">{address}</p>
+            )}
+            {lat && lng && (
+              <img
+                src={buildStaticMapUrl(lat, lng, { width: 400, height: 120 })}
+                alt="Map preview"
+                className="w-full h-24 object-cover rounded-lg mt-1"
+              />
+            )}
+            {errors.location && (
+              <p className="text-red-400 text-xs font-body">{errors.location}</p>
+            )}
+          </div>
 
           {/* City */}
           <Input
@@ -164,8 +235,11 @@ export default function GatheringNew() {
             onChange={e => setDescription(e.target.value)}
           />
 
-          {/* Cocktail Menu */}
-          <div className="flex flex-col gap-2">
+          {/* Pizza Menu (pizza party only) */}
+          {flavour === 'pizza_party' && <PizzaMenuBuilder pizzas={pizzaMenu} onChange={setPizzaMenu} />}
+
+          {/* Cocktail Menu (regular only) */}
+          {flavour !== 'pizza_party' && <div className="flex flex-col gap-2">
             <label className="text-ivory-muted text-xs uppercase tracking-widest font-body">
               Cocktail Menu
             </label>
@@ -218,7 +292,7 @@ export default function GatheringNew() {
                 ))}
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Guest List */}
           <div className="flex flex-col gap-2">
@@ -290,6 +364,13 @@ export default function GatheringNew() {
 
         </form>
       </PageWrapper>
+
+      {showLocationModal && (
+        <LocationSearchModal
+          onSelect={handleLocationSelect}
+          onClose={() => setShowLocationModal(false)}
+        />
+      )}
     </>
   )
 }
