@@ -8,6 +8,7 @@ import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw, ChevronDown, ChevronLeft, ChevronRight, Move, Check, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { SoundtrackSection } from '@/components/mission/SoundtrackSection'
 import { ListenButton } from '@/components/ui/ListenButton'
+import { stopGlobalAudio } from '@/lib/audioManager'
 import { useUIStore } from '@/store/ui'
 import { updateEntry } from '@/data/entries'
 import {
@@ -205,6 +206,7 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
 
   function scrollToPage(page: number) {
     if (!scrollRef.current) return
+    stopGlobalAudio() // Stop any playing narration when swiping between pages
     isScrollingRef.current = true
     const el = scrollRef.current
     const width = el.offsetWidth
