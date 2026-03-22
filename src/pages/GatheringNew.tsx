@@ -1,16 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { X, Plus, MapPin } from 'lucide-react'
+import { X, Plus, MapPin, Crosshair } from 'lucide-react'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Input, DatePicker } from '@/components/ui'
 import { PizzaMenuBuilder } from '@/components/gathering/PizzaMenuBuilder'
 import { LocationSearchModal } from '@/components/places/LocationSearchModal'
+import { MapPicker } from '@/components/places/MapPicker'
 import { buildStaticMapUrl } from '@/export/templates/shared/utils'
+import { reverseGeocode } from '@/lib/geo'
 import { createEntry, updateEntry } from '@/data/entries'
+import { fetchLocations } from '@/data/locations'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { cn } from '@/lib/utils'
-import type { GatheringMetadata, PizzaMenuItem } from '@/types/app'
+import type { GatheringMetadata, PizzaMenuItem, SavedLocation } from '@/types/app'
 import type { LocationFill } from '@/lib/geo'
 
 export default function GatheringNew() {
@@ -37,12 +40,16 @@ export default function GatheringNew() {
   const [flavour, setFlavour] = useState<'pizza_party' | undefined>(undefined)
   const [pizzaMenu, setPizzaMenu] = useState<PizzaMenuItem[]>([])
 
-  // Location modal
+  // Location modal + map picker
   const [showLocationModal, setShowLocationModal] = useState(false)
+  const [showMapPicker, setShowMapPicker] = useState(false)
   const [venue, setVenue] = useState('')
   const [address, setAddress] = useState('')
   const [lat, setLat] = useState<number | undefined>()
   const [lng, setLng] = useState<number | undefined>()
+  const [savedPlaces, setSavedPlaces] = useState<SavedLocation[]>([])
+
+  useEffect(() => { fetchLocations().then(setSavedPlaces) }, [])
 
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<{ title?: string; eventDate?: string; location?: string }>({})
@@ -80,6 +87,22 @@ export default function GatheringNew() {
     if (fill.lat) setLat(fill.lat)
     if (fill.lng) setLng(fill.lng)
     setShowLocationModal(false)
+  }
+
+  async function handlePinConfirm(pinLat: number, pinLng: number) {
+    setLat(pinLat)
+    setLng(pinLng)
+    setShowMapPicker(false)
+    // Reverse geocode to get city/country
+    try {
+      const addr = await reverseGeocode(pinLat, pinLng)
+      if (addr) {
+        if (addr.city) setCity(addr.city)
+        if (!venue) setVenue(addr.city ?? 'Pinned Location')
+        setLocation(addr.city ?? 'Pinned Location')
+        if (addr.address) setAddress(addr.address)
+      }
+    } catch { /* silent — coords are enough */ }
   }
 
   function validate(): boolean {
@@ -189,21 +212,31 @@ export default function GatheringNew() {
             <label className="text-ivory-muted text-xs uppercase tracking-widest font-body">
               Location
             </label>
-            <button
-              type="button"
-              onClick={() => setShowLocationModal(true)}
-              className={cn(
-                'flex items-center gap-2 h-10 bg-slate-mid border text-sm font-body',
-                'rounded-[--radius-md] px-3 transition-colors text-left',
-                venue || location.trim()
-                  ? 'border-white/10 text-ivory'
-                  : 'border-white/10 text-ivory-dim/50',
-                errors.location && 'border-red-500/50',
-              )}
-            >
-              <MapPin size={14} className="text-gold shrink-0" />
-              <span className="truncate">{venue || location.trim() || 'Select a venue'}</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowLocationModal(true)}
+                className={cn(
+                  'flex-1 flex items-center gap-2 h-10 bg-slate-mid border text-sm font-body',
+                  'rounded-[--radius-md] px-3 transition-colors text-left',
+                  venue || location.trim()
+                    ? 'border-white/10 text-ivory'
+                    : 'border-white/10 text-ivory-dim/50',
+                  errors.location && 'border-red-500/50',
+                )}
+              >
+                <MapPin size={14} className="text-gold shrink-0" />
+                <span className="truncate">{venue || location.trim() || 'Search a place'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMapPicker(true)}
+                className="h-10 w-10 shrink-0 flex items-center justify-center bg-slate-mid border border-white/10 rounded-[--radius-md] text-ivory-dim hover:text-gold hover:border-gold/30 transition-colors"
+                title="Drop a pin on map"
+              >
+                <Crosshair size={16} />
+              </button>
+            </div>
             {address && (
               <p className="text-[10px] text-ivory-dim/60 font-body">{address}</p>
             )}
@@ -370,6 +403,15 @@ export default function GatheringNew() {
         <LocationSearchModal
           onSelect={handleLocationSelect}
           onClose={() => setShowLocationModal(false)}
+          savedPlaces={savedPlaces}
+        />
+      )}
+      {showMapPicker && (
+        <MapPicker
+          lat={lat}
+          lng={lng}
+          onConfirm={handlePinConfirm}
+          onClose={() => setShowMapPicker(false)}
         />
       )}
     </>
