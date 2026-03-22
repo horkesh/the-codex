@@ -662,8 +662,8 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
 
         {/* Director's notes + controls below carousel */}
         <div className="px-4">
-          {/* Only show overall lore below carousel if no per-day lore exists */}
-          {!dayEpisodes.some(d => d.lore) && loreSlot && <div className="mt-2">{loreSlot}</div>}
+          {/* Lore section — always show (contains Director's Notes input) */}
+          {loreSlot && <div className="mt-2">{loreSlot}</div>}
           {controlsSection}
         </div>
 

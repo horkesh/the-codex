@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
-import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, Edit2, Pin, X as XIcon, Type } from 'lucide-react'
+import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, Edit2, Pin, X as XIcon, Type, StickyNote } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Avatar } from '@/components/ui'
@@ -55,12 +55,13 @@ interface OptionsMenuProps {
   onEdit: () => void
   onExport: () => void
   onDelete: () => void
+  onDirectorNotes?: () => void
 }
 
 function OptionsMenu({
   isOpen, onClose, isCreator, hasLore, regeneratingLore,
   isPinned, entryType, currentFlavour, onTogglePin,
-  onGenerateLore, onRegenerateLore, onSetFlavour, onEdit, onExport, onDelete,
+  onGenerateLore, onRegenerateLore, onSetFlavour, onEdit, onExport, onDelete, onDirectorNotes,
 }: OptionsMenuProps) {
   const flavourOptions = entryType ? FLAVOUR_OPTIONS[entryType] : undefined
   return (
@@ -109,6 +110,16 @@ function OptionsMenu({
             <span className="font-body text-sm">
               {regeneratingLore ? 'Regenerating lore...' : 'Regenerate Lore'}
             </span>
+          </button>
+        )}
+        {isCreator && onDirectorNotes && (
+          <button
+            type="button"
+            className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
+            onClick={() => { onDirectorNotes(); onClose() }}
+          >
+            <StickyNote size={18} className="text-gold shrink-0" />
+            <span className="font-body text-sm">Director's Notes</span>
           </button>
         )}
         <button
@@ -825,6 +836,10 @@ export default function EntryDetail() {
         onEdit={() => navigate(`/chronicle/${entry.id}/edit`)}
         onExport={handleExportToStudio}
         onDelete={() => setDeleteOpen(true)}
+        onDirectorNotes={() => {
+          const el = document.getElementById('lore-section')
+          if (el) el.scrollIntoView({ behavior: 'smooth' })
+        }}
       />
 
       {/* Delete confirmation modal */}
