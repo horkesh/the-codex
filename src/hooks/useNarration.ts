@@ -21,6 +21,20 @@ export function useNarration(cacheKey: string) {
     }
   }, [])
 
+  /** Replace the current Audio object, cleaning up the old one */
+  function setAudio(url: string): HTMLAudioElement {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.onended = null
+      audioRef.current.onerror = null
+    }
+    const audio = new Audio(url)
+    audio.onended = () => setPlaying(false)
+    audio.onerror = () => setPlaying(false)
+    audioRef.current = audio
+    return audio
+  }
+
   const generate = useCallback(async (text: string) => {
     setGenerating(true)
     try {
@@ -30,11 +44,7 @@ export function useNarration(cacheKey: string) {
       if (error) throw error
       if (data?.audio_url) {
         setAudioUrl(data.audio_url)
-        // Auto-play after generation
-        const audio = new Audio(data.audio_url)
-        audio.onended = () => setPlaying(false)
-        audio.onerror = () => setPlaying(false)
-        audioRef.current = audio
+        const audio = setAudio(data.audio_url)
         audio.play()
         setPlaying(true)
       }
@@ -47,17 +57,12 @@ export function useNarration(cacheKey: string) {
 
   const play = useCallback(() => {
     if (!audioUrl) return
-    if (!audioRef.current) {
-      audioRef.current = new Audio(audioUrl)
-      audioRef.current.onended = () => setPlaying(false)
-      audioRef.current.onerror = () => setPlaying(false)
-    }
     if (playing) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
+      audioRef.current?.pause()
       setPlaying(false)
     } else {
-      audioRef.current.play()
+      if (!audioRef.current) setAudio(audioUrl)
+      audioRef.current!.play()
       setPlaying(true)
     }
   }, [audioUrl, playing])

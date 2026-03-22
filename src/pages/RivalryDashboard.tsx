@@ -489,6 +489,11 @@ export default function RivalryDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
+  const ratings = useMemo<EloRatings>(
+    () => computeElo(matches.map((m) => ({ p1: m.p1, p2: m.p2, winner: m.winner }))),
+    [matches],
+  )
+
   // Generate commentary for the most recent match
   const trashTalkFetched = useRef(false)
   useEffect(() => {
@@ -530,7 +535,7 @@ export default function RivalryDashboard() {
       })
 
     // ELO ratings
-    const currentRatings = computeElo(matches.map(m => ({ p1: m.p1, p2: m.p2, winner: m.winner })))
+    const currentRatings = ratings
 
     // Season context
     const now = new Date()
@@ -562,18 +567,13 @@ export default function RivalryDashboard() {
         saveLine(data.trash_talk)
       }
     }).catch(() => {})
-  }, [matches, h2h])
+  }, [matches, h2h, ratings])
 
   function handlePlayCommentary() {
     if (!commentary) return
     if (commentaryAudioUrl) playAudio()
     else generateAudio(`${commentary.commentary} ${commentary.trash_talk}`)
   }
-
-  const ratings = useMemo<EloRatings>(
-    () => computeElo(matches.map((m) => ({ p1: m.p1, p2: m.p2, winner: m.winner }))),
-    [matches],
-  )
 
   const headlines = useMemo(
     () => generateHeadlines(h2h, ratings, streaks, GENT_LABELS),

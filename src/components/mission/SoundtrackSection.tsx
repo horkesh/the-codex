@@ -116,6 +116,7 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
       }
     } catch (err) {
       console.error('AI soundtrack suggest failed:', err)
+      useUIStore.getState().addToast('Could not suggest a soundtrack', 'error')
     } finally {
       setSuggesting(false)
     }

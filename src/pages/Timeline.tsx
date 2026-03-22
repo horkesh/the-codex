@@ -71,7 +71,7 @@ export default function Timeline() {
                 {/* Entries */}
                 <motion.div
                   variants={staggerContainer}
-                  initial="initial"
+                  initial={false}
                   whileInView="animate"
                   viewport={{ once: true }}
                   className="flex flex-col gap-2"
