@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -147,15 +147,17 @@ export default function GatheringDetail() {
     setPushPromptShown(true)
   }, [entry, gent, pushSupported, pushSubscribed])
 
-  // Reset unseen RSVP count for creator
+  // Reset unseen RSVP count for creator (once per mount)
+  const [unseenReset, setUnseenReset] = useState(false)
   useEffect(() => {
-    if (!id || !entry || !gent) return
+    if (unseenReset || !id || !entry || !gent) return
     if (entry.created_by !== gent.id) return
     const m = entry.metadata as Record<string, unknown>
     if (m?.rsvp_unseen_count && (m.rsvp_unseen_count as number) > 0) {
+      setUnseenReset(true)
       updateGatheringMetadata(id, { rsvp_unseen_count: 0 }).catch(() => {})
     }
-  }, [id, entry, gent])
+  }, [id, entry?.id, gent?.id, unseenReset])
 
   async function handleMarkComplete() {
     if (!id) return
@@ -215,11 +217,14 @@ export default function GatheringDetail() {
 
   const meta = entry.metadata as unknown as GatheringMetadata
   const isPreEvent = entry.status === 'gathering_pre' || meta.phase === 'pre'
+  const rsvpCounts = useMemo(() => ({
+    attendingCount: rsvps.filter(r => r.response === 'attending').length,
+    maybeCount: rsvps.filter(r => r.response === 'maybe').length,
+  }), [rsvps])
 
   // ── Pre-event view ────────────────────────────────────────────────────────────
   if (isPreEvent) {
-    const attendingCount = rsvps.filter(r => r.response === 'attending').length
-    const maybeCount = rsvps.filter(r => r.response === 'maybe').length
+    const { attendingCount, maybeCount } = rsvpCounts
 
     return (
       <>

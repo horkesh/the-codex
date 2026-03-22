@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 type ToppingShape = 'blob' | 'circle' | 'halfmoon' | 'leaf' | 'ring' | 'strip' | 'square' | 'chunk' | 'shred'
 
 interface ToppingDef {
@@ -51,7 +53,7 @@ interface PizzaSvgProps {
   className?: string
 }
 
-export function PizzaSvg({ toppings, size, seed = 'pizza', className }: PizzaSvgProps) {
+export const PizzaSvg = memo(function PizzaSvg({ toppings, size, seed = 'pizza', className }: PizzaSvgProps) {
   const r = size / 2
   const crustWidth = r * 0.12
   const sauceR = r - crustWidth - r * 0.04
@@ -102,7 +104,7 @@ export function PizzaSvg({ toppings, size, seed = 'pizza', className }: PizzaSvg
       {toppingElements}
     </svg>
   )
-}
+})
 
 function renderTopping(def: ToppingDef, x: number, y: number, baseSize: number, rotation: number, key: number): React.ReactNode {
   const rot = rotation * 360

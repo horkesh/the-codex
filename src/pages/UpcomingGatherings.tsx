@@ -16,12 +16,14 @@ export default function UpcomingGatherings() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('entries')
-        .select('*')
+        .select('id, title, date, location, metadata')
         .eq('type', 'gathering')
         .eq('status', 'gathering_pre')
         .order('date', { ascending: true })
+        .limit(20)
+      if (error) console.error('Failed to fetch upcoming gatherings:', error.message)
       setGatherings((data as Entry[]) ?? [])
       setLoading(false)
     }

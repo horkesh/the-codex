@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrandMark, GoldRule, FONT } from '@/export/templates/shared'
-import { formatDate } from '@/lib/utils'
+import { formatDate, daysUntil } from '@/lib/utils'
 import type { EntryWithParticipants, GatheringMetadata, PizzaMenuItem } from '@/types/app'
 
 interface Props {
@@ -9,14 +9,6 @@ interface Props {
 
 const BRICK = '#D4843A'
 const BRICK_DIM = 'rgba(212,132,58,0.35)'
-
-function daysUntil(dateStr: string): number {
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-  const target = new Date(dateStr)
-  target.setHours(0, 0, 0, 0)
-  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-}
 
 const PizzaPartyCountdown = React.forwardRef<HTMLDivElement, Props>(({ entry }, ref) => {
   const meta = (entry.metadata ?? {}) as unknown as GatheringMetadata
