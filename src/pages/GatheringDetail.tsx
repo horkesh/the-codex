@@ -159,6 +159,11 @@ export default function GatheringDetail() {
     }
   }, [id, entry?.id, gent?.id, unseenReset])
 
+  const rsvpCounts = useMemo(() => ({
+    attendingCount: rsvps.filter(r => r.response === 'attending').length,
+    maybeCount: rsvps.filter(r => r.response === 'maybe').length,
+  }), [rsvps])
+
   async function handleMarkComplete() {
     if (!id) return
     setCompleting(true)
@@ -217,10 +222,6 @@ export default function GatheringDetail() {
 
   const meta = entry.metadata as unknown as GatheringMetadata
   const isPreEvent = entry.status === 'gathering_pre' || meta.phase === 'pre'
-  const rsvpCounts = useMemo(() => ({
-    attendingCount: rsvps.filter(r => r.response === 'attending').length,
-    maybeCount: rsvps.filter(r => r.response === 'maybe').length,
-  }), [rsvps])
 
   // ── Pre-event view ────────────────────────────────────────────────────────────
   if (isPreEvent) {
