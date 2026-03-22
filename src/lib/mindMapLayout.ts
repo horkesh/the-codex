@@ -105,7 +105,7 @@ export function computeGraphData(
     { x: -69, y: 40 },   // bottom-left
     { x: 69, y: 40 },    // bottom-right
   ]
-  const retiredGentPosition = { x: 0, y: -160 } // above the formation
+  const retiredGentPosition = { x: 0, y: 280 } // far below, outer edge
 
   // Map of gent id → alias for quick lookup
   const gentIdToAlias = new Map<string, GentAlias>()
