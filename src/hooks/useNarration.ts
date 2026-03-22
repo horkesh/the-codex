@@ -13,6 +13,9 @@ export function useNarration(cacheKey: string) {
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
+        audioRef.current.currentTime = 0
+        audioRef.current.onended = null
+        audioRef.current.onerror = null
         audioRef.current = null
       }
     }

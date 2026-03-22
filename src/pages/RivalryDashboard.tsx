@@ -9,6 +9,7 @@ import type { EloRatings } from '@/lib/elo'
 import { GENT_LABELS } from '@/lib/gents'
 import type { GentAlias } from '@/types/app'
 import { Spinner } from '@/components/ui'
+import { useNarration } from '@/hooks/useNarration'
 import { supabase } from '@/lib/supabase'
 import { fadeIn } from '@/lib/animations'
 
@@ -475,9 +476,7 @@ export default function RivalryDashboard() {
   const [matches, setMatches] = useState<PS5MatchFlat[]>([])
   const [loading, setLoading] = useState(true)
   const [commentary, setCommentary] = useState<Commentary | null>(null)
-  const [generatingAudio, setGeneratingAudio] = useState(false)
-  const [playingAudio, setPlayingAudio] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const { audioUrl: commentaryAudioUrl, generating: generatingAudio, playing: playingAudio, generate: generateAudio, play: playAudio } = useNarration('rivalry-commentary')
 
   useEffect(() => {
     Promise.all([fetchPS5HeadToHead(), fetchPS5Streaks(), fetchPS5AllMatches()])
@@ -565,40 +564,10 @@ export default function RivalryDashboard() {
     }).catch(() => {})
   }, [matches, h2h])
 
-  // TTS playback
-  async function handlePlayCommentary() {
+  function handlePlayCommentary() {
     if (!commentary) return
-
-    if (audioRef.current && playingAudio) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      setPlayingAudio(false)
-      return
-    }
-
-    if (audioRef.current) {
-      audioRef.current.play()
-      setPlayingAudio(true)
-      return
-    }
-
-    setGeneratingAudio(true)
-    try {
-      const text = `${commentary.commentary} ${commentary.trash_talk}`
-      const { data } = await supabase.functions.invoke('generate-narration', {
-        body: { text, entry_id: `rivalry-${Date.now()}`, voice: 'onyx' },
-      })
-      if (data?.audio_url) {
-        audioRef.current = new Audio(data.audio_url)
-        audioRef.current.onended = () => setPlayingAudio(false)
-        audioRef.current.play()
-        setPlayingAudio(true)
-      }
-    } catch (err) {
-      console.error('Commentary audio failed:', err)
-    } finally {
-      setGeneratingAudio(false)
-    }
+    if (commentaryAudioUrl) playAudio()
+    else generateAudio(`${commentary.commentary} ${commentary.trash_talk}`)
   }
 
   const ratings = useMemo<EloRatings>(

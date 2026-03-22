@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Volume2, VolumeX, Loader2 } from 'lucide-react'
 import { useNarration } from '@/hooks/useNarration'
 
@@ -7,7 +8,7 @@ interface ListenButtonProps {
   size?: 'sm' | 'md'
 }
 
-export function ListenButton({ cacheKey, text, size = 'sm' }: ListenButtonProps) {
+export const ListenButton = memo(function ListenButton({ cacheKey, text, size = 'sm' }: ListenButtonProps) {
   const { audioUrl, generating, playing, generate, play } = useNarration(cacheKey)
 
   function handleClick() {
@@ -35,4 +36,4 @@ export function ListenButton({ cacheKey, text, size = 'sm' }: ListenButtonProps)
       {generating ? 'Generating...' : playing ? 'Stop' : 'Listen'}
     </button>
   )
-}
+})
