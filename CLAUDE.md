@@ -585,6 +585,7 @@ User-toggleable CSS filters applied to video feed, captured image, and export co
 - **OpenAI TTS**: `tts-1` model, `onyx` voice (deep male narrator). Edge function: `generate-narration`.
 - **Caching**: MP3s stored in `narrations` Supabase Storage bucket. Cache key per section (`{entryId}`, `{entryId}-debrief`, `{entryId}-day-0`).
 - **Hook**: `useNarration(cacheKey)` — manages generation, caching, play/stop, cleanup on unmount.
+- **Global audio manager** (`src/lib/audioManager.ts`): singleton ensures only one narration plays at a time. Stops audio on: route navigation (`useStopAudioOnNavigate` in App.tsx), mission page swipe (`scrollToPage` in MissionLayout), app backgrounded (`visibilitychange` listener). No more phantom narrations.
 
 ## Mission Soundtrack
 - Each mission gets a theme song. Auto-suggested by Claude Haiku after lore generation, searchable via Spotify.
