@@ -21,10 +21,15 @@ export function useNarration(cacheKey: string) {
   function startPlaying(url: string) {
     const audio = new Audio(url)
     audioRef.current = audio
-    // Let the global manager handle onended — pass our state setter as the stop callback
     setGlobalAudio(audio, () => setPlaying(false))
-    audio.play()
-    setPlaying(true)
+    audio.play().then(() => {
+      setPlaying(true)
+    }).catch(err => {
+      // Autoplay blocked — show as ready to play, user taps again
+      console.warn('Audio autoplay blocked:', err)
+      setPlaying(false)
+      setAudioUrl(url)
+    })
   }
 
   const generate = useCallback(async (text: string) => {

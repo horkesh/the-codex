@@ -1,7 +1,6 @@
 /**
  * Global audio manager — ensures only one narration plays at a time.
- * Stops on: route navigation, page visibility change (app backgrounded),
- * and when a new narration starts.
+ * Stops on: route navigation, page swipe, and app backgrounded (with delay).
  */
 let currentAudio: HTMLAudioElement | null = null
 let onStopCallback: (() => void) | null = null
@@ -39,9 +38,15 @@ export function setGlobalAudio(audio: HTMLAudioElement, onStop: () => void) {
   }
 }
 
-// Stop audio when app is backgrounded (phone locked, tab switched, app minimized)
+// Stop audio when app is truly backgrounded (not brief UI overlays).
+// 2s delay: if visibility returns within 2s, don't stop (handles keyboard, share sheet, etc.)
 if (typeof document !== 'undefined') {
+  let hideTimer: ReturnType<typeof setTimeout> | null = null
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') stopGlobalAudio()
+    if (document.visibilityState === 'hidden') {
+      hideTimer = setTimeout(() => stopGlobalAudio(), 2000)
+    } else {
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
+    }
   })
 }
