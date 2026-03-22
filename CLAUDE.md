@@ -1,7 +1,7 @@
 # The Gents Chronicles — CLAUDE.md
 
 ## What this is
-Private lifestyle chronicle app for three friends (The Gents). Deployed at https://the-codex-sepia.vercel.app. Three fixed users, invite-only Supabase Auth (magic link). Not commercial.
+Private lifestyle chronicle app for The Gents. Deployed at https://the-codex-sepia.vercel.app. Three active users + one retired operative (Mirza), invite-only Supabase Auth (magic link). Not commercial.
 
 ## Stack
 - **Frontend**: React 19 + TypeScript + Vite 6 + Tailwind v4 + Framer Motion + Zustand 5 + Google Maps JS API
@@ -224,7 +224,53 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 
 ## QR code for guestbook
 - GatheringDetail shows a "Share" section with copy-to-clipboard buttons for invite + guestbook URLs.
-- QR code rendered as an `<img>` from `api.qrserver.com` (no library dependency). Points to `/g/{entryId}/guestbook`.
+- QR code: tappable button opens modal with large QR + "Download QR" button (800x800 PNG). No inline display.
+
+## Pizza party gathering flavour
+- `metadata.flavour: 'pizza_party'` on gatherings, same pattern as Night Out flavours.
+- **Pizza menu**: `metadata.pizza_menu: PizzaMenuItem[]` — each item has `name` + `toppings: string[]`.
+- **PizzaMenuBuilder** (`src/components/gathering/PizzaMenuBuilder.tsx`): tap-to-toggle topping grid (19 toppings), max 8 pizzas.
+- **PizzaSvg** (`src/lib/pizzaSvg.tsx`): procedural SVG pizza from toppings. `React.memo` wrapped. Seeded PRNG for deterministic layout.
+- **Studio templates** (4, `requiresFlavour: 'pizza_party'`, 1080x1920): La Carta (menu card), The Invitation, Il Forno (hero pizza), Slice & Dice (countdown). All use `COLOR.brick` from shared utils.
+- **Public invite** (`/g/{entryId}`): pizza party skin with animated entrance, live ticking countdown (d/h/m/s), tap-to-flip menu cards, host message quote, RSVP confirmation card, no email field.
+- **RSVP → Circle**: attending guests auto-added as POI contacts via `submit-rsvp` edge function.
+- **Push notifications**: minimal SW (`public/sw-push.js`, zero fetch interception). Creator notified on RSVP.
+- **Shopping list**: auto-generated from pizza toppings on GatheringDetail (creator only), tappable cross-off.
+- **OG meta**: Vercel serverless function at `api/og.ts` for `/invite/:slug` bot previews.
+
+## Gathering location
+- All gatherings use `LocationSearchModal` for place selection (Google Places + saved places + drop pin).
+- `metadata.venue`, `metadata.address`, `metadata.lat`, `metadata.lng` stored in JSONB.
+- Static map via `buildStaticMapUrl()` shown on form, detail, public invite, and Studio templates.
+- `MapPicker` accessible from both the search modal ("Drop a pin on map" option) and the form (crosshair button).
+
+## Gathering enhancements
+- **Photos**: creator can upload photos during creation (PhotoUpload component) and on detail page.
+- **Description**: creator can add/edit inline on detail page.
+- **Host message**: `metadata.host_message` — creator text shown as italic quote on detail + public invite.
+- **Live guest wall**: 2-column RSVP grid with real-time fly-in animation on GatheringDetail.
+- **RSVP badge**: gold unseen count badge on EntryCard (creator only), reset on detail page visit.
+- **Export to Studio**: button on pre-event gathering detail.
+
+## Retired operative (Mirza)
+- **4th gent**: `alias: 'operative'`, `retired: true`. No auth account — inserted directly with `gen_random_uuid()`.
+- **GentAlias**: `'keys' | 'bass' | 'lorekeeper' | 'operative'`.
+- **AI identity**: full appearance description + visual ID in `gent-identities.ts`. Key rule: visual guide is for photo identification ONLY — never describe appearances in narrative.
+- **Participant selector**: "Show retired" toggle (hidden by default). Retired gent shown with faded styling + "Ret." badge.
+- **GentProfile** (`/gents/operative`): desaturated portrait, "OPERATIVE STATUS: RETIRED" stamp, retirement citation, legacy stats, Honourable Discharge certificate.
+- **Mind map**: positioned at outer edge (y:280), ghosted glow, desaturated.
+- **Showcase**: card with desaturated portrait + "Retired" stamp overlay.
+- **Passport**: Honourable Discharge certificate below stamp grid.
+- **Lore directive**: when Mirza is participant, Claude told he was active at the time (retired AFTER). Subtle foreshadowing allowed once ("four at the table, as it was then") but never mention retirement.
+- **Ghost effects**: EntryCard (faded avatar), EntryDetail ("featuring a retired operative"), Ledger (dimmed + "(ret.)").
+
+## Agenda page
+- **Unified feed**: merges gatherings (pre-event), scouting (prospects), and wishlist items. Dated items sorted by upcoming first, undated wishlist at bottom.
+- **Icon submenu**: Gatherings / Scouting / Wishlist bar with icons + counts, navigates to dedicated sub-pages.
+- **Swipe to delete**: each feed item swipeable left to reveal delete.
+- **FAB**: gold Plus button opens action sheet (New Gathering / Scout Event / Wishlist).
+- **Upcoming Gatherings** page at `/agenda/upcoming`.
+- **Showcase**: "What's Next" section shows upcoming gatherings + scouted events on public page.
 
 ## Wishlist Instagram import
 - "Import from Instagram" URL field in BucketList's AddWishModal.
