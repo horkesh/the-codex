@@ -9,6 +9,17 @@ import type { LocationFill } from '@/lib/geo'
 import { fetchLocations } from '@/data/locations'
 import { isVideoFile, extractKeyframes } from '@/lib/videoKeyframes'
 
+/** Check if a canvas has any non-transparent pixels (detects blank HEVC renders) */
+function isCanvasBlank(canvas: HTMLCanvasElement): boolean {
+  const ctx = canvas.getContext('2d')!
+  const data = ctx.getImageData(0, 0, Math.min(canvas.width, 50), Math.min(canvas.height, 50)).data
+  // Check if all pixels are transparent/black (HEVC blank render)
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] > 10 && (data[i] > 5 || data[i + 1] > 5 || data[i + 2] > 5)) return false
+  }
+  return true
+}
+
 /** Fallback: grab a single frame from time 0 when keyframe extraction fails (HEVC etc.) */
 async function grabPosterFrame(file: File): Promise<Blob | null> {
   return new Promise((resolve) => {
@@ -32,6 +43,15 @@ async function grabPosterFrame(file: File): Promise<Blob | null> {
         canvas.height = Math.round(vh * scale)
         const ctx = canvas.getContext('2d')!
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+        // Check if the canvas is blank (HEVC can't be decoded to canvas)
+        if (isCanvasBlank(canvas)) {
+          console.warn('Video frame is blank (unsupported codec):', file.name)
+          URL.revokeObjectURL(url)
+          resolve(null)
+          return
+        }
+
         canvas.toBlob(
           blob => { URL.revokeObjectURL(url); resolve(blob) },
           'image/jpeg',
@@ -94,38 +114,44 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
 
       // Expand video files into keyframe image files before adding
       const expandedFiles: File[] = []
+      const skippedVideos: string[] = []
       for (const file of toAdd) {
         if (isVideoFile(file)) {
           try {
             setProcessingLabel(`Extracting frames from ${file.name}...`)
             const frames = await extractKeyframes(file, { maxFrames: 5, maxWidth: 1024 })
-            if (frames.length > 0) {
-              for (const { blob, timestampSeconds } of frames) {
+            // Filter out blank frames (HEVC renders as black)
+            const validFrames = frames.filter(f => f.blob.size > 1000)
+            if (validFrames.length > 0) {
+              for (const { blob, timestampSeconds } of validFrames) {
                 const ext = blob.type === 'image/webp' ? 'webp' : 'jpg'
                 const frameName = `${file.name.replace(/\.[^.]+$/, '')}_${Math.round(timestampSeconds)}s.${ext}`
                 expandedFiles.push(new File([blob], frameName, { type: blob.type }))
               }
             } else {
-              // HEVC/unsupported codec — try grabbing a single poster frame at time 0
-              console.warn('Keyframe extraction returned 0 frames, trying poster grab:', file.name)
+              // Try poster frame fallback
               setProcessingLabel(`Grabbing thumbnail from ${file.name}...`)
               const poster = await grabPosterFrame(file)
               if (poster) {
-                const ext = poster.type === 'image/webp' ? 'webp' : 'jpg'
-                const frameName = `${file.name.replace(/\.[^.]+$/, '')}_poster.${ext}`
+                const frameName = `${file.name.replace(/\.[^.]+$/, '')}_poster.jpg`
                 expandedFiles.push(new File([poster], frameName, { type: poster.type }))
               } else {
-                console.warn('Could not extract any frame from video:', file.name)
+                skippedVideos.push(file.name)
               }
             }
           } catch (err) {
             console.error('Video processing failed:', file.name, err)
+            skippedVideos.push(file.name)
           }
         } else {
           expandedFiles.push(file)
         }
       }
       setProcessingLabel(null)
+      if (skippedVideos.length > 0) {
+        const { addToast } = await import('@/store/ui').then(m => ({ addToast: m.useUIStore.getState().addToast }))
+        addToast(`${skippedVideos.length} video${skippedVideos.length > 1 ? 's' : ''} skipped (unsupported format). Try converting to MP4/H.264.`, 'error')
+      }
 
       // Re-apply the cap after expansion
       const finalFiles = expandedFiles.slice(0, maxPhotos - photos.length)
