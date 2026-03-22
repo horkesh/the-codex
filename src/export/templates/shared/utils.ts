@@ -471,3 +471,20 @@ const ALIAS_DISPLAY: Record<string, string> = {
 export function aliasDisplay(alias: string, fullAlias?: string | null): string {
   return ALIAS_DISPLAY[alias] ?? fullAlias ?? alias
 }
+
+/** Google Static Maps dark-style URL with gold marker */
+export function buildStaticMapUrl(lat: number, lng: number, opts?: { zoom?: number; width?: number; height?: number }): string {
+  const zoom = opts?.zoom ?? 15
+  const w = opts?.width ?? 600
+  const h = opts?.height ?? 300
+  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ''
+  const style = [
+    'style=element:geometry|color:0x1a1a2e',
+    'style=element:labels.text.fill|color:0xc9a84c',
+    'style=element:labels.text.stroke|color:0x0a0a0f',
+    'style=feature:water|element:geometry|color:0x0d0d1a',
+    'style=feature:road|element:geometry|color:0x2a2a3e',
+    'style=feature:poi|visibility:off',
+  ].join('&')
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${w}x${h}&scale=2&${style}&markers=color:0xC9A84C|${lat},${lng}&key=${key}`
+}

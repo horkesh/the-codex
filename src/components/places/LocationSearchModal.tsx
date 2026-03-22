@@ -198,6 +198,7 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
         country_code: countryCode,
         lat: detail.location?.latitude,
         lng: detail.location?.longitude,
+        address: detail.formattedAddress ?? undefined,
         overwrite: true,
       })
       onClose()
