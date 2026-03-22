@@ -191,6 +191,7 @@ RULES:
 - Never fabricate details not supported by the intelligence data.
 - Match mood of each scene. A chaotic bar scene gets different energy than a contemplative morning walk.
 - Avoid generic filler. Every sentence must earn its place with a specific detail, name, or observation.
+- NEVER describe the gents' physical appearances — no bald heads, mustaches, beards, builds, hair, complexions, height. The visual guide above is ONLY for identifying who is in each photo. The readers know what they look like. Write about what they DO, not what they look like.
 - No emojis. Ever.
 ${retiredDirective}
 ${directorNotes ? `\nDIRECTOR'S NOTES: ${directorNotes}` : ""}
