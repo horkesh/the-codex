@@ -404,6 +404,7 @@ export default function GatheringNew() {
           onSelect={handleLocationSelect}
           onClose={() => setShowLocationModal(false)}
           savedPlaces={savedPlaces}
+          onDropPin={() => setShowMapPicker(true)}
         />
       )}
       {showMapPicker && (

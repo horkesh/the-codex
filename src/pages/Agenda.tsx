@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { motion } from 'framer-motion'
-import { MapPin, Users, Ticket, Star } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { MapPin, Users, Ticket, Star, Plus } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { SwipeToDelete } from '@/components/ui'
 import { PizzaSvg } from '@/lib/pizzaSvg'
@@ -35,6 +35,7 @@ const SUB_SECTIONS = [
 export default function Agenda() {
   const navigate = useNavigate()
   const { addToast } = useUIStore()
+  const [showAddMenu, setShowAddMenu] = useState(false)
   const [gatherings, setGatherings] = useState<Entry[]>([])
   const [prospects, setProspects] = useState<Prospect[]>([])
   const [wishlist, setWishlist] = useState<BucketListItem[]>([])
@@ -264,6 +265,60 @@ export default function Agenda() {
           </motion.div>
         )}
       </PageWrapper>
+
+      {/* FAB */}
+      <motion.button
+        type="button"
+        aria-label="Add to agenda"
+        onClick={() => setShowAddMenu(true)}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.3 }}
+        whileTap={{ scale: 0.92 }}
+        className="fixed right-4 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-gold text-obsidian shadow-[0_0_40px_rgba(201,168,76,0.3)]"
+        style={{ bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <Plus size={24} strokeWidth={2.5} />
+      </motion.button>
+
+      {/* Add menu overlay */}
+      <AnimatePresence>
+        {showAddMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[55] bg-black/60"
+              onClick={() => setShowAddMenu(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="fixed right-4 z-[56] flex flex-col gap-2 w-52"
+              style={{ bottom: 'calc(160px + env(safe-area-inset-bottom, 0px))' }}
+            >
+              {[
+                { icon: Users, label: 'New Gathering', action: () => navigate('/gathering/new') },
+                { icon: Ticket, label: 'Scout an Event', action: () => navigate('/agenda/scouting') },
+                { icon: Star, label: 'Add to Wishlist', action: () => navigate('/agenda/wishlist') },
+              ].map(item => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => { setShowAddMenu(false); item.action() }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-dark border border-white/10 hover:border-gold/30 transition-colors text-left"
+                >
+                  <item.icon size={16} className="text-gold shrink-0" />
+                  <span className="text-sm text-ivory font-body">{item.label}</span>
+                </button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 }

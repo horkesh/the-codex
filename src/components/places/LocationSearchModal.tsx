@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { X, Search, MapPin, Loader2, Navigation } from 'lucide-react'
+import { X, Search, MapPin, Loader2, Navigation, Crosshair } from 'lucide-react'
 import type { LocationFill } from '@/lib/geo'
 import { getDevicePosition, reverseGeocode } from '@/lib/geo'
 import type { SavedLocation } from '@/types/app'
@@ -25,13 +25,14 @@ interface LocationSearchModalProps {
   onSelect: (fill: LocationFill) => void
   onClose: () => void
   savedPlaces?: SavedLocation[]
+  onDropPin?: () => void
 }
 
 /**
  * Full-screen modal with Google Places Autocomplete search.
  * Similar to Instagram's location picker.
  */
-export function LocationSearchModal({ onSelect, onClose, savedPlaces }: LocationSearchModalProps) {
+export function LocationSearchModal({ onSelect, onClose, savedPlaces, onDropPin }: LocationSearchModalProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<PlaceResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -299,6 +300,21 @@ export function LocationSearchModal({ onSelect, onClose, savedPlaces }: Location
           <div className="px-4 py-8 text-center">
             <p className="text-ivory-dim text-sm font-body">No places found</p>
           </div>
+        )}
+
+        {/* Drop pin option (shown when no query and callback provided) */}
+        {!query.trim() && onDropPin && (
+          <button
+            type="button"
+            onClick={() => { onClose(); onDropPin() }}
+            className="flex items-start gap-3 px-4 py-3.5 border-b border-white/5 text-left hover:bg-white/3 active:bg-white/5 transition-colors w-full"
+          >
+            <Crosshair size={16} className="text-gold mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-ivory text-sm font-body">Drop a pin on map</p>
+              <p className="text-ivory-dim text-xs font-body mt-0.5">Choose an exact location</p>
+            </div>
+          </button>
         )}
 
         {/* City — first pick (shown when no query) */}

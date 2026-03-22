@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download, Image } from 'lucide-react'
+import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download, Image, Camera, Pencil } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal } from '@/components/ui'
 import { CountdownBadge } from '@/components/gathering/CountdownBadge'
 import { fetchGathering, fetchRsvps, fetchGuestBookMessages, markGatheringComplete, updateGatheringMetadata } from '@/data/gatherings'
+import { fetchEntryPhotos, uploadEntryPhoto, updateEntry } from '@/data/entries'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -85,6 +86,12 @@ export default function GatheringDetail() {
   const [completing, setCompleting] = useState(false)
   const [showQrModal, setShowQrModal] = useState(false)
 
+  // Photos + description editing
+  const [photos, setPhotos] = useState<Array<{ id: string; url: string }>>([])
+  const [uploading, setUploading] = useState(false)
+  const [editingDesc, setEditingDesc] = useState(false)
+  const [descDraft, setDescDraft] = useState('')
+
   // Push notification prompt for creator
   const { supported: pushSupported, subscribed: pushSubscribed, subscribe: pushSubscribe } = usePushNotifications()
   const [pushPromptShown, setPushPromptShown] = useState(false)
@@ -99,14 +106,16 @@ export default function GatheringDetail() {
       fetchGathering(id),
       fetchRsvps(id),
       fetchGuestBookMessages(id),
+      fetchEntryPhotos(id),
     ])
-      .then(([fetchedEntry, fetchedRsvps, fetchedMessages]) => {
+      .then(([fetchedEntry, fetchedRsvps, fetchedMessages, fetchedPhotos]) => {
         if (!fetchedEntry) {
           setNotFound(true)
         } else {
           setEntry(fetchedEntry)
           setRsvps(fetchedRsvps)
           setMessages(fetchedMessages)
+          setPhotos(fetchedPhotos.map(p => ({ id: p.id, url: p.url })))
         }
       })
       .catch(err => {
@@ -164,6 +173,32 @@ export default function GatheringDetail() {
     attendingCount: rsvps.filter(r => r.response === 'attending').length,
     maybeCount: rsvps.filter(r => r.response === 'maybe').length,
   }), [rsvps])
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files?.length || !id) return
+    setUploading(true)
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const url = await uploadEntryPhoto(id, files[i], photos.length + i)
+        setPhotos(prev => [...prev, { id: `new-${Date.now()}-${i}`, url }])
+      }
+      addToast('Photos uploaded', 'success')
+    } catch {
+      addToast('Failed to upload photos', 'error')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function handleSaveDescription() {
+    if (!id) return
+    await updateEntry(id, { description: descDraft.trim() || null })
+    setEntry(prev => prev ? { ...prev, description: descDraft.trim() || null } : prev)
+    setEditingDesc(false)
+    addToast('Description updated', 'success')
+  }
 
   async function handleMarkComplete() {
     if (!id) return
@@ -223,6 +258,7 @@ export default function GatheringDetail() {
 
   const meta = entry.metadata as unknown as GatheringMetadata
   const isPreEvent = entry.status === 'gathering_pre' || meta.phase === 'pre'
+  const isCreator = gent?.id === entry.created_by
 
   // ── Pre-event view ────────────────────────────────────────────────────────────
   if (isPreEvent) {
@@ -296,10 +332,56 @@ export default function GatheringDetail() {
               {meta.address && <p className="text-[11px] text-ivory-dim/60 font-body mt-1">{meta.address}</p>}
             </motion.div>
 
-            {/* Description */}
-            {entry.description && (
-              <motion.div variants={staggerItem}>
-                <p className="font-body text-sm text-ivory leading-relaxed">{entry.description}</p>
+            {/* Description — editable by creator */}
+            <motion.div variants={staggerItem}>
+              {editingDesc ? (
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    value={descDraft}
+                    onChange={e => setDescDraft(e.target.value)}
+                    placeholder="Add a description..."
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim/40 focus:outline-none focus:border-gold/30 resize-none"
+                    rows={3}
+                    autoFocus
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button type="button" onClick={() => setEditingDesc(false)} className="text-xs text-ivory-dim font-body px-3 py-1.5">Cancel</button>
+                    <button type="button" onClick={handleSaveDescription} className="text-xs text-gold font-body font-semibold px-3 py-1.5 bg-gold/10 rounded-lg">Save</button>
+                  </div>
+                </div>
+              ) : entry.description ? (
+                <div className="flex items-start gap-2">
+                  <p className="font-body text-sm text-ivory leading-relaxed flex-1">{entry.description}</p>
+                  {isCreator && (
+                    <button type="button" onClick={() => { setDescDraft(entry.description ?? ''); setEditingDesc(true) }} className="text-ivory-dim/40 hover:text-gold transition-colors shrink-0 mt-0.5">
+                      <Pencil size={12} />
+                    </button>
+                  )}
+                </div>
+              ) : isCreator ? (
+                <button type="button" onClick={() => { setDescDraft(''); setEditingDesc(true) }} className="w-full text-left text-xs text-ivory-dim/40 font-body py-2 hover:text-ivory-dim transition-colors">
+                  + Add description
+                </button>
+              ) : null}
+            </motion.div>
+
+            {/* Photos */}
+            {(photos.length > 0 || isCreator) && (
+              <motion.div variants={staggerItem} className="flex flex-col gap-3">
+                {photos.length > 0 && (
+                  <div className="grid grid-cols-3 gap-1.5 rounded-xl overflow-hidden">
+                    {photos.map(p => (
+                      <img key={p.id} src={p.url} alt="" className="w-full aspect-square object-cover" />
+                    ))}
+                  </div>
+                )}
+                {isCreator && (
+                  <label className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-white/15 text-xs text-ivory-dim/60 font-body hover:border-gold/30 hover:text-gold/60 transition-all cursor-pointer">
+                    <Camera size={14} />
+                    {uploading ? 'Uploading...' : 'Add photos'}
+                    <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" disabled={uploading} />
+                  </label>
+                )}
               </motion.div>
             )}
 
