@@ -6,6 +6,7 @@ import { fetchCityVisits, type CityVisit } from '@/data/entries'
 import { flagEmoji, cn, getCoverCrop } from '@/lib/utils'
 import { generateMissionDebrief } from '@/ai/debrief'
 import { Sparkles, RefreshCw, ChevronDown, ChevronLeft, ChevronRight, Move, Check, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { SoundtrackSection } from '@/components/mission/SoundtrackSection'
 import { useUIStore } from '@/store/ui'
 import { updateEntry } from '@/data/entries'
 import {
@@ -664,6 +665,9 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
         <div className="px-4">
           {/* Lore section — always show (contains Director's Notes input) */}
           {loreSlot && <div className="mt-2">{loreSlot}</div>}
+          <div className="mt-4">
+            <SoundtrackSection entry={entry} isCreator={isCreator} onEntryUpdate={onEntryUpdate} />
+          </div>
           {controlsSection}
         </div>
 
@@ -737,6 +741,10 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
       )}
 
       {loreSlot && <div className="mt-2">{loreSlot}</div>}
+
+      <div className="mt-4">
+        <SoundtrackSection entry={entry} isCreator={isCreator} onEntryUpdate={onEntryUpdate} />
+      </div>
 
       <SectionDivider label="Intelligence Report" />
       {debriefSection}

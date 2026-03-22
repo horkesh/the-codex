@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router'
-import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, Edit2, Pin, X as XIcon, Type, StickyNote } from 'lucide-react'
+import { MoreVertical, Sparkles, RefreshCw, Share2, Trash2, Edit2, Pin, X as XIcon, Type, StickyNote, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal, Avatar } from '@/components/ui'
@@ -8,6 +8,8 @@ import { EntryHero } from '@/components/chronicle/EntryHero'
 import { LoreSection } from '@/components/chronicle/LoreSection'
 import { EntryReactions } from '@/components/chronicle/EntryReactions'
 import { generateLoreFull } from '@/ai/lore'
+import { suggestSoundtrack } from '@/ai/soundtrack'
+import { supabase } from '@/lib/supabase'
 import { generateTitleSuggestions } from '@/ai/title'
 import { PhotoGrid } from '@/components/chronicle/PhotoGrid'
 import { PhotoStoryboard } from '@/components/chronicle/PhotoStoryboard'
@@ -263,6 +265,7 @@ export default function EntryDetail() {
   const { filterId, setFilter } = useEntryFilter(id ?? '')
   const photoUrls = useMemo(() => photos.map((p) => p.url), [photos])
   const isCreator = !!entry && gent?.id === entry.created_by
+  const isMission = entry?.type === 'mission'
 
   // Toast session data
   const isToast = entry?.type === 'toast'
@@ -289,6 +292,9 @@ export default function EntryDetail() {
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([])
   const [titleModalOpen, setTitleModalOpen] = useState(false)
   const [generatingTitle, setGeneratingTitle] = useState(false)
+
+  // Soundtrack auto-suggest after lore generation (missions only)
+  const [soundtrackSuggestion, setSoundtrackSuggestion] = useState<{ name: string; artist: string; album: string; spotify_url: string; album_art: string } | null>(null)
 
   function handleExportToStudio() {
     navigate(`/studio?entry=${id}`)
@@ -345,13 +351,15 @@ export default function EntryDetail() {
             updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {}),
           ])
           const now = new Date().toISOString()
-          setEntry({ ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta })
+          const updated = { ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta }
+          setEntry(updated)
           if (result.suggested_title) {
             setSuggestedTitle(result.suggested_title)
             addToast('Lore regenerated. New title suggested.', 'success')
           } else {
             addToast('Lore regenerated.', 'success')
           }
+          autoSuggestSoundtrackForMission(result.lore, updated)
         } else {
           addToast('Could not regenerate lore. Try again.', 'error')
         }
@@ -364,13 +372,15 @@ export default function EntryDetail() {
             updateEntry(entry.id, { metadata: meta } as Partial<EntryWithParticipants>).catch(() => {}),
           ])
           const now = new Date().toISOString()
-          setEntry({ ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta })
+          const updated = { ...entryForLore, lore: result.lore, lore_generated_at: now, metadata: meta }
+          setEntry(updated)
           if (result.suggested_title) {
             setSuggestedTitle(result.suggested_title)
             addToast('Lore regenerated. New title suggested.', 'success')
           } else {
             addToast('Lore regenerated.', 'success')
           }
+          autoSuggestSoundtrackForMission(result.lore, updated)
         } else {
           addToast('Could not regenerate lore. Try again.', 'error')
         }
@@ -427,22 +437,41 @@ export default function EntryDetail() {
     }
   }
 
+  /** Fire-and-forget: suggest a soundtrack after lore is available (missions only). */
+  async function autoSuggestSoundtrackForMission(lore: string, e: EntryWithParticipants) {
+    if (e.type !== 'mission') return
+    // Skip if soundtrack already set
+    const meta = e.metadata as Record<string, unknown> | undefined
+    if (meta?.soundtrack) return
+    try {
+      const suggestion = await suggestSoundtrack(lore, e.title, e.city ?? '', e.country ?? '')
+      if (!suggestion) return
+      const searchResults = await supabase.functions.invoke('spotify-search', {
+        body: { query: suggestion, limit: 1 },
+      })
+      const track = searchResults.data?.tracks?.[0]
+      if (track) setSoundtrackSuggestion(track)
+    } catch { /* non-critical */ }
+  }
+
   function handleLoreGenerated(lore: string, oneliner?: string | null, suggestedTitle?: string | null) {
     if (!entry) return
     const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: oneliner ?? null }
-    setEntry({
+    const updated = {
       ...entry,
       lore,
       lore_generated_at: new Date().toISOString(),
       metadata: meta,
-    })
+    }
+    setEntry(updated)
     if (suggestedTitle) {
       addToast(`Lore generated. Suggested title: "${suggestedTitle}"`, 'success')
-      // Offer to apply the title
       setSuggestedTitle(suggestedTitle)
     } else {
       addToast('Lore generated.', 'success')
     }
+    // Auto-suggest soundtrack for missions (fire-and-forget)
+    autoSuggestSoundtrackForMission(lore, updated)
   }
 
   async function handleOpenTitleModal() {
@@ -558,6 +587,56 @@ export default function EntryDetail() {
     </div>
   )
 
+  async function handleAcceptSoundtrack() {
+    if (!entry || !soundtrackSuggestion) return
+    const st = {
+      name: soundtrackSuggestion.name,
+      artist: soundtrackSuggestion.artist,
+      album: soundtrackSuggestion.album || undefined,
+      spotify_url: soundtrackSuggestion.spotify_url || undefined,
+      album_art: soundtrackSuggestion.album_art || undefined,
+      suggested_by: 'ai' as const,
+    }
+    const newMeta = { ...(entry.metadata as Record<string, unknown> ?? {}), soundtrack: st }
+    try {
+      await updateEntry(entry.id, { metadata: newMeta } as Partial<EntryWithParticipants>)
+      setEntry({ ...entry, metadata: newMeta })
+      setSoundtrackSuggestion(null)
+      addToast(`Soundtrack set: ${st.name}`, 'success')
+    } catch {
+      addToast('Failed to save soundtrack.', 'error')
+    }
+  }
+
+  const soundtrackSuggestionBanner = soundtrackSuggestion && isMission && (
+    <div className="flex items-center gap-3 bg-gold/8 border border-gold/20 rounded-lg px-3 py-2.5">
+      {soundtrackSuggestion.album_art && (
+        <img src={soundtrackSuggestion.album_art} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] text-gold font-body font-semibold tracking-wide uppercase">Suggested Soundtrack</p>
+        <p className="text-sm text-ivory font-body truncate">{soundtrackSuggestion.name}</p>
+        <p className="text-xs text-ivory-dim font-body truncate">{soundtrackSuggestion.artist}</p>
+      </div>
+      <button
+        type="button"
+        onClick={handleAcceptSoundtrack}
+        className="flex items-center justify-center w-8 h-8 rounded-full border border-gold/30 text-gold hover:bg-gold/10 transition-colors shrink-0"
+        aria-label="Accept"
+      >
+        <Check size={14} />
+      </button>
+      <button
+        type="button"
+        onClick={() => setSoundtrackSuggestion(null)}
+        className="flex items-center justify-center w-8 h-8 rounded-full text-ivory-dim hover:text-ivory transition-colors shrink-0"
+        aria-label="Dismiss"
+      >
+        <XIcon size={14} />
+      </button>
+    </div>
+  )
+
   const controlsContent = (
     <>
       {/* Reactions */}
@@ -616,9 +695,6 @@ export default function EntryDetail() {
     </>
   )
 
-  // ── Mission layout ──
-  const isMission = entry.type === 'mission'
-
   return (
     <>
       {/* TopBar — sits above hero, not inside it */}
@@ -654,6 +730,7 @@ export default function EntryDetail() {
         /* ── Mission: visa card + magazine + debrief ── */
         <PageWrapper scrollable>
           {titleSuggestionBanner && <div className="px-4 pt-4">{titleSuggestionBanner}</div>}
+          {soundtrackSuggestionBanner && <div className="px-4 pt-2">{soundtrackSuggestionBanner}</div>}
           <MissionLayout
             entry={entry}
             photos={photos}
