@@ -175,6 +175,13 @@ Deno.serve(async (req: Request) => {
       ? `\n\nThis is a multi-day mission spanning ${dayLabels.length} days: ${dayLabels.join('; ')}.${dayPhotoInfo}\n\nReturn your response in this format:\n<lore>2-3 sentence overview of the entire mission — the arc, the mood, the defining character of this trip.</lore>\n${dayLabels.map((_: string, i: number) => `<day${i + 1}>2-3 sentences narrating ${dayLabels[i]} — what happened, what stood out, the mood and energy. Every sentence earns its place with a specific detail, venue, or observation.</day${i + 1}>\n<day${i + 1}_oneliner>One punchy sentence distilling this day — poster-worthy.</day${i + 1}_oneliner>\n<day${i + 1}_photos>The 3 best photo numbers (0-indexed) from this day that illustrate the narrative — comma-separated. Pick the most visually striking and story-relevant.</day${i + 1}_photos>`).join('\n')}\n<oneliner>One punchy sentence distilling the entire mission — poster-worthy.</oneliner>\n<title>A short, evocative title (3-7 words, no dates, no quotes).</title>`
       : `\n\nReturn your response in exactly this format (three lines, no labels on the first line):\n<lore>The ${isFullChronicle ? '4-6 sentence' : '2-3 sentence'} narrative.</lore>\n<oneliner>One punchy sentence distilled from the lore — the kind of line you'd put on a poster or Instagram export card.</oneliner>\n<title>A short, evocative title for this entry (3-7 words, no dates, no quotes).</title>`
 
+    // Check if retired operative is among participants
+    const participants = Array.isArray(entry.participants) ? entry.participants : []
+    const hasRetiredOperative = participants.some((p: { alias?: string }) => p.alias === 'operative')
+    const retiredOperativeDirective = hasRetiredOperative
+      ? `\n\nIMPORTANT CONTEXT: Mirza ("Retired Operative") is present in this entry. He is a former member of The Gents who has since retired from active duty. Write about him with warmth and a hint of nostalgia — acknowledge his presence as special, like a returning legend. Do not be heavy-handed; a subtle nod is more powerful than a eulogy. He was there. That's what matters.`
+      : ''
+
     const prompt = `You are the chronicler of The Gents — three sophisticated gentlemen who document their lives together with style and wit. ${lengthInstruction} The prose should be eloquent, slightly self-aware, warm, and feel like an entry in a very exclusive private journal.
 
 Entry Type: ${entryTypeLabels[entry.type] || entry.type}
@@ -186,7 +193,7 @@ Present: ${participantNames}
 Description: ${entry.description || 'No additional details provided.'}${entry.metadata?.song ? `\nSong: ${entry.metadata.song}` : ''}${loreHints ? `\nDirector's Notes (incorporate these details naturally): ${loreHints}` : ''}
 ${typeDirective ? `\n${typeDirective}` : ''}${moodTags.length > 0 ? `\nThe mood tags above reflect the energy of this occasion — let them subtly shape the tone and vocabulary of the narrative. Don't list or name the moods explicitly; embody them.` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) sampled from ${allPhotos.length} total from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
 IMPORTANT: The Day and Time fields above are from the camera's EXIF data and are authoritative. Always use them to set the time of day in the narrative — do NOT infer a different time of day from photo lighting or ambiance. If the Context field is present, weave that situational awareness into the prose naturally.${weather ? ` If Weather is provided, let it inform atmosphere and sensory details naturally — don't force a weather report, but let the conditions colour the scene.` : ''}
-Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text.${multiDayFormat}`
+Write the lore in first person plural ("We", "The Gents"). No hashtags, no emojis, no quotes around the text.${retiredOperativeDirective}${multiDayFormat}`
 
     // Build message content — images first, then the text prompt
     type ContentBlock =

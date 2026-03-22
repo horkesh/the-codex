@@ -156,6 +156,7 @@ export default function GentProfile() {
                 src={gent.portrait_url}
                 alt={gent.display_name}
                 className="h-56 w-full object-cover rounded-2xl"
+                style={gent.retired ? { filter: 'saturate(0.3) brightness(0.9)' } : undefined}
               />
               {/* gradient overlay */}
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-obsidian/80 via-obsidian/20 to-transparent" />
@@ -198,9 +199,23 @@ export default function GentProfile() {
             </div>
           )}
 
+          {/* ── Retired operative stamp ── */}
+          {gent.retired && (
+            <div className="flex justify-center my-4">
+              <span className="text-xs font-body text-red-400/80 uppercase tracking-[0.25em] border-2 border-red-400/40 px-4 py-1.5 rounded -rotate-3"
+                style={{ fontFamily: 'var(--font-body)' }}>
+                Operative Status: Retired
+              </span>
+            </div>
+          )}
+
           {/* ── Stats row ── */}
           {statChips.length > 0 && (
-            <div className="flex gap-3 overflow-x-auto pb-1 px-0.5 mb-6 scrollbar-none">
+            <div className="mb-6">
+              <p className="text-[10px] font-body text-ivory-dim uppercase tracking-widest mb-2">
+                {gent.retired ? 'Legacy Stats' : 'Stats'}
+              </p>
+            <div className="flex gap-3 overflow-x-auto pb-1 px-0.5 scrollbar-none">
               {statChips.map((chip) => (
                 <div
                   key={chip.label}
@@ -212,6 +227,7 @@ export default function GentProfile() {
                   </p>
                 </div>
               ))}
+            </div>
             </div>
           )}
 
@@ -257,6 +273,16 @@ export default function GentProfile() {
                 About
               </p>
               <p className="text-sm text-ivory-muted font-body leading-relaxed">{gent.bio}</p>
+            </div>
+          )}
+
+          {/* ── Retirement citation ── */}
+          {gent.retired && (
+            <div className="mt-6 mb-6 bg-white/3 border-l-2 border-gold/40 rounded-r-lg px-4 py-3">
+              <p className="text-[10px] font-body text-gold/50 uppercase tracking-widest mb-2">Retirement Citation</p>
+              <p className="text-sm font-display text-ivory/80 italic leading-relaxed">
+                A founding member of The Gents. Though no longer among the active operatives, his presence shaped the early chronicles. The fourth chair remains.
+              </p>
             </div>
           )}
 

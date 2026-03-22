@@ -41,6 +41,7 @@ export interface GentNodeData {
   type: 'gent'
   gent: Gent
   dimmed: boolean
+  ghosted: boolean // true for retired gents
   [key: string]: unknown
 }
 
@@ -98,21 +99,30 @@ export function computeGraphData(
     if (linked) for (const gId of linked) focusedPersonGentIds.add(gId)
   }
 
-  // 2. Place gents in equilateral triangle at center
-  const gentPositions: Array<{ x: number; y: number }> = [
-    { x: 0, y: -80 },
-    { x: -69, y: 40 },
-    { x: 69, y: 40 },
+  // 2. Place gents: active gents form a triangle, retired gent sits above (guardian position)
+  const activeGentPositions: Array<{ x: number; y: number }> = [
+    { x: 0, y: -80 },    // top of triangle
+    { x: -69, y: 40 },   // bottom-left
+    { x: 69, y: 40 },    // bottom-right
   ]
+  const retiredGentPosition = { x: 0, y: -160 } // above the formation
 
   // Map of gent id → alias for quick lookup
   const gentIdToAlias = new Map<string, GentAlias>()
   const gentIds = new Set<string>()
 
-  gents.forEach((g, i) => {
+  // Track active gent index for triangle position assignment
+  let activeIdx = 0
+
+  gents.forEach((g) => {
     gentIdToAlias.set(g.id, g.alias)
     gentIds.add(g.id)
-    const pos = gentPositions[i] ?? { x: 0, y: 0 }
+
+    const isRetired = g.retired === true
+    const pos = isRetired
+      ? retiredGentPosition
+      : (activeGentPositions[activeIdx++] ?? { x: 0, y: 0 })
+
     const gentDimmed = (focusedGentId !== null && focusedGentId !== g.id)
       || (focusedPersonId !== null && !focusedPersonGentIds.has(g.id))
       || (!!searchQuery && searchMatchIds.size > 0)
@@ -121,8 +131,9 @@ export function computeGraphData(
       id: `gent-${g.id}`,
       type: 'gentNode',
       position: pos,
-      data: { type: 'gent', gent: g, dimmed: gentDimmed } satisfies GentNodeData,
+      data: { type: 'gent', gent: g, dimmed: gentDimmed, ghosted: isRetired } satisfies GentNodeData,
       draggable: true,
+      style: isRetired ? { opacity: 0.5 } : undefined,
     })
   })
 
