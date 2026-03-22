@@ -12,7 +12,10 @@ const GENT_LABELS: Record<string, string> = {
   keys: 'Keys',
   bass: 'Bass',
   lorekeeper: 'Lorekeeper',
+  operative: 'Operative',
 }
+
+const RETIRED_ALIASES = new Set(['operative'])
 
 const PER_GENT_ROWS: Array<{ key: keyof GentStats; label: string }> = [
   { key: 'missions', label: 'Missions' },
@@ -113,9 +116,12 @@ export function StatGrid({ stats }: StatGridProps) {
           {stats.map((s) => (
             <span
               key={s.alias}
-              className="text-xs text-gold font-body font-semibold uppercase tracking-wider text-center"
+              className={`text-xs font-body font-semibold uppercase tracking-wider text-center ${RETIRED_ALIASES.has(s.alias) ? 'text-gold/40' : 'text-gold'}`}
             >
               {GENT_LABELS[s.alias] ?? s.alias}
+              {RETIRED_ALIASES.has(s.alias) && (
+                <span className="text-[8px] text-ivory-dim/50 font-normal lowercase tracking-normal ml-0.5">(ret.)</span>
+              )}
               {monthlyLeaders.has(s.alias) && (
                 <span className="text-gold text-xs" title="Monthly leader" aria-label="Monthly leader"> 👑</span>
               )}

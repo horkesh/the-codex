@@ -209,29 +209,33 @@ function ParticipantsSection({ entry }: { entry: EntryWithParticipants }) {
         Who Was There
       </p>
       <div className="flex flex-wrap gap-3">
-        {entry.participants.map((gent) => (
-          <motion.div key={gent.id} variants={staggerItem}>
+        {entry.participants.map((p) => (
+          <motion.div key={p.id} variants={staggerItem}>
             <Link
-              to={`/gents/${gent.alias}`}
+              to={`/gents/${p.alias}`}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              style={p.retired ? { opacity: 0.5, filter: 'saturate(0.3)' } : undefined}
             >
               <Avatar
-                src={gent.avatar_url}
-                name={gent.display_name}
+                src={p.avatar_url}
+                name={p.display_name}
                 size="sm"
               />
               <div className="flex flex-col">
                 <span className="text-sm text-ivory font-body font-medium">
-                  {gent.display_name}
+                  {p.display_name}
                 </span>
                 <span className="text-xs text-ivory-dim font-body capitalize">
-                  {gent.full_alias}
+                  {p.full_alias}
                 </span>
               </div>
             </Link>
           </motion.div>
         ))}
       </div>
+      {entry.participants.some(p => p.retired) && (
+        <p className="text-[10px] font-body text-gold/40 italic mt-1">featuring a retired operative</p>
+      )}
     </motion.div>
   )
 }

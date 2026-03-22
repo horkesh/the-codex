@@ -7,14 +7,16 @@ import { PassportCover } from '@/components/passport/PassportCover'
 import { StampGrid } from '@/components/passport/StampGrid'
 import { StampDetail } from '@/components/passport/StampDetail'
 import { StoryCard } from '@/components/passport/StoryCard'
+import { HonourableDischargeCertificate } from '@/components/passport/HonourableDischargeCertificate'
 import { Spinner, OnboardingTip, Modal, Button } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
 import { fadeUp } from '@/lib/animations'
 import { fetchStories, deleteStory } from '@/data/stories'
+import { fetchAllGents } from '@/data/gents'
 import { generateStamp } from '@/ai/stamp'
 import { updateStampImage } from '@/data/stamps'
 import { useUIStore } from '@/store/ui'
-import type { PassportStamp, Story } from '@/types/app'
+import type { PassportStamp, Story, Gent } from '@/types/app'
 import { useNavigate } from 'react-router'
 
 type View = 'cover' | 'stamps'
@@ -33,7 +35,16 @@ export default function Passport() {
   const [regenerating, setRegenerating] = useState(false)
   const [storyToDelete, setStoryToDelete] = useState<Story | null>(null)
   const [deletingStory, setDeletingStory] = useState(false)
+  const [retiredGent, setRetiredGent] = useState<Gent | null>(null)
   const addToast = useUIStore(s => s.addToast)
+
+  // Fetch retired gent for Honourable Discharge certificate
+  useEffect(() => {
+    fetchAllGents().then(gents => {
+      const retired = gents.find(g => g.retired)
+      if (retired) setRetiredGent(retired)
+    })
+  }, [])
 
   // Raw (non-deduplicated) city list for frequency analysis in travel intel
   const rawCities = useMemo(() => missionStamps.map(s => s.city).filter(Boolean) as string[], [missionStamps])
@@ -195,6 +206,17 @@ export default function Passport() {
                   </div>
 
                   <StampGrid stamps={stamps} onStampPress={handleStampPress} />
+
+                  {/* Honourable Discharge — shown when a retired gent exists */}
+                  {retiredGent && (
+                    <div className="mt-8">
+                      <HonourableDischargeCertificate
+                        gentName={retiredGent.display_name}
+                        alias={retiredGent.full_alias}
+                        activePeriod="2019 — 2024"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

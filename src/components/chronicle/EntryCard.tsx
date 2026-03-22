@@ -145,13 +145,14 @@ export function EntryCard({ entry, onClick, onTogglePin }: EntryCardProps) {
           {entry.participants.length > 0 && (
             <div className="flex items-center shrink-0">
               <div className="flex -space-x-1.5">
-                {visibleParticipants.map((gent) => (
-                  <Avatar
-                    key={gent.id}
-                    src={gent.avatar_url}
-                    name={gent.display_name}
-                    size="xs"
-                  />
+                {visibleParticipants.map((p) => (
+                  <div key={p.id} style={p.retired ? { opacity: 0.5, filter: 'saturate(0.3)' } : undefined}>
+                    <Avatar
+                      src={p.avatar_url}
+                      name={p.display_name}
+                      size="xs"
+                    />
+                  </div>
                 ))}
               </div>
               {overflow > 0 && (

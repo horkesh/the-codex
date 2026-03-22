@@ -8,6 +8,7 @@ import { fetchEntries } from '@/data/entries'
 import { fetchEarnedAchievements, ACHIEVEMENT_ICONS, type EarnedAchievement } from '@/data/achievements'
 import { fetchEarnedThresholds, THRESHOLD_DEFINITIONS } from '@/data/thresholds'
 import { formatDate } from '@/lib/utils'
+import { HonourableDischargeCertificate } from '@/components/passport/HonourableDischargeCertificate'
 import type { Gent, GentStats, EntryWithParticipants } from '@/types/app'
 
 // ─── Signature stat derivation ────────────────────────────────────────────────
@@ -283,6 +284,16 @@ export default function GentProfile() {
               <p className="text-sm font-display text-ivory/80 italic leading-relaxed">
                 A founding member of The Gents. Though no longer among the active operatives, his presence shaped the early chronicles. The fourth chair remains.
               </p>
+            </div>
+          )}
+
+          {/* ── Honourable Discharge certificate ── */}
+          {gent.retired && (
+            <div className="mb-6">
+              <HonourableDischargeCertificate
+                gentName={gent.display_name}
+                alias={gent.full_alias}
+              />
             </div>
           )}
 

@@ -5,7 +5,7 @@ import { checkAndAwardThresholds } from '@/data/thresholds'
 import { imageToWebpBlob } from '@/lib/image'
 
 export const ENTRY_COLUMNS = 'id, type, title, date, location, city, country, country_code, description, lore, lore_generated_at, cover_image_url, scene_url, status, pinned, visibility, metadata, created_by, created_at, updated_at'
-const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio'
+const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio, retired'
 
 /** Build a map of entryId → Gent[] from entry_participants rows */
 export async function fetchParticipantsMap(entryIds: string[]): Promise<Record<string, Gent[]>> {
