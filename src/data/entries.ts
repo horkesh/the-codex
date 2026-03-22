@@ -485,6 +485,32 @@ export async function fetchRecentEntryIds(days: number): Promise<string[]> {
   return (data ?? []).map(e => e.id)
 }
 
+/** Fetch entries from previous years that happened on today's date (exact match). */
+export async function fetchOnThisDay(): Promise<EntryWithParticipants[]> {
+  const now = new Date()
+  const thisYear = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const pattern = `%-${month}-${day}`
+
+  const { data, error } = await supabase
+    .from('entries')
+    .select(ENTRY_COLUMNS)
+    .in('status', ['published', 'gathering_post'])
+    .like('date', pattern)
+    .order('date', { ascending: false })
+
+  if (error || !data) return []
+
+  const entries = (data as unknown as Entry[]).filter(e =>
+    new Date(e.date).getFullYear() < thisYear
+  )
+
+  if (entries.length === 0) return []
+  const participantMap = await fetchParticipantsMap(entries.map(e => e.id))
+  return entries.map(e => ({ ...e, participants: participantMap[e.id] ?? [] }))
+}
+
 /** Returns entry id → date for all published entries (for mind map recency). */
 export async function fetchEntryDates(): Promise<Map<string, string>> {
   const { data, error } = await supabase

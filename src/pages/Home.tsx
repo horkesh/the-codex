@@ -7,6 +7,7 @@ import { NAV_SECTIONS } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
 import { launchToastSession } from '@/ai/toast'
 import { isComfortMode } from '@/hooks/useComfortMode'
+import { OnThisDayCard } from '@/components/home/OnThisDayCard'
 
 const MotionLink = motion(Link)
 
@@ -144,6 +145,9 @@ export default function Home() {
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-gold/30" />
           </motion.div>
         </div>
+
+        {/* On This Day — nostalgia card */}
+        <OnThisDayCard />
 
         {/* Section cards — 2×3 grid, or 3×2 in comfort mode for bigger cards */}
         <div className={cn('grid gap-3 pb-4', comfort ? 'grid-cols-3' : 'grid-cols-2')}>
