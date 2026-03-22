@@ -415,6 +415,28 @@ CREATE TABLE public.push_subscriptions (
 - `src/components/chronicle/EntryCard.tsx` — RSVP badge + attending count for gathering cards
 - `src/pages/Profile.tsx` — push notification toggle
 
+## Agenda: Upcoming Gatherings
+
+Pre-event gatherings (`phase: 'pre'`) surface on the Agenda page as a third sub-section: **"Upcoming"**.
+
+### Agenda landing page
+Add a third card to `SUB_SECTIONS` in `Agenda.tsx`:
+```
+{ id: 'upcoming', label: 'Upcoming', subtitle: 'Gatherings on the calendar', path: '/agenda/upcoming' }
+```
+
+### Upcoming page (`src/pages/UpcomingGatherings.tsx`)
+- Fetches all entries with `type: 'gathering'` and `status: 'gathering_pre'`, sorted by `metadata.event_date` ascending (soonest first)
+- Each card shows: title, countdown badge, venue, pizza menu count (if pizza party), RSVP attending count
+- Tapping a card navigates to `/gathering/{id}`
+- Empty state: "No upcoming gatherings"
+- Route: `/agenda/upcoming` (protected)
+
+### Modified files
+- `src/pages/Agenda.tsx` — add Upcoming sub-section card
+- `src/pages/UpcomingGatherings.tsx` — new page (CREATE)
+- `src/App.tsx` — add route for `/agenda/upcoming`
+
 ## Out of Scope
 
 - Pizza ordering/voting by guests

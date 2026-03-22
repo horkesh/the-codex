@@ -1902,7 +1902,149 @@ git commit -m "feat: push notification toggle on Profile + subscribe prompt on G
 
 ## Chunk 6: Final Integration + VAPID Setup
 
-### Task 18: Generate VAPID keys and document setup
+### Task 18: Upcoming Gatherings on Agenda
+
+**Files:**
+- Modify: `src/pages/Agenda.tsx`
+- Create: `src/pages/UpcomingGatherings.tsx`
+- Modify: `src/App.tsx`
+
+- [ ] **Step 1: Read Agenda.tsx for exact structure**
+
+Read `src/pages/Agenda.tsx` to see how sub-sections are defined and rendered.
+
+- [ ] **Step 2: Add Upcoming sub-section to Agenda**
+
+Add to the `SUB_SECTIONS` array in `Agenda.tsx`:
+```typescript
+{
+  id: 'upcoming',
+  label: 'Upcoming',
+  subtitle: 'Gatherings on the calendar',
+  path: '/agenda/upcoming',
+  image: '/images/sections/bucket-list.webp', // reuse existing image
+},
+```
+
+- [ ] **Step 3: Create UpcomingGatherings page**
+
+Create `src/pages/UpcomingGatherings.tsx`:
+
+```tsx
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
+import { motion } from 'framer-motion'
+import { MapPin, Calendar } from 'lucide-react'
+import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
+import { CountdownBadge } from '@/components/gathering/CountdownBadge'
+import { PizzaSvg } from '@/lib/pizzaSvg'
+import { supabase } from '@/lib/supabase'
+import { fadeUp, staggerContainer, staggerItem } from '@/lib/variants'
+import type { Entry, GatheringMetadata } from '@/types/app'
+
+export default function UpcomingGatherings() {
+  const navigate = useNavigate()
+  const [gatherings, setGatherings] = useState<Entry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from('entries')
+        .select('*')
+        .eq('type', 'gathering')
+        .eq('status', 'gathering_pre')
+        .order('date', { ascending: true })
+      setGatherings((data as Entry[]) ?? [])
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  return (
+    <>
+      <TopBar title="Upcoming" backTo="/agenda" />
+      <SectionNav />
+
+      <PageWrapper padded scrollable>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+          </div>
+        ) : gatherings.length === 0 ? (
+          <motion.div variants={fadeUp} initial="initial" animate="animate" className="flex flex-col items-center py-20 gap-3">
+            <p className="text-sm text-ivory-dim font-body text-center">No upcoming gatherings</p>
+          </motion.div>
+        ) : (
+          <motion.div variants={staggerContainer} initial="initial" animate="animate" className="flex flex-col gap-3 pb-6">
+            {gatherings.map(entry => {
+              const meta = entry.metadata as GatheringMetadata
+              const isPizza = meta.flavour === 'pizza_party'
+              return (
+                <motion.button
+                  key={entry.id}
+                  variants={staggerItem}
+                  type="button"
+                  onClick={() => navigate(`/gathering/${entry.id}`)}
+                  className="flex items-center gap-4 bg-white/5 border border-white/8 rounded-xl p-4 text-left hover:bg-white/8 transition-colors"
+                >
+                  {isPizza && meta.pizza_menu?.[0] && (
+                    <PizzaSvg toppings={meta.pizza_menu[0].toppings} size={48} seed={meta.pizza_menu[0].name} />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-ivory font-display truncate">{entry.title}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {meta.venue && (
+                        <span className="text-[10px] text-ivory-dim/60 font-body flex items-center gap-1">
+                          <MapPin size={10} /> {meta.venue}
+                        </span>
+                      )}
+                      <span className="text-[10px] text-ivory-dim/60 font-body flex items-center gap-1">
+                        <Calendar size={10} /> {meta.event_date}
+                      </span>
+                    </div>
+                    {isPizza && meta.pizza_menu && (
+                      <p className="text-[10px] text-gold/60 font-body mt-1">{meta.pizza_menu.length} pizzas</p>
+                    )}
+                  </div>
+                  <CountdownBadge eventDate={meta.event_date} />
+                </motion.button>
+              )
+            })}
+          </motion.div>
+        )}
+      </PageWrapper>
+    </>
+  )
+}
+```
+
+- [ ] **Step 4: Add route in App.tsx**
+
+Find where gathering routes are and add:
+```typescript
+const UpcomingGatherings = lazy(() => import('./pages/UpcomingGatherings'))
+```
+
+And in the routes:
+```tsx
+<Route path="/agenda/upcoming" element={<ProtectedRoute><UpcomingGatherings /></ProtectedRoute>} />
+```
+
+- [ ] **Step 5: Check CountdownBadge accepts eventDate prop**
+
+Read `src/components/gathering/CountdownBadge.tsx` to verify prop name. Adjust if needed.
+
+- [ ] **Step 6: Verify + Commit**
+
+Run: `npx tsc -b`
+
+```bash
+git add src/pages/Agenda.tsx src/pages/UpcomingGatherings.tsx src/App.tsx
+git commit -m "feat: Upcoming Gatherings page on Agenda with countdown + pizza preview"
+```
+
+### Task 19: Generate VAPID keys and document setup
 
 **Files:**
 - Modify: `.env.example`
@@ -1934,7 +2076,7 @@ git add .env.example
 git commit -m "docs: add VAPID key env vars to .env.example"
 ```
 
-### Task 19: Full integration test + type check
+### Task 20: Full integration test + type check
 
 - [ ] **Step 1: Full type check**
 
