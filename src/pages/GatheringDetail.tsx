@@ -6,6 +6,7 @@ import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal } from '@/components/ui'
 import { CountdownBadge } from '@/components/gathering/CountdownBadge'
 import { fetchGathering, fetchRsvps, fetchGuestBookMessages, markGatheringComplete, updateGatheringMetadata } from '@/data/gatherings'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { supabase } from '@/lib/supabase'
@@ -83,6 +84,11 @@ export default function GatheringDetail() {
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [completing, setCompleting] = useState(false)
 
+  // Push notification prompt for creator
+  const { supported: pushSupported, subscribed: pushSubscribed, subscribe: pushSubscribe } = usePushNotifications()
+  const [pushPromptShown, setPushPromptShown] = useState(false)
+  const [pushSubscribing, setPushSubscribing] = useState(false)
+
   // Load data
   useEffect(() => {
     if (!id) return
@@ -134,6 +140,13 @@ export default function GatheringDetail() {
     }
   }, [id])
 
+  // Show push prompt for creator if not subscribed
+  useEffect(() => {
+    if (!entry || !gent || entry.created_by !== gent.id) return
+    if (!pushSupported || pushSubscribed) return
+    setPushPromptShown(true)
+  }, [entry, gent, pushSupported, pushSubscribed])
+
   // Reset unseen RSVP count for creator
   useEffect(() => {
     if (!id || !entry || !gent) return
@@ -158,6 +171,16 @@ export default function GatheringDetail() {
       addToast('Something went wrong. Please try again.', 'error')
     } finally {
       setCompleting(false)
+    }
+  }
+
+  async function handleEnablePush() {
+    setPushSubscribing(true)
+    const ok = await pushSubscribe()
+    setPushSubscribing(false)
+    if (ok) {
+      setPushPromptShown(false)
+      addToast('Push notifications enabled', 'success')
     }
   }
 
@@ -222,6 +245,21 @@ export default function GatheringDetail() {
             animate="animate"
             className="flex flex-col gap-6 pb-4"
           >
+
+            {/* Push notification prompt for creator */}
+            {pushPromptShown && (
+              <div className="flex items-center justify-between bg-gold/10 border border-gold/20 rounded-xl px-4 py-3">
+                <span className="text-xs text-ivory font-body">Get notified when guests RSVP?</span>
+                <button
+                  type="button"
+                  onClick={handleEnablePush}
+                  disabled={pushSubscribing}
+                  className="text-xs text-gold font-body font-semibold"
+                >
+                  {pushSubscribing ? 'Enabling...' : 'Enable'}
+                </button>
+              </div>
+            )}
 
             {/* Countdown badge */}
             <motion.div variants={staggerItem} className="pt-1">
