@@ -9,6 +9,7 @@ import type { EloRatings } from '@/lib/elo'
 import { GENT_LABELS } from '@/lib/gents'
 import type { GentAlias } from '@/types/app'
 import { Spinner } from '@/components/ui'
+import { supabase } from '@/lib/supabase'
 import { fadeIn } from '@/lib/animations'
 
 // ─── Scanline overlay (CSS) ──────────────────────────────────────────────────
@@ -329,7 +330,7 @@ function NewsTicker({ headlines }: { headlines: string[] }) {
 
 // ─── Match Log ───────────────────────────────────────────────────────────────
 
-function RecentMatches({ matches }: { matches: PS5MatchFlat[] }) {
+function RecentMatches({ matches, trashTalk }: { matches: PS5MatchFlat[]; trashTalk: string | null }) {
   const recent = useMemo(() => [...matches].reverse().slice(0, 8), [matches])
 
   if (recent.length === 0) return null
@@ -345,30 +346,41 @@ function RecentMatches({ matches }: { matches: PS5MatchFlat[] }) {
           const labelB = GENT_LABELS[m.p2] ?? m.p2
           const draw = !m.winner
           return (
-            <motion.div
-              key={`${m.date}-${i}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: i * 0.04 }}
-              className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.04] rounded px-3 py-2 font-mono text-xs"
-            >
-              <span className="text-ivory-dim/50 w-16 shrink-0">
-                {m.date.slice(5)}
-              </span>
-              <span className={m.winner === m.p1 ? 'text-gold font-bold' : 'text-ivory-dim'}>
-                {labelA}
-              </span>
-              <span className="text-ivory-dim/30 mx-1">vs</span>
-              <span className={m.winner === m.p2 ? 'text-gold font-bold' : 'text-ivory-dim'}>
-                {labelB}
-              </span>
-              {draw && (
-                <>
-                  <span className="flex-1" />
-                  <span className="text-ivory-dim/40">Draw</span>
-                </>
+            <div key={`${m.date}-${i}`}>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.04 }}
+                className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.04] rounded px-3 py-2 font-mono text-xs"
+              >
+                <span className="text-ivory-dim/50 w-16 shrink-0">
+                  {m.date.slice(5)}
+                </span>
+                <span className={m.winner === m.p1 ? 'text-gold font-bold' : 'text-ivory-dim'}>
+                  {labelA}
+                </span>
+                <span className="text-ivory-dim/30 mx-1">vs</span>
+                <span className={m.winner === m.p2 ? 'text-gold font-bold' : 'text-ivory-dim'}>
+                  {labelB}
+                </span>
+                {draw && (
+                  <>
+                    <span className="flex-1" />
+                    <span className="text-ivory-dim/40">Draw</span>
+                  </>
+                )}
+              </motion.div>
+              {i === 0 && trashTalk && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="px-4 py-3 bg-white/[0.03] rounded-lg border-l-2 border-gold/40 mt-2"
+                >
+                  <p className="text-xs font-display text-gold/80 italic">"{trashTalk}"</p>
+                </motion.div>
               )}
-            </motion.div>
+            </div>
           )
         })}
       </div>
@@ -383,6 +395,7 @@ export default function RivalryDashboard() {
   const [streaks, setStreaks] = useState<PS5Streak[]>([])
   const [matches, setMatches] = useState<PS5MatchFlat[]>([])
   const [loading, setLoading] = useState(true)
+  const [trashTalk, setTrashTalk] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([fetchPS5HeadToHead(), fetchPS5Streaks(), fetchPS5AllMatches()])
@@ -394,6 +407,28 @@ export default function RivalryDashboard() {
       .catch(err => console.error('RivalryDashboard: failed to load data:', err))
       .finally(() => setLoading(false))
   }, [])
+
+  // Generate trash talk for the most recent match
+  const trashTalkFetched = useRef(false)
+  useEffect(() => {
+    if (matches.length === 0 || trashTalkFetched.current) return
+    const reversed = [...matches].reverse()
+    const latest = reversed[0]
+    if (!latest?.winner) return
+    trashTalkFetched.current = true
+    const winnerLabel = GENT_LABELS[latest.winner as GentAlias] ?? latest.winner
+    const loserAlias = latest.winner === latest.p1 ? latest.p2 : latest.p1
+    const loserLabel = GENT_LABELS[loserAlias as GentAlias] ?? loserAlias
+    supabase.functions.invoke('generate-trash-talk', {
+      body: {
+        winner: winnerLabel,
+        loser: loserLabel,
+        game: 'PS5',
+      },
+    }).then(({ data }) => {
+      if (data?.trash_talk) setTrashTalk(data.trash_talk)
+    }).catch(() => {})
+  }, [matches])
 
   const ratings = useMemo<EloRatings>(
     () => computeElo(matches.map((m) => ({ p1: m.p1, p2: m.p2, winner: m.winner }))),
@@ -487,7 +522,7 @@ export default function RivalryDashboard() {
           <HeadToHeadGrid h2h={h2h} />
           <WinProbabilityBar h2h={h2h} ratings={ratings} />
           <StreaksPanel streaks={streaks} />
-          <RecentMatches matches={matches} />
+          <RecentMatches matches={matches} trashTalk={trashTalk} />
         </motion.div>
       )}
     </div>

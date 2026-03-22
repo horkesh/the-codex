@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, ChevronDown } from 'lucide-react'
+import { Sparkles, ChevronDown, Volume2, VolumeX, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui'
 import { generateLoreFull } from '@/ai/lore'
 import { updateEntryLore, updateEntry } from '@/data/entries'
 import { fadeUp } from '@/lib/animations'
+import { useNarration } from '@/hooks/useNarration'
 import type { EntryWithParticipants } from '@/types/app'
 
 interface LoreSectionProps {
@@ -56,6 +57,9 @@ export function LoreSection({ entry, photoUrls, readOnly, gentId, onLoreGenerate
   // Keep a ref to entry so the debounced save always reads fresh metadata
   const entryRef = useRef(entry)
   entryRef.current = entry
+
+  // Narration (listen to lore)
+  const { audioUrl, generating: narrationGenerating, playing, generate: generateNarration, play: playNarration } = useNarration(entry.id)
 
   // Auto-save hints to entry metadata after 1s of inactivity
   const unmounted = useRef(false)
@@ -203,11 +207,30 @@ export function LoreSection({ entry, photoUrls, readOnly, gentId, onLoreGenerate
             <p className="text-gold/90 font-display italic text-base leading-relaxed whitespace-pre-wrap">
               {localLore}
             </p>
-            {localLoreDate && (
-              <p className="text-xs text-ivory-dim font-body">
-                Generated {formatDate(localLoreDate)}
-              </p>
-            )}
+            <div className="flex items-center gap-3">
+              {localLoreDate && (
+                <p className="text-xs text-ivory-dim font-body">
+                  Generated {formatDate(localLoreDate)}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (audioUrl) { playNarration() }
+                  else if (localLore) { generateNarration(localLore) }
+                }}
+                disabled={narrationGenerating}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/10 border border-gold/20 text-xs font-body text-gold hover:bg-gold/15 transition-colors disabled:opacity-40"
+              >
+                {narrationGenerating ? (
+                  <><Loader2 size={12} className="animate-spin" /> Generating...</>
+                ) : playing ? (
+                  <><VolumeX size={12} /> Stop</>
+                ) : (
+                  <><Volume2 size={12} /> Listen</>
+                )}
+              </button>
+            </div>
           </motion.div>
         )}
 
