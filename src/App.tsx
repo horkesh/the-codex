@@ -36,6 +36,7 @@ const Agenda = lazy(() => import('@/pages/Agenda'))
 const UpcomingGatherings = lazy(() => import('@/pages/UpcomingGatherings'))
 const GentProfile = lazy(() => import('@/pages/GentProfile'))
 const PhotoTimeline = lazy(() => import('@/pages/PhotoTimeline'))
+const Timeline = lazy(() => import('@/pages/Timeline'))
 const ToastDraftReview = lazy(() => import('@/pages/ToastDraftReview'))
 const Momento = lazy(() => import('@/pages/Momento'))
 const VisaRedirect = lazy(() => import('@/pages/VisaRedirect'))
@@ -72,6 +73,7 @@ function AnimatedRoutes() {
           <Route path="/chronicle" element={<ProtectedRoute><Chronicle /></ProtectedRoute>} />
           <Route path="/chronicle/new" element={<ProtectedRoute><EntryNew /></ProtectedRoute>} />
           <Route path="/chronicle/photos" element={<ProtectedRoute><PhotoTimeline /></ProtectedRoute>} />
+          <Route path="/chronicle/timeline" element={<ProtectedRoute><Timeline /></ProtectedRoute>} />
           <Route path="/chronicle/draft/:id" element={<ProtectedRoute><ToastDraftReview /></ProtectedRoute>} />
           <Route path="/chronicle/:id" element={<ProtectedRoute><EntryDetail /></ProtectedRoute>} />
           <Route path="/chronicle/:id/edit" element={<ProtectedRoute><EntryEdit /></ProtectedRoute>} />

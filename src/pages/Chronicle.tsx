@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Plus, Globe, Images, CalendarCheck, X } from 'lucide-react'
+import { Plus, Globe, Images, CalendarCheck, X, GitBranch } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useChronicle, useUpcomingGatherings } from '@/hooks/useChronicle'
 import { EntryCard } from '@/components/chronicle/EntryCard'
@@ -69,6 +69,14 @@ export default function Chronicle() {
         title="Chronicle"
         right={
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => navigate('/chronicle/timeline')}
+              className="flex items-center justify-center w-8 h-8 text-ivory-muted hover:text-ivory transition-colors"
+              aria-label="Timeline"
+            >
+              <GitBranch size={18} strokeWidth={1.75} />
+            </button>
             <button
               type="button"
               onClick={() => navigate('/chronicle/photos')}
