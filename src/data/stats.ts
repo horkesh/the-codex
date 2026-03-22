@@ -181,6 +181,47 @@ export async function fetchMissionsByYear(): Promise<Array<{ year: number; count
     .sort((a, b) => a.year - b.year)
 }
 
+// ─── PS5 All Matches (for ELO computation) ───────────────────────────────────
+
+export interface PS5MatchFlat {
+  p1: GentAlias
+  p2: GentAlias
+  winner: GentAlias | null
+  date: string
+}
+
+/** Fetch every individual PS5 match across all sessions, ordered by date ASC. */
+export async function fetchPS5AllMatches(): Promise<PS5MatchFlat[]> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('metadata, date')
+    .eq('type', 'playstation')
+    .in('status', ['published', 'gathering_post'])
+    .order('date', { ascending: true })
+
+  if (error) throw error
+
+  const flat: PS5MatchFlat[] = []
+
+  for (const row of data ?? []) {
+    const metadata = row.metadata as Record<string, unknown>
+    const entryDate = (row as { date: string }).date
+    const matches = metadata?.matches as PS5Match[] | undefined
+    if (!matches) continue
+
+    for (const m of matches) {
+      flat.push({
+        p1: m.p1,
+        p2: m.p2,
+        winner: m.winner,
+        date: entryDate,
+      })
+    }
+  }
+
+  return flat
+}
+
 // ─── PS5 Win Streaks ──────────────────────────────────────────────────────────
 
 export interface PS5Streak {

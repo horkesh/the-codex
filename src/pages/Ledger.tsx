@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router'
-import { MapPin } from 'lucide-react'
+import { MapPin, Radio } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { Spinner, OnboardingTip } from '@/components/ui'
 import { useStats } from '@/hooks/useStats'
@@ -88,6 +88,27 @@ export default function Ledger() {
                 <p className="font-body text-xs text-ivory-dim mt-0.5">Saved venues & locations</p>
               </div>
               <span className="text-ivory-dim text-xs font-body">›</span>
+            </Link>
+
+            {/* Rivalry Broadcast banner */}
+            <Link
+              to="/ledger/rivalry"
+              className="flex items-center gap-4 rounded-xl border border-[#e63946]/20 bg-[#e63946]/[0.06] px-4 py-3.5 mb-2 hover:border-[#e63946]/40 transition-colors active:scale-[0.98]"
+            >
+              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#e63946]/15 shrink-0">
+                <Radio size={18} className="text-[#e63946]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-display text-base text-ivory leading-tight">Rivalry Broadcast</p>
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e63946] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#e63946]" />
+                  </span>
+                </div>
+                <p className="font-body text-xs text-ivory-dim mt-0.5">ELO ratings, head-to-head, projections</p>
+              </div>
+              <span className="text-ivory-dim text-xs font-body">&rsaquo;</span>
             </Link>
 
             <StatGrid stats={stats} />

@@ -40,6 +40,7 @@ const Timeline = lazy(() => import('@/pages/Timeline'))
 const ToastDraftReview = lazy(() => import('@/pages/ToastDraftReview'))
 const Momento = lazy(() => import('@/pages/Momento'))
 const Vaults = lazy(() => import('@/pages/Vaults'))
+const RivalryDashboard = lazy(() => import('@/pages/RivalryDashboard'))
 const VisaRedirect = lazy(() => import('@/pages/VisaRedirect'))
 const PublicInvite = lazy(() => import('@/pages/public/PublicInvite'))
 const PublicGuestBook = lazy(() => import('@/pages/public/PublicGuestBook'))
@@ -99,6 +100,7 @@ function AnimatedRoutes() {
           <Route path="/vaults" element={<ProtectedRoute><Vaults /></ProtectedRoute>} />
           <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
           <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
+          <Route path="/ledger/rivalry" element={<ProtectedRoute><RivalryDashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/gents/:alias" element={<ProtectedRoute><GentProfile /></ProtectedRoute>} />
           <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
