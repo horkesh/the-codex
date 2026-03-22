@@ -29,14 +29,17 @@ Deno.serve(async (req: Request) => {
         ? `You have been provided ${photos.length} photograph(s) from this mission. Study every photograph carefully. Identify locations, landmarks, restaurants, bars, activities, food, drinks, architecture, weather, time of day, mood. Identify each Gent present using the visual identification guide.`
         : `No photographs are available. Use the mission details, location, and lore to construct the debrief from context alone.${lore ? `\n\nLore: ${lore}` : ''}`
 
-      return `You are writing a CLASSIFIED MISSION DEBRIEF for The Gents Chronicles — a private chronicle of three gentlemen.
+      const hasRetired = entry.participants?.some((p: { alias?: string }) => p.alias === 'operative')
+      const retiredNote = hasRetired ? `\n\nNOTE: Mirza ("Retired Operative") is present — a former member of The Gents. Reference him with warmth; his presence on this mission is notable.` : ''
+
+      return `You are writing a CLASSIFIED MISSION DEBRIEF for The Gents Chronicles — a private chronicle of The Gents.
 
 These are from a mission (trip) to ${city}, ${country}.
 
 Mission: ${entry.title}
 Date: ${entry.date}
 Present: ${participantNames}
-${entry.location ? `Venue: ${entry.location}` : ''}
+${entry.location ? `Venue: ${entry.location}` : ''}${retiredNote}
 
 ${GENT_VISUAL_ID}
 

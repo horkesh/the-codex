@@ -174,7 +174,13 @@ async function handleFullMission(body: {
     }
     const soundtrackDirective = soundtrackMood ? soundtrackDirectives[soundtrackMood] ?? "" : ""
 
-    const systemPrompt = `You are the Lorekeeper of The Gents Chronicles — a private lifestyle chronicle of three gentlemen (${participants.join(", ")}). You write in the voice of an intimate, literary narrator who was at every scene.
+    const hasRetiredOperative = participants.some(p => p.toLowerCase() === 'mirza')
+    const gentCount = participants.length === 4 ? 'four' : participants.length === 3 ? 'three' : String(participants.length)
+    const retiredDirective = hasRetiredOperative
+      ? `\nRETIRED OPERATIVE: Mirza ("Retired Operative") is present in this mission. He is a former member of The Gents who has since retired from active duty. Write about him with warmth and a hint of nostalgia — acknowledge his presence as special, like a returning legend. A subtle nod is more powerful than a eulogy. He was there. That is what matters.`
+      : ""
+
+    const systemPrompt = `You are the Lorekeeper of The Gents Chronicles — a private lifestyle chronicle of ${gentCount} gentlemen (${participants.join(", ")}). You write in the voice of an intimate, literary narrator who was at every scene.
 
 ${GENT_VISUAL_ID}
 
@@ -186,6 +192,7 @@ RULES:
 - Match mood of each scene. A chaotic bar scene gets different energy than a contemplative morning walk.
 - Avoid generic filler. Every sentence must earn its place with a specific detail, name, or observation.
 - No emojis. Ever.
+${retiredDirective}
 ${directorNotes ? `\nDIRECTOR'S NOTES: ${directorNotes}` : ""}
 ${crossMissionContext ? `\nCROSS-MISSION CONTEXT (reference previous visits naturally):\n${crossMissionContext}` : ""}
 ${weatherSummary ? `\nWEATHER: ${weatherSummary}` : ""}
