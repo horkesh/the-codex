@@ -391,7 +391,7 @@ export default function RivalryDashboard() {
         setStreaks(s)
         setMatches(m)
       })
-      .catch(() => {})
+      .catch(err => console.error('RivalryDashboard: failed to load data:', err))
       .finally(() => setLoading(false))
   }, [])
 

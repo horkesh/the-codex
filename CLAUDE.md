@@ -545,6 +545,40 @@ User-toggleable CSS filters applied to video feed, captured image, and export co
 - Both use `BackgroundLayer`, `InsetFrame`, `GeometricBorder` (repeating 45deg gold gradient), `CrescentMark` SVG.
 - Text outline: multi-directional `text-shadow` for legibility against background photos.
 
+## Interactive Timeline (`/chronicle/timeline`)
+- Pannable, zoomable ReactFlow canvas showing all entries as nodes connected by a golden chronological thread.
+- Horizontal layout: each month = 300px column, entries zigzag vertically within months.
+- Custom nodes: `TimelineEntryNode` (cover photo + type badge + title + date), `TimelineMonthNode` (month label pill).
+- Lightweight fetch: `fetchTimelineEntries()` selects only 5 columns (not full metadata/lore).
+- Navigation: GitBranch icon on Chronicle page header.
+
+## On This Day (`src/components/home/OnThisDayCard.tsx`)
+- Home page card showing entries from previous years on today's date.
+- `fetchOnThisDay()` queries entries matching `%-MM-DD` pattern, filters out current year.
+- Shows up to 3 entries with cover thumbnail, title, "N years ago" label, city.
+- Returns null (hidden) when no matching entries exist.
+
+## The Vault — Time Capsules (`/vaults`)
+- Seal a message for a future date. No peeking until the date arrives.
+- DB: `vaults` table (message, opens_at, opened, created_by) with RLS per gent.
+- Three groups: "Ready to Unseal" (date passed), "Sealed" (countdown), "Opened" (revealed).
+- Sealed vaults show redacted bars (hidden message) + breathing gold glow + countdown.
+- Quick date presets: 6 months, 1 year, 2 years.
+- Linked from Home page.
+
+## Rivalry Broadcast (`/ledger/rivalry`)
+- Sports-broadcast-style PS5 rivalry dashboard.
+- ELO rating system (`src/lib/elo.ts`): K=32, computes dynamic ratings from match history.
+- Features: ELO leaderboard, head-to-head grid, win probability bars, active streaks, recent results.
+- Breaking news ticker with data-derived headlines (streak records, dominance stats).
+- CSS scanline overlay + pulsing red "LIVE" indicator for broadcast aesthetic.
+- Linked from Ledger page.
+
+## Planned features (need API keys)
+- **AI Narrator Voice**: TTS for lore (needs `OPENAI_API_KEY` or ElevenLabs key in Supabase secrets)
+- **Memory Mixtape**: Spotify-linked playlists from entries (needs Spotify OAuth credentials)
+- **Annual Film**: Auto-generated year-in-review video from photos + lore
+
 ## Related projects (for reference)
 - `C:\...\Tonight` — Social game app. Source of avatar prompt patterns.
 - `C:\...\The Grand Tour` — Italy trip PWA.

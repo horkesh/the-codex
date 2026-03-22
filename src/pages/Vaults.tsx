@@ -1,22 +1,15 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock, Unlock, Plus, Trash2, X } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { useAuthStore } from '@/store/auth'
 import { fetchVaults, createVault, openVault, deleteVault } from '@/data/vaults'
-import { formatDate } from '@/lib/utils'
+import { formatDate, daysUntil } from '@/lib/utils'
+import { useUIStore } from '@/store/ui'
 import type { Vault } from '@/types/app'
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function daysUntil(dateStr: string): number {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const target = new Date(dateStr + 'T00:00:00')
-  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-}
-
-function countdownLabel(days: number): string {
+// Vault-specific countdown (more granular than the generic countdownLabel)
+function vaultCountdown(days: number): string {
   if (days <= 0) return 'Ready to unseal'
   if (days === 1) return 'Opens tomorrow'
   if (days < 30) return `Opens in ${days} days`
@@ -242,7 +235,7 @@ function VaultCard({
                 ? `Opened ${vault.opened_at ? formatDate(vault.opened_at) : ''}`
                 : isReady
                   ? 'Ready to unseal'
-                  : countdownLabel(days)}
+                  : vaultCountdown(days)}
             </p>
             <p className="text-[10px] text-ivory-dim/30 font-body mt-0.5">
               Sealed {formatDate(vault.created_at)} · Opens {formatDate(vault.opens_at)}
@@ -311,30 +304,46 @@ export default function Vaults() {
 
   useEffect(() => { load() }, [load])
 
+  const { addToast } = useUIStore()
+
   async function handleCreate(message: string, opensAt: string) {
     if (!gent) return
-    const vault = await createVault(gent.id, message, opensAt)
-    setVaults((prev) => [...prev, vault].sort((a, b) => a.opens_at.localeCompare(b.opens_at)))
+    try {
+      const vault = await createVault(gent.id, message, opensAt)
+      setVaults((prev) => [...prev, vault].sort((a, b) => a.opens_at.localeCompare(b.opens_at)))
+      addToast('Vault sealed', 'success')
+    } catch {
+      addToast('Failed to create vault', 'error')
+    }
   }
 
   async function handleOpen(id: string) {
-    await openVault(id)
-    setVaults((prev) =>
-      prev.map((v) =>
-        v.id === id ? { ...v, opened: true, opened_at: new Date().toISOString() } : v,
-      ),
-    )
+    try {
+      await openVault(id)
+      setVaults((prev) =>
+        prev.map((v) =>
+          v.id === id ? { ...v, opened: true, opened_at: new Date().toISOString() } : v,
+        ),
+      )
+    } catch {
+      addToast('Failed to unseal vault', 'error')
+    }
   }
 
   async function handleDelete(id: string) {
-    await deleteVault(id)
-    setVaults((prev) => prev.filter((v) => v.id !== id))
+    try {
+      await deleteVault(id)
+      setVaults((prev) => prev.filter((v) => v.id !== id))
+    } catch {
+      addToast('Failed to delete vault', 'error')
+    }
   }
 
-  // Split into groups
-  const sealed = vaults.filter((v) => !v.opened && daysUntil(v.opens_at) > 0)
-  const ready = vaults.filter((v) => !v.opened && daysUntil(v.opens_at) <= 0)
-  const opened = vaults.filter((v) => v.opened)
+  const { sealed, ready, opened } = useMemo(() => ({
+    sealed: vaults.filter((v) => !v.opened && daysUntil(v.opens_at) > 0),
+    ready: vaults.filter((v) => !v.opened && daysUntil(v.opens_at) <= 0),
+    opened: vaults.filter((v) => v.opened),
+  }), [vaults])
 
   return (
     <>
