@@ -337,6 +337,84 @@ When a guest RSVPs with status `attending`, they are automatically added to the 
 ### Modified files addition
 - `supabase/functions/submit-rsvp/index.ts` — add auto-Circle logic for attending RSVPs
 
+## RSVP Notifications
+
+Three notification channels for the gathering creator:
+
+### 1. Push notifications (web push via minimal service worker)
+
+**Service worker** (`public/sw-push.js`): notification-only, zero fetch interception. Does NOT cache anything — avoids the deadlock that caused VitePWA removal. Literally only listens for `push` and `notificationclick` events.
+
+```js
+// public/sw-push.js
+self.addEventListener('push', (e) => {
+  const data = e.data?.json() ?? {}
+  e.waitUntil(
+    self.registration.showNotification(data.title ?? 'The Gents Chronicles', {
+      body: data.body,
+      icon: '/logo-gold.webp',
+      data: { url: data.url },
+    })
+  )
+})
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  e.waitUntil(clients.openWindow(e.notification.data?.url ?? '/'))
+})
+```
+
+**VAPID keys**: generated once via `web-push generate-vapid-keys`. Public key in `VITE_VAPID_PUBLIC_KEY` env var (client-side). Private key in Supabase secrets as `VAPID_PRIVATE_KEY`.
+
+**DB table** (new migration):
+```sql
+CREATE TABLE public.push_subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  gent_id uuid NOT NULL REFERENCES public.gents(id) ON DELETE CASCADE,
+  endpoint text NOT NULL,
+  p256dh text NOT NULL,
+  auth text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(gent_id, endpoint)
+);
+-- RLS: authenticated can SELECT/INSERT/DELETE their own
+```
+
+**Subscribe flow**:
+- `src/lib/pushSubscription.ts`: `subscribeToPush(gentId)` — checks permission, registers SW, subscribes via `pushManager.subscribe()`, upserts to `push_subscriptions` table
+- Called from GatheringDetail when creator views their gathering (one-time prompt, persisted)
+- Also accessible from Profile page as a toggle
+
+**Trigger**: `submit-rsvp` edge function, after inserting RSVP row (and after Circle auto-add), fetches creator's push subscriptions and sends web push notification:
+- Title: gathering title (e.g. "Pizza Night")
+- Body: "{name} is attending!" / "{name} might come" / "{name} can't make it"
+- URL: `/gathering/{entryId}`
+- Uses `web-push` npm package in Deno edge function (or raw Web Push protocol via fetch)
+
+**Failure handling**: push send is fire-and-forget. If endpoint returns 410 Gone (subscription expired), delete the subscription row.
+
+### 2. In-app notification badge
+
+- `entry.metadata.rsvp_unseen_count`: incremented by `submit-rsvp` edge function on each RSVP insert
+- Reset to 0 when creator opens GatheringDetail (via `updateGatheringMetadata` on mount)
+- EntryCard in Chronicle feed shows a gold badge with the unseen count (e.g. "3") on gathering cards where `rsvp_unseen_count > 0`
+- Only visible to the gathering creator (`entry.created_by === gent.id`)
+
+### 3. RSVP count on Chronicle EntryCard
+
+- All gathering EntryCards show an RSVP summary below the title: "{N} attending" in gold text
+- Computed from `gathering_rsvps` table — fetched alongside entries in `useChronicle` or lazy-loaded per gathering card
+- Visible to all gents, not just the creator
+
+### Modified files addition
+- `public/sw-push.js` — notification-only service worker (NEW)
+- `src/lib/pushSubscription.ts` — subscribe/unsubscribe helpers (NEW)
+- `supabase/migrations/XXXXXX_push_subscriptions.sql` — push subscriptions table (NEW)
+- `supabase/functions/submit-rsvp/index.ts` — send web push + increment unseen count
+- `src/pages/GatheringDetail.tsx` — trigger push subscribe prompt, reset unseen count on mount
+- `src/components/chronicle/EntryCard.tsx` — RSVP badge + attending count for gathering cards
+- `src/pages/Profile.tsx` — push notification toggle
+
 ## Out of Scope
 
 - Pizza ordering/voting by guests
