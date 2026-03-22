@@ -146,7 +146,7 @@ export function EntryCard({ entry, onClick, onTogglePin }: EntryCardProps) {
             <div className="flex items-center shrink-0">
               <div className="flex -space-x-1.5">
                 {visibleParticipants.map((p) => (
-                  <div key={p.id} style={p.retired ? { opacity: 0.5, filter: 'saturate(0.3)' } : undefined}>
+                  <div key={p.id} className={p.retired ? 'opacity-50 saturate-[0.3]' : undefined}>
                     <Avatar
                       src={p.avatar_url}
                       name={p.display_name}

@@ -178,9 +178,11 @@ export default function EntryEdit() {
     if (!entry) return null
 
     if (entry.type === 'mission') {
+      const meta = entry.metadata as Record<string, unknown> | undefined
       const initial: Partial<MissionFormData> = {
         title: entry.title,
         date: entry.date,
+        date_end: (meta?.date_end as string) ?? '',
         city: entry.city ?? '',
         country: entry.country ?? '',
         country_code: entry.country_code ?? '',

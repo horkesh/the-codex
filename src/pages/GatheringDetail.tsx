@@ -306,24 +306,32 @@ export default function GatheringDetail() {
 
   async function handleSaveDescription() {
     if (!id) return
-    await updateEntry(id, { description: descDraft.trim() || null })
-    setEntry(prev => prev ? { ...prev, description: descDraft.trim() || null } : prev)
-    setEditingDesc(false)
-    addToast('Description updated', 'success')
+    try {
+      await updateEntry(id, { description: descDraft.trim() || null })
+      setEntry(prev => prev ? { ...prev, description: descDraft.trim() || null } : prev)
+      setEditingDesc(false)
+      addToast('Description updated', 'success')
+    } catch {
+      addToast('Failed to save description', 'error')
+    }
   }
 
   async function handleSaveHostMessage() {
     if (!id) return
-    const trimmed = hostMsgDraft.trim() || undefined
-    await updateGatheringMetadata(id, { host_message: trimmed } as Partial<GatheringMetadata>)
-    setEntry(prev => {
-      if (!prev) return prev
-      const newMeta = { ...prev.metadata, host_message: trimmed }
-      if (!trimmed) delete (newMeta as Record<string, unknown>).host_message
-      return { ...prev, metadata: newMeta }
-    })
-    setEditingHostMsg(false)
-    addToast('Host message updated', 'success')
+    try {
+      const trimmed = hostMsgDraft.trim() || undefined
+      await updateGatheringMetadata(id, { host_message: trimmed } as Partial<GatheringMetadata>)
+      setEntry(prev => {
+        if (!prev) return prev
+        const newMeta = { ...prev.metadata, host_message: trimmed }
+        if (!trimmed) delete (newMeta as Record<string, unknown>).host_message
+        return { ...prev, metadata: newMeta }
+      })
+      setEditingHostMsg(false)
+      addToast('Host message updated', 'success')
+    } catch {
+      addToast('Failed to save message', 'error')
+    }
   }
 
   async function handleMarkComplete() {
