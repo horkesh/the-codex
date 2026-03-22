@@ -1,12 +1,17 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
 import { MapPin, Users, Ticket, Star } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
+import { SwipeToDelete } from '@/components/ui'
 import { PizzaSvg } from '@/lib/pizzaSvg'
 import { supabase } from '@/lib/supabase'
+import { deleteEntry } from '@/data/entries'
+import { deleteProspect } from '@/data/prospects'
+import { deleteBucketItem } from '@/data/bucketList'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import { daysUntil, formatDate } from '@/lib/utils'
+import { useUIStore } from '@/store/ui'
 import type { Entry, GatheringMetadata, Prospect, BucketListItem } from '@/types/app'
 
 type FeedItemType = 'gathering' | 'scouting' | 'wishlist'
@@ -29,6 +34,7 @@ const SUB_SECTIONS = [
 
 export default function Agenda() {
   const navigate = useNavigate()
+  const { addToast } = useUIStore()
   const [gatherings, setGatherings] = useState<Entry[]>([])
   const [prospects, setProspects] = useState<Prospect[]>([])
   const [wishlist, setWishlist] = useState<BucketListItem[]>([])
@@ -111,9 +117,33 @@ export default function Agenda() {
       })
     }
 
-    items.sort((a, b) => a.sortDate.localeCompare(b.sortDate))
-    return items
+    // Dated items first (sorted by upcoming), wishlist at the bottom
+    const dated = items.filter(i => i.date).sort((a, b) => a.sortDate.localeCompare(b.sortDate))
+    const undated = items.filter(i => !i.date)
+    return [...dated, ...undated]
   }, [gatherings, prospects, wishlist])
+
+  const handleDelete = useCallback(async (item: FeedItem) => {
+    try {
+      switch (item.type) {
+        case 'gathering':
+          await deleteEntry((item.data as Entry).id)
+          setGatherings(prev => prev.filter(g => g.id !== (item.data as Entry).id))
+          break
+        case 'scouting':
+          await deleteProspect((item.data as Prospect).id)
+          setProspects(prev => prev.filter(p => p.id !== (item.data as Prospect).id))
+          break
+        case 'wishlist':
+          await deleteBucketItem((item.data as BucketListItem).id)
+          setWishlist(prev => prev.filter(w => w.id !== (item.data as BucketListItem).id))
+          break
+      }
+      addToast('Removed from agenda', 'success')
+    } catch {
+      addToast('Failed to delete', 'error')
+    }
+  }, [addToast])
 
   function handleTap(item: FeedItem) {
     switch (item.type) {
@@ -185,48 +215,50 @@ export default function Agenda() {
               const days = item.date ? daysUntil(item.date) : null
 
               return (
-                <motion.button
-                  key={item.id}
-                  variants={staggerItem}
-                  type="button"
-                  onClick={() => handleTap(item)}
-                  className="flex items-center gap-3 bg-white/4 border border-white/6 rounded-xl p-3.5 text-left hover:bg-white/6 transition-colors"
-                >
-                  {isPizzaGathering && pizzaMenu?.[0] ? (
-                    <PizzaSvg toppings={pizzaMenu[0].toppings} size={40} seed={pizzaMenu[0].name} className="shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                      {typeIcon(item.type)}
-                    </div>
-                  )}
+                <motion.div key={item.id} variants={staggerItem}>
+                  <SwipeToDelete onDelete={() => handleDelete(item)}>
+                    <button
+                      type="button"
+                      onClick={() => handleTap(item)}
+                      className="flex items-center gap-3 bg-white/4 border border-white/6 rounded-xl p-3.5 text-left hover:bg-white/6 transition-colors w-full"
+                    >
+                      {isPizzaGathering && pizzaMenu?.[0] ? (
+                        <PizzaSvg toppings={pizzaMenu[0].toppings} size={40} seed={pizzaMenu[0].name} className="shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                          {typeIcon(item.type)}
+                        </div>
+                      )}
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[9px] font-body text-gold/50 uppercase tracking-wider">{typeLabel(item.type)}</span>
-                    </div>
-                    <p className="text-sm text-ivory font-display truncate">{item.title}</p>
-                    {item.subtitle && (
-                      <span className="text-[10px] text-ivory-dim/50 font-body flex items-center gap-1 mt-0.5">
-                        <MapPin size={9} className="shrink-0" /> {item.subtitle}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="shrink-0 text-right">
-                    {item.date ? (
-                      <>
-                        <p className="text-[10px] text-ivory-dim/50 font-body">{formatDate(item.date)}</p>
-                        {days !== null && days >= 0 && (
-                          <p className="text-[10px] text-gold font-body mt-0.5">
-                            {days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`}
-                          </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="text-[9px] font-body text-gold/50 uppercase tracking-wider">{typeLabel(item.type)}</span>
+                        </div>
+                        <p className="text-sm text-ivory font-display truncate">{item.title}</p>
+                        {item.subtitle && (
+                          <span className="text-[10px] text-ivory-dim/50 font-body flex items-center gap-1 mt-0.5">
+                            <MapPin size={9} className="shrink-0" /> {item.subtitle}
+                          </span>
                         )}
-                      </>
-                    ) : (
-                      <p className="text-[10px] text-ivory-dim/30 font-body">No date</p>
-                    )}
-                  </div>
-                </motion.button>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        {item.date ? (
+                          <>
+                            <p className="text-[10px] text-ivory-dim/50 font-body">{formatDate(item.date)}</p>
+                            {days !== null && days >= 0 && (
+                              <p className="text-[10px] text-gold font-body mt-0.5">
+                                {days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-[10px] text-ivory-dim/30 font-body">No date</p>
+                        )}
+                      </div>
+                    </button>
+                  </SwipeToDelete>
+                </motion.div>
               )
             })}
           </motion.div>
