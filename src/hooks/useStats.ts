@@ -31,7 +31,7 @@ export function useStats(): UseStatsReturn {
           fetchMissionsByYear(),
         ])
         if (!cancelled) {
-          setStats(allStats)
+          setStats(allStats.filter(s => s.alias !== 'operative'))
           setPs5H2H(h2h)
           setMissionsByYear(missions)
         }
@@ -52,7 +52,7 @@ export function useStats(): UseStatsReturn {
     setLoading(true)
     try {
       const data = year !== null ? await fetchYearStats(year) : await fetchAllStats()
-      setStats(data)
+      setStats(data.filter(s => s.alias !== 'operative'))
     } catch {
       // leave state as-is
     } finally {
