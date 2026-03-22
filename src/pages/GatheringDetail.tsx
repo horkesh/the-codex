@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download, Image, Camera, Pencil } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download, Image, Camera, Pencil, ShoppingBag, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal } from '@/components/ui'
 import { CountdownBadge } from '@/components/gathering/CountdownBadge'
@@ -49,22 +49,131 @@ function OptionsMenu({ isOpen, onClose, onMarkComplete, completing }: OptionsMen
 function RsvpBadge({ response }: { response: GatheringRsvp['response'] }) {
   if (response === 'attending') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-body text-[10px] font-medium">
+      <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-gold/15 border border-gold/30 text-gold font-body text-[10px] font-medium">
         Attending
       </span>
     )
   }
   if (response === 'not_attending') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 font-body text-[10px] font-medium">
-        Not Attending
+      <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-ivory-dim/50 font-body text-[10px] font-medium">
+        Can't make it
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 font-body text-[10px] font-medium">
+    <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full bg-white/8 border border-white/15 text-ivory-dim font-body text-[10px] font-medium">
       Maybe
     </span>
+  )
+}
+
+// ── Shopping list (pizza party) ───────────────────────────────────────────
+
+function ShoppingList({ pizzaMenu }: { pizzaMenu: NonNullable<GatheringMetadata['pizza_menu']> }) {
+  const [collapsed, setCollapsed] = useState(true)
+  const [crossedOff, setCrossedOff] = useState<Set<string>>(new Set())
+
+  const items = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const pizza of pizzaMenu) {
+      for (const t of pizza.toppings) {
+        counts.set(t, (counts.get(t) ?? 0) + 1)
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([key, count]) => ({ key, label: TOPPING_REGISTRY[key]?.label ?? key, count }))
+  }, [pizzaMenu])
+
+  function toggleItem(key: string) {
+    setCrossedOff(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  if (items.length === 0) return null
+
+  return (
+    <motion.div variants={staggerItem} className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={() => setCollapsed(c => !c)}
+        className="flex items-center justify-between w-full group"
+      >
+        <div className="flex items-center gap-2">
+          <ShoppingBag size={15} className="text-gold shrink-0" />
+          <h2 className="font-display text-base text-ivory">Shopping List</h2>
+          <span className="font-body text-[10px] text-ivory-dim/60 ml-1">{items.length} items</span>
+        </div>
+        <ChevronDown
+          size={14}
+          className={cn(
+            'text-ivory-dim/40 transition-transform duration-200',
+            !collapsed && 'rotate-180',
+          )}
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.ul
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col gap-0.5 overflow-hidden"
+          >
+            {items.map(item => {
+              const crossed = crossedOff.has(item.key)
+              return (
+                <li key={item.key}>
+                  <button
+                    type="button"
+                    onClick={() => toggleItem(item.key)}
+                    className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+                  >
+                    {/* Check circle */}
+                    <span
+                      className={cn(
+                        'w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors',
+                        crossed
+                          ? 'bg-gold/20 border-gold/50'
+                          : 'border-white/20',
+                      )}
+                    >
+                      {crossed && (
+                        <span className="block w-2 h-2 rounded-full bg-gold" />
+                      )}
+                    </span>
+
+                    <span
+                      className={cn(
+                        'flex-1 text-left font-body text-sm transition-all',
+                        crossed
+                          ? 'text-ivory-dim/40 line-through'
+                          : 'text-ivory',
+                      )}
+                    >
+                      {item.label}
+                    </span>
+
+                    {item.count > 1 && (
+                      <span className="font-body text-[10px] text-ivory-dim/50 shrink-0">
+                        (x{item.count})
+                      </span>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
 
@@ -406,6 +515,11 @@ export default function GatheringDetail() {
               </motion.div>
             )}
 
+            {/* Shopping list — pizza party, creator only */}
+            {isCreator && meta.flavour === 'pizza_party' && meta.pizza_menu && meta.pizza_menu.length > 0 && (
+              <ShoppingList pizzaMenu={meta.pizza_menu} />
+            )}
+
             {/* Cocktail menu */}
             {meta.flavour !== 'pizza_party' && meta.cocktail_menu && meta.cocktail_menu.length > 0 && (
               <motion.div variants={staggerItem} className="flex flex-col gap-3">
@@ -486,16 +600,16 @@ export default function GatheringDetail() {
               </button>
             </motion.div>
 
-            {/* RSVP section */}
+            {/* Guest Wall */}
             <motion.div variants={staggerItem} className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users size={15} className="text-gold shrink-0" />
-                  <h2 className="font-display text-base text-ivory">RSVPs</h2>
+                  <h2 className="font-display text-base text-ivory">Guest Wall</h2>
                 </div>
                 {rsvps.length > 0 && (
                   <span className="font-body text-xs text-ivory-dim">
-                    {attendingCount} attending{maybeCount > 0 ? `, ${maybeCount} maybe` : ''}
+                    {attendingCount} attending{maybeCount > 0 ? ` · ${maybeCount} maybe` : ''}
                   </span>
                 )}
               </div>
@@ -503,22 +617,34 @@ export default function GatheringDetail() {
               {rsvps.length === 0 ? (
                 <p className="font-body text-sm text-ivory-dim">No RSVPs yet.</p>
               ) : (
-                <ul className="flex flex-col gap-2">
-                  {rsvps.map(rsvp => (
-                    <li
-                      key={rsvp.id}
-                      className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-slate-light border border-white/8"
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-body text-sm text-ivory font-medium">{rsvp.name}</span>
-                        {rsvp.email && (
-                          <span className="font-body text-xs text-ivory-dim">{rsvp.email}</span>
+                <motion.div layout className="grid grid-cols-2 gap-2">
+                  <AnimatePresence>
+                    {rsvps.map(rsvp => (
+                      <motion.div
+                        key={rsvp.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                        className={cn(
+                          'flex flex-col gap-1.5 px-3 py-3 rounded-xl bg-slate-light border',
+                          rsvp.response === 'attending'
+                            ? 'border-[#D4843A]/40'
+                            : rsvp.response === 'maybe'
+                              ? 'border-white/12'
+                              : 'border-white/6 opacity-50',
                         )}
-                      </div>
-                      <RsvpBadge response={rsvp.response} />
-                    </li>
-                  ))}
-                </ul>
+                      >
+                        <span className="font-display text-sm text-ivory truncate">{rsvp.name}</span>
+                        {rsvp.email && (
+                          <span className="font-body text-[10px] text-ivory-dim/60 truncate">{rsvp.email}</span>
+                        )}
+                        <RsvpBadge response={rsvp.response} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
               )}
             </motion.div>
 
