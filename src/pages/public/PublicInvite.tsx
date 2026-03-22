@@ -190,6 +190,7 @@ export default function PublicInvite() {
   const lng = metadata?.lng as number | undefined
   const venue = metadata?.venue as string | undefined
   const address = metadata?.address as string | undefined
+  const hostMessage = metadata?.host_message as string | undefined
 
   /* ── live countdown ── */
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 })
@@ -355,6 +356,32 @@ export default function PublicInvite() {
             </motion.p>
           )}
 
+          {/* Host message */}
+          {hostMessage && (
+            <motion.div {...fadeUp(0.85)} className="mt-5 w-full">
+              <div
+                className="rounded-r-lg px-4 py-3"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  borderLeft: '2px solid rgba(212,132,58,0.5)',
+                }}
+              >
+                <p
+                  className="text-sm italic leading-relaxed"
+                  style={{ color: '#C8C0B0', fontFamily: 'var(--font-display)' }}
+                >
+                  &ldquo;{hostMessage}&rdquo;
+                </p>
+                <p
+                  className="text-[10px] mt-2"
+                  style={{ color: '#D4843A', fontFamily: 'var(--font-body)' }}
+                >
+                  — The Host
+                </p>
+              </div>
+            </motion.div>
+          )}
+
           {/* Pizza menu — flip cards */}
           {isPizzaParty && pizzaMenu.length > 0 && (
             <div className="flex flex-col gap-3 mt-6 w-full">
@@ -476,13 +503,104 @@ export default function PublicInvite() {
             </motion.form>
           ) : (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
               className="mt-8"
             >
-              <p className="text-[#C9A84C] text-center text-base">
-                See you there.
+              <div
+                className="rounded-xl px-5 py-6 flex flex-col items-center gap-4"
+                style={{
+                  background: response === 'not_attending'
+                    ? 'rgba(255,255,255,0.03)'
+                    : 'rgba(255,255,255,0.05)',
+                  border: response === 'not_attending'
+                    ? '1px solid rgba(255,255,255,0.08)'
+                    : '1px solid rgba(201,168,76,0.2)',
+                }}
+              >
+                {/* Header */}
+                <p
+                  className="text-[10px] uppercase tracking-[0.3em]"
+                  style={{
+                    color: response === 'not_attending' ? '#8C8680' : '#C9A84C',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  — The Gents Chronicles —
+                </p>
+
+                {/* Pizza icon for pizza party */}
+                {isPizzaParty && pizzaMenu.length > 0 && response !== 'not_attending' && (
+                  <PizzaSvg toppings={pizzaMenu[0].toppings} size={56} seed={pizzaMenu[0].name || 'p-0'} />
+                )}
+
+                {/* Status line */}
+                <p
+                  className="text-lg text-center"
+                  style={{
+                    color: response === 'not_attending' ? '#8C8680' : '#F0EDE8',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 500,
+                  }}
+                >
+                  {name}{' '}
+                  {response === 'attending'
+                    ? 'is attending'
+                    : response === 'maybe'
+                      ? 'might be there'
+                      : 'sends regrets'}
+                </p>
+
+                {/* Event info */}
+                <div className="flex flex-col items-center gap-1">
+                  <p
+                    className="text-sm text-center"
+                    style={{ color: '#F0EDE8', fontFamily: 'var(--font-display)' }}
+                  >
+                    {entry.title}
+                  </p>
+                  <p
+                    className="text-xs text-center"
+                    style={{ color: '#8C8680', fontFamily: 'var(--font-body)' }}
+                  >
+                    {eventDate ? formatDate(eventDate) : formatDate(entry.date)}
+                    {(venue || metaLocation || entry.location) && ` · ${venue || metaLocation || entry.location}`}
+                  </p>
+                </div>
+
+                {/* Gold rule */}
+                <div
+                  className="w-16 h-px"
+                  style={{
+                    background: response === 'not_attending'
+                      ? 'rgba(140,134,128,0.3)'
+                      : 'rgba(201,168,76,0.4)',
+                  }}
+                />
+
+                {/* Tagline */}
+                <p
+                  className="text-sm italic"
+                  style={{
+                    color: response === 'not_attending' ? '#8C8680' : '#C9A84C',
+                    fontFamily: 'var(--font-display)',
+                  }}
+                >
+                  {response === 'attending'
+                    ? 'See you there.'
+                    : response === 'maybe'
+                      ? 'We will keep a spot.'
+                      : 'You will be missed.'}
+                </p>
+              </div>
+
+              {/* Screenshot hint */}
+              <p
+                className="text-[10px] text-center mt-3"
+                style={{ color: 'rgba(140,134,128,0.4)', fontFamily: 'var(--font-body)' }}
+              >
+                Screenshot to share
               </p>
             </motion.div>
           )}

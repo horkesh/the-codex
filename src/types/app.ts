@@ -162,6 +162,7 @@ export interface GatheringMetadata {
   lat?: number
   lng?: number
   rsvp_unseen_count?: number
+  host_message?: string
 }
 
 // Person tiers for mind map

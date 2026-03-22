@@ -195,11 +195,13 @@ export default function GatheringDetail() {
   const [completing, setCompleting] = useState(false)
   const [showQrModal, setShowQrModal] = useState(false)
 
-  // Photos + description editing
+  // Photos + description + host message editing
   const [photos, setPhotos] = useState<Array<{ id: string; url: string }>>([])
   const [uploading, setUploading] = useState(false)
   const [editingDesc, setEditingDesc] = useState(false)
   const [descDraft, setDescDraft] = useState('')
+  const [editingHostMsg, setEditingHostMsg] = useState(false)
+  const [hostMsgDraft, setHostMsgDraft] = useState('')
 
   // Push notification prompt for creator
   const { supported: pushSupported, subscribed: pushSubscribed, subscribe: pushSubscribe } = usePushNotifications()
@@ -307,6 +309,20 @@ export default function GatheringDetail() {
     setEntry(prev => prev ? { ...prev, description: descDraft.trim() || null } : prev)
     setEditingDesc(false)
     addToast('Description updated', 'success')
+  }
+
+  async function handleSaveHostMessage() {
+    if (!id) return
+    const trimmed = hostMsgDraft.trim() || undefined
+    await updateGatheringMetadata(id, { host_message: trimmed } as Partial<GatheringMetadata>)
+    setEntry(prev => {
+      if (!prev) return prev
+      const newMeta = { ...prev.metadata, host_message: trimmed }
+      if (!trimmed) delete (newMeta as Record<string, unknown>).host_message
+      return { ...prev, metadata: newMeta }
+    })
+    setEditingHostMsg(false)
+    addToast('Host message updated', 'success')
   }
 
   async function handleMarkComplete() {
@@ -470,6 +486,50 @@ export default function GatheringDetail() {
               ) : isCreator ? (
                 <button type="button" onClick={() => { setDescDraft(''); setEditingDesc(true) }} className="w-full text-left text-xs text-ivory-dim/40 font-body py-2 hover:text-ivory-dim transition-colors">
                   + Add description
+                </button>
+              ) : null}
+            </motion.div>
+
+            {/* Host message */}
+            <motion.div variants={staggerItem}>
+              {editingHostMsg ? (
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    value={hostMsgDraft}
+                    onChange={e => setHostMsgDraft(e.target.value)}
+                    placeholder="Add a personal message for guests..."
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-ivory font-body placeholder:text-ivory-dim/40 focus:outline-none focus:border-gold/30 resize-none italic"
+                    rows={3}
+                    autoFocus
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button type="button" onClick={() => setEditingHostMsg(false)} className="text-xs text-ivory-dim font-body px-3 py-1.5">Cancel</button>
+                    <button type="button" onClick={handleSaveHostMessage} className="text-xs text-gold font-body font-semibold px-3 py-1.5 bg-gold/10 rounded-lg">Save</button>
+                  </div>
+                </div>
+              ) : meta.host_message ? (
+                <div className="flex items-start gap-2">
+                  <div
+                    className="flex-1 rounded-r-lg px-4 py-3"
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      borderLeft: '2px solid rgba(212,132,58,0.5)',
+                    }}
+                  >
+                    <p className="font-display text-sm text-[#C8C0B0] italic leading-relaxed">
+                      &ldquo;{meta.host_message}&rdquo;
+                    </p>
+                    <p className="font-body text-[10px] text-[#D4843A] mt-2">— The Host</p>
+                  </div>
+                  {isCreator && (
+                    <button type="button" onClick={() => { setHostMsgDraft(meta.host_message ?? ''); setEditingHostMsg(true) }} className="text-ivory-dim/40 hover:text-gold transition-colors shrink-0 mt-2">
+                      <Pencil size={12} />
+                    </button>
+                  )}
+                </div>
+              ) : isCreator ? (
+                <button type="button" onClick={() => { setHostMsgDraft(''); setEditingHostMsg(true) }} className="w-full text-left text-xs text-ivory-dim/40 font-body py-2 hover:text-ivory-dim transition-colors">
+                  + Add personal message
                 </button>
               ) : null}
             </motion.div>

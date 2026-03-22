@@ -28,6 +28,9 @@ export default function GatheringNew() {
   const [city, setCity] = useState('')
   const [description, setDescription] = useState('')
 
+  // Host message
+  const [hostMessage, setHostMessage] = useState('')
+
   // Cocktail menu
   const [cocktailInput, setCocktailInput] = useState('')
   const [cocktails, setCocktails] = useState<string[]>([])
@@ -143,6 +146,7 @@ export default function GatheringNew() {
         address: address || undefined,
         lat,
         lng,
+        host_message: hostMessage.trim() || undefined,
       }
 
       const entry = await createEntry({
@@ -267,6 +271,15 @@ export default function GatheringNew() {
             placeholder="What is this gathering about?"
             value={description}
             onChange={e => setDescription(e.target.value)}
+          />
+
+          {/* Host message */}
+          <Input
+            as="textarea"
+            label="Personal Message"
+            placeholder="Looking forward to having you. I'm making my special Diavola..."
+            value={hostMessage}
+            onChange={e => setHostMessage(e.target.value)}
           />
 
           {/* Pizza Menu (pizza party only) */}
