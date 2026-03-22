@@ -8,7 +8,8 @@ import { LocationSearchModal } from '@/components/places/LocationSearchModal'
 import { MapPicker } from '@/components/places/MapPicker'
 import { buildStaticMapUrl } from '@/export/templates/shared/utils'
 import { reverseGeocode } from '@/lib/geo'
-import { createEntry, updateEntry } from '@/data/entries'
+import { createEntry, updateEntry, uploadEntryPhoto, updateEntryCover } from '@/data/entries'
+import { PhotoUpload, usePendingPhotos } from '@/components/chronicle/PhotoUpload'
 import { fetchLocations } from '@/data/locations'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -53,6 +54,9 @@ export default function GatheringNew() {
   const [savedPlaces, setSavedPlaces] = useState<SavedLocation[]>([])
 
   useEffect(() => { fetchLocations().then(setSavedPlaces) }, [])
+
+  // Photos
+  const { pendingFiles, addFiles, removeFile } = usePendingPhotos(10)
 
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<{ title?: string; eventDate?: string; location?: string }>({})
@@ -162,6 +166,18 @@ export default function GatheringNew() {
 
       // createEntry defaults to 'published' — patch to gathering_pre
       await updateEntry(entry.id, { status: 'gathering_pre' })
+
+      // Upload photos if any were selected
+      if (pendingFiles.length > 0) {
+        let coverUrl: string | null = null
+        for (let i = 0; i < pendingFiles.length; i++) {
+          const url = await uploadEntryPhoto(entry.id, pendingFiles[i], i)
+          if (i === 0) coverUrl = url
+        }
+        if (coverUrl) {
+          await updateEntryCover(entry.id, coverUrl)
+        }
+      }
 
       addToast('Gathering created', 'success')
       navigate(`/gathering/${entry.id}`)
@@ -396,6 +412,15 @@ export default function GatheringNew() {
               </ul>
             )}
           </div>
+
+          {/* Photos */}
+          <PhotoUpload
+            entryId={null}
+            maxPhotos={10}
+            onFilesAdded={addFiles}
+            onFileRemoved={removeFile}
+            className="w-full"
+          />
 
           {/* Submit */}
           <div className="pt-2">
