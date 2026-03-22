@@ -9,23 +9,19 @@ export function useNarration(cacheKey: string) {
   const [playing, setPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Stop audio on unmount
   useEffect(() => {
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
-        audioRef.current.onended = null
-        audioRef.current.onerror = null
         audioRef.current = null
       }
     }
   }, [])
 
-  function startPlaying(audio: HTMLAudioElement) {
+  function startPlaying(url: string) {
+    const audio = new Audio(url)
     audioRef.current = audio
-    audio.onended = () => setPlaying(false)
-    audio.onerror = () => setPlaying(false)
-    // Register globally — stops any other narration
+    // Let the global manager handle onended — pass our state setter as the stop callback
     setGlobalAudio(audio, () => setPlaying(false))
     audio.play()
     setPlaying(true)
@@ -40,8 +36,7 @@ export function useNarration(cacheKey: string) {
       if (error) throw error
       if (data?.audio_url) {
         setAudioUrl(data.audio_url)
-        const audio = new Audio(data.audio_url)
-        startPlaying(audio)
+        startPlaying(data.audio_url)
       }
     } catch (err) {
       console.error('Narration generation failed:', err)
@@ -56,8 +51,7 @@ export function useNarration(cacheKey: string) {
       stopGlobalAudio()
       setPlaying(false)
     } else {
-      const audio = new Audio(audioUrl)
-      startPlaying(audio)
+      startPlaying(audioUrl)
     }
   }, [audioUrl, playing])
 

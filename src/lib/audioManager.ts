@@ -10,6 +10,8 @@ export function stopGlobalAudio() {
   if (currentAudio) {
     currentAudio.pause()
     currentAudio.currentTime = 0
+    currentAudio.onended = null
+    currentAudio.onerror = null
     currentAudio = null
   }
   if (onStopCallback) {
@@ -20,18 +22,21 @@ export function stopGlobalAudio() {
 
 /** Register an audio element as the globally playing one.
  *  Stops any previously playing audio first.
- *  @param onStop — called when this audio is stopped by another play or navigation
+ *  Sets onended/onerror to auto-clear global state + call onStop.
  */
 export function setGlobalAudio(audio: HTMLAudioElement, onStop: () => void) {
   stopGlobalAudio()
   currentAudio = audio
   onStopCallback = onStop
 
-  // Auto-clear when audio ends naturally
-  const originalOnEnded = audio.onended
-  audio.onended = (e) => {
+  audio.onended = () => {
     currentAudio = null
     onStopCallback = null
-    if (typeof originalOnEnded === 'function') originalOnEnded.call(audio, e)
+    onStop()
+  }
+  audio.onerror = () => {
+    currentAudio = null
+    onStopCallback = null
+    onStop()
   }
 }
