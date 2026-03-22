@@ -39,6 +39,7 @@ const PhotoTimeline = lazy(() => import('@/pages/PhotoTimeline'))
 const Timeline = lazy(() => import('@/pages/Timeline'))
 const ToastDraftReview = lazy(() => import('@/pages/ToastDraftReview'))
 const Momento = lazy(() => import('@/pages/Momento'))
+const Vaults = lazy(() => import('@/pages/Vaults'))
 const VisaRedirect = lazy(() => import('@/pages/VisaRedirect'))
 const PublicInvite = lazy(() => import('@/pages/public/PublicInvite'))
 const PublicGuestBook = lazy(() => import('@/pages/public/PublicGuestBook'))
@@ -95,6 +96,7 @@ function AnimatedRoutes() {
           <Route path="/circle/map" element={<Navigate to="/circle" replace />} />
           <Route path="/circle/:id" element={<ProtectedRoute><PersonDetail /></ProtectedRoute>} />
           <Route path="/momento" element={<ProtectedRoute><Momento /></ProtectedRoute>} />
+          <Route path="/vaults" element={<ProtectedRoute><Vaults /></ProtectedRoute>} />
           <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
           <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

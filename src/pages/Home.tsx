@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { motion } from 'framer-motion'
-import { Wine, Camera } from 'lucide-react'
+import { Wine, Camera, Lock } from 'lucide-react'
 import { TopBar, PageWrapper, SectionNav } from '@/components/layout'
 import { useAuthStore } from '@/store/auth'
 import { NAV_SECTIONS } from '@/lib/navigation'
@@ -166,6 +166,16 @@ export default function Home() {
             <div>
               <p className="text-ivory font-body text-sm font-semibold">Momento</p>
               <p className="text-ivory-dim font-body text-xs">Capture a framed story</p>
+            </div>
+          </Link>
+          <Link
+            to="/vaults"
+            className="w-full bg-slate-dark rounded-xl p-4 border border-gold/20 text-left flex items-center gap-3 active:scale-[0.98] transition-transform no-underline"
+          >
+            <Lock size={20} className="text-gold shrink-0" />
+            <div>
+              <p className="text-ivory font-body text-sm font-semibold">The Vault</p>
+              <p className="text-ivory-dim font-body text-xs">Seal a message for the future</p>
             </div>
           </Link>
           <button

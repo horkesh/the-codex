@@ -686,3 +686,15 @@ export interface ToastSessionFull {
   wrapped: ToastWrapped[]
   tracks: ToastTrack[]
 }
+
+// ─── Vault (time capsule) ─────────────────────────────────────────────────
+
+export interface Vault {
+  id: string
+  created_by: string
+  message: string
+  opens_at: string
+  opened: boolean
+  opened_at: string | null
+  created_at: string
+}
