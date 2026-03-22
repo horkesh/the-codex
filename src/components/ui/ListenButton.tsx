@@ -33,7 +33,7 @@ export const ListenButton = memo(function ListenButton({ cacheKey, text, size = 
       ) : (
         <Volume2 size={10} />
       )}
-      {generating ? 'Generating...' : playing ? 'Stop' : 'Listen'}
+      {generating ? 'Generating...' : playing ? 'Stop' : 'Voice of The Gents'}
     </button>
   )
 })
