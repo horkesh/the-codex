@@ -23,6 +23,7 @@ const GENT_EDGE_COLOR: Record<GentAlias, string> = {
   keys: '#3B82F6',
   bass: '#8B5CF6',
   lorekeeper: 'rgba(201,168,76,0.5)',
+  operative: '#6B7280',
 }
 
 function gentPersonEdgeStyle(alias: GentAlias, dimmed: boolean, count: number) {

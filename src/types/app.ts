@@ -15,7 +15,7 @@ export interface SavedLocation {
   created_at: string
 }
 export type EntryStatus = 'draft' | 'published' | 'gathering_pre' | 'gathering_post'
-export type GentAlias = 'keys' | 'bass' | 'lorekeeper'
+export type GentAlias = 'keys' | 'bass' | 'lorekeeper' | 'operative'
 
 export interface Gent {
   id: string
@@ -27,6 +27,7 @@ export interface Gent {
   portrait_url: string | null
   status: string | null
   status_expires_at: string | null
+  retired?: boolean
 }
 
 export interface Entry {

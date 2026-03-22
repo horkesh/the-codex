@@ -37,7 +37,7 @@ export function ParticipantSelector({ selectedIds, onChange }: ParticipantSelect
   if (loading) {
     return (
       <div className="flex gap-3">
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
             className="flex flex-col items-center gap-2 flex-1 animate-pulse"
@@ -74,12 +74,22 @@ export function ParticipantSelector({ selectedIds, onChange }: ParticipantSelect
                   : 'border-white/10 bg-white/5 opacity-60 hover:opacity-80',
               )}
             >
-              <Avatar
-                src={gent.avatar_url}
-                name={gent.display_name}
-                size="md"
-                active={isSelected}
-              />
+              <div className={cn(
+                'relative flex flex-col items-center gap-1',
+                gent.retired && 'opacity-60',
+              )}>
+                <Avatar
+                  src={gent.avatar_url}
+                  name={gent.display_name}
+                  size="md"
+                  active={isSelected}
+                />
+                {gent.retired && (
+                  <span className="absolute -top-1 -right-1 text-[7px] font-body text-gold/70 bg-obsidian border border-gold/30 rounded px-1 py-0.5 uppercase tracking-wider">
+                    Ret.
+                  </span>
+                )}
+              </div>
               <div className="text-center">
                 <p
                   className={cn(

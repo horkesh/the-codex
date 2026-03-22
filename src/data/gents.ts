@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Gent } from '@/types/app'
 
-const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio, portrait_url, status, status_expires_at'
+const GENT_COLUMNS = 'id, alias, display_name, full_alias, avatar_url, bio, portrait_url, status, status_expires_at, retired'
 
 export async function fetchGentById(userId: string): Promise<Gent | null> {
   const { data, error } = await supabase

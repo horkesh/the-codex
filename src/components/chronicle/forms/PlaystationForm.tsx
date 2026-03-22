@@ -24,12 +24,13 @@ interface PlaystationFormProps {
   initialData?: Partial<PlaystationFormData>
 }
 
-const ALIASES: GentAlias[] = ['keys', 'bass', 'lorekeeper']
+const ALIASES: GentAlias[] = ['keys', 'bass', 'lorekeeper', 'operative']
 
 const ALIAS_LABELS: Record<GentAlias, string> = {
   keys: 'Keys',
   bass: 'Bass',
   lorekeeper: 'Lorekeeper',
+  operative: 'Operative',
 }
 
 interface FieldErrors {

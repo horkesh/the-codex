@@ -13,6 +13,7 @@ const GENT_LABELS: Record<GentAlias, string> = {
   keys: 'Keys',
   bass: 'Bass',
   lorekeeper: 'Lorekeeper',
+  operative: 'Operative',
 }
 
 type Pairing = { a: GentAlias; b: GentAlias }

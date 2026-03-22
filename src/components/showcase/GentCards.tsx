@@ -6,6 +6,7 @@ const SIGNATURE_DRINKS: Record<string, string> = {
   keys: 'Cocktails',
   bass: 'Beer',
   lorekeeper: 'Beer',
+  operative: 'The Fourth Chair',
 }
 
 const STAT_RULES: Array<{ field: keyof GentStats; threshold: number; label: string }> = [
@@ -47,18 +48,30 @@ export function GentCards({ gents, stats }: GentCardsProps) {
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
-              className="flex flex-col items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-6"
+              className="relative flex flex-col items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-6"
             >
               {/* Portrait */}
-              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gold/20 bg-slate-dark">
+              <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-gold/20 bg-slate-dark">
                 {(g.portrait_url ?? g.avatar_url) ? (
-                  <img src={(g.portrait_url ?? g.avatar_url)!} alt={g.display_name} className="w-full h-full object-cover" />
+                  <img
+                    src={(g.portrait_url ?? g.avatar_url)!}
+                    alt={g.display_name}
+                    className="w-full h-full object-cover"
+                    style={{ filter: g.retired ? 'saturate(0.3)' : undefined }}
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-2xl font-display text-gold/50">
                     {g.display_name.charAt(0)}
                   </div>
                 )}
               </div>
+              {g.retired && (
+                <div className="absolute inset-0 flex items-center justify-center z-10">
+                  <span className="text-[10px] font-body text-gold/80 uppercase tracking-[0.3em] border border-gold/40 px-3 py-1 rounded -rotate-12 bg-obsidian/60 backdrop-blur-sm">
+                    Retired
+                  </span>
+                </div>
+              )}
               {/* Name + alias */}
               <div className="text-center">
                 <p className="font-display text-lg text-ivory">{g.display_name}</p>

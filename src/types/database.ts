@@ -397,6 +397,7 @@ export type Database = {
           full_alias: string
           id: string
           portrait_url: string | null
+          retired: boolean
           status: string | null
           status_expires_at: string | null
         }
@@ -410,6 +411,7 @@ export type Database = {
           full_alias: string
           id: string
           portrait_url?: string | null
+          retired?: boolean
           status?: string | null
           status_expires_at?: string | null
         }
@@ -423,6 +425,7 @@ export type Database = {
           full_alias?: string
           id?: string
           portrait_url?: string | null
+          retired?: boolean
           status?: string | null
           status_expires_at?: string | null
         }

@@ -201,12 +201,13 @@ export async function fetchPS5Streaks(): Promise<PS5Streak[]> {
   if (error) throw error
 
   // Track per-gent streaks
-  const current: Record<GentAlias, number> = { keys: 0, bass: 0, lorekeeper: 0 }
-  const longest: Record<GentAlias, number> = { keys: 0, bass: 0, lorekeeper: 0 }
+  const current: Record<GentAlias, number> = { keys: 0, bass: 0, lorekeeper: 0, operative: 0 }
+  const longest: Record<GentAlias, number> = { keys: 0, bass: 0, lorekeeper: 0, operative: 0 }
   const lastResult: Record<GentAlias, 'win' | 'loss' | 'draw' | null> = {
     keys: null,
     bass: null,
     lorekeeper: null,
+    operative: null,
   }
 
   for (const row of data ?? []) {
