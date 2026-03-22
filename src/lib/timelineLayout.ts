@@ -23,11 +23,16 @@ export interface TimelineMonthData {
 
 export type TimelineNodeData = TimelineEntryData | TimelineMonthData
 
+/**
+ * Vertical timeline layout — latest entries on top.
+ * Y axis = time (each month = MONTH_HEIGHT), X axis = zigzag within months.
+ */
 export function computeTimelineGraph(entries: TimelineEntry[]): {
   nodes: Node<TimelineNodeData>[]
   edges: Edge[]
 } {
-  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date))
+  // Sort by date DESCENDING (newest first = top)
+  const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date))
 
   const groups = new Map<string, TimelineEntry[]>()
   for (const e of sorted) {
@@ -39,29 +44,31 @@ export function computeTimelineGraph(entries: TimelineEntry[]): {
   const nodes: Node<TimelineNodeData>[] = []
   const edges: Edge[] = []
 
-  let monthX = 0
+  let monthY = 0
   let prevNodeId: string | null = null
-  const MONTH_WIDTH = 300
-  const ENTRY_GAP = 100
+  const MONTH_HEIGHT = 200
+  const ENTRY_GAP = 120
 
   for (const [monthKey, monthEntries] of groups) {
     const [year, month] = monthKey.split('-')
     const monthDate = new Date(+year, +month - 1)
     const monthLabel = monthDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 
+    // Month label on the left
     nodes.push({
       id: `month-${monthKey}`,
       type: 'timelineMonth',
-      position: { x: monthX + MONTH_WIDTH / 2 - 60, y: -60 },
+      position: { x: -140, y: monthY },
       data: { type: 'timelineMonth' as const, label: monthLabel },
       draggable: false,
       selectable: false,
     })
 
+    // Entries zigzag left/right of centre
     monthEntries.forEach((entry, i) => {
       const nodeId = `entry-${entry.id}`
-      const y = i * ENTRY_GAP
-      const x = monthX + (i % 2 === 0 ? 40 : 160)
+      const x = i % 2 === 0 ? 20 : 160
+      const y = monthY + i * ENTRY_GAP
 
       nodes.push({
         id: nodeId,
@@ -83,7 +90,7 @@ export function computeTimelineGraph(entries: TimelineEntry[]): {
       prevNodeId = nodeId
     })
 
-    monthX += MONTH_WIDTH
+    monthY += Math.max(MONTH_HEIGHT, monthEntries.length * ENTRY_GAP + 40)
   }
 
   return { nodes, edges }

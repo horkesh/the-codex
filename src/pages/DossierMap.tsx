@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, Building2, X, ChevronRight } from 'lucide-react'
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
+import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps'
 import { fetchEntries } from '@/data/entries'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Spinner } from '@/components/ui'
@@ -25,9 +25,11 @@ function loadCoordsCache(): Record<string, [number, number]> {
 interface CityMapProps {
   cityGroups: CityGroup[]
   onCitySelect: (c: CityGroup) => void
+  focusCity?: CityGroup | null
 }
 
-function CityMap({ cityGroups, onCitySelect }: CityMapProps) {
+function CityMapInner({ cityGroups, onCitySelect, focusCity }: CityMapProps) {
+  const map = useMap()
   const [coords, setCoords] = useState<Record<string, [number, number]>>(loadCoordsCache)
 
   // Geocode any cities not yet cached
@@ -56,16 +58,68 @@ function CityMap({ cityGroups, onCitySelect }: CityMapProps) {
     return () => { cancelled = true }
   }, [cityGroups])
 
+  // Auto-fit bounds to all markers
+  useEffect(() => {
+    if (!map) return
+    const allCoords = Object.values(coords)
+    if (allCoords.length === 0) return
+    const bounds = new google.maps.LatLngBounds()
+    for (const [lat, lng] of allCoords) bounds.extend({ lat, lng })
+    map.fitBounds(bounds, 40)
+  }, [map, coords])
+
+  // Zoom to focused city
+  useEffect(() => {
+    if (!map || !focusCity) return
+    const coord = coords[`${focusCity.city},${focusCity.country}`]
+    if (coord) {
+      map.panTo({ lat: coord[0], lng: coord[1] })
+      map.setZoom(12)
+    }
+  }, [map, focusCity, coords])
+
   const handleMarkerClick = useCallback((cg: CityGroup) => {
     onCitySelect(cg)
   }, [onCitySelect])
 
   return (
+    <>
+      {cityGroups.map((cg) => {
+        const coord = coords[`${cg.city},${cg.country}`]
+        if (!coord) return null
+        return (
+          <AdvancedMarker
+            key={`${cg.city}-${cg.country}`}
+            position={{ lat: coord[0], lng: coord[1] }}
+            title={cg.city}
+            onClick={() => handleMarkerClick(cg)}
+          >
+            <div
+              style={{
+                width: 26, height: 26, background: '#C9A84C', borderRadius: '50%',
+                border: '2px solid rgba(255,255,255,0.25)',
+                boxShadow: '0 0 10px rgba(201,168,76,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'monospace', fontSize: 10, fontWeight: 700, color: '#0d0b0f',
+                cursor: 'pointer',
+              }}
+            >
+              {cg.entries.length}
+            </div>
+          </AdvancedMarker>
+        )
+      })}
+    </>
+  )
+}
+
+function CityMap({ cityGroups, onCitySelect, focusCity }: CityMapProps) {
+  return (
     <div style={{ height: '260px' }} className="w-full rounded-2xl overflow-hidden border border-white/8">
       <APIProvider apiKey={GOOGLE_MAPS_KEY}>
         <Map
-          defaultCenter={{ lat: 20, lng: 10 }}
-          defaultZoom={2}
+          defaultCenter={{ lat: 44, lng: 18 }}
+          defaultZoom={5}
           gestureHandling="greedy"
           disableDefaultUI
           zoomControl
@@ -73,31 +127,7 @@ function CityMap({ cityGroups, onCitySelect }: CityMapProps) {
           colorScheme="DARK"
           style={{ width: '100%', height: '100%' }}
         >
-          {cityGroups.map((cg) => {
-            const coord = coords[`${cg.city},${cg.country}`]
-            if (!coord) return null
-            return (
-              <AdvancedMarker
-                key={`${cg.city}-${cg.country}`}
-                position={{ lat: coord[0], lng: coord[1] }}
-                title={cg.city}
-                onClick={() => handleMarkerClick(cg)}
-              >
-                <div
-                  style={{
-                    width: 26, height: 26, background: '#C9A84C', borderRadius: '50%',
-                    border: '2px solid rgba(255,255,255,0.25)',
-                    boxShadow: '0 0 10px rgba(201,168,76,0.4)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'monospace', fontSize: 10, fontWeight: 700, color: '#0d0b0f',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {cg.entries.length}
-                </div>
-              </AdvancedMarker>
-            )
-          })}
+          <CityMapInner cityGroups={cityGroups} onCitySelect={onCitySelect} focusCity={focusCity} />
         </Map>
       </APIProvider>
     </div>
@@ -336,7 +366,7 @@ export default function DossierMap() {
             {/* Map */}
             {allCityGroups.length > 0 && (
               <motion.div variants={staggerItem} className="mb-5">
-                <CityMap cityGroups={allCityGroups} onCitySelect={setSelectedCity} />
+                <CityMap cityGroups={allCityGroups} onCitySelect={setSelectedCity} focusCity={selectedCity} />
               </motion.div>
             )}
 

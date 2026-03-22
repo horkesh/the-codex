@@ -12,7 +12,7 @@ export const TimelineEntryNode = memo(function TimelineEntryNode({ data }: NodeP
 
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer group">
-      <Handle type="target" position={Position.Left} className="!bg-gold/40 !w-1.5 !h-1.5 !border-0" />
+      <Handle type="target" position={Position.Top} className="!bg-gold/40 !w-1.5 !h-1.5 !border-0" />
       <div className="relative">
         <img
           src={coverSrc}
@@ -34,7 +34,7 @@ export const TimelineEntryNode = memo(function TimelineEntryNode({ data }: NodeP
       <p className="text-[8px] font-body text-ivory/40">
         {formatDate(entry.date)}
       </p>
-      <Handle type="source" position={Position.Right} className="!bg-gold/40 !w-1.5 !h-1.5 !border-0" />
+      <Handle type="source" position={Position.Bottom} className="!bg-gold/40 !w-1.5 !h-1.5 !border-0" />
     </div>
   )
 })

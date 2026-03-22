@@ -72,8 +72,8 @@ export default function Chronicle() {
       <nav className="flex items-stretch border-b border-white/6" style={{ background: 'rgba(20, 16, 25, 0.88)' }}>
         {[
           { icon: GitBranch, label: 'Timeline', path: '/chronicle/timeline' },
-          { icon: Images, label: 'Photos', path: '/chronicle/photos' },
           { icon: Globe, label: 'Map', path: '/dossier' },
+          { icon: Images, label: 'Photos', path: '/chronicle/photos' },
         ].map(s => (
           <button
             key={s.path}
