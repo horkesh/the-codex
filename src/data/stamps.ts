@@ -154,14 +154,11 @@ export async function backfillMissionStamps(): Promise<PassportStamp[]> {
     .not('city', 'is', null)
     .not('country', 'is', null)
 
-  if (error) { console.error('backfillMissionStamps: failed to fetch missions:', error.message); return [] }
-  if (!missions || missions.length === 0) { console.log('backfillMissionStamps: no published missions with city+country found'); return [] }
-  console.log(`backfillMissionStamps: found ${missions.length} missions, ${stampedEntryIds.size} already stamped`)
+  if (error || !missions) return []
 
   // 3. Filter to entries without stamps
   const missing = missions.filter(m => !stampedEntryIds.has(m.id))
-  if (missing.length === 0) { console.log('backfillMissionStamps: all missions already have stamps'); return [] }
-  console.log(`backfillMissionStamps: creating stamps for ${missing.length} missions`)
+  if (missing.length === 0) return []
 
   // 4. Insert all missing stamps
   const rows = missing.map(m => ({
