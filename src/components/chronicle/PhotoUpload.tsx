@@ -35,6 +35,7 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PendingPhoto[]>([])
   const [picking, setPicking] = useState(false)
+  const [processingLabel, setProcessingLabel] = useState<string | null>(null)
   const geoFiredRef = useRef(false)
 
   const openPicker = () => {
@@ -53,20 +54,31 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
 
       // Expand video files into keyframe image files before adding
       const expandedFiles: File[] = []
+      let videoProcessed = false
       for (const file of toAdd) {
         if (isVideoFile(file)) {
           try {
+            setProcessingLabel(`Extracting frames from ${file.name}...`)
             const frames = await extractKeyframes(file, { maxFrames: 5, maxWidth: 1024 })
-            for (const { blob, timestampSeconds } of frames) {
-              const frameName = `${file.name.replace(/\.[^.]+$/, '')}_${Math.round(timestampSeconds)}s.webp`
-              expandedFiles.push(new File([blob], frameName, { type: 'image/webp' }))
+            if (frames.length > 0) {
+              for (const { blob, timestampSeconds } of frames) {
+                const frameName = `${file.name.replace(/\.[^.]+$/, '')}_${Math.round(timestampSeconds)}s.webp`
+                expandedFiles.push(new File([blob], frameName, { type: 'image/webp' }))
+              }
+              videoProcessed = true
+            } else {
+              console.warn('Video keyframe extraction returned 0 frames:', file.name)
             }
-          } catch {
-            // If extraction fails entirely, skip the video silently
+          } catch (err) {
+            console.error('Video keyframe extraction failed:', file.name, err)
           }
         } else {
           expandedFiles.push(file)
         }
+      }
+      setProcessingLabel(null)
+      if (videoProcessed && expandedFiles.length > 0) {
+        console.log(`Extracted ${expandedFiles.length} frames from video(s)`)
       }
 
       // Re-apply the cap after expansion
@@ -306,7 +318,7 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
       )}
 
       {/* Processing indicator — visible while native gallery is open */}
-      {picking && (
+      {(picking || processingLabel) && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -319,13 +331,13 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
             style={{ animationDuration: '2.5s' }}
           />
           <span className="text-ivory-dim text-xs font-body tracking-wide">
-            Processing photos...
+            {processingLabel ?? 'Processing photos...'}
           </span>
         </motion.div>
       )}
 
       {/* Add photos button */}
-      {canAddMore && !picking && (
+      {canAddMore && !picking && !processingLabel && (
         <button
           type="button"
           onClick={openPicker}
