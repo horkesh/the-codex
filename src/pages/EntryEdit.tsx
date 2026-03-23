@@ -40,6 +40,8 @@ function steakInitialData(entry: EntryWithParticipants): Partial<SteakFormData> 
     title: entry.title,
     date: entry.date,
     location: entry.location ?? '',
+    city: entry.city ?? '',
+    country: entry.country ?? '',
     description: entry.description ?? '',
     cut: typeof meta?.cut === 'string' ? meta.cut : '',
     score: meta?.score != null ? String(meta.score) : '',
@@ -111,12 +113,16 @@ export default function EntryEdit() {
   }
 
   async function submitSteak(data: SteakFormData) {
+    const existingMeta = (entry?.metadata as Record<string, unknown>) ?? {}
     await handleSubmit({
       title: data.title,
       date: data.date,
       location: data.location || null,
+      city: data.city || null,
+      country: data.country || null,
       description: data.description || null,
       metadata: {
+        ...existingMeta,
         cut: data.cut || null,
         score: data.score ? parseFloat(data.score) : null,
         verdict: data.verdict || null,

@@ -10,6 +10,8 @@ export interface SteakFormData {
   title: string
   date: string
   location: string
+  city: string
+  country: string
   description: string
   cut: string
   score: string
@@ -26,7 +28,7 @@ interface SteakFormProps {
   initialData?: Partial<SteakFormData>
 }
 
-const CUTS = ['Ribeye', 'Wagyu', 'T-Bone', 'Striploin', 'Fillet', 'Other']
+const CUTS = ['Steak', 'Burger', 'Ćevapi', 'Pizza', 'Seafood', 'Sushi', 'BBQ', 'Pasta', 'Other']
 
 const TABLE_FLAVOURS = [
   { value: undefined, label: 'Regular' },
@@ -38,6 +40,8 @@ const empty: SteakFormData = {
   title: '',
   date: '',
   location: '',
+  city: '',
+  country: '',
   description: '',
   cut: '',
   score: '',
@@ -80,6 +84,8 @@ export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle,
       ...prev,
       date: prev.date || detectedLocation.date || prev.date,
       location: ow ? (detectedLocation.location ?? prev.location) : (prev.location || detectedLocation.location || prev.location),
+      city: ow ? (detectedLocation.city ?? prev.city) : (prev.city || detectedLocation.city || prev.city),
+      country: ow ? (detectedLocation.country ?? prev.country) : (prev.country || detectedLocation.country || prev.country),
     }))
   }, [detectedLocation])
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -168,6 +174,21 @@ export function SteakForm({ onSubmit, loading, detectedLocation, suggestedTitle,
         value={form.location}
         onChange={(e) => set('location', e.target.value)}
       />
+
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          label="City"
+          placeholder="e.g. Istanbul"
+          value={form.city}
+          onChange={(e) => set('city', e.target.value)}
+        />
+        <Input
+          label="Country"
+          placeholder="e.g. Turkey"
+          value={form.country}
+          onChange={(e) => set('country', e.target.value)}
+        />
+      </div>
 
       {/* Cut selector */}
       <div className="flex flex-col gap-1.5">
