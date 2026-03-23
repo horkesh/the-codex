@@ -38,11 +38,6 @@ interface MissionLayoutProps {
 
 /* ── Helpers ── */
 
-function loreParagraphs(lore: string | null): string[] {
-  if (!lore) return []
-  return lore.split(/\n\n+/).filter(Boolean)
-}
-
 function SectionDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 my-7">
@@ -179,7 +174,6 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
   const debriefHighlights = Array.isArray(meta?.debrief_highlights) ? meta.debrief_highlights as string[] : []
   const riskAssessment = meta?.risk_assessment as string | undefined
 
-  const paragraphs = loreParagraphs(entry.lore)
   const isMultiDay = dayEpisodes.length > 1
 
   // Build photo lookup by ID for day episodes
@@ -687,12 +681,6 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
 
   /* ── Single-day fallback (original magazine layout) ── */
 
-  const photosForPairs = photos.slice(1)
-  const photoPairs: EntryPhoto[][] = []
-  for (let i = 0; i < photosForPairs.length; i += 2) {
-    photoPairs.push(photosForPairs.slice(i, i + 2))
-  }
-
   return (
     <div className="px-4 py-5 space-y-0">
       {visaCard}
@@ -722,30 +710,53 @@ export function MissionLayout({ entry, photos, isCreator, onEntryUpdate, onSetAs
         </div>
       )}
 
-      {/* Magazine story */}
+      {/* Day card — lore + photos */}
       {(entry.lore || photos.length > 0) && (
         <>
           <SectionDivider label="The Mission" />
-          {(photos[0]?.url || coverPhoto) && (
-            <div className="relative rounded-lg overflow-hidden mb-5" style={{ aspectRatio: '16/9' }}>
-              <img src={photos[0]?.url ?? coverPhoto!} alt="" className="w-full h-full object-cover" draggable={false} />
+
+          {/* Lore narrative */}
+          {entry.lore && (
+            <div className="pb-3">
+              <div className="flex items-start justify-between gap-2 px-1">
+                <p className="font-display italic text-ivory/80 text-[14px] leading-relaxed flex-1">
+                  {entry.lore}
+                </p>
+                <ListenButton cacheKey={entry.id} text={entry.lore} size="sm" />
+              </div>
             </div>
           )}
-          {paragraphs.map((p, i) => (
-            <div key={i}>
-              <p className={cn('font-display text-[15px] text-ivory/85 leading-[1.7] mb-5', i === 0 && 'first-letter:text-[48px] first-letter:float-left first-letter:leading-[1] first-letter:mr-2 first-letter:text-gold first-letter:font-bold')}>{p}</p>
-              {photoPairs[i] && (
-                <div className="grid grid-cols-2 gap-2 mb-5">
-                  {photoPairs[i].map(photo => <img key={photo.id} src={photo.url} alt={photo.caption ?? ''} className="w-full aspect-square object-cover rounded-md border border-gold/10" draggable={false} />)}
-                </div>
-              )}
+
+          {/* Hero photo */}
+          {(photos[0]?.url || coverPhoto) && (
+            <button
+              type="button"
+              className="relative rounded-lg overflow-hidden mb-2 w-full text-left"
+              style={{ aspectRatio: '16/9' }}
+              onClick={() => onSetAsCover?.(photos[0]?.url ?? coverPhoto!)}
+              disabled={!onSetAsCover}
+            >
+              <img src={photos[0]?.url ?? coverPhoto!} alt="" className="w-full h-full object-cover" draggable={false} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            </button>
+          )}
+
+          {/* Supporting photos — 3-col grid */}
+          {photos.length > 1 && (
+            <div className="grid grid-cols-3 gap-1.5 mb-3">
+              {photos.slice(1).map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="aspect-square rounded-md overflow-hidden border border-gold/10"
+                  onClick={() => onSetAsCover?.(p.url)}
+                  disabled={!onSetAsCover}
+                >
+                  <img src={p.url} alt="" className="w-full h-full object-cover" draggable={false} />
+                </button>
+              ))}
             </div>
-          ))}
-          {paragraphs.length === 0 && photoPairs.map((pair, i) => (
-            <div key={i} className="grid grid-cols-2 gap-2 mb-4">
-              {pair.map(photo => <img key={photo.id} src={photo.url} alt={photo.caption ?? ''} className="w-full aspect-square object-cover rounded-md border border-gold/10" draggable={false} />)}
-            </div>
-          ))}
+          )}
         </>
       )}
 
