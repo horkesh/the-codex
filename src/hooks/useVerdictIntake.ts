@@ -5,7 +5,7 @@ import { generatePersonPortrait } from '@/ai/personPortrait'
 import { createPersonScanDraft, updatePersonScan, confirmPersonScan, uploadPersonScanPhoto } from '@/data/personScans'
 import { createPersonFromScan, findPersonByInstagram } from '@/data/people'
 import { normalizeInstagramHandle } from '@/lib/instagram'
-import { imageToJpegBase64 } from '@/lib/image'
+import { imageToBase64WithMime } from '@/lib/image'
 import type { PersonVerdict, DossierDraft, VerdictSourceType } from '@/types/app'
 
 const CONTACT_SCORE_THRESHOLD = 8.0
@@ -60,6 +60,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
   // Shared analysis runner — used by both file upload and handle lookup
   const runVerdictAnalysis = useCallback(async (
     compressedBase64: string,
+    mimeType: string,
     file: File,
     sourceType: VerdictSourceType,
     knownHandle?: string,
@@ -69,7 +70,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
 
     const sourcePhotoUrl = await uploadPersonScanPhoto(gent.id, file)
 
-    const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: 'image/webp', source_type: sourceType })
+    const verdict = await scanPersonVerdict({ photo_base64: compressedBase64, mime_type: mimeType, source_type: sourceType })
 
     const handle = knownHandle ?? verdict.instagram_handle ?? null
 
@@ -128,8 +129,8 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
     setStep('analyzing')
 
     try {
-      const compressedBase64 = await imageToJpegBase64(file, { maxPx: 1024, quality: 0.82 })
-      await runVerdictAnalysis(compressedBase64, file, sourceType)
+      const { base64, mimeType } = await imageToBase64WithMime(file, { maxPx: 1024, quality: 0.82 })
+      await runVerdictAnalysis(base64, mimeType, file, sourceType)
     } catch (err) {
       setAnalyzeError((err as Error).message)
       setStep('input')
