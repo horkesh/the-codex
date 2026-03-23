@@ -73,18 +73,87 @@ async function fetchWeather(date: string, city: string | null, country: string |
   }
 }
 
+/**
+ * Server-side venue lookup: cluster GPS points from photos, query Google Places
+ * for each cluster, return unique venue names. No CORS, no script loading races.
+ */
+async function resolveVenuesFromGps(
+  entry: { location?: string; metadata?: Record<string, unknown> },
+  googleMapsKey?: string,
+): Promise<string[]> {
+  // If location is already set on the entry, use it as-is
+  if (entry.location) return [entry.location]
+
+  const gpsPoints = entry.metadata?.photo_gps as Array<{ lat: number; lng: number }> | undefined
+  if (!gpsPoints?.length || !googleMapsKey) return []
+
+  // Cluster GPS points within 200m of each other
+  const clusters: { lat: number; lng: number }[] = []
+  for (const pt of gpsPoints) {
+    const near = clusters.find(c => haversine(c.lat, c.lng, pt.lat, pt.lng) <= 200)
+    if (!near) clusters.push({ lat: pt.lat, lng: pt.lng })
+  }
+
+  // Query Google Places Nearby Search for each cluster (server-side REST — no CORS)
+  const venues: string[] = []
+  for (const center of clusters.slice(0, 5)) { // cap at 5 clusters
+    try {
+      const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${center.lat},${center.lng}&radius=100&type=establishment&key=${googleMapsKey}`
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
+      if (!res.ok) continue
+      const data = await res.json()
+      if (data.status !== 'OK' || !data.results?.length) continue
+      // Pick closest establishment
+      let best: { name: string; dist: number } | null = null
+      for (const place of data.results) {
+        if (!place.name || !place.geometry?.location) continue
+        const dist = haversine(center.lat, center.lng, place.geometry.location.lat, place.geometry.location.lng)
+        if (!best || dist < best.dist) best = { name: place.name, dist }
+      }
+      if (best && !venues.includes(best.name)) venues.push(best.name)
+    } catch { /* skip this cluster */ }
+  }
+  return venues
+}
+
+/** Haversine distance in metres */
+function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6_371_000
+  const toRad = (d: number) => (d * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.asin(Math.sqrt(a))
+}
+
+/** Build the Location prompt line, incorporating discovered venue names */
+function buildLocationLine(
+  entry: { location?: string; city?: string; country?: string },
+  venueNames: string[],
+): string {
+  const city = [entry.city, entry.country].filter(Boolean).join(', ')
+  if (venueNames.length > 0) {
+    const venues = venueNames.join(', ')
+    return city ? `Venues: ${venues} | City: ${city}` : `Venues: ${venues}`
+  }
+  return [entry.location, entry.city, entry.country].filter(Boolean).join(', ') || 'undisclosed location'
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { entry, photoUrls, dayLabels, dayPhotoIndices } = await req.json()
+    const { entry, photoUrls, dayLabels, dayPhotoIndices, googleMapsKey } = await req.json()
     // dayLabels: optional string[] like ["Day 1 — Friday, 14 March", "Day 2 — Saturday, 15 March"]
     // dayPhotoIndices: optional number[][] — for each day, indices into photoUrls belonging to that day
     const isMultiDay = Array.isArray(dayLabels) && dayLabels.length > 1
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
+
+    // Server-side venue lookup from photo GPS coordinates
+    const venueNames = await resolveVenuesFromGps(entry, googleMapsKey)
 
     const participantNames = entry.participants?.map((p: { display_name: string }) => p.display_name).join(', ') || 'The Gents'
     // Cap photos for vision API — too many causes timeouts. Spread evenly across the set.
@@ -188,7 +257,7 @@ Entry Type: ${entryTypeLabels[entry.type] || entry.type}
 Title: ${entry.title}
 Date: ${entry.date}
 ${timeContext}${situationalHint ? `\nContext: ${situationalHint}` : ''}
-Location: ${[entry.location, entry.city, entry.country].filter(Boolean).join(', ') || 'undisclosed location'}${weatherLine}${moodLine}
+Location: ${buildLocationLine(entry, venueNames)}${weatherLine}${moodLine}
 Present: ${participantNames}
 Description: ${entry.description || 'No additional details provided.'}${entry.metadata?.song ? `\nSong: ${entry.metadata.song}` : ''}${loreHints ? `\nDirector's Notes (incorporate these details naturally): ${loreHints}` : ''}
 ${typeDirective ? `\n${typeDirective}` : ''}${moodTags.length > 0 ? `\nThe mood tags above reflect the energy of this occasion — let them subtly shape the tone and vocabulary of the narrative. Don't list or name the moods explicitly; embody them.` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) sampled from ${allPhotos.length} total from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.

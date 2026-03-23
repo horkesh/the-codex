@@ -106,10 +106,14 @@ export default function EntryNew() {
   const [fullChronicle, setFullChronicle] = useState(false)
   const [suggestedTitle, setSuggestedTitle] = useState<string | null>(null)
   const [showLocationSearch, setShowLocationSearch] = useState(false)
+  const [photoGps, setPhotoGps] = useState<{ lat: number; lng: number }[]>([])
   const titleGenFired = useRef(false)
   const firstPhotoRef = useRef<File | null>(null)
   const prospectHandled = useRef(false)
   const handleGeoDetected = useCallback((loc: LocationFill) => setLocationFill(loc), [])
+  const handleGpsCollected = useCallback((points: { lat: number; lng: number }[]) => {
+    setPhotoGps(prev => [...prev, ...points])
+  }, [])
 
   useEffect(() => {
     fetchLocations().then(setSavedPlaces)
@@ -246,6 +250,7 @@ export default function EntryNew() {
           ...(locationFill?.time ? { time_of_day: locationFill.time } : {}),
           ...(moodTags.length > 0 ? { mood_tags: moodTags } : {}),
           ...(fullChronicle ? { full_chronicle: true } : {}),
+          ...(photoGps.length > 0 ? { photo_gps: photoGps } : {}),
         },
         created_by: gent.id,
         visibility,
@@ -578,6 +583,7 @@ export default function EntryNew() {
           entryId={null}
           maxPhotos={maxPhotos}
           onGeoDetected={handleGeoDetected}
+          onGpsCollected={handleGpsCollected}
           onFilesAdded={addFiles}
           onFileRemoved={removeFile}
           className="w-full"

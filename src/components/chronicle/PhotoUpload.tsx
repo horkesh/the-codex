@@ -8,6 +8,7 @@ import { extractLocationFromPhoto, extractExifDate, haversineMetres, getDevicePo
 import type { LocationFill } from '@/lib/geo'
 import { fetchLocations } from '@/data/locations'
 import { isVideoFile, extractKeyframes } from '@/lib/videoKeyframes'
+import { extractExifGps } from '@/lib/geo'
 import { useUIStore } from '@/store/ui'
 
 /** Check if a canvas has any non-transparent pixels (detects blank HEVC renders) */
@@ -86,6 +87,8 @@ interface PhotoUploadProps {
   maxPhotos?: number
   onUpload?: (url: string) => void
   onGeoDetected?: (loc: LocationFill) => void
+  /** Called with GPS points extracted from ALL uploaded photos (for server-side venue lookup) */
+  onGpsCollected?: (points: { lat: number; lng: number }[]) => void
   onFilesAdded?: (files: File[]) => void
   onFileRemoved?: (file: File) => void
   className?: string
@@ -103,7 +106,7 @@ interface PendingPhoto {
 
 const DEFAULT_MAX_PHOTOS = 10
 
-export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload, onGeoDetected, onFilesAdded, onFileRemoved, className }: PhotoUploadProps) {
+export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload, onGeoDetected, onGpsCollected, onFilesAdded, onFileRemoved, className }: PhotoUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PendingPhoto[]>([])
   const [picking, setPicking] = useState(false)
@@ -243,6 +246,14 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
           }
 
           onGeoDetected(finalLoc)
+        })
+      }
+
+      // Extract GPS from ALL photos for server-side venue lookup
+      if (onGpsCollected && finalFiles.length > 0) {
+        Promise.all(finalFiles.map(f => extractExifGps(f))).then(results => {
+          const points = results.filter((r): r is { lat: number; lng: number } => r !== null)
+          if (points.length > 0) onGpsCollected(points)
         })
       }
 

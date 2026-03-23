@@ -26,7 +26,13 @@ export async function generateLoreFull(
 ): Promise<LoreResult | null> {
   try {
     const { data, error } = await supabase.functions.invoke('generate-lore', {
-      body: { entry, photoUrls, dayLabels, dayPhotoIndices },
+      body: {
+        entry,
+        photoUrls,
+        dayLabels,
+        dayPhotoIndices,
+        googleMapsKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+      },
     })
     if (error) throw error
     if (data?.error) {

@@ -487,6 +487,19 @@ export async function batchReverseGeocode(
   return result
 }
 
+/** Extract GPS lat/lng from a photo's EXIF. Fast — no geocoding, no network calls. */
+export async function extractExifGps(file: File): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const exif = await exifr.parse(file, { gps: true, tiff: false, exif: false, xmp: false, iptc: false, jfif: false, ihdr: false, icc: false })
+    if (typeof exif?.latitude === 'number' && typeof exif?.longitude === 'number') {
+      return { lat: exif.latitude, lng: exif.longitude }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 /** Extract only the EXIF date from a photo (no geocoding). */
 export async function extractExifDate(file: File): Promise<string | null> {
   try {
