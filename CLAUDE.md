@@ -6,7 +6,7 @@ Private lifestyle chronicle app for The Gents. Deployed at https://the-codex-sep
 ## Stack
 - **Frontend**: React 19 + TypeScript + Vite 6 + Tailwind v4 + Framer Motion + Zustand 5 + Google Maps JS API
 - **Backend**: Supabase (Auth + Postgres + Storage + Edge Functions on Deno)
-- **AI**: Anthropic Claude (`claude-haiku-4-5-20251001` for Instagram analysis, `claude-sonnet-4-6` for lore/narrative) + Google Gemini (`gemini-2.5-flash` for photo vision, `imagen-4.0-generate-001` for image generation)
+- **AI**: Anthropic Claude (`claude-haiku-4-5-20251001` for titles/stamps/narration, `claude-sonnet-4-6` for lore/narrative/chat) + Google Gemini (`gemini-2.5-flash` for photo vision + POI scanning, `imagen-4.0-generate-001` for image generation)
 - **Deploy**: `git push` to `main` — GitHub Actions (`.github/workflows/deploy.yml`) auto-deploys Vercel + Supabase DB migrations (`supabase db push`) + all Edge Functions. See `docs/05-dev-ops/runbook.md`. Requires `SUPABASE_DB_PASSWORD` secret in GitHub repo settings.
 
 ## Key architecture decisions
@@ -30,8 +30,9 @@ Private lifestyle chronicle app for The Gents. Deployed at https://the-codex-sep
 |---|---|---|
 | Lore generation | `claude-sonnet-4-6` | Best narrative voice |
 | Title generation from photo | `claude-haiku-4-5-20251001` | Fast vision, type-specific title inference |
-| Instagram screenshot analysis | `claude-haiku-4-5-20251001` | Reliable JSON, no refusals on profile data |
+| Instagram screenshot analysis | `gemini-2.5-flash` | Consistent scoring with photo scan; Claude scored conservatively |
 | Photo/camera scan (POI) | `gemini-2.5-flash` | Claude refuses appearance scoring; Gemini does not |
+| Codex AI chat | `claude-sonnet-4-6` | Context-aware Q&A over chronicle data |
 | Portrait image generation | `imagen-4.0-generate-001` | Imagen 4 via `:predict` endpoint |
 | Cover/scene image generation | `imagen-4.0-generate-001` | Imagen 4 via `:predict` endpoint |
 | Passport stamp SVG generation | `claude-haiku-4-5-20251001` | Generates SVG code with guilloche, arced text, landmarks |
@@ -88,13 +89,13 @@ Two-step pipeline (with photo-less fallback):
 - Portrait uploaded to `portraits` bucket in Supabase Storage
 
 ## POI Scanner (`scan-person-verdict` edge function)
-Two modes, routed by `source_type`:
-- `instagram_screenshot` → Claude Haiku: extracts appearance, traits, score, display_name, instagram_handle
-- `photo` → Gemini 2.5 Flash: same fields minus display_name/handle
+Both modes use **Gemini 2.5 Flash** via a shared `callGemini()` helper, routed by `source_type`:
+- `instagram_screenshot` → Gemini with Instagram-aware prompt: extracts appearance, traits, score, display_name, instagram_handle. Handles posts, stories, profiles, DM photos.
+- `photo` → Gemini with standard prompt: same fields minus display_name/handle.
 
-Client: `src/hooks/useVerdictIntake.ts` — compresses all images to 1024px WebP (0.82 quality) before upload. `handleAnalyzeFile(file, sourceType)` takes explicit source type. Handle lookup was removed (unavatar.io Instagram provider is dead).
+Client: `src/hooks/useVerdictIntake.ts` — compresses all images to 1024px via `imageToBase64WithMime()` (WebP preferred, JPEG fallback for Safari/iOS). The actual MIME type from the browser is sent to the API — never hardcoded. Handle lookup was removed (unavatar.io Instagram provider is dead).
 
-**Claude prompt for screenshots**: tightened for private/closed profiles — instructs Claude to examine small profile picture thumbnails closely, extract maximum detail from bio text, highlight covers, and grid previews. Confidence score reflects image quality.
+**Image compression MIME handling** (`src/lib/image.ts`): `imageToWebpBlob()` tries WebP encoding first; if the browser doesn't support it (Safari < 16 silently produces PNG instead of WebP), falls back to JPEG. `imageToBase64WithMime()` returns both the base64 data and the real blob MIME type. Legacy `imageToJpegBase64()` wrapper kept for backward compatibility.
 
 **UI entry point**: FAB on Circle's POI tab opens `ScanActionSheet` (full-height panel below header/nav/tabs, `top: 136px`) with two options:
 - **Research** — Instagram screenshot analysis → opens `POIModal` in `research` mode
@@ -268,6 +269,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Passport**: Honourable Discharge certificate below stamp grid.
 - **Lore directive**: when Mirza is participant, Claude told he was active at the time (retired AFTER). Subtle foreshadowing allowed once ("four at the table, as it was then") but never mention retirement.
 - **Ghost effects**: EntryCard (faded avatar), EntryDetail ("featuring a retired operative"), Ledger (dimmed + "(ret.)").
+- **Excluded from**: Circle "Known by" gent selector (filtered by `!g.retired`), Codex AI active gent list (listed under "RETIRED" with instruction not to count as active).
 
 ## Agenda page
 - **Unified feed**: merges gatherings (pre-event), scouting (prospects), and wishlist items. Dated items sorted by upcoming first, undated wishlist at bottom.
@@ -317,6 +319,14 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - `date_end` stored in `entry.metadata.date_end` (not a DB column — avoids migration).
 - Display format: "Budapest, Hungary · 05/03 – 12/03/2026" when range, single date otherwise.
 - **Auto-fill**: when EXIF sets the start date and end date is empty, end date defaults to the last photo's EXIF date (via `lastPhotoDate` on `LocationFill`). Falls back to start date if only one photo.
+
+## Table form
+- `SteakForm` has Title, Date, Restaurant, City, Country, Dish Type, Score (1-10), Verdict, Description.
+- **Dish types**: Steak, Burger, Ćevapi, Pizza, Seafood, Sushi, BBQ, Pasta, Other. Stored in `metadata.cut`.
+- **Flavours**: Regular, Iftar, Eid — pill selector below title.
+- Auto-fills date, restaurant, city, country from photo EXIF via `detectedLocation` prop.
+- City/Country passed through `submitSteak` to `createEntry` (both creation and edit).
+- **Edit metadata preservation**: `submitSteak` in `EntryEdit.tsx` spreads existing metadata before applying form fields, preventing loss of mood tags, cover position, lore hints, etc.
 
 ## Pitch form
 - `PlaystationForm` has Title, Date, Location, and Matches fields.
@@ -587,11 +597,22 @@ User-toggleable CSS filters applied to video feed, captured image, and export co
 - **Hook**: `useNarration(cacheKey)` — manages generation, caching, play/stop, cleanup on unmount.
 - **Global audio manager** (`src/lib/audioManager.ts`): singleton ensures only one narration plays at a time. Stops audio on: route navigation (`useStopAudioOnNavigate` in App.tsx), mission page swipe (`scrollToPage` in MissionLayout), app backgrounded (`visibilitychange` listener). No more phantom narrations.
 
+## Codex AI chat (`/codex-ai`)
+- **Page**: `src/pages/CodexAI.tsx` — conversational Q&A over chronicle data. Session-only (not persisted to DB).
+- **Edge function**: `supabase/functions/codex-ai/index.ts` — `claude-sonnet-4-6`, max 1024 tokens.
+- **Context injected**: latest 200 entries (with participants), gent stats, PS5 head-to-head, mission cities, circle size, asking gent identity.
+- **System prompt**: identifies 3 active gents by name/alias. Mirza listed separately under "RETIRED" with instruction not to reference unless asked. Rules: DD/MM/YYYY dates, no emojis, accuracy first, concise.
+- **Markdown rendering**: AI responses render `**bold**`, `*italic*`, and bullet lists via lightweight inline parser (`renderMarkdown`). User messages stay plain text. Bold styled with full ivory, italic with gold tint.
+- **Suggestion chips**: 7 preset questions on empty state (e.g. "When did all three of us last meet?").
+- **Home link**: "Ask The Codex" card in Quick Actions section.
+
 ## Mission Soundtrack
 - Each mission gets a theme song. Auto-suggested by Claude Haiku after lore generation, searchable via Spotify.
-- **Edge functions**: `spotify-search` (Client Credentials flow, cached token), `suggest-soundtrack` (Claude Haiku suggests song from lore).
-- **Data**: `entry.metadata.soundtrack` — `{ name, artist, album, spotify_url, album_art, suggested_by }`.
-- **UI**: `SoundtrackSection` on MissionLayout — album art, song name, artist, Spotify link, "Change" button, search modal with AI suggest.
+- **Edge functions**: `spotify-search` (Client Credentials flow, cached token, returns `preview_url`), `suggest-soundtrack` (Claude Haiku suggests song from lore).
+- **Data**: `entry.metadata.soundtrack` — `{ name, artist, album, spotify_url, album_art, preview_url, suggested_by }`.
+- **30s preview playback**: `usePreviewPlayer` hook in `SoundtrackSection` — plays Spotify's 30-second preview clip via HTML Audio. Play/pause button visible on saved soundtrack + in search results (tap album art to preview before selecting). Gold SVG progress ring around album art during playback. Stops global narration audio before playing. Preview not available for all tracks (Spotify licensing).
+- **UI**: `SoundtrackSection` on MissionLayout — album art with play overlay, song name, artist, Spotify link, "Change" button, search modal with manual search + AI suggest.
+- **Search modal**: debounced (400ms) Spotify search, results show preview play on album art (separate from select tap target). AI suggest button fills query and triggers search.
 - **Spotify keys**: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` in Supabase secrets.
 
 ## PS5 Rivalry Broadcast (upgraded)
