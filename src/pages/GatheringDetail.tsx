@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download, Image, Camera, Pencil, ShoppingBag, ChevronDown } from 'lucide-react'
+import { MoreVertical, MapPin, Calendar, Users, Wine, BookOpen, ChevronRight, Share2, UtensilsCrossed, QrCode, Download, Image, Camera, Pencil, ShoppingBag, ChevronDown, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TopBar, PageWrapper } from '@/components/layout'
 import { Button, Spinner, Modal } from '@/components/ui'
 import { CountdownBadge } from '@/components/gathering/CountdownBadge'
 import { fetchGathering, fetchRsvps, fetchGuestBookMessages, markGatheringComplete, updateGatheringMetadata } from '@/data/gatherings'
-import { fetchEntryPhotos, uploadEntryPhoto, updateEntry } from '@/data/entries'
+import { fetchEntryPhotos, uploadEntryPhoto, updateEntry, deleteEntry } from '@/data/entries'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -24,11 +24,12 @@ interface OptionsMenuProps {
   onClose: () => void
   onMarkComplete: () => void
   onEdit: () => void
+  onDelete: () => void
   completing: boolean
   isCreator: boolean
 }
 
-function OptionsMenu({ isOpen, onClose, onMarkComplete, onEdit, completing, isCreator }: OptionsMenuProps) {
+function OptionsMenu({ isOpen, onClose, onMarkComplete, onEdit, onDelete, completing, isCreator }: OptionsMenuProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Gathering Options">
       <div className="flex flex-col gap-1 pb-2">
@@ -51,6 +52,52 @@ function OptionsMenu({ isOpen, onClose, onMarkComplete, onEdit, completing, isCr
           <BookOpen size={18} className="text-gold shrink-0" />
           <span className="font-body text-sm">Mark as Complete</span>
         </button>
+        {isCreator && (
+          <button
+            type="button"
+            className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-red-400 hover:bg-red-500/10 transition-colors"
+            onClick={() => { onDelete(); onClose() }}
+          >
+            <Trash2 size={18} className="shrink-0" />
+            <span className="font-body text-sm">Delete Gathering</span>
+          </button>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+// ── Delete confirmation ──────────────────────────────────────────────────────
+
+function DeleteConfirm({ isOpen, onClose, onConfirm, deleting, title }: {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  deleting: boolean
+  title: string
+}) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Delete Gathering?">
+      <div className="space-y-4 pb-2">
+        <p className="text-sm text-ivory-muted font-body">
+          Are you sure you want to permanently delete{' '}
+          <span className="text-ivory font-semibold">"{title}"</span>? This
+          cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="ghost" size="md" fullWidth onClick={onClose} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            size="md"
+            fullWidth
+            loading={deleting}
+            onClick={onConfirm}
+          >
+            Delete
+          </Button>
+        </div>
       </div>
     </Modal>
   )
@@ -206,6 +253,8 @@ export default function GatheringDetail() {
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [completing, setCompleting] = useState(false)
   const [showQrModal, setShowQrModal] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Photos + description + host message editing
   const [photos, setPhotos] = useState<Array<{ id: string; url: string }>>([])
@@ -360,6 +409,21 @@ export default function GatheringDetail() {
       addToast('Something went wrong. Please try again.', 'error')
     } finally {
       setCompleting(false)
+    }
+  }
+
+  async function handleDeleteConfirm() {
+    if (!id) return
+    setDeleting(true)
+    try {
+      await deleteEntry(id)
+      addToast('Gathering deleted.', 'success')
+      navigate('/home', { replace: true })
+    } catch {
+      addToast('Could not delete gathering. Try again.', 'error')
+    } finally {
+      setDeleting(false)
+      setDeleteOpen(false)
     }
   }
 
@@ -780,8 +844,17 @@ export default function GatheringDetail() {
           onClose={() => setOptionsOpen(false)}
           onMarkComplete={handleMarkComplete}
           onEdit={() => navigate(`/gathering/${id}/edit`)}
+          onDelete={() => setDeleteOpen(true)}
           completing={completing}
           isCreator={isCreator}
+        />
+
+        <DeleteConfirm
+          isOpen={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          onConfirm={handleDeleteConfirm}
+          deleting={deleting}
+          title={entry.title}
         />
 
         {/* QR Code modal */}

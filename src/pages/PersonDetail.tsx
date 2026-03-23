@@ -909,7 +909,7 @@ export default function PersonDetail() {
       {/* Gent connection modal — multi-select */}
       <Modal isOpen={showGentModal} onClose={() => setShowGentModal(false)} title="Known by">
         <div className="space-y-2 pb-2">
-          {gents.map((g) => {
+          {gents.filter(g => !g.retired).map((g) => {
             const selected = knownByGentIds.includes(g.id)
             return (
               <button
