@@ -389,7 +389,7 @@ export default function EntryNew() {
           const fbPhotoIndices = fbEpisodes && fbEpisodes.length > 1
             ? fbEpisodes.map(ep => ep.photoIds.map(pid => allPhotoIds.indexOf(pid)).filter(idx => idx >= 0))
             : undefined
-          generateLoreFull(entryWithParticipants, uploadedUrls, fallbackDayLabels, fbPhotoIndices).then(async (result) => {
+          generateLoreFull(entryWithParticipants, uploadedUrls, fallbackDayLabels, fbPhotoIndices, photoGps).then(async (result) => {
             if (!result) return
             const meta: Record<string, unknown> = { ...(fbMeta ?? {}), lore_oneliner: result.oneliner }
             // Save per-day lore + selected photos to entry.metadata.day_episodes
@@ -415,7 +415,7 @@ export default function EntryNew() {
       } else {
         // Non-mission entries: use existing lore pipeline
         const entryWithParticipants = { ...entry, participants: participantGents }
-        generateLoreFull(entryWithParticipants, uploadedUrls).then(async (result) => {
+        generateLoreFull(entryWithParticipants, uploadedUrls, undefined, undefined, photoGps).then(async (result) => {
           if (!result) return
           try {
             const meta = { ...(entry.metadata as Record<string, unknown> ?? {}), lore_oneliner: result.oneliner }

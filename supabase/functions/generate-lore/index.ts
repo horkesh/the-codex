@@ -86,13 +86,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 async function resolveVenuesFromGps(
   entry: { id?: string; location?: string; metadata?: Record<string, unknown> },
   googleMapsKey?: string,
+  clientGps?: Array<{ lat: number; lng: number }>,
 ): Promise<string[]> {
   // If location is already set on the entry, use it as-is
   if (entry.location) return [entry.location]
   if (!googleMapsKey) return []
 
-  // Try metadata first, then query DB for photo GPS
-  let gpsPoints = entry.metadata?.photo_gps as Array<{ lat: number; lng: number }> | undefined
+  // GPS sources: 1) direct from client (most reliable), 2) metadata, 3) DB
+  let gpsPoints = (Array.isArray(clientGps) && clientGps.length > 0) ? clientGps : undefined
+  if (!gpsPoints?.length) {
+    gpsPoints = entry.metadata?.photo_gps as Array<{ lat: number; lng: number }> | undefined
+  }
   if (!gpsPoints?.length && entry.id) {
     gpsPoints = await fetchPhotoGpsFromDb(entry.id)
   }
@@ -176,7 +180,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { entry, photoUrls, dayLabels, dayPhotoIndices, googleMapsKey } = await req.json()
+    const { entry, photoUrls, dayLabels, dayPhotoIndices, googleMapsKey, gpsPoints: clientGps } = await req.json()
     // dayLabels: optional string[] like ["Day 1 — Friday, 14 March", "Day 2 — Saturday, 15 March"]
     // dayPhotoIndices: optional number[][] — for each day, indices into photoUrls belonging to that day
     const isMultiDay = Array.isArray(dayLabels) && dayLabels.length > 1
@@ -184,7 +188,8 @@ Deno.serve(async (req: Request) => {
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set')
 
     // Server-side venue lookup from photo GPS coordinates
-    const venueNames = await resolveVenuesFromGps(entry, googleMapsKey)
+    // GPS sources (priority): 1) direct from client, 2) entry metadata, 3) entry_photos DB
+    const venueNames = await resolveVenuesFromGps(entry, googleMapsKey, clientGps)
 
     const participantNames = entry.participants?.map((p: { display_name: string }) => p.display_name).join(', ') || 'The Gents'
     // Cap photos for vision API — too many causes timeouts. Spread evenly across the set.

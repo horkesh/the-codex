@@ -23,6 +23,7 @@ export async function generateLoreFull(
   photoUrls?: string[],
   dayLabels?: string[],
   dayPhotoIndices?: number[][],
+  gpsPoints?: { lat: number; lng: number }[],
 ): Promise<LoreResult | null> {
   try {
     const { data, error } = await supabase.functions.invoke('generate-lore', {
@@ -32,6 +33,7 @@ export async function generateLoreFull(
         dayLabels,
         dayPhotoIndices,
         googleMapsKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+        gpsPoints,
       },
     })
     if (error) throw error
