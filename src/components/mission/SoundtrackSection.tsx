@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Music, ExternalLink, Search, Sparkles, X, Check, Play, Pause } from 'lucide-react'
+import { Music, Search, Sparkles, X, Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { Spinner } from '@/components/ui'
 import { useSpotifySearch, type SpotifyTrack } from '@/hooks/useSpotifySearch'
 import { suggestSoundtrack } from '@/ai/soundtrack'
 import { updateEntry } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
-import { stopGlobalAudio } from '@/lib/audioManager'
 import { cn } from '@/lib/utils'
 import type { EntryWithParticipants } from '@/types/app'
 
@@ -26,61 +25,14 @@ interface SoundtrackSectionProps {
   onEntryUpdate: (entry: EntryWithParticipants) => void
 }
 
-/* ── Preview player hook ── */
+/* ── Helpers ── */
 
-function usePreviewPlayer() {
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [playing, setPlaying] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const rafRef = useRef<number>(0)
-
-  const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-    }
-    cancelAnimationFrame(rafRef.current)
-    setPlaying(false)
-    setProgress(0)
-  }, [])
-
-  const toggle = useCallback((url: string) => {
-    if (playing) {
-      stop()
-      return
-    }
-
-    // Stop any narration or other audio
-    stopGlobalAudio()
-
-    if (!audioRef.current) {
-      audioRef.current = new Audio()
-      audioRef.current.addEventListener('ended', () => {
-        setPlaying(false)
-        setProgress(0)
-        cancelAnimationFrame(rafRef.current)
-      })
-    }
-
-    const audio = audioRef.current
-    audio.src = url
-    audio.play().then(() => {
-      setPlaying(true)
-      const tick = () => {
-        if (audio.duration) setProgress(audio.currentTime / audio.duration)
-        rafRef.current = requestAnimationFrame(tick)
-      }
-      rafRef.current = requestAnimationFrame(tick)
-    }).catch(() => setPlaying(false))
-  }, [playing, stop])
-
-  // Cleanup on unmount
-  useEffect(() => () => {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
-    cancelAnimationFrame(rafRef.current)
-  }, [])
-
-  return { playing, progress, toggle, stop }
+/** Convert a Spotify track URL to an embed URL */
+function spotifyEmbedUrl(spotifyUrl: string): string | null {
+  // https://open.spotify.com/track/ABC123 → https://open.spotify.com/embed/track/ABC123
+  const match = spotifyUrl.match(/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/)
+  if (!match) return null
+  return `https://open.spotify.com/embed/track/${match[1]}?utm_source=generator&theme=0`
 }
 
 /* ── Suggestion banner (shown after AI suggest, before saving) ── */
@@ -307,10 +259,11 @@ export function SoundtrackSection({ entry, isCreator, onEntryUpdate }: Soundtrac
   const addToast = useUIStore(s => s.addToast)
   const [searchOpen, setSearchOpen] = useState(false)
   const [suggestion, setSuggestion] = useState<SpotifyTrack | null>(null)
-  const preview = usePreviewPlayer()
+  const [playerOpen, setPlayerOpen] = useState(false)
 
   const meta = entry.metadata as Record<string, unknown> | undefined
   const soundtrack = meta?.soundtrack as Soundtrack | undefined
+  const embedUrl = soundtrack?.spotify_url ? spotifyEmbedUrl(soundtrack.spotify_url) : null
 
   async function saveSoundtrack(track: SpotifyTrack, source: 'ai' | 'user') {
     const newSoundtrack: Soundtrack = {
@@ -358,82 +311,73 @@ export function SoundtrackSection({ entry, isCreator, onEntryUpdate }: Soundtrac
 
       {/* Current soundtrack display */}
       {soundtrack ? (
-        <div className="flex items-center gap-3 bg-white/3 border border-white/8 rounded-lg px-3 py-2.5">
-          {/* Album art with play overlay */}
-          <div className="relative shrink-0">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 bg-white/3 border border-white/8 rounded-lg px-3 py-2.5">
             {soundtrack.album_art ? (
-              <img src={soundtrack.album_art} alt="" className="w-12 h-12 rounded object-cover" />
+              <img src={soundtrack.album_art} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
             ) : (
-              <div className="w-12 h-12 rounded bg-white/5 flex items-center justify-center">
+              <div className="w-12 h-12 rounded bg-white/5 flex items-center justify-center shrink-0">
                 <Music size={20} className="text-gold/60" />
               </div>
             )}
-            {soundtrack.preview_url && (
-              <button
-                type="button"
-                onClick={() => soundtrack.preview_url && preview.toggle(soundtrack.preview_url)}
-                className="absolute inset-0 flex items-center justify-center bg-black/40 rounded opacity-0 hover:opacity-100 transition-opacity"
-                aria-label={preview.playing ? 'Pause' : 'Play preview'}
-              >
-                {preview.playing ? <Pause size={18} className="text-white" /> : <Play size={18} className="text-white" />}
-              </button>
-            )}
-            {/* Progress ring */}
-            {preview.playing && (
-              <svg className="absolute inset-0 w-12 h-12 -rotate-90 pointer-events-none" viewBox="0 0 48 48">
-                <circle cx="24" cy="24" r="22" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="2"
-                  strokeDasharray={`${preview.progress * 138.2} 138.2`} strokeLinecap="round" />
-              </svg>
-            )}
+
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-gold/60 font-body font-semibold tracking-[0.15em] uppercase">Mission Soundtrack</p>
+              <p className="text-sm text-ivory font-body font-medium truncate">{soundtrack.name}</p>
+              <p className="text-xs text-ivory-dim font-body truncate">{soundtrack.artist}</p>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {embedUrl && (
+                <button
+                  type="button"
+                  onClick={() => setPlayerOpen(prev => !prev)}
+                  className={cn(
+                    'flex items-center justify-center w-8 h-8 rounded-full transition-colors',
+                    playerOpen ? 'bg-gold/15 text-gold' : 'text-gold/60 hover:text-gold hover:bg-gold/10',
+                  )}
+                  aria-label={playerOpen ? 'Hide player' : 'Play'}
+                >
+                  {playerOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+              )}
+              {isCreator && (
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  className={cn(
+                    'text-[10px] font-body text-ivory-dim hover:text-gold transition-colors',
+                    'border border-white/10 rounded-full px-2.5 py-1',
+                  )}
+                >
+                  Change
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-gold/60 font-body font-semibold tracking-[0.15em] uppercase">Mission Soundtrack</p>
-            <p className="text-sm text-ivory font-body font-medium truncate">{soundtrack.name}</p>
-            <p className="text-xs text-ivory-dim font-body truncate">{soundtrack.artist}</p>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Play/Pause button (visible, not just hover) */}
-            {soundtrack.preview_url && (
-              <button
-                type="button"
-                onClick={() => soundtrack.preview_url && preview.toggle(soundtrack.preview_url)}
-                className={cn(
-                  'flex items-center justify-center w-8 h-8 rounded-full transition-colors',
-                  preview.playing
-                    ? 'bg-gold/15 text-gold'
-                    : 'text-gold/60 hover:text-gold hover:bg-gold/10',
-                )}
-                aria-label={preview.playing ? 'Pause' : 'Play preview'}
+          {/* Spotify embed player */}
+          <AnimatePresence>
+            {playerOpen && embedUrl && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 80, opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden rounded-lg"
               >
-                {preview.playing ? <Pause size={14} /> : <Play size={14} />}
-              </button>
+                <iframe
+                  src={embedUrl}
+                  width="100%"
+                  height="80"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                  className="rounded-lg border-0"
+                  title="Spotify player"
+                />
+              </motion.div>
             )}
-            {soundtrack.spotify_url && (
-              <a
-                href={soundtrack.spotify_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-8 h-8 rounded-full text-[#1DB954] hover:bg-[#1DB954]/10 transition-colors"
-                aria-label="Open in Spotify"
-              >
-                <ExternalLink size={14} />
-              </a>
-            )}
-            {isCreator && (
-              <button
-                type="button"
-                onClick={() => { preview.stop(); setSearchOpen(true) }}
-                className={cn(
-                  'text-[10px] font-body text-ivory-dim hover:text-gold transition-colors',
-                  'border border-white/10 rounded-full px-2.5 py-1',
-                )}
-              >
-                Change
-              </button>
-            )}
-          </div>
+          </AnimatePresence>
         </div>
       ) : isCreator ? (
         <button
