@@ -272,7 +272,7 @@ export async function uploadEntryPhoto(
   // Run storage upload and EXIF extraction in parallel
   const exifPromise = import('exifr').then(async (exifr) => {
     try {
-      const parsed = await exifr.default.parse(file, ['DateTimeOriginal', 'latitude', 'longitude'])
+      const parsed = await exifr.default.parse(file, { gps: true, tiff: true, exif: true, xmp: false, iptc: false, jfif: false, ihdr: false, icc: false })
       return {
         takenAt: parsed?.DateTimeOriginal instanceof Date ? parsed.DateTimeOriginal.toISOString() : null,
         gpsLat: typeof parsed?.latitude === 'number' ? parsed.latitude : null,
