@@ -194,7 +194,7 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 
 ## Passport pages & templates
 - **Cover**: uses real Pasoš cover image (`public/passport-cover.png`) with gent personalization overlay (avatar, name, alias, stats, travel intel).
-- **Mission layout (in-app)**: Mission entries render `MissionLayout` component inside `EntryDetail` instead of the generic layout. Shows visa card artifact (cream passport aesthetic), magazine-style lore with drop-caps + interspersed photos, intelligence report with debrief, and expandable "More" section for reactions/comments/actions. `/passport/visa/:stampId` redirects to `/chronicle/:entryId`. Passport stamp grid navigates directly to entry detail.
+- **Mission layout (in-app)**: Mission entries render `MissionLayout` component inside `EntryDetail` instead of the generic layout. Two paths: multi-day (horizontal carousel: visa card + debrief on page 1, per-day lore + photos on day pages) and single-day (vertical scroll: visa card, day-card lore with TTS, hero photo + 3-col grid, intelligence report). No magazine-style paragraph splitting — both formats use the same day-card style with italic lore narrative. `/passport/visa/:stampId` redirects to `/chronicle/:entryId`. Passport stamp grid navigates directly to entry detail.
 - **AI Mission Debrief**: "Generate Mission Debrief" button calls `generate-mission-debrief` edge function (`claude-sonnet-4-6`). Retries text-only if photo URLs fail (400). Returns classified narrative, landmarks, highlights, risk assessment. Stored in `entry.metadata`. `verify_jwt = false` in config.toml.
 - **Visa carousel export** (`src/export/templates/visa-carousel/`): dynamic Instagram carousel (2–7 slides, all 1080×1350):
   - `VisaCardSlide` — photo band (480px, uses `getCoverCrop`), flag+VIZA, destination (48px), bearer row (56px avatars), one-liner + stamp in flex row (not absolute)
@@ -369,6 +369,13 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 - **Reset Layout**: chip in filter area clears all saved positions from localStorage.
 - Data: `useMindMap` hook in `src/hooks/useMindMap.ts`, layout in `src/lib/mindMapLayout.ts`. `fetchEntryDates()` in `src/data/entries.ts` for recency computation.
 
+## Circle contacts scoring
+- `people.score` column (numeric 3,1) — persisted from POI scan verdict score.
+- **Contacts tab sorted by score DESC** (nulls last), then alphabetically.
+- **Score badge** on `PersonCard`: gold pill for 9+, muted gold for 8+, dim below 6.5. Monospace font.
+- Score populated via `createPersonFromScan()` in `people.ts` from verdict result.
+- Migration `20260323000000_people_score.sql` adds column + backfills from `person_scans`.
+
 ## Circle multi-gent relationships
 - `person_gents` table: many-to-many between people and gents (who "knows" this person). RLS: authenticated users can select/insert/delete.
 - `fetchPersonGents(personId)` / `updatePersonGents(personId, gentIds[])` in people.ts.
@@ -378,6 +385,10 @@ When a contact has an Instagram handle, `photo_url` is `https://unavatar.io/inst
 ## Photo Timeline (`/chronicle/photos`)
 - `fetchAllPhotos()` in `src/data/photos.ts` — joins `entry_photos` with `entries`, filters to published entries, sorted by date DESC.
 - `PhotoTimeline.tsx` page: 3-column masonry grid grouped by month, entry type icon overlay, tap to navigate to entry.
+
+## Ledger year range
+- Year selector dynamically derived from earliest entry date via `fetchEarliestEntryYear()` in stats.ts. Not hardcoded.
+- `useStats` hook fetches earliest year on mount alongside stats/H2H/missions.
 
 ## Steak Ratings Chart (`src/components/ledger/SteakRatingsChart.tsx`)
 - Pure CSS horizontal bar chart in Ledger. Gold bars filled to score/10, animated entrance via Framer Motion.
@@ -608,11 +619,11 @@ User-toggleable CSS filters applied to video feed, captured image, and export co
 
 ## Mission Soundtrack
 - Each mission gets a theme song. Auto-suggested by Claude Haiku after lore generation, searchable via Spotify.
-- **Edge functions**: `spotify-search` (Client Credentials flow, cached token, returns `preview_url`), `suggest-soundtrack` (Claude Haiku suggests song from lore).
-- **Data**: `entry.metadata.soundtrack` — `{ name, artist, album, spotify_url, album_art, preview_url, suggested_by }`.
-- **30s preview playback**: `usePreviewPlayer` hook in `SoundtrackSection` — plays Spotify's 30-second preview clip via HTML Audio. Play/pause button visible on saved soundtrack + in search results (tap album art to preview before selecting). Gold SVG progress ring around album art during playback. Stops global narration audio before playing. Preview not available for all tracks (Spotify licensing).
-- **UI**: `SoundtrackSection` on MissionLayout — album art with play overlay, song name, artist, Spotify link, "Change" button, search modal with manual search + AI suggest.
-- **Search modal**: debounced (400ms) Spotify search, results show preview play on album art (separate from select tap target). AI suggest button fills query and triggers search.
+- **Edge functions**: `spotify-search` (Client Credentials flow, cached token), `suggest-soundtrack` (Claude Haiku suggests song from lore).
+- **Data**: `entry.metadata.soundtrack` — `{ name, artist, album, spotify_url, album_art, suggested_by }`.
+- **Spotify embed player**: Compact 80px iframe via `spotifyEmbedUrl()` — converts `open.spotify.com/track/ID` to embed URL with dark theme. Expand/collapse toggle (chevron button). Spotify removed `preview_url` from Client Credentials API, so HTML Audio playback is not viable.
+- **UI**: `SoundtrackSection` on MissionLayout — album art, song name, artist, expand player button, "Change" button (creator only), search modal with manual search + AI suggest.
+- **Search modal**: debounced (400ms) Spotify search, AI suggest button fills query and triggers search.
 - **Spotify keys**: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` in Supabase secrets.
 
 ## PS5 Rivalry Broadcast (upgraded)
