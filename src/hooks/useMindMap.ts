@@ -92,6 +92,11 @@ export function useMindMap() {
     setFocusedGentId(null) // clear gent focus when person focused
   }, [])
 
+  const clearFocus = useCallback(() => {
+    setFocusedPersonId(null)
+    setFocusedGentId(null)
+  }, [])
+
   const setTierFilter = useCallback((tier: MindMapFilters['tier']) => {
     setFilters(prev => ({ ...prev, tier }))
   }, [])
@@ -142,6 +147,7 @@ export function useMindMap() {
     savedPositions,
     toggleGentFocus,
     togglePersonFocus,
+    clearFocus,
     setTierFilter,
     setGentFilter,
     updatePersonTier,

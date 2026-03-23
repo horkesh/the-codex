@@ -176,6 +176,7 @@ export function useVerdictIntake(onSaved: (personId: string) => void) {
         tier: 'acquaintance',
         added_by: gent.id,
         labels: verdictResult?.verdict?.trait_words ?? [],
+        score: verdictResult?.verdict?.score ?? null,
       })
 
       if (verdictResult?.scanId) {

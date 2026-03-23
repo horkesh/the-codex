@@ -3,6 +3,13 @@ import { Avatar } from '@/components/ui/Avatar'
 import { cn, formatDate } from '@/lib/utils'
 import type { Person } from '@/types/app'
 
+function scoreColor(score: number): string {
+  if (score >= 9.0) return 'text-gold bg-gold/15 border-gold/30'
+  if (score >= 8.0) return 'text-gold/80 bg-gold/10 border-gold/20'
+  if (score >= 6.5) return 'text-ivory-dim bg-white/8 border-white/15'
+  return 'text-ivory-dim/60 bg-white/5 border-white/10'
+}
+
 interface PersonCardProps {
   person: Person
   onClick: () => void
@@ -31,10 +38,20 @@ export function PersonCard({ person, onClick }: PersonCardProps) {
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          {/* Name */}
-          <p className="font-display text-base text-ivory leading-tight truncate">
-            {person.name}
-          </p>
+          {/* Name + score */}
+          <div className="flex items-center gap-2">
+            <p className="font-display text-base text-ivory leading-tight truncate">
+              {person.name}
+            </p>
+            {person.score != null && (
+              <span className={cn(
+                'shrink-0 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-full border leading-none',
+                scoreColor(person.score),
+              )}>
+                {person.score.toFixed(1)}
+              </span>
+            )}
+          </div>
 
           {/* Instagram — display only, clickable in PersonDetail */}
           {person.instagram && (

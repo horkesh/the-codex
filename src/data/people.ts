@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Person, PersonWithPrivateNote, PersonConnection } from '@/types/app'
 
-const PERSON_COLUMNS = 'id, name, instagram, photo_url, portrait_url, instagram_source_url, met_at_entry, met_date, met_location, notes, labels, added_by, category, tier, poi_source_url, poi_intel, poi_source_gent, poi_visibility, birthday'
+const PERSON_COLUMNS = 'id, name, instagram, photo_url, portrait_url, instagram_source_url, met_at_entry, met_date, met_location, notes, labels, added_by, category, tier, poi_source_url, poi_intel, poi_source_gent, poi_visibility, birthday, score'
 
 export async function fetchPeople(filters?: {
   search?: string
@@ -10,6 +10,7 @@ export async function fetchPeople(filters?: {
   let query = supabase
     .from('people')
     .select(PERSON_COLUMNS)
+    .order('score', { ascending: false, nullsFirst: false })
     .order('name', { ascending: true })
 
   if (filters?.search) {
@@ -126,6 +127,7 @@ export async function createPersonFromScan(data: {
   tier: 'inner_circle' | 'outer_circle' | 'acquaintance'
   added_by: string
   labels: string[]
+  score?: number | null
 }): Promise<Person> {
   const { data: rawPerson, error } = await supabase
     .from('people')
@@ -142,6 +144,7 @@ export async function createPersonFromScan(data: {
       tier: data.tier,
       labels: data.labels,
       added_by: data.added_by,
+      score: data.score ?? null,
     })
     .select(PERSON_COLUMNS)
     .single()
