@@ -23,13 +23,25 @@ interface OptionsMenuProps {
   isOpen: boolean
   onClose: () => void
   onMarkComplete: () => void
+  onEdit: () => void
   completing: boolean
+  isCreator: boolean
 }
 
-function OptionsMenu({ isOpen, onClose, onMarkComplete, completing }: OptionsMenuProps) {
+function OptionsMenu({ isOpen, onClose, onMarkComplete, onEdit, completing, isCreator }: OptionsMenuProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Gathering Options">
       <div className="flex flex-col gap-1 pb-2">
+        {isCreator && (
+          <button
+            type="button"
+            className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors"
+            onClick={() => { onEdit(); onClose() }}
+          >
+            <Pencil size={18} className="text-gold shrink-0" />
+            <span className="font-body text-sm">Edit Gathering</span>
+          </button>
+        )}
         <button
           type="button"
           className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-left text-ivory hover:bg-slate-light transition-colors disabled:opacity-50"
@@ -767,7 +779,9 @@ export default function GatheringDetail() {
           isOpen={optionsOpen}
           onClose={() => setOptionsOpen(false)}
           onMarkComplete={handleMarkComplete}
+          onEdit={() => navigate(`/gathering/${id}/edit`)}
           completing={completing}
+          isCreator={isCreator}
         />
 
         {/* QR Code modal */}

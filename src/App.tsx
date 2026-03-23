@@ -20,6 +20,7 @@ const EntryNew = lazy(() => import('@/pages/EntryNew'))
 const EntryEdit = lazy(() => import('@/pages/EntryEdit'))
 const GatheringNew = lazy(() => import('@/pages/GatheringNew'))
 const GatheringDetail = lazy(() => import('@/pages/GatheringDetail'))
+const GatheringEdit = lazy(() => import('@/pages/GatheringEdit'))
 const Passport = lazy(() => import('@/pages/Passport'))
 const Circle = lazy(() => import('@/pages/Circle'))
 const PersonDetail = lazy(() => import('@/pages/PersonDetail'))
@@ -94,6 +95,7 @@ function AnimatedRoutes() {
           <Route path="/dossier" element={<ProtectedRoute><DossierMap /></ProtectedRoute>} />
           <Route path="/gathering/new" element={<ProtectedRoute><GatheringNew /></ProtectedRoute>} />
           <Route path="/gathering/:id" element={<ProtectedRoute><GatheringDetail /></ProtectedRoute>} />
+          <Route path="/gathering/:id/edit" element={<ProtectedRoute><GatheringEdit /></ProtectedRoute>} />
           <Route path="/passport" element={<ProtectedRoute><Passport /></ProtectedRoute>} />
           <Route path="/circle" element={<ProtectedRoute><Circle /></ProtectedRoute>} />
           <Route path="/circle/map" element={<Navigate to="/circle" replace />} />
