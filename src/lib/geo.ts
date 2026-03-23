@@ -179,40 +179,35 @@ export async function fetchNearestPOIGoogle(lat: number, lng: number): Promise<s
   }
 }
 
-/** Load the Google Maps JS API with Places library via script tag */
+/** Load the Google Maps Places library, dynamically importing it if Maps is already loaded */
 let _googlePromise: Promise<typeof google | null> | null = null
 function loadGoogleMapsPlaces(): Promise<typeof google | null> {
   if (_googlePromise) return _googlePromise
-  _googlePromise = new Promise((resolve) => {
-    // Already loaded (e.g. by @vis.gl/react-google-maps)
-    if (typeof google !== 'undefined' && google.maps?.places) {
-      resolve(google)
-      return
-    }
-    // Check if script is already in DOM but hasn't finished loading
-    const existing = document.querySelector('script[src*="maps.googleapis.com"]') as HTMLScriptElement | null
-    if (existing) {
-      // Wait for it to load, then check for places
-      const check = () => {
-        if (typeof google !== 'undefined' && google.maps?.places) resolve(google)
-        else setTimeout(check, 100)
+  _googlePromise = (async () => {
+    try {
+      // Already fully loaded with Places
+      if (typeof google !== 'undefined' && google.maps?.places) return google
+
+      // Maps loaded (by @vis.gl/react-google-maps) but without Places — import it
+      if (typeof google !== 'undefined' && google.maps?.importLibrary) {
+        await google.maps.importLibrary('places')
+        return google
       }
-      const timeout = setTimeout(() => resolve(null), 8000)
-      existing.addEventListener('load', () => { clearTimeout(timeout); check() })
-      check()
-      return
+
+      // Maps not loaded at all — load via script tag
+      await new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places`
+        script.async = true
+        script.onload = () => resolve()
+        script.onerror = () => reject()
+        document.head.appendChild(script)
+      })
+      return typeof google !== 'undefined' ? google : null
+    } catch {
+      return null
     }
-    // Load it ourselves
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places`
-    script.async = true
-    script.onload = () => {
-      if (typeof google !== 'undefined' && google.maps?.places) resolve(google)
-      else resolve(null)
-    }
-    script.onerror = () => resolve(null)
-    document.head.appendChild(script)
-  })
+  })()
   return _googlePromise
 }
 
