@@ -188,7 +188,7 @@ Entry Type: ${entryTypeLabels[entry.type] || entry.type}
 Title: ${entry.title}
 Date: ${entry.date}
 ${timeContext}${situationalHint ? `\nContext: ${situationalHint}` : ''}
-Location: ${[entry.city, entry.country].filter(Boolean).join(', ') || entry.location || 'undisclosed location'}${weatherLine}${moodLine}
+Location: ${[entry.location, entry.city, entry.country].filter(Boolean).join(', ') || 'undisclosed location'}${weatherLine}${moodLine}
 Present: ${participantNames}
 Description: ${entry.description || 'No additional details provided.'}${entry.metadata?.song ? `\nSong: ${entry.metadata.song}` : ''}${loreHints ? `\nDirector's Notes (incorporate these details naturally): ${loreHints}` : ''}
 ${typeDirective ? `\n${typeDirective}` : ''}${moodTags.length > 0 ? `\nThe mood tags above reflect the energy of this occasion — let them subtly shape the tone and vocabulary of the narrative. Don't list or name the moods explicitly; embody them.` : ''}${photos.length > 0 ? `\n${GENT_IDENTITIES}\n\nYou have been provided ${photos.length} photo(s) sampled from ${allPhotos.length} total from this occasion. Observe the atmosphere, setting, and details carefully — including the mood, energy, and expressions of those present — and let these inform the narrative. If you can identify specific Gents in the photos, reference them by name. If someone looks subdued or distracted, let that texture show.` : ''}
