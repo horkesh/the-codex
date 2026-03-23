@@ -137,29 +137,83 @@ export function haversineMetres(
   return R * 2 * Math.asin(Math.sqrt(a))
 }
 
-/** Google Places Nearby Search — find the nearest named POI within 150m. */
+/**
+ * Google Places Nearby Search — find the nearest named POI within 150m.
+ * Uses the Maps JS API PlacesService (CORS-safe) instead of the REST endpoint.
+ */
 export async function fetchNearestPOIGoogle(lat: number, lng: number): Promise<string | null> {
   if (!GOOGLE_MAPS_KEY) return fetchNearestPOINominatim(lat, lng)
   try {
-    const res = await fetch(
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=150&type=restaurant|bar|cafe|night_club|movie_theater|gym|hotel|museum|shopping_mall&key=${GOOGLE_MAPS_KEY}`,
-      { signal: AbortSignal.timeout(5000) },
-    )
-    if (!res.ok) return fetchNearestPOINominatim(lat, lng)
-    const data = await res.json()
-    if (data.status !== 'OK' || !data.results?.length) return fetchNearestPOINominatim(lat, lng)
+    // Load the Google Maps JS API with Places library
+    const google = await loadGoogleMapsPlaces()
+    if (!google) return fetchNearestPOINominatim(lat, lng)
 
-    // Pick the closest result
-    let best: { name: string; dist: number } | null = null
-    for (const place of data.results) {
-      if (!place.name || !place.geometry?.location) continue
-      const dist = haversineMetres(lat, lng, place.geometry.location.lat, place.geometry.location.lng)
-      if (!best || dist < best.dist) best = { name: place.name, dist }
-    }
-    return best?.name ?? null
+    // PlacesService requires a DOM element (can be a hidden div)
+    const div = document.createElement('div')
+    const service = new google.maps.places.PlacesService(div)
+    const location = new google.maps.LatLng(lat, lng)
+
+    return new Promise<string | null>((resolve) => {
+      const timeout = setTimeout(() => resolve(fetchNearestPOINominatim(lat, lng)), 5000)
+      service.nearbySearch(
+        { location, radius: 150, type: 'establishment' },
+        (results, status) => {
+          clearTimeout(timeout)
+          if (status !== google.maps.places.PlacesServiceStatus.OK || !results?.length) {
+            resolve(fetchNearestPOINominatim(lat, lng))
+            return
+          }
+          // Pick the closest result
+          let best: { name: string; dist: number } | null = null
+          for (const place of results) {
+            if (!place.name || !place.geometry?.location) continue
+            const dist = haversineMetres(lat, lng, place.geometry.location.lat(), place.geometry.location.lng())
+            if (!best || dist < best.dist) best = { name: place.name, dist }
+          }
+          resolve(best?.name ?? null)
+        },
+      )
+    })
   } catch {
     return fetchNearestPOINominatim(lat, lng)
   }
+}
+
+/** Load the Google Maps JS API with Places library via script tag */
+let _googlePromise: Promise<typeof google | null> | null = null
+function loadGoogleMapsPlaces(): Promise<typeof google | null> {
+  if (_googlePromise) return _googlePromise
+  _googlePromise = new Promise((resolve) => {
+    // Already loaded (e.g. by @vis.gl/react-google-maps)
+    if (typeof google !== 'undefined' && google.maps?.places) {
+      resolve(google)
+      return
+    }
+    // Check if script is already in DOM but hasn't finished loading
+    const existing = document.querySelector('script[src*="maps.googleapis.com"]') as HTMLScriptElement | null
+    if (existing) {
+      // Wait for it to load, then check for places
+      const check = () => {
+        if (typeof google !== 'undefined' && google.maps?.places) resolve(google)
+        else setTimeout(check, 100)
+      }
+      const timeout = setTimeout(() => resolve(null), 8000)
+      existing.addEventListener('load', () => { clearTimeout(timeout); check() })
+      check()
+      return
+    }
+    // Load it ourselves
+    const script = document.createElement('script')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&libraries=places`
+    script.async = true
+    script.onload = () => {
+      if (typeof google !== 'undefined' && google.maps?.places) resolve(google)
+      else resolve(null)
+    }
+    script.onerror = () => resolve(null)
+    document.head.appendChild(script)
+  })
+  return _googlePromise
 }
 
 /** Google reverse geocode — returns city, country, and best-effort location name. */
