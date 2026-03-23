@@ -73,19 +73,30 @@ async function fetchWeather(date: string, city: string | null, country: string |
   }
 }
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
 /**
  * Server-side venue lookup: cluster GPS points from photos, query Google Places
  * for each cluster, return unique venue names. No CORS, no script loading races.
+ *
+ * GPS sources (in priority order):
+ * 1. entry.metadata.photo_gps (set during creation for new entries)
+ * 2. entry_photos table gps_lat/gps_lng columns (works for ALL entries)
  */
 async function resolveVenuesFromGps(
-  entry: { location?: string; metadata?: Record<string, unknown> },
+  entry: { id?: string; location?: string; metadata?: Record<string, unknown> },
   googleMapsKey?: string,
 ): Promise<string[]> {
   // If location is already set on the entry, use it as-is
   if (entry.location) return [entry.location]
+  if (!googleMapsKey) return []
 
-  const gpsPoints = entry.metadata?.photo_gps as Array<{ lat: number; lng: number }> | undefined
-  if (!gpsPoints?.length || !googleMapsKey) return []
+  // Try metadata first, then query DB for photo GPS
+  let gpsPoints = entry.metadata?.photo_gps as Array<{ lat: number; lng: number }> | undefined
+  if (!gpsPoints?.length && entry.id) {
+    gpsPoints = await fetchPhotoGpsFromDb(entry.id)
+  }
+  if (!gpsPoints?.length) return []
 
   // Cluster GPS points within 200m of each other
   const clusters: { lat: number; lng: number }[] = []
@@ -114,6 +125,26 @@ async function resolveVenuesFromGps(
     } catch { /* skip this cluster */ }
   }
   return venues
+}
+
+/** Query entry_photos table for GPS coordinates (works for existing entries) */
+async function fetchPhotoGpsFromDb(entryId: string): Promise<{ lat: number; lng: number }[]> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!supabaseUrl || !serviceKey) return []
+    const sb = createClient(supabaseUrl, serviceKey)
+    const { data } = await sb
+      .from('entry_photos')
+      .select('gps_lat, gps_lng')
+      .eq('entry_id', entryId)
+      .not('gps_lat', 'is', null)
+      .not('gps_lng', 'is', null)
+    if (!data?.length) return []
+    return data.map((r: { gps_lat: number; gps_lng: number }) => ({ lat: r.gps_lat, lng: r.gps_lng }))
+  } catch {
+    return []
+  }
 }
 
 /** Haversine distance in metres */
