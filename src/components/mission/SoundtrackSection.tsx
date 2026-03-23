@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Music, ExternalLink, Search, Sparkles, X, Check } from 'lucide-react'
+import { Music, ExternalLink, Search, Sparkles, X, Check, Play, Pause } from 'lucide-react'
 import { Spinner } from '@/components/ui'
 import { useSpotifySearch, type SpotifyTrack } from '@/hooks/useSpotifySearch'
 import { suggestSoundtrack } from '@/ai/soundtrack'
 import { updateEntry } from '@/data/entries'
 import { useUIStore } from '@/store/ui'
+import { stopGlobalAudio } from '@/lib/audioManager'
 import { cn } from '@/lib/utils'
 import type { EntryWithParticipants } from '@/types/app'
 
@@ -15,6 +16,7 @@ export interface Soundtrack {
   album?: string
   spotify_url?: string
   album_art?: string
+  preview_url?: string | null
   suggested_by?: 'ai' | 'user'
 }
 
@@ -22,6 +24,63 @@ interface SoundtrackSectionProps {
   entry: EntryWithParticipants
   isCreator: boolean
   onEntryUpdate: (entry: EntryWithParticipants) => void
+}
+
+/* ── Preview player hook ── */
+
+function usePreviewPlayer() {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const rafRef = useRef<number>(0)
+
+  const stop = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+    cancelAnimationFrame(rafRef.current)
+    setPlaying(false)
+    setProgress(0)
+  }, [])
+
+  const toggle = useCallback((url: string) => {
+    if (playing) {
+      stop()
+      return
+    }
+
+    // Stop any narration or other audio
+    stopGlobalAudio()
+
+    if (!audioRef.current) {
+      audioRef.current = new Audio()
+      audioRef.current.addEventListener('ended', () => {
+        setPlaying(false)
+        setProgress(0)
+        cancelAnimationFrame(rafRef.current)
+      })
+    }
+
+    const audio = audioRef.current
+    audio.src = url
+    audio.play().then(() => {
+      setPlaying(true)
+      const tick = () => {
+        if (audio.duration) setProgress(audio.currentTime / audio.duration)
+        rafRef.current = requestAnimationFrame(tick)
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }).catch(() => setPlaying(false))
+  }, [playing, stop])
+
+  // Cleanup on unmount
+  useEffect(() => () => {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+    cancelAnimationFrame(rafRef.current)
+  }, [])
+
+  return { playing, progress, toggle, stop }
 }
 
 /* ── Suggestion banner (shown after AI suggest, before saving) ── */
@@ -86,6 +145,7 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
   const [suggesting, setSuggesting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const preview = usePreviewPlayer()
 
   useEffect(() => {
     if (isOpen) {
@@ -93,16 +153,19 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
     } else {
       setQuery('')
       clear()
+      preview.stop()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, clear])
 
   const handleQueryChange = useCallback((val: string) => {
     setQuery(val)
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      if (val.trim().length >= 2) search(val)
-      else clear()
-    }, 400)
+    if (val.trim().length >= 2) {
+      debounceRef.current = setTimeout(() => search(val.trim()), 400)
+    } else {
+      clear()
+    }
   }, [search, clear])
 
   async function handleAiSuggest() {
@@ -122,6 +185,11 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
     }
   }
 
+  function handleSelect(track: SpotifyTrack) {
+    preview.stop()
+    onSelect(track)
+  }
+
   if (!isOpen) return null
 
   return (
@@ -130,7 +198,7 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={() => { preview.stop(); onClose() }}
     >
       <motion.div
         initial={{ y: '100%' }}
@@ -143,7 +211,7 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
           <h3 className="text-sm font-display font-semibold text-ivory">Mission Soundtrack</h3>
-          <button type="button" onClick={onClose} className="text-ivory-dim hover:text-ivory transition-colors">
+          <button type="button" onClick={() => { preview.stop(); onClose() }} className="text-ivory-dim hover:text-ivory transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -182,24 +250,44 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
         {/* Results */}
         <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
           {results.map((track, i) => (
-            <button
+            <div
               key={track.spotify_url || `track-${i}`}
-              type="button"
-              onClick={() => onSelect(track)}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors text-left"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
             >
-              {track.album_art ? (
+              {/* Preview play button or album art */}
+              {track.preview_url ? (
+                <button
+                  type="button"
+                  onClick={() => track.preview_url && preview.toggle(track.preview_url)}
+                  className="relative w-10 h-10 rounded overflow-hidden shrink-0 group"
+                >
+                  {track.album_art ? (
+                    <img src={track.album_art} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                      <Music size={16} className="text-ivory-dim" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Play size={14} className="text-white" />
+                  </div>
+                </button>
+              ) : track.album_art ? (
                 <img src={track.album_art} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
               ) : (
                 <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center shrink-0">
                   <Music size={16} className="text-ivory-dim" />
                 </div>
               )}
-              <div className="flex-1 min-w-0">
+              <button
+                type="button"
+                onClick={() => handleSelect(track)}
+                className="flex-1 min-w-0 text-left"
+              >
                 <p className="text-sm text-ivory font-body truncate">{track.name}</p>
                 <p className="text-xs text-ivory-dim font-body truncate">{track.artist} &middot; {track.album}</p>
-              </div>
-            </button>
+              </button>
+            </div>
           ))}
           {!searching && results.length === 0 && query.length >= 2 && (
             <p className="text-xs text-ivory-dim/50 font-body text-center py-6">No results found</p>
@@ -219,6 +307,7 @@ export function SoundtrackSection({ entry, isCreator, onEntryUpdate }: Soundtrac
   const addToast = useUIStore(s => s.addToast)
   const [searchOpen, setSearchOpen] = useState(false)
   const [suggestion, setSuggestion] = useState<SpotifyTrack | null>(null)
+  const preview = usePreviewPlayer()
 
   const meta = entry.metadata as Record<string, unknown> | undefined
   const soundtrack = meta?.soundtrack as Soundtrack | undefined
@@ -230,6 +319,7 @@ export function SoundtrackSection({ entry, isCreator, onEntryUpdate }: Soundtrac
       album: track.album || undefined,
       spotify_url: track.spotify_url || undefined,
       album_art: track.album_art || undefined,
+      preview_url: track.preview_url ?? undefined,
       suggested_by: source,
     }
     const newMeta = { ...(meta ?? {}), soundtrack: newSoundtrack }
@@ -253,9 +343,6 @@ export function SoundtrackSection({ entry, isCreator, onEntryUpdate }: Soundtrac
     setSuggestion(null)
   }
 
-  // Expose suggestion setter for parent (auto-suggest after lore gen)
-  // This is done via the exported autoSuggestSoundtrack function below
-
   return (
     <div className="space-y-2">
       {/* Suggestion banner */}
@@ -272,19 +359,57 @@ export function SoundtrackSection({ entry, isCreator, onEntryUpdate }: Soundtrac
       {/* Current soundtrack display */}
       {soundtrack ? (
         <div className="flex items-center gap-3 bg-white/3 border border-white/8 rounded-lg px-3 py-2.5">
-          {soundtrack.album_art ? (
-            <img src={soundtrack.album_art} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
-          ) : (
-            <div className="w-12 h-12 rounded bg-white/5 flex items-center justify-center shrink-0">
-              <Music size={20} className="text-gold/60" />
-            </div>
-          )}
+          {/* Album art with play overlay */}
+          <div className="relative shrink-0">
+            {soundtrack.album_art ? (
+              <img src={soundtrack.album_art} alt="" className="w-12 h-12 rounded object-cover" />
+            ) : (
+              <div className="w-12 h-12 rounded bg-white/5 flex items-center justify-center">
+                <Music size={20} className="text-gold/60" />
+              </div>
+            )}
+            {soundtrack.preview_url && (
+              <button
+                type="button"
+                onClick={() => soundtrack.preview_url && preview.toggle(soundtrack.preview_url)}
+                className="absolute inset-0 flex items-center justify-center bg-black/40 rounded opacity-0 hover:opacity-100 transition-opacity"
+                aria-label={preview.playing ? 'Pause' : 'Play preview'}
+              >
+                {preview.playing ? <Pause size={18} className="text-white" /> : <Play size={18} className="text-white" />}
+              </button>
+            )}
+            {/* Progress ring */}
+            {preview.playing && (
+              <svg className="absolute inset-0 w-12 h-12 -rotate-90 pointer-events-none" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="22" fill="none" stroke="rgba(201,168,76,0.5)" strokeWidth="2"
+                  strokeDasharray={`${preview.progress * 138.2} 138.2`} strokeLinecap="round" />
+              </svg>
+            )}
+          </div>
+
           <div className="flex-1 min-w-0">
             <p className="text-[10px] text-gold/60 font-body font-semibold tracking-[0.15em] uppercase">Mission Soundtrack</p>
             <p className="text-sm text-ivory font-body font-medium truncate">{soundtrack.name}</p>
             <p className="text-xs text-ivory-dim font-body truncate">{soundtrack.artist}</p>
           </div>
+
           <div className="flex items-center gap-1.5 shrink-0">
+            {/* Play/Pause button (visible, not just hover) */}
+            {soundtrack.preview_url && (
+              <button
+                type="button"
+                onClick={() => soundtrack.preview_url && preview.toggle(soundtrack.preview_url)}
+                className={cn(
+                  'flex items-center justify-center w-8 h-8 rounded-full transition-colors',
+                  preview.playing
+                    ? 'bg-gold/15 text-gold'
+                    : 'text-gold/60 hover:text-gold hover:bg-gold/10',
+                )}
+                aria-label={preview.playing ? 'Pause' : 'Play preview'}
+              >
+                {preview.playing ? <Pause size={14} /> : <Play size={14} />}
+              </button>
+            )}
             {soundtrack.spotify_url && (
               <a
                 href={soundtrack.spotify_url}
@@ -299,7 +424,7 @@ export function SoundtrackSection({ entry, isCreator, onEntryUpdate }: Soundtrac
             {isCreator && (
               <button
                 type="button"
-                onClick={() => setSearchOpen(true)}
+                onClick={() => { preview.stop(); setSearchOpen(true) }}
                 className={cn(
                   'text-[10px] font-body text-ivory-dim hover:text-gold transition-colors',
                   'border border-white/10 rounded-full px-2.5 py-1',

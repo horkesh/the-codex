@@ -53,6 +53,7 @@ Deno.serve(async (req: Request) => {
       album: t.album?.name ?? '',
       spotify_url: t.external_urls?.spotify ?? '',
       album_art: t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? '',
+      preview_url: t.preview_url ?? null,
     }))
 
     return new Response(JSON.stringify({ tracks }), {
