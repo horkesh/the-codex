@@ -18,16 +18,16 @@ import { ToastStatsSection } from '@/components/ledger/ToastStatsSection'
 import { GentComparison } from '@/components/ledger/GentComparison'
 import { fadeIn } from '@/lib/animations'
 
-// Years available for selection — from the Gents' first year to current
 const CURRENT_YEAR = new Date().getFullYear()
-const FIRST_YEAR = 2022
-const YEARS: number[] = Array.from(
-  { length: CURRENT_YEAR - FIRST_YEAR + 1 },
-  (_, i) => FIRST_YEAR + i,
-).reverse()
 
 export default function Ledger() {
-  const { stats, ps5H2H, missionsByYear, selectedYear, setSelectedYear, loading } = useStats()
+  const { stats, ps5H2H, missionsByYear, selectedYear, setSelectedYear, loading, earliestYear } = useStats()
+
+  // Years available for selection — from earliest entry year to current
+  const years: number[] = Array.from(
+    { length: CURRENT_YEAR - earliestYear + 1 },
+    (_, i) => earliestYear + i,
+  ).reverse()
 
   return (
     <>
@@ -53,7 +53,7 @@ export default function Ledger() {
               onSelect={() => setSelectedYear(null)}
             />
 
-            {YEARS.map((year) => (
+            {years.map((year) => (
               <YearChip
                 key={year}
                 label={String(year)}

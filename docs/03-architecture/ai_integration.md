@@ -182,12 +182,16 @@ Output (per photo):
 Special achievement stamps with unique visual identity. More ornate than mission stamps.
 
 #### `scan-person-verdict`
-Vision analysis of a photo or Instagram screenshot. Single prompt handles eligibility check + full verdict.
+Vision analysis of a photo or Instagram screenshot. Both modes use **Gemini 2.5 Flash** via a shared `callGemini()` helper, with separate prompts per `source_type`. Single prompt handles eligibility check + full verdict.
 
 Input:
 ```json
-{ "photo_base64": "...", "mime_type": "image/jpeg" }
+{ "photo_base64": "...", "mime_type": "image/webp", "source_type": "photo" }
 ```
+
+`source_type` values: `"photo"` (camera/gallery) or `"instagram_screenshot"` (profile/post/story screenshot — also extracts `display_name` and `instagram_handle`).
+
+`mime_type` must match the actual image encoding. Client uses `imageToBase64WithMime()` which returns the real MIME type (WebP preferred, JPEG fallback on Safari/iOS).
 
 Returns HTTP 422 if no person is identifiable (ineligible image). Otherwise returns:
 ```json
@@ -310,7 +314,8 @@ Additional context: ${JSON.stringify(metadata)}`
 | Entry published | Gemini: generate-cover | If no user photo uploaded |
 | Year-end Wrapped | Claude: generate-wrapped | Manual trigger in Ledger |
 | First load of Calling Card | Gemini: generate-portrait | Once per Gent, cached |
-| Verdict intake — photo uploaded | Gemini: scan-person-verdict | Blocks review step; 422 = ineligible |
+| Verdict intake — photo uploaded | Gemini: scan-person-verdict (photo) | Blocks review step; 422 = ineligible |
+| Verdict intake — Instagram screenshot | Gemini: scan-person-verdict (instagram_screenshot) | Blocks review step; extracts handle/name |
 | Verdict intake — scan created | Gemini: generate-person-portrait | Non-blocking background; shimmer in review |
 | Scene Director's Cut | Claude: generate-mission-narrative (single scene) | On director's note submit in SceneEditor |
 

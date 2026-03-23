@@ -43,7 +43,7 @@ export function MindMapCanvas({ height }: { height?: string }) {
   const canvasHeight = height ?? DEFAULT_CANVAS_HEIGHT
   const {
     loading, nodes, edges, filters, gents, savedPositions, focusedPersonId,
-    toggleGentFocus, togglePersonFocus, setTierFilter, setGentFilter, updatePersonTier,
+    toggleGentFocus, togglePersonFocus, clearFocus, setTierFilter, setGentFilter, updatePersonTier,
     handleNodeDragStop, clearPersonPosition, resetLayout, searchQuery, setSearchQuery,
     searchMatchNodeIds,
   } = useMindMap()
@@ -217,6 +217,7 @@ export function MindMapCanvas({ height }: { height?: string }) {
         onNodesChange={onNodesChange}
         onNodeClick={onNodeClick}
         onNodeDragStop={onDragStop}
+        onPaneClick={clearFocus}
         fitView
         fitViewOptions={{ padding: 0.3 }}
         minZoom={0.3}

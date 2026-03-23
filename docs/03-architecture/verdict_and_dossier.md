@@ -1,6 +1,6 @@
 # Verdict & Dossier — Feature Design
 
-Status: Proposed only. Document created for planning. No implementation yet.
+Status: Implemented. Both scan modes (Research + Scan) use Gemini 2.5 Flash. See ADR 0003 for history.
 
 ---
 
