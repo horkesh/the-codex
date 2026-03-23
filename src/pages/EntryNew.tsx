@@ -236,7 +236,7 @@ export default function EntryNew() {
         type: selectedType,
         title: formData.title,
         date: formData.date,
-        location: formData.location ?? locationFill?.location ?? undefined,
+        location: formData.location || locationFill?.location || undefined,
         city,
         country,
         country_code,
