@@ -1,26 +1,30 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router'
+import { useParams, useNavigate } from 'react-router'
 import { X, Plus, MapPin, Crosshair } from 'lucide-react'
 import { TopBar, PageWrapper } from '@/components/layout'
-import { Button, Input, DatePicker } from '@/components/ui'
+import { Button, Input, DatePicker, Spinner } from '@/components/ui'
 import { PizzaMenuBuilder } from '@/components/gathering/PizzaMenuBuilder'
 import { LocationSearchModal } from '@/components/places/LocationSearchModal'
 import { MapPicker } from '@/components/places/MapPicker'
 import { buildStaticMapUrl } from '@/export/templates/shared/utils'
 import { reverseGeocode } from '@/lib/geo'
-import { createEntry, updateEntry, uploadEntryPhoto, updateEntryCover } from '@/data/entries'
-import { PhotoUpload, usePendingPhotos } from '@/components/chronicle/PhotoUpload'
+import { updateEntry } from '@/data/entries'
+import { fetchGathering, updateGatheringMetadata } from '@/data/gatherings'
 import { fetchLocations } from '@/data/locations'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
 import { cn } from '@/lib/utils'
-import type { GatheringMetadata, PizzaMenuItem, SavedLocation } from '@/types/app'
+import type { Entry, GatheringMetadata, PizzaMenuItem, SavedLocation } from '@/types/app'
 import type { LocationFill } from '@/lib/geo'
 
-export default function GatheringNew() {
+export default function GatheringEdit() {
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { gent } = useAuthStore()
   const { addToast } = useUIStore()
+
+  const [entry, setEntry] = useState<Entry | null>(null)
+  const [loading, setLoading] = useState(true)
 
   // Core fields
   const [title, setTitle] = useState('')
@@ -53,13 +57,46 @@ export default function GatheringNew() {
   const [lng, setLng] = useState<number | undefined>()
   const [savedPlaces, setSavedPlaces] = useState<SavedLocation[]>([])
 
-  useEffect(() => { fetchLocations().then(setSavedPlaces).catch(() => {}) }, [])
-
-  // Photos
-  const { pendingFiles, addFiles, removeFile } = usePendingPhotos(10)
-
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<{ title?: string; eventDate?: string; location?: string }>({})
+
+  // Load existing gathering data
+  useEffect(() => {
+    if (!id) return
+    setLoading(true)
+    Promise.all([fetchGathering(id), fetchLocations()])
+      .then(([fetched, places]) => {
+        setSavedPlaces(places)
+        if (!fetched) {
+          addToast('Gathering not found', 'error')
+          navigate(-1)
+          return
+        }
+        setEntry(fetched)
+        const meta = fetched.metadata as unknown as GatheringMetadata
+
+        // Populate form fields
+        setTitle(fetched.title)
+        setEventDate(meta.event_date || fetched.date)
+        setLocation(meta.location || fetched.location || '')
+        setCity(fetched.city || '')
+        setDescription(fetched.description || '')
+        setHostMessage(meta.host_message || '')
+        setCocktails(meta.cocktail_menu || [])
+        setGuests((meta.guest_list || []).map(g => g.name))
+        setFlavour(meta.flavour)
+        setPizzaMenu(meta.pizza_menu || [])
+        setVenue(meta.venue || '')
+        setAddress(meta.address || '')
+        setLat(meta.lat)
+        setLng(meta.lng)
+      })
+      .catch(err => {
+        console.error('Failed to load gathering:', err)
+        addToast('Failed to load gathering', 'error')
+      })
+      .finally(() => setLoading(false))
+  }, [id, addToast, navigate])
 
   function addCocktail() {
     const trimmed = cocktailInput.trim()
@@ -100,7 +137,6 @@ export default function GatheringNew() {
     setLat(pinLat)
     setLng(pinLng)
     setShowMapPicker(false)
-    // Reverse geocode to get city/country
     try {
       const addr = await reverseGeocode(pinLat, pinLng)
       if (addr) {
@@ -109,7 +145,7 @@ export default function GatheringNew() {
         setLocation(addr.city ?? 'Pinned Location')
         if (addr.address) setAddress(addr.address)
       }
-    } catch { /* silent — coords are enough */ }
+    } catch { /* silent */ }
   }
 
   function validate(): boolean {
@@ -123,26 +159,24 @@ export default function GatheringNew() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!gent) return
+    if (!gent || !id || !entry) return
     if (!validate()) return
 
     setSubmitting(true)
 
     try {
-      const metadata: GatheringMetadata = {
+      const meta = entry.metadata as unknown as GatheringMetadata
+
+      const updatedMetadata: GatheringMetadata = {
+        ...meta,
         event_date: eventDate,
         location: (venue || location).trim(),
-        guest_list: guests.map(name => ({
-          name,
-          person_id: null,
-          rsvp_status: 'pending' as const,
-        })),
+        guest_list: guests.map(name => {
+          // Preserve existing RSVP status for guests that already exist
+          const existing = meta.guest_list?.find(g => g.name === name)
+          return existing ?? { name, person_id: null, rsvp_status: 'pending' as const }
+        }),
         cocktail_menu: flavour === 'pizza_party' ? [] : cocktails,
-        invite_image_url: null,
-        rsvp_link: null,
-        qr_code_url: null,
-        guest_book_count: 0,
-        phase: 'pre',
         flavour,
         pizza_menu: flavour === 'pizza_party' ? pizzaMenu : undefined,
         venue: venue || undefined,
@@ -152,45 +186,44 @@ export default function GatheringNew() {
         host_message: hostMessage.trim() || undefined,
       }
 
-      const entry = await createEntry({
-        type: 'gathering',
+      // Update entry fields and metadata together
+      await updateEntry(id, {
         title: title.trim(),
         date: eventDate,
-        location: (venue || location).trim() || undefined,
-        city: city.trim() || undefined,
-        description: description.trim() || undefined,
-        metadata: metadata as unknown as Record<string, unknown>,
-        created_by: gent.id,
+        location: (venue || location).trim() || null,
+        city: city.trim() || null,
+        description: description.trim() || null,
+        metadata: updatedMetadata as unknown as Record<string, unknown>,
       })
 
-      // createEntry defaults to 'published' — patch to gathering_pre
-      await updateEntry(entry.id, { status: 'gathering_pre' })
-
-      // Upload photos if any were selected
-      if (pendingFiles.length > 0) {
-        let coverUrl: string | null = null
-        for (let i = 0; i < pendingFiles.length; i++) {
-          const url = await uploadEntryPhoto(entry.id, pendingFiles[i], i)
-          if (i === 0) coverUrl = url
-        }
-        if (coverUrl) {
-          await updateEntryCover(entry.id, coverUrl)
-        }
-      }
-
-      addToast('Gathering created', 'success')
-      navigate(`/gathering/${entry.id}`)
+      addToast('Gathering updated', 'success')
+      navigate(`/gathering/${id}`)
     } catch (err) {
-      console.error('Failed to create gathering:', err)
+      console.error('Failed to update gathering:', err)
       addToast('Something went wrong. Please try again.', 'error')
     } finally {
       setSubmitting(false)
     }
   }
 
+  if (loading) {
+    return (
+      <>
+        <TopBar title="Edit Gathering" back />
+        <PageWrapper>
+          <div className="flex items-center justify-center h-48">
+            <Spinner size="md" />
+          </div>
+        </PageWrapper>
+      </>
+    )
+  }
+
+  if (!entry) return null
+
   return (
     <>
-      <TopBar title="New Gathering" back />
+      <TopBar title="Edit Gathering" back />
       <PageWrapper>
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 pb-4">
 
@@ -412,15 +445,6 @@ export default function GatheringNew() {
             )}
           </div>
 
-          {/* Photos */}
-          <PhotoUpload
-            entryId={null}
-            maxPhotos={10}
-            onFilesAdded={addFiles}
-            onFileRemoved={removeFile}
-            className="w-full"
-          />
-
           {/* Submit */}
           <div className="pt-2">
             <Button
@@ -429,7 +453,7 @@ export default function GatheringNew() {
               loading={submitting}
               size="lg"
             >
-              Create Gathering
+              Save Changes
             </Button>
           </div>
 

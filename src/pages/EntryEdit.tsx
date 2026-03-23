@@ -266,14 +266,8 @@ export default function EntryEdit() {
     }
 
     if (entry.type === 'gathering') {
-      // Gathering edits are handled on the dedicated gathering page
-      return (
-        <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-          <p className="text-ivory-muted font-body text-sm">
-            Gathering entries are managed from the Gathering page.
-          </p>
-        </div>
-      )
+      navigate(`/gathering/${entry.id}/edit`, { replace: true })
+      return null
     }
 
     return null
