@@ -21,7 +21,7 @@ const SUGGESTIONS = [
   "What's our best-rated steak?",
   'How many countries have we visited?',
   'Who has the most PS5 wins?',
-  'When did all four of us last meet?',
+  'When did all three of us last meet?',
   'What city have we visited the most?',
   'Give me a summary of our year so far.',
 ]
