@@ -8,6 +8,7 @@ import { extractLocationFromPhoto, extractExifDate, haversineMetres, getDevicePo
 import type { LocationFill } from '@/lib/geo'
 import { fetchLocations } from '@/data/locations'
 import { isVideoFile, extractKeyframes } from '@/lib/videoKeyframes'
+import { useUIStore } from '@/store/ui'
 
 /** Check if a canvas has any non-transparent pixels (detects blank HEVC renders) */
 function isCanvasBlank(canvas: HTMLCanvasElement): boolean {
@@ -83,7 +84,6 @@ interface PendingPhoto {
   id: string
   file: File
   previewUrl: string
-  isVideo: boolean
   progress: number
   uploading: boolean
   uploadedUrl: string | null
@@ -115,6 +115,7 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
 
       // Expand video files into keyframe image files before adding
       const expandedFiles: File[] = []
+      const skippedVideos: string[] = []
       for (const file of toAdd) {
         if (isVideoFile(file)) {
           try {
@@ -134,38 +135,37 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
                 const frameName = `${file.name.replace(/\.[^.]+$/, '')}_poster.jpg`
                 expandedFiles.push(new File([poster], frameName, { type: poster.type }))
               } else {
-                // Codec unsupported for canvas extraction (e.g. HEVC on desktop Chrome)
-                // Keep the original video file — upload as-is, show <video> preview
-                expandedFiles.push(file)
+                skippedVideos.push(file.name)
               }
             }
           } catch (err) {
             console.error('Video processing failed:', file.name, err)
-            // Still include the original video on error
-            expandedFiles.push(file)
+            skippedVideos.push(file.name)
           }
         } else {
           expandedFiles.push(file)
         }
       }
       setProcessingLabel(null)
+      if (skippedVideos.length > 0) {
+        useUIStore.getState().addToast(
+          `${skippedVideos.length} video${skippedVideos.length > 1 ? 's' : ''} couldn't be processed. Try uploading from your phone instead.`,
+          'error',
+        )
+      }
 
       // Re-apply the cap after expansion
       const finalFiles = expandedFiles.slice(0, maxPhotos - photos.length)
 
-      const newPhotos: PendingPhoto[] = finalFiles.map((file) => {
-        const video = isVideoFile(file)
-        return {
-          id: crypto.randomUUID(),
-          file,
-          previewUrl: video ? '' : URL.createObjectURL(file),
-          isVideo: video,
-          progress: 0,
-          uploading: false,
-          uploadedUrl: null,
-          error: null,
-        }
-      })
+      const newPhotos: PendingPhoto[] = finalFiles.map((file) => ({
+        id: crypto.randomUUID(),
+        file,
+        previewUrl: URL.createObjectURL(file),
+        progress: 0,
+        uploading: false,
+        uploadedUrl: null,
+        error: null,
+      }))
 
       // Reset file input so same files can be re-added after removal
       e.target.value = ''
@@ -335,24 +335,12 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
                 transition={{ duration: 0.2 }}
                 className="relative aspect-square rounded-lg overflow-hidden bg-slate-mid"
               >
-                {photo.isVideo ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-slate-mid">
-                    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-gold stroke-[1.5]">
-                      <rect x="2" y="4" width="20" height="16" rx="2" />
-                      <polygon points="10,9 16,12 10,15" className="fill-gold/60" />
-                    </svg>
-                    <span className="text-ivory-dim text-[8px] font-body truncate max-w-[90%] px-1">
-                      {photo.file.name}
-                    </span>
-                  </div>
-                ) : (
-                  <img
-                    src={photo.previewUrl}
-                    alt="Upload preview"
-                    className="w-full h-full object-cover"
-                    draggable={false}
-                  />
-                )}
+                <img
+                  src={photo.previewUrl}
+                  alt="Upload preview"
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                />
 
                 {/* Upload progress overlay */}
                 {photo.uploading && (
