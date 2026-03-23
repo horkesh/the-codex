@@ -121,8 +121,8 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
           try {
             setProcessingLabel(`Extracting frames from ${file.name}...`)
             const frames = await extractKeyframes(file, { maxFrames: 5, maxWidth: 1024 })
-            // Filter out blank frames (HEVC renders as black)
-            const validFrames = frames.filter(f => f.blob.size > 1000)
+            // extractKeyframes already skips blank frames via pixel inspection
+            const validFrames = frames
             if (validFrames.length > 0) {
               for (const { blob, timestampSeconds } of validFrames) {
                 const ext = blob.type === 'image/webp' ? 'webp' : 'jpg'

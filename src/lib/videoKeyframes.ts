@@ -82,6 +82,18 @@ export async function extractKeyframes(
         try {
           await seekTo(video, time)
           ctx.drawImage(video, 0, 0, w, h)
+
+          // Check if the frame is blank (black) — codec may not have decoded
+          if (isCanvasBlank(ctx, w, h)) {
+            // Retry once with a longer delay
+            await new Promise(r => setTimeout(r, 200))
+            ctx.drawImage(video, 0, 0, w, h)
+            if (isCanvasBlank(ctx, w, h)) {
+              console.warn(`Blank frame at ${time}s, skipping`)
+              continue
+            }
+          }
+
           const blob = await new Promise<Blob>((res, rej) => {
             canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), mimeType, quality)
           })
@@ -107,14 +119,25 @@ export async function extractKeyframes(
   })
 }
 
+/** Check if canvas content is blank/black (unsupported codec or not yet decoded) */
+function isCanvasBlank(ctx: CanvasRenderingContext2D, w: number, h: number): boolean {
+  const sampleW = Math.min(w, 50)
+  const sampleH = Math.min(h, 50)
+  const data = ctx.getImageData(0, 0, sampleW, sampleH).data
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] > 10 && (data[i] > 5 || data[i + 1] > 5 || data[i + 2] > 5)) return false
+  }
+  return true
+}
+
 /** Seek video to specific time and wait for frame to be ready */
 function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error(`Seek timeout at ${time}s`)), 8000)
     video.onseeked = () => {
       clearTimeout(timeout)
-      // Small delay for frame to render on canvas
-      setTimeout(resolve, 50)
+      // Delay for frame to fully decode before canvas draw
+      setTimeout(resolve, 150)
     }
     video.currentTime = time
   })
