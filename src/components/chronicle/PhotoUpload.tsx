@@ -153,16 +153,19 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
       // Re-apply the cap after expansion
       const finalFiles = expandedFiles.slice(0, maxPhotos - photos.length)
 
-      const newPhotos: PendingPhoto[] = finalFiles.map((file) => ({
-        id: crypto.randomUUID(),
-        file,
-        previewUrl: URL.createObjectURL(file),
-        isVideo: isVideoFile(file),
-        progress: 0,
-        uploading: false,
-        uploadedUrl: null,
-        error: null,
-      }))
+      const newPhotos: PendingPhoto[] = finalFiles.map((file) => {
+        const video = isVideoFile(file)
+        return {
+          id: crypto.randomUUID(),
+          file,
+          previewUrl: video ? '' : URL.createObjectURL(file),
+          isVideo: video,
+          progress: 0,
+          uploading: false,
+          uploadedUrl: null,
+          error: null,
+        }
+      })
 
       // Reset file input so same files can be re-added after removal
       e.target.value = ''
@@ -333,14 +336,15 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
                 className="relative aspect-square rounded-lg overflow-hidden bg-slate-mid"
               >
                 {photo.isVideo ? (
-                  <video
-                    src={photo.previewUrl}
-                    muted
-                    playsInline
-                    preload="metadata"
-                    className="w-full h-full object-cover"
-                    draggable={false}
-                  />
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-slate-mid">
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-gold stroke-[1.5]">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <polygon points="10,9 16,12 10,15" className="fill-gold/60" />
+                    </svg>
+                    <span className="text-ivory-dim text-[8px] font-body truncate max-w-[90%] px-1">
+                      {photo.file.name}
+                    </span>
+                  </div>
                 ) : (
                   <img
                     src={photo.previewUrl}
@@ -348,13 +352,6 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
                     className="w-full h-full object-cover"
                     draggable={false}
                   />
-                )}
-
-                {/* Video badge */}
-                {photo.isVideo && (
-                  <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-obsidian/70 text-ivory text-[9px] font-body uppercase tracking-wider">
-                    Video
-                  </div>
                 )}
 
                 {/* Upload progress overlay */}
