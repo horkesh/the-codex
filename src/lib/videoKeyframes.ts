@@ -100,9 +100,11 @@ export async function extractKeyframes(
 }
 
 /**
- * Seek to a time, then use requestVideoFrameCallback (if available) to wait
- * for the browser to actually render the decoded frame before drawing.
- * Falls back to a generous timeout for browsers without RVFC.
+ * Seek to a time and capture the frame to canvas.
+ * Tries multiple strategies to handle hardware-decoded HEVC:
+ * 1. createImageBitmap (works with GPU frames on some browsers)
+ * 2. requestVideoFrameCallback + drawImage (waits for rendered frame)
+ * 3. Direct drawImage with delay fallback
  * Returns true if a non-blank frame was captured.
  */
 async function seekAndCapture(
@@ -119,31 +121,37 @@ async function seekAndCapture(
     video.currentTime = time
   })
 
-  // 2. Briefly play + wait for actual frame render via requestVideoFrameCallback
-  //    This forces the hardware decoder to produce a real frame on the compositor.
+  // 2. Brief play + RVFC to force hardware decoder to produce a frame
   const hasRVFC = 'requestVideoFrameCallback' in video
   if (hasRVFC) {
     try {
       await video.play()
       await new Promise<void>((resolve) => {
         (video as any).requestVideoFrameCallback(() => resolve())
-        // Safety timeout — if RVFC never fires (codec unsupported), don't hang
         setTimeout(resolve, 1000)
       })
       video.pause()
-    } catch {
-      // play() rejected — fall through to direct draw
-    }
+    } catch { /* play rejected — continue anyway */ }
   } else {
-    // No RVFC — use a generous static delay
     await new Promise(r => setTimeout(r, 300))
   }
 
-  // 3. Draw and check
+  // 3. Try createImageBitmap first — it can grab GPU-decoded frames
+  //    that drawImage(video) cannot access via the 2D canvas path
+  try {
+    const bitmap = await createImageBitmap(video)
+    ctx.drawImage(bitmap, 0, 0, w, h)
+    bitmap.close()
+    if (!isCanvasBlank(ctx, w, h)) return true
+  } catch {
+    // createImageBitmap failed — fall through to drawImage
+  }
+
+  // 4. Direct drawImage fallback
   ctx.drawImage(video, 0, 0, w, h)
   if (!isCanvasBlank(ctx, w, h)) return true
 
-  // 4. Retry once with extra delay (covers slow hardware decoders)
+  // 5. Last resort: extra delay + retry
   await new Promise(r => setTimeout(r, 500))
   ctx.drawImage(video, 0, 0, w, h)
   return !isCanvasBlank(ctx, w, h)

@@ -31,9 +31,10 @@ async function grabPosterFrame(file: File): Promise<Blob | null> {
     video.preload = 'auto'
     video.setAttribute('playsinline', '')
 
-    const timeout = setTimeout(() => { URL.revokeObjectURL(url); resolve(null) }, 10000)
+    const cleanup = () => { video.src = ''; URL.revokeObjectURL(url) }
+    const timeout = setTimeout(() => { cleanup(); resolve(null) }, 10000)
 
-    video.onloadeddata = () => {
+    video.onloadeddata = async () => {
       clearTimeout(timeout)
       try {
         const vw = video.videoWidth || 640
@@ -42,29 +43,39 @@ async function grabPosterFrame(file: File): Promise<Blob | null> {
         const canvas = document.createElement('canvas')
         canvas.width = Math.round(vw * scale)
         canvas.height = Math.round(vh * scale)
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })!
 
-        // Check if the canvas is blank (HEVC can't be decoded to canvas)
-        if (isCanvasBlank(canvas)) {
+        // Try createImageBitmap first (handles GPU-decoded HEVC)
+        let drawn = false
+        try {
+          const bitmap = await createImageBitmap(video)
+          ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+          bitmap.close()
+          drawn = true
+        } catch {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          drawn = true
+        }
+
+        if (!drawn || isCanvasBlank(canvas)) {
           console.warn('Video frame is blank (unsupported codec):', file.name)
-          URL.revokeObjectURL(url)
+          cleanup()
           resolve(null)
           return
         }
 
         canvas.toBlob(
-          blob => { URL.revokeObjectURL(url); resolve(blob) },
+          blob => { cleanup(); resolve(blob) },
           'image/jpeg',
           0.85,
         )
       } catch {
-        URL.revokeObjectURL(url)
+        cleanup()
         resolve(null)
       }
     }
 
-    video.onerror = () => { clearTimeout(timeout); URL.revokeObjectURL(url); resolve(null) }
+    video.onerror = () => { clearTimeout(timeout); cleanup(); resolve(null) }
     video.src = url
     video.load()
   })
