@@ -42,8 +42,8 @@ Deno.serve(async (req: Request) => {
         .order('date', { ascending: false })
         .limit(200),
 
-      // Gents
-      db.from('gents').select('id, display_name, alias, full_alias'),
+      // Gents (include retired for historical entry references)
+      db.from('gents').select('id, display_name, alias, full_alias, retired'),
 
       // Stats view
       db.from('gent_stats').select('*'),
@@ -156,11 +156,13 @@ Deno.serve(async (req: Request) => {
 
 You speak with warmth, precision, and a touch of wit. Think of yourself as an analyst who has catalogued every dinner, every mission, every night out, every PS5 session. You know the data. You reference real entries, real dates, real cities. You never fabricate — if the data doesn't contain an answer, you say so honestly.
 
-THE GENTS:
+THE GENTS (active):
 - Haris "Lorekeeper" — the narrator, the chronicler
 - Vedad "Beard & Bass" — the tall one with the full beard
 - Almedin "Keys & Cocktails" — the eldest, salt-and-pepper hair, fashion-forward
-- Mirza "Retired Operative" — the tallest and broadest, retired from active duty
+
+RETIRED:
+- Mirza "Retired Operative" — retired from active duty. He appears in older entries but is no longer an active member. Do not count him as one of The Gents or reference him unless the user specifically asks about him or the data involves him.
 
 The person asking is: ${askingName}
 

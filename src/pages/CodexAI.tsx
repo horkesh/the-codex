@@ -21,7 +21,7 @@ const SUGGESTIONS = [
   "What's our best-rated steak?",
   'How many countries have we visited?',
   'Who has the most PS5 wins?',
-  'When did all four of us last meet?',
+  'When did all three of us last meet?',
   'What city have we visited the most?',
   'Give me a summary of our year so far.',
 ]
@@ -50,6 +50,32 @@ function TypingIndicator() {
   )
 }
 
+// ── Lightweight markdown for AI responses ────────────────────────────────────
+
+function renderMarkdown(text: string): string {
+  // Escape HTML entities
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  // Bold: **text** or __text__
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>')
+
+  // Italic: *text* or _text_ (not inside bold)
+  html = html.replace(/(?<!\w)\*([^*]+?)\*(?!\w)/g, '<em>$1</em>')
+  html = html.replace(/(?<!\w)_([^_]+?)_(?!\w)/g, '<em>$1</em>')
+
+  // Bullet lists: lines starting with - or *
+  html = html.replace(/^[-*] (.+)$/gm, '<li>$1</li>')
+
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul class="list-disc pl-4 space-y-0.5">$1</ul>')
+
+  return html
+}
+
 // ── Message bubble ───────────────────────────────────────────────────────────
 
 function MessageBubble({ message }: { message: Message }) {
@@ -67,15 +93,16 @@ function MessageBubble({ message }: { message: Message }) {
           <Sparkles size={14} className="text-gold" />
         </div>
       )}
-      <div
-        className={`max-w-[85%] px-4 py-3 text-sm font-body leading-relaxed whitespace-pre-wrap ${
-          isUser
-            ? 'bg-gold/15 border border-gold/25 text-ivory rounded-2xl rounded-tr-sm'
-            : 'bg-slate-dark border border-gold/15 text-ivory/90 rounded-2xl rounded-tl-sm'
-        }`}
-      >
-        {message.content}
-      </div>
+      {isUser ? (
+        <div className="max-w-[85%] px-4 py-3 text-sm font-body leading-relaxed whitespace-pre-wrap bg-gold/15 border border-gold/25 text-ivory rounded-2xl rounded-tr-sm">
+          {message.content}
+        </div>
+      ) : (
+        <div
+          className="max-w-[85%] px-4 py-3 text-sm font-body leading-relaxed whitespace-pre-wrap bg-slate-dark border border-gold/15 text-ivory/90 rounded-2xl rounded-tl-sm [&_strong]:font-semibold [&_strong]:text-ivory [&_em]:italic [&_em]:text-gold/80 [&_ul]:my-1"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
+        />
+      )}
     </motion.div>
   )
 }

@@ -511,6 +511,8 @@ export default function EntryNew() {
       title: data.title,
       date: data.date,
       location: data.location,
+      city: data.city || undefined,
+      country: data.country || undefined,
       description: data.description,
       metadata: meta,
     })

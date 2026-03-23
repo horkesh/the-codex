@@ -7,6 +7,7 @@ export interface SpotifyTrack {
   album: string
   spotify_url: string
   album_art: string
+  preview_url: string | null
 }
 
 export function useSpotifySearch() {
