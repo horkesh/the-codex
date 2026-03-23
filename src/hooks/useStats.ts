@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchAllStats, fetchYearStats, fetchPS5HeadToHead, fetchMissionsByYear } from '@/data/stats'
+import { fetchAllStats, fetchYearStats, fetchPS5HeadToHead, fetchMissionsByYear, fetchEarliestEntryYear } from '@/data/stats'
 import type { GentStats } from '@/types/app'
 
 interface UseStatsReturn {
@@ -9,6 +9,7 @@ interface UseStatsReturn {
   selectedYear: number | null
   setSelectedYear: (year: number | null) => void
   loading: boolean
+  earliestYear: number
 }
 
 export function useStats(): UseStatsReturn {
@@ -17,23 +18,26 @@ export function useStats(): UseStatsReturn {
   const [missionsByYear, setMissionsByYear] = useState<Array<{ year: number; count: number }>>([])
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+  const [earliestYear, setEarliestYear] = useState(new Date().getFullYear())
 
-  // Load all-time stats, PS5 H2H, and missions by year on mount
+  // Load all-time stats, PS5 H2H, missions by year, and earliest year on mount
   useEffect(() => {
     let cancelled = false
 
     const loadInitial = async () => {
       setLoading(true)
       try {
-        const [allStats, h2h, missions] = await Promise.all([
+        const [allStats, h2h, missions, earliest] = await Promise.all([
           fetchAllStats(),
           fetchPS5HeadToHead(),
           fetchMissionsByYear(),
+          fetchEarliestEntryYear(),
         ])
         if (!cancelled) {
           setStats(allStats.filter(s => s.alias !== 'operative'))
           setPs5H2H(h2h)
           setMissionsByYear(missions)
+          setEarliestYear(earliest)
         }
       } catch {
         // leave state as-is on error
@@ -71,5 +75,5 @@ export function useStats(): UseStatsReturn {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear])
 
-  return { stats, ps5H2H, missionsByYear, selectedYear, setSelectedYear, loading }
+  return { stats, ps5H2H, missionsByYear, selectedYear, setSelectedYear, loading, earliestYear }
 }

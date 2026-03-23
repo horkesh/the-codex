@@ -34,6 +34,20 @@ export function computeLeaderSummary(statA: GentStats, statB: GentStats): string
 }
 
 // Fetch all-time stats for all gents from the gent_stats view
+export async function fetchEarliestEntryYear(): Promise<number> {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('date')
+    .in('status', ['published', 'gathering_post'])
+    .order('date', { ascending: true })
+    .limit(1)
+    .single()
+
+  if (error || !data?.date) return new Date().getFullYear()
+  const year = parseInt((data.date as string).slice(0, 4), 10)
+  return isNaN(year) ? new Date().getFullYear() : year
+}
+
 export async function fetchAllStats(): Promise<GentStats[]> {
   const { data, error } = await supabase
     .from('gent_stats')
