@@ -97,7 +97,6 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
   const [suggesting, setSuggesting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const preview = usePreviewPlayer()
 
   useEffect(() => {
     if (isOpen) {
@@ -105,9 +104,7 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
     } else {
       setQuery('')
       clear()
-      preview.stop()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, clear])
 
   const handleQueryChange = useCallback((val: string) => {
@@ -138,7 +135,6 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
   }
 
   function handleSelect(track: SpotifyTrack) {
-    preview.stop()
     onSelect(track)
   }
 
@@ -150,7 +146,7 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
-      onClick={() => { preview.stop(); onClose() }}
+      onClick={onClose}
     >
       <motion.div
         initial={{ y: '100%' }}
@@ -163,7 +159,7 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
           <h3 className="text-sm font-display font-semibold text-ivory">Mission Soundtrack</h3>
-          <button type="button" onClick={() => { preview.stop(); onClose() }} className="text-ivory-dim hover:text-ivory transition-colors">
+          <button type="button" onClick={onClose} className="text-ivory-dim hover:text-ivory transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -206,25 +202,7 @@ function SearchModal({ isOpen, onClose, onSelect, lore, title, city, country }: 
               key={track.spotify_url || `track-${i}`}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
             >
-              {/* Preview play button or album art */}
-              {track.preview_url ? (
-                <button
-                  type="button"
-                  onClick={() => track.preview_url && preview.toggle(track.preview_url)}
-                  className="relative w-10 h-10 rounded overflow-hidden shrink-0 group"
-                >
-                  {track.album_art ? (
-                    <img src={track.album_art} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                      <Music size={16} className="text-ivory-dim" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Play size={14} className="text-white" />
-                  </div>
-                </button>
-              ) : track.album_art ? (
+              {track.album_art ? (
                 <img src={track.album_art} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
               ) : (
                 <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center shrink-0">
