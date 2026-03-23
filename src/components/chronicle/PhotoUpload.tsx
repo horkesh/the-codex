@@ -8,7 +8,6 @@ import { extractLocationFromPhoto, extractExifDate, haversineMetres, getDevicePo
 import type { LocationFill } from '@/lib/geo'
 import { fetchLocations } from '@/data/locations'
 import { isVideoFile, extractKeyframes } from '@/lib/videoKeyframes'
-import { useUIStore } from '@/store/ui'
 
 /** Check if a canvas has any non-transparent pixels (detects blank HEVC renders) */
 function isCanvasBlank(canvas: HTMLCanvasElement): boolean {
@@ -84,6 +83,7 @@ interface PendingPhoto {
   id: string
   file: File
   previewUrl: string
+  isVideo: boolean
   progress: number
   uploading: boolean
   uploadedUrl: string | null
@@ -115,16 +115,13 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
 
       // Expand video files into keyframe image files before adding
       const expandedFiles: File[] = []
-      const skippedVideos: string[] = []
       for (const file of toAdd) {
         if (isVideoFile(file)) {
           try {
             setProcessingLabel(`Extracting frames from ${file.name}...`)
             const frames = await extractKeyframes(file, { maxFrames: 5, maxWidth: 1024 })
-            // extractKeyframes already skips blank frames via pixel inspection
-            const validFrames = frames
-            if (validFrames.length > 0) {
-              for (const { blob, timestampSeconds } of validFrames) {
+            if (frames.length > 0) {
+              for (const { blob, timestampSeconds } of frames) {
                 const ext = blob.type === 'image/webp' ? 'webp' : 'jpg'
                 const frameName = `${file.name.replace(/\.[^.]+$/, '')}_${Math.round(timestampSeconds)}s.${ext}`
                 expandedFiles.push(new File([blob], frameName, { type: blob.type }))
@@ -137,24 +134,21 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
                 const frameName = `${file.name.replace(/\.[^.]+$/, '')}_poster.jpg`
                 expandedFiles.push(new File([poster], frameName, { type: poster.type }))
               } else {
-                skippedVideos.push(file.name)
+                // Codec unsupported for canvas extraction (e.g. HEVC on desktop Chrome)
+                // Keep the original video file — upload as-is, show <video> preview
+                expandedFiles.push(file)
               }
             }
           } catch (err) {
             console.error('Video processing failed:', file.name, err)
-            skippedVideos.push(file.name)
+            // Still include the original video on error
+            expandedFiles.push(file)
           }
         } else {
           expandedFiles.push(file)
         }
       }
       setProcessingLabel(null)
-      if (skippedVideos.length > 0) {
-        useUIStore.getState().addToast(
-          `${skippedVideos.length} video${skippedVideos.length > 1 ? 's' : ''} skipped (unsupported format). Try converting to MP4/H.264.`,
-          'error',
-        )
-      }
 
       // Re-apply the cap after expansion
       const finalFiles = expandedFiles.slice(0, maxPhotos - photos.length)
@@ -163,6 +157,7 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
         id: crypto.randomUUID(),
         file,
         previewUrl: URL.createObjectURL(file),
+        isVideo: isVideoFile(file),
         progress: 0,
         uploading: false,
         uploadedUrl: null,
@@ -337,12 +332,30 @@ export function PhotoUpload({ entryId, maxPhotos = DEFAULT_MAX_PHOTOS, onUpload,
                 transition={{ duration: 0.2 }}
                 className="relative aspect-square rounded-lg overflow-hidden bg-slate-mid"
               >
-                <img
-                  src={photo.previewUrl}
-                  alt="Upload preview"
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
+                {photo.isVideo ? (
+                  <video
+                    src={photo.previewUrl}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                  />
+                ) : (
+                  <img
+                    src={photo.previewUrl}
+                    alt="Upload preview"
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                  />
+                )}
+
+                {/* Video badge */}
+                {photo.isVideo && (
+                  <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-obsidian/70 text-ivory text-[9px] font-body uppercase tracking-wider">
+                    Video
+                  </div>
+                )}
 
                 {/* Upload progress overlay */}
                 {photo.uploading && (
